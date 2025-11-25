@@ -581,8 +581,8 @@ def create_all_rules() -> List[Rule]:
         family="HIER",
         description="Within each half, ignoring order, some three ranks differ by the same amount — either in both halves or in neither.",
         composition=C("eq",
-            C("has_AP", length=3, step="any", aligned=False, C("left_half")),
-            C("has_AP", length=3, step="any", aligned=False, C("right_half"))
+            C("has_AP", C("left_half"), params={"length": 3, "step": "any", "aligned": False}),
+            C("has_AP", C("right_half"), params={"length": 3, "step": "any", "aligned": False})
         ),
         primitives_used=["halves", "has_AP", "eq"],
         level=3
