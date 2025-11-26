@@ -32,7 +32,56 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from rules.cards import sample_hand, hand_to_string
-from rules.catalogue import ALL_RULES, DISCOVERED_ABSTRACTIONS, get_all_families
+from rules.catalogue import ALL_RULES, DISCOVERED_ABSTRACTIONS, get_all_families, CompositionNode
+
+
+def extract_subtrees(node: CompositionNode, depth: int = 0) -> List[Tuple[str, int]]:
+    """
+    Extract all subtrees from a composition tree.
+    Returns list of (subtree_string, depth) tuples.
+    """
+    subtrees = []
+
+    # Add this node as a subtree
+    subtree_str = str(node)
+    subtrees.append((subtree_str, depth))
+
+    # Recursively extract from children
+    for child in node.args:
+        subtrees.extend(extract_subtrees(child, depth + 1))
+
+    return subtrees
+
+
+def analyze_shared_subtrees(rules) -> Dict:
+    """
+    Analyze which subtrees are shared across rules.
+    Returns dictionary with subtree frequencies and which rules use them.
+    """
+    subtree_usage = {}  # subtree_str -> list of rule_ids
+
+    for rule in rules:
+        subtrees = extract_subtrees(rule.composition)
+        seen_in_rule = set()  # Avoid counting same subtree twice per rule
+
+        for subtree_str, depth in subtrees:
+            if subtree_str not in seen_in_rule:
+                seen_in_rule.add(subtree_str)
+                if subtree_str not in subtree_usage:
+                    subtree_usage[subtree_str] = []
+                subtree_usage[subtree_str].append(rule.id)
+
+    # Filter to subtrees used by 2+ rules and not just single primitives
+    shared_subtrees = {
+        k: v for k, v in subtree_usage.items()
+        if len(v) >= 2 and '(' in k  # Has structure, not just a primitive name
+    }
+
+    return {
+        'all_subtrees': subtree_usage,
+        'shared_subtrees': shared_subtrees,
+        'top_shared': sorted(shared_subtrees.items(), key=lambda x: len(x[1]), reverse=True)[:20]
+    }
 
 
 def generate_tasks_and_evaluate(num_examples: int = 100) -> Dict:
@@ -274,10 +323,121 @@ def create_visualizations(results: Dict, output_dir: Path) -> Dict[str, str]:
     plt.close()
     images['primitive_cooccurrence'] = str(path)
 
-    return images
+    # 7. Shared Subtrees Analysis
+    subtree_analysis = analyze_shared_subtrees(ALL_RULES)
+    top_subtrees = subtree_analysis['top_shared'][:15]  # Top 15 shared subtrees
+
+    if top_subtrees:
+        fig, ax = plt.subplots(figsize=(14, 8))
+
+        subtree_names = []
+        counts = []
+        for subtree_str, rule_ids in top_subtrees:
+            # Truncate long subtree names for display
+            display_name = subtree_str if len(subtree_str) < 50 else subtree_str[:47] + '...'
+            subtree_names.append(display_name)
+            counts.append(len(rule_ids))
+
+        colors = plt.cm.plasma(np.linspace(0.2, 0.8, len(subtree_names)))
+        bars = ax.barh(subtree_names, counts, color=colors, edgecolor='black', linewidth=0.5)
+
+        ax.set_xlabel('Number of Rules Sharing This Subtree', fontsize=12)
+        ax.set_title('Most Frequently Shared Compositional Subtrees', fontsize=14, fontweight='bold')
+        ax.invert_yaxis()
+
+        for bar, count in zip(bars, counts):
+            ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+                    str(count), va='center', fontsize=10, fontweight='bold')
+
+        plt.tight_layout()
+        path = output_dir / 'shared_subtrees.png'
+        plt.savefig(path, dpi=150, bbox_inches='tight')
+        plt.close()
+        images['shared_subtrees'] = str(path)
+
+    # 8. Project Architecture Diagram
+    fig, ax = plt.subplots(figsize=(16, 12))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.axis('off')
+
+    # Title
+    ax.text(50, 97, 'DreamCoder Card Game Modeling - System Architecture',
+            ha='center', va='top', fontsize=18, fontweight='bold', color='#2c3e50')
+
+    # Draw boxes for components
+    def draw_box(x, y, w, h, label, color='#3498db', text_color='white', sublabel=None):
+        rect = plt.Rectangle((x, y), w, h, fill=True, facecolor=color,
+                              edgecolor='#2c3e50', linewidth=2, alpha=0.9)
+        ax.add_patch(rect)
+        ax.text(x + w/2, y + h/2 + (2 if sublabel else 0), label,
+                ha='center', va='center', fontsize=11, fontweight='bold', color=text_color)
+        if sublabel:
+            ax.text(x + w/2, y + h/2 - 4, sublabel,
+                    ha='center', va='center', fontsize=8, color=text_color, style='italic')
+
+    # Layer 1: Data/Input Layer (bottom)
+    draw_box(5, 5, 25, 12, 'cards.py', '#27ae60', sublabel='Card/Hand types')
+    draw_box(35, 5, 30, 12, 'primitives.py', '#27ae60', sublabel='60+ compositional functions')
+    draw_box(70, 5, 25, 12, 'catalogue.py', '#27ae60', sublabel='57 rules + compositions')
+
+    # Layer 2: Processing Layer
+    draw_box(5, 25, 40, 12, 'Task Generation', '#3498db', sublabel='Sample hands → evaluate rules')
+    draw_box(55, 25, 40, 12, 'Feature Extraction', '#3498db', sublabel='104-dim vectors from examples')
+
+    # Layer 3: Analysis Layer
+    draw_box(5, 45, 28, 12, 'Primitive Usage\nAnalysis', '#9b59b6')
+    draw_box(36, 45, 28, 12, 'Subtree Sharing\nAnalysis', '#9b59b6')
+    draw_box(67, 45, 28, 12, 'Abstraction\nDiscovery', '#9b59b6')
+
+    # Layer 4: DreamCoder Components (to implement)
+    draw_box(5, 65, 22, 12, 'Recognition\nNetwork', '#e74c3c', sublabel='(to integrate)')
+    draw_box(30, 65, 22, 12, 'Enumeration\nSearch', '#e74c3c', sublabel='(to implement)')
+    draw_box(55, 65, 22, 12, 'Library\nLearning', '#e74c3c', sublabel='(to implement)')
+    draw_box(80, 65, 17, 12, 'Wake-Sleep\nLoop', '#e74c3c', sublabel='(to implement)')
+
+    # Layer 5: Output
+    draw_box(20, 82, 60, 10, 'Comprehensive Report (HTML/JSON)', '#f39c12', text_color='#2c3e50')
+
+    # Arrows
+    def draw_arrow(x1, y1, x2, y2):
+        ax.annotate('', xy=(x2, y2), xytext=(x1, y1),
+                    arrowprops=dict(arrowstyle='->', color='#7f8c8d', lw=1.5))
+
+    # Vertical flow arrows
+    draw_arrow(17, 17, 17, 25)
+    draw_arrow(50, 17, 50, 25)
+    draw_arrow(82, 17, 75, 25)
+    draw_arrow(25, 37, 19, 45)
+    draw_arrow(75, 37, 81, 45)
+    draw_arrow(50, 37, 50, 45)
+    draw_arrow(19, 57, 16, 65)
+    draw_arrow(50, 57, 41, 65)
+    draw_arrow(81, 57, 66, 65)
+    draw_arrow(50, 77, 50, 82)
+
+    # Legend
+    legend_items = [
+        ('#27ae60', 'Core Domain (Complete)'),
+        ('#3498db', 'Processing Pipeline (Complete)'),
+        ('#9b59b6', 'Analysis Components (Complete)'),
+        ('#e74c3c', 'DreamCoder Components (To Implement)'),
+        ('#f39c12', 'Output')
+    ]
+    for i, (color, label) in enumerate(legend_items):
+        ax.add_patch(plt.Rectangle((78, 38 - i*5), 4, 3, facecolor=color, edgecolor='#2c3e50'))
+        ax.text(84, 39.5 - i*5, label, va='center', fontsize=9)
+
+    plt.tight_layout()
+    path = output_dir / 'architecture_diagram.png'
+    plt.savefig(path, dpi=150, bbox_inches='tight', facecolor='white')
+    plt.close()
+    images['architecture_diagram'] = str(path)
+
+    return images, subtree_analysis
 
 
-def generate_html_report(results: Dict, images: Dict, output_path: Path):
+def generate_html_report(results: Dict, images: Dict, subtree_analysis: Dict, output_path: Path):
     """Generate comprehensive HTML report with embedded images and explanations."""
 
     # Convert images to base64 for embedding
@@ -611,12 +771,52 @@ def generate_html_report(results: Dict, images: Dict, output_path: Path):
     <div class="toc">
         <h3>📋 Table of Contents</h3>
         <ul>
+            <li><a href="#architecture">System Architecture</a></li>
             <li><a href="#overview">Overview & Summary Statistics</a></li>
+            <li><a href="#model-run">How the Model Works</a></li>
             <li><a href="#visualizations">Visualizations & Analysis</a></li>
+            <li><a href="#subtrees">Shared Compositional Subtrees</a></li>
             <li><a href="#rules">Complete Rule Catalogue</a></li>
             <li><a href="#abstractions">Discovered Abstractions</a></li>
             <li><a href="#performance">Model Performance</a></li>
             <li><a href="#glossary">Glossary & Interpretation Guide</a></li>
+        </ul>
+    </div>
+
+    <!-- SECTION: Architecture -->
+    <h2 id="architecture">🏗️ System Architecture</h2>
+
+    <div class="info-box">
+        <strong>What is this diagram?</strong><br>
+        This flowchart shows how all components of the DreamCoder card game modeling system
+        fit together. Data flows from bottom to top: starting with the core domain definitions,
+        through processing and analysis, up to the DreamCoder components (some still to be implemented),
+        and finally to this report output.
+    </div>
+
+    <div class="figure-container">
+        <img src="data:image/png;base64,{images_b64.get('architecture_diagram', '')}" alt="System Architecture">
+        <div class="figure-caption">
+            <strong>Figure 0: System Architecture Diagram</strong><br>
+            Green boxes are complete core domain components. Blue boxes handle data processing.
+            Purple boxes perform analysis. Red boxes are DreamCoder components (recognition network
+            exists but needs integration; others need implementation). Orange is the output layer.
+        </div>
+    </div>
+
+    <div class="legend">
+        <h4>🔑 Component Descriptions</h4>
+        <ul>
+            <li><strong>cards.py</strong>: Defines Card, Hand, Suit, Rank, Color, Parity types. The foundation.</li>
+            <li><strong>primitives.py</strong>: 60+ compositional functions organized in 5 levels (0-4).</li>
+            <li><strong>catalogue.py</strong>: All 57 rules with their compositional decompositions.</li>
+            <li><strong>Task Generation</strong>: Samples random hands, evaluates rules, creates training examples.</li>
+            <li><strong>Feature Extraction</strong>: Converts example hands into 104-dimensional numeric vectors.</li>
+            <li><strong>Primitive/Subtree/Abstraction Analysis</strong>: Identifies shared structure across rules.</li>
+            <li><strong>Recognition Network</strong>: Neural network that predicts which primitives a rule uses (94.75% accuracy achieved in dreamcoder_modeling/).</li>
+            <li><strong>Enumeration Search</strong>: Searches program space for rules matching examples.</li>
+            <li><strong>Library Learning</strong>: Discovers new abstractions from solved tasks.</li>
+            <li><strong>Wake-Sleep Loop</strong>: Alternates solving tasks and learning, improving over iterations.</li>
         </ul>
     </div>
 
@@ -693,6 +893,93 @@ def generate_html_report(results: Dict, images: Dict, output_path: Path):
 
     html += """    </table>
 
+    <!-- SECTION: How the Model Works -->
+    <h2 id="model-run">🔄 How the Model Works: A Typical Run</h2>
+
+    <div class="info-box">
+        <strong>What happens when we run the model?</strong><br>
+        This section explains step-by-step what the DreamCoder-style model does when processing
+        our card game rules. Understanding this pipeline is essential for interpreting the results.
+    </div>
+
+    <h3>Step 1: Task Generation</h3>
+    <div class="info-box success">
+        For each rule, we generate <strong>training examples</strong>:
+        <ol>
+            <li>Sample N random 6-card hands (e.g., N=100)</li>
+            <li>Evaluate the rule on each hand → TRUE or FALSE</li>
+            <li>Result: A "task" = list of (hand, label) pairs</li>
+        </ol>
+        <em>Example for "Sorted_by_rank":</em><br>
+        <code>[2♠, 5♦, 7♣, 9♥, J♦, K♠] → TRUE (ranks increase)</code><br>
+        <code>[K♠, 2♦, 7♣, 5♥, 9♦, J♠] → FALSE (not sorted)</code>
+    </div>
+
+    <h3>Step 2: Feature Extraction</h3>
+    <div class="info-box success">
+        Each task is converted to a <strong>104-dimensional feature vector</strong>:
+        <ul>
+            <li><strong>Rank statistics (8 dims)</strong>: mean, std, min, max for positive/negative examples</li>
+            <li><strong>Suit entropy (2 dims)</strong>: how evenly distributed are suits?</li>
+            <li><strong>Color uniformity (2 dims)</strong>: are examples all one color?</li>
+            <li><strong>Structural features (20+ dims)</strong>: has pair, is sorted, is palindrome, etc.</li>
+            <li><strong>Positional features (40+ dims)</strong>: what's at each position?</li>
+            <li><strong>Relational features (30+ dims)</strong>: terminal equality, halves similarity, etc.</li>
+        </ul>
+        These features help the recognition network identify which primitives are relevant.
+    </div>
+
+    <h3>Step 3: Recognition Network (Neural Guidance)</h3>
+    <div class="info-box success">
+        A neural network predicts <strong>which primitives</strong> the rule likely uses:
+        <ul>
+            <li><strong>Input</strong>: 104-dimensional feature vector</li>
+            <li><strong>Output</strong>: Probability for each of ~60 primitives</li>
+            <li><strong>Training</strong>: Learn from (features, known primitives) pairs</li>
+            <li><strong>Accuracy achieved</strong>: 94.75% on held-out rules (in dreamcoder_modeling/)</li>
+        </ul>
+        <em>This tells the search: "Focus on these primitives first!"</em>
+    </div>
+
+    <h3>Step 4: Program Enumeration (Search)</h3>
+    <div class="info-box warning">
+        <strong>⚠️ Not yet implemented</strong> — This is where the model searches for programs:
+        <ul>
+            <li><strong>Goal</strong>: Find a program (composition of primitives) that matches all examples</li>
+            <li><strong>Method</strong>: Best-first search, prioritized by recognition network scores</li>
+            <li><strong>Output</strong>: The simplest program that explains the examples</li>
+        </ul>
+        <em>Example: Given examples for "Sorted_by_rank", find: λh. is_sorted(map(get_rank_val, h))</em>
+    </div>
+
+    <h3>Step 5: Library Learning (Compression)</h3>
+    <div class="info-box warning">
+        <strong>⚠️ Not yet implemented</strong> — After solving many tasks, we learn abstractions:
+        <ul>
+            <li><strong>Goal</strong>: Find reusable "chunks" that appear in multiple rules</li>
+            <li><strong>Method</strong>: Identify common subtrees in solved programs</li>
+            <li><strong>Output</strong>: New library entries (e.g., halves_equal, seq_palindrome)</li>
+        </ul>
+        <em>The "Discovered Abstractions" section shows what we expect DreamCoder to find.</em>
+    </div>
+
+    <h3>Understanding Accuracy Metrics</h3>
+    <div class="info-box">
+        <strong>⚠️ Important: Current accuracy values are SIMULATED</strong><br><br>
+        The "Model Accuracy" shown in this report is currently an <em>estimate</em> based on:
+        <ul>
+            <li><strong>Compositional Level</strong>: Higher level → harder → lower estimated accuracy</li>
+            <li><strong>Number of Primitives</strong>: More primitives → more complex → lower estimated accuracy</li>
+            <li><strong>Base Rate</strong>: Extreme base rates (near 0 or 1) → easier to guess</li>
+        </ul>
+        <strong>What these will mean when real:</strong>
+        <ul>
+            <li><strong>Recognition Accuracy</strong>: % of primitives correctly predicted by neural network</li>
+            <li><strong>Synthesis Accuracy</strong>: % of rules where search finds correct program</li>
+        </ul>
+        <em>Currently showing: simulated values = 0.95 - difficulty × 0.4 + noise</em>
+    </div>
+
     <!-- SECTION: Visualizations -->
     <h2 id="visualizations">📈 Visualizations & Analysis</h2>
 
@@ -748,6 +1035,78 @@ def generate_html_report(results: Dict, images: Dict, output_path: Path):
             for item in legend_items:
                 html += f"            <li>{item}</li>\n"
             html += """        </ul>
+    </div>
+"""
+
+    # SECTION: Shared Subtrees
+    html += """
+    <!-- SECTION: Shared Subtrees -->
+    <h2 id="subtrees">🌲 Shared Compositional Subtrees</h2>
+
+    <div class="info-box">
+        <strong>What are shared subtrees?</strong><br>
+        When we represent each rule as a tree of function compositions, some subtrees appear in
+        multiple rules. These shared subtrees are candidates for abstraction — reusable "chunks"
+        that could be given names and added to our primitive library. Rules sharing subtrees
+        are predicted to benefit from transfer learning.
+    </div>
+"""
+
+    # Add shared subtrees visualization if it exists
+    if 'shared_subtrees' in images_b64:
+        html += f"""
+    <div class="figure-container">
+        <img src="data:image/png;base64,{images_b64['shared_subtrees']}" alt="Shared Subtrees">
+        <div class="figure-caption">
+            <strong>Figure 7: Most Frequently Shared Compositional Subtrees</strong><br>
+            Each bar shows a subtree pattern that appears in multiple rules. Longer bars indicate
+            subtrees shared by more rules, suggesting higher potential for transfer learning.
+        </div>
+    </div>
+
+    <div class="legend">
+        <h4>📖 How to interpret this figure</h4>
+        <ul>
+            <li>Each bar represents a specific composition pattern (shown as function notation)</li>
+            <li>Bar length = number of rules containing this exact subtree</li>
+            <li>Subtrees like <code>arrays_equal(left_half, right_half)</code> appear in many halves-comparison rules</li>
+            <li>These patterns are what DreamCoder's library learning would discover and name</li>
+        </ul>
+    </div>
+"""
+
+    # Add table of top shared subtrees with the rules that use them
+    top_subtrees = subtree_analysis['top_shared'][:10]
+    if top_subtrees:
+        html += """
+    <h3>Top 10 Shared Subtrees and Their Rules</h3>
+    <table>
+        <tr>
+            <th style="width:40%">Subtree Pattern</th>
+            <th style="width:10%">Count</th>
+            <th style="width:50%">Rules Using This Subtree</th>
+        </tr>
+"""
+        for subtree_str, rule_ids in top_subtrees:
+            display_str = subtree_str if len(subtree_str) < 60 else subtree_str[:57] + '...'
+            rules_display = ', '.join(rule_ids[:5])
+            if len(rule_ids) > 5:
+                rules_display += f', +{len(rule_ids)-5} more'
+            html += f"""        <tr>
+            <td><code style="font-size:11px;">{display_str}</code></td>
+            <td style="text-align:center;font-weight:bold;">{len(rule_ids)}</td>
+            <td style="font-size:12px;">{rules_display}</td>
+        </tr>
+"""
+        html += "    </table>\n"
+
+    html += """
+    <div class="info-box success">
+        <strong>Why this matters for transfer learning:</strong><br>
+        If a participant learns a rule like "Halves_copy_suits", they acquire the subtree
+        <code>arrays_equal(map(get_suit, left_half), map(get_suit, right_half))</code>.
+        When they encounter "Halves_copy_colors", they can reuse most of this structure —
+        only <code>get_suit</code> changes to <code>get_color</code>. This predicts faster learning!
     </div>
 """
 
@@ -955,16 +1314,17 @@ def main():
 
     # Step 2: Create visualizations
     print("Step 2: Creating visualizations...")
-    images = create_visualizations(results, output_dir)
+    images, subtree_analysis = create_visualizations(results, output_dir)
     print(f"  ✓ Generated {len(images)} figures")
     for name, path in images.items():
         print(f"    - {name}: {path}")
+    print(f"  ✓ Analyzed {len(subtree_analysis['shared_subtrees'])} shared subtrees")
     print()
 
     # Step 3: Generate HTML report
     print("Step 3: Generating HTML report...")
     report_path = output_dir / "comprehensive_report.html"
-    generate_html_report(results, images, report_path)
+    generate_html_report(results, images, subtree_analysis, report_path)
     print(f"  ✓ Saved: {report_path}")
     print()
 
