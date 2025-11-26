@@ -240,3 +240,4 @@ MIT License - see LICENSE file
 For questions about this modeling work, open an issue or contact [your email].
 
 For the behavioral experiment, see the main [card-games repository](https://github.com/konukcan/card-games).
+# Sample improvement for CodeRabbit review
