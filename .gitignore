@@ -43,6 +43,16 @@ results/*.csv
 data/*.pkl
 data/*.npy
 
+# Experiment outputs (large files - model checkpoints, logs, results)
+src/results/
+*.pt
+*.pkl
+*.pid
+
+# Cython generated files (regenerate from .pyx)
+src/dreamcoder_core/cython_src/*.c
+src/dreamcoder_core/cython_src/*.html
+
 # OS
 .DS_Store
 Thumbs.db
