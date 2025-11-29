@@ -101,26 +101,78 @@ Our grammar has 5 levels:
 - **Level 3**: Domain algorithms (`hasAP`, `bracketMatch`, `cycleMap`, ...)
 - **Level 4**: Meta-combinators (`halvesEqual_F`, `seqPalindrome_P`, ...)
 
-See `src/rules/primitives.py` for implementation.
+See `src/dreamcoder_core/lean_primitives.py` for implementation.
 
-### 2. Recognition Network
+### 2. Neural Recognition Model
 
-Architecture:
+The recognition model predicts which primitives are likely useful for solving a task, given input/output examples. This guides enumeration by prioritizing promising programs.
+
+**Architecture:**
+
 ```
-Task Examples (8 hands × 104 features)
-    ↓
-Example Encoder (104 → 128 → 64) per hand
-    ↓
-Set Aggregator (max-pool, permutation-invariant)
-    ↓
-Task Embedding (64 dims)
-    ↓
-Primitive Predictor (64 → 128 → num_primitives)
-    ↓
-Probability distribution over primitives
+Task with M examples [(hand₁, bool₁), (hand₂, bool₂), ...]
+                    ↓
+┌─────────────────────────────────────────────────────────┐
+│  Per-Card Feature Extraction (24 dimensions/card)       │
+│  ├─ Suit one-hot: 4 dims (♣♦♥♠)                        │
+│  ├─ Rank one-hot: 13 dims (2-A)                        │
+│  ├─ Color one-hot: 2 dims (red/black)                  │
+│  ├─ Normalized rank: 1 dim (0-1)                       │
+│  └─ Binary features: 4 dims (face, ace, even, odd)     │
+└─────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────┐
+│  CardEncoder (per card → sequence → hand embedding)     │
+│  ├─ Linear(24 → 64) + ReLU + Dropout(0.1)              │
+│  ├─ Linear(64 → 64)                                     │
+│  ├─ Bidirectional GRU(64 → 64×2)                       │
+│  └─ Linear(128 → 64) [combine forward/backward]        │
+│  Output: 64-dim hand embedding                          │
+└─────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────┐
+│  ExampleEncoder (hand + output → example embedding)     │
+│  ├─ CardEncoder(hand) → 64 dims                        │
+│  ├─ Linear(2 → 64) + ReLU [output: True/False]         │
+│  ├─ Concat → 128 dims                                   │
+│  └─ Linear(128 → 64) + ReLU + Linear(64 → 64)         │
+│  Output: 64-dim example embedding (×M examples)         │
+└─────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────┐
+│  TaskEncoder (M examples → single task embedding)       │
+│  ├─ Attention weights: Linear(64→32→1) + Softmax       │
+│  ├─ Weighted pooling across examples                   │
+│  └─ Linear(64 → 64) + ReLU + Linear(64 → 64)          │
+│  Output: 64-dim task embedding                          │
+│  [Permutation-invariant over examples]                  │
+└─────────────────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────────────────┐
+│  PrimitivePredictor (task → primitive log-probs)        │
+│  ├─ Linear(64 → 128) + ReLU + Dropout(0.1)             │
+│  ├─ Linear(128 → 64) + ReLU + Dropout(0.1)             │
+│  └─ Linear(64 → num_primitives) + LogSoftmax           │
+│  Output: log P(primitive | task) for ~60 primitives     │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Trained on synthetic tasks with ground truth decompositions.
+**Key Design Choices:**
+- **Bidirectional GRU**: Captures left-to-right and right-to-left card dependencies
+- **Attention-based pooling**: Learns which examples are most informative (not max-pool)
+- **Permutation invariance**: Example order doesn't affect predictions
+- **Multi-hot training targets**: Multiple primitives can be correct per task
+- **~25-30K parameters**: Small enough for rapid training in sleep phase
+
+**Training:**
+- **Signal**: Primitives used in solved programs (from enumeration phase)
+- **Loss**: Cross-entropy over multi-hot primitive targets
+- **Optimizer**: Adam (lr=0.001)
+- **Epochs per iteration**: 10 (configurable)
+
+**Files:**
+- `dreamcoder_core/neural_recognition.py`: Main implementation
+- `dreamcoder_core/interpretability.py`: Feature importance, embedding visualization
 
 ### 3. Program Enumeration
 
@@ -240,4 +292,3 @@ MIT License - see LICENSE file
 For questions about this modeling work, open an issue or contact [your email].
 
 For the behavioral experiment, see the main [card-games repository](https://github.com/konukcan/card-games).
-# Sample improvement for CodeRabbit review
