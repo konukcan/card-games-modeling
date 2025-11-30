@@ -511,12 +511,15 @@ class CythonOptimizedDreamCoder:
             return True
 
         try:
+            # Evaluate program to get callable function, then apply to each holdout example
+            fn = program.evaluate([])
             for inp, expected in holdout:
-                result = self.eval_fn(program, inp)
+                result = fn(inp)
                 if result != expected:
                     return False
             return True
-        except:
+        except Exception as e:
+            # Verification failed (likely due to runtime error)
             return False
 
     def run(self) -> Dict:
@@ -967,21 +970,28 @@ class CythonOptimizedDreamCoder:
         checkpoint_dir = self.log_dir / "iteration_checkpoints"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-        # Get primitive predictions for all tasks
+        # Get primitive predictions for all tasks using detailed method
         primitive_predictions = {}
+        prediction_errors = []
         for task in self.all_tasks[:50]:  # Limit to 50 tasks for size
             try:
-                with torch.no_grad():
-                    log_probs = self.recognition.predict_primitives(task)
-                    primitive_predictions[task.name] = {
-                        'log_probs': log_probs.numpy().tolist(),
-                        'top_5': [
-                            (self.recognition.primitive_names[i], float(log_probs[i]))
-                            for i in log_probs.argsort(descending=True)[:5]
-                        ]
-                    }
+                # Use the new detailed prediction method
+                pred_data = self.recognition.get_primitive_predictions_detailed(task)
+                primitive_predictions[task.name] = {
+                    'log_probs': pred_data['log_probs'],
+                    'logits': pred_data['logits'],
+                    'top_10': pred_data['top_10'],
+                    'entropy': pred_data['entropy'],
+                    'max_prob': pred_data['max_prob']
+                }
             except Exception as e:
-                self.log(f"Warning: Could not get predictions for {task.name}: {e}")
+                prediction_errors.append(f"{task.name}: {e}")
+
+        if prediction_errors and len(prediction_errors) < 5:
+            for err in prediction_errors:
+                self.log(f"Warning: Primitive prediction failed - {err}")
+        elif prediction_errors:
+            self.log(f"Warning: Primitive predictions failed for {len(prediction_errors)} tasks")
 
         # Get task embeddings
         task_embeddings = {}

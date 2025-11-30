@@ -350,15 +350,18 @@ class PrimitivePredictor(nn.Module):
             nn.Linear(hidden_dim, num_primitives)
         )
 
-    def forward(self, task_encoding: torch.Tensor) -> torch.Tensor:
+    def forward(self, task_encoding: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
         """
         Args:
             task_encoding: (batch, hidden_dim)
+            return_logits: If True, return raw logits instead of log-probabilities
 
         Returns:
-            Log-probabilities: (batch, num_primitives)
+            Log-probabilities or raw logits: (batch, num_primitives)
         """
         logits = self.predictor(task_encoding)
+        if return_logits:
+            return logits
         return F.log_softmax(logits, dim=-1)
 
 
@@ -466,6 +469,69 @@ class NeuralRecognitionModel(nn.Module):
             task_enc = self.encode_task(task).unsqueeze(0)
             log_probs = self.primitive_predictor(task_enc)
             return log_probs.squeeze(0)
+
+    def predict_primitive_logits(self, task) -> torch.Tensor:
+        """
+        Predict raw logits (before softmax) for each primitive given a task.
+
+        This provides the model's "raw intuition" about primitive relevance
+        before normalization. Useful for interpretability analysis.
+
+        Returns:
+            Logits: (num_primitives,)
+        """
+        self.eval()
+        with torch.no_grad():
+            task_enc = self.encode_task(task).unsqueeze(0)
+            logits = self.primitive_predictor(task_enc, return_logits=True)
+            return logits.squeeze(0)
+
+    def get_primitive_predictions_detailed(self, task) -> Dict[str, Any]:
+        """
+        Get comprehensive primitive predictions for a task.
+
+        Returns dict with:
+        - log_probs: List of log-probabilities
+        - logits: List of raw logits
+        - top_k: List of (primitive_name, log_prob, logit) tuples for top-10
+        - entropy: Entropy of the distribution (uncertainty measure)
+        - max_prob: Maximum probability (confidence measure)
+        """
+        self.eval()
+        with torch.no_grad():
+            task_enc = self.encode_task(task).unsqueeze(0)
+
+            # Get both logits and log-probs
+            logits = self.primitive_predictor(task_enc, return_logits=True).squeeze(0)
+            log_probs = F.log_softmax(logits, dim=-1)
+            probs = torch.exp(log_probs)
+
+            # Compute metrics
+            entropy = -torch.sum(probs * log_probs).item()
+            max_prob = torch.max(probs).item()
+
+            # Get top-10 predictions
+            top_k_values, top_k_indices = torch.topk(log_probs, min(10, len(log_probs)))
+
+            top_k = []
+            for lp, idx in zip(top_k_values, top_k_indices):
+                idx_int = int(idx)
+                prim_name = self.primitive_names[idx_int] if idx_int < len(self.primitive_names) else f"unknown_{idx_int}"
+                top_k.append({
+                    'primitive': prim_name,
+                    'log_prob': float(lp),
+                    'logit': float(logits[idx_int]),
+                    'prob': float(torch.exp(lp))
+                })
+
+            return {
+                'log_probs': log_probs.cpu().numpy().tolist(),
+                'logits': logits.cpu().numpy().tolist(),
+                'top_10': top_k,
+                'entropy': entropy,
+                'max_prob': max_prob,
+                'num_primitives': len(self.primitive_names)
+            }
 
     def predict_grammar_weights(self, task) -> Grammar:
         """
@@ -629,14 +695,31 @@ class NeuralRecognitionModel(nn.Module):
         return results
 
     def save(self, path: str):
-        """Save model state."""
-        torch.save({
+        """Save model state with verification."""
+        import os
+
+        checkpoint = {
             'model_state_dict': self.state_dict(),
             'primitive_names': self.primitive_names,
             'hidden_dim': self.hidden_dim,
             'training_losses': self.training_losses,
             'epoch_history': self.epoch_history
-        }, path)
+        }
+
+        # Save with explicit file handling to ensure data is written
+        temp_path = path + '.tmp'
+        torch.save(checkpoint, temp_path)
+
+        # Verify file was written
+        if os.path.exists(temp_path):
+            file_size = os.path.getsize(temp_path)
+            if file_size > 0:
+                # Atomic rename
+                os.replace(temp_path, path)
+            else:
+                raise RuntimeError(f"Model save failed: file {temp_path} is empty")
+        else:
+            raise RuntimeError(f"Model save failed: file {temp_path} was not created")
 
     def load(self, path: str):
         """Load model state."""

@@ -2,6 +2,49 @@
 
 This document provides guidelines for AI coding agents working on this DreamCoder card game modeling project.
 
+---
+
+## ⚠️ CRITICAL: Overnight Run Protocol
+
+**BEFORE LAUNCHING ANY OVERNIGHT/LONG-RUNNING SCRIPT, YOU MUST:**
+
+### 1. Prevent System Sleep with Caffeinate
+
+```bash
+# Launch the script, then attach caffeinate to its PID
+python3 run_overnight_v3.py &
+PID=$!
+caffeinate -d -i -s -w $PID &
+echo "Process $PID protected by caffeinate"
+
+# OR use nohup + caffeinate in one command:
+nohup caffeinate -d -i -s python3 run_overnight_v3.py > overnight.out 2>&1 &
+```
+
+**Caffeinate flags explained:**
+- `-d` : Prevent display sleep (monitor can still sleep if `-d` omitted)
+- `-i` : Prevent system idle sleep
+- `-s` : Prevent system sleep (on AC power)
+- `-w PID` : Wait for process PID to finish, then exit caffeinate
+
+### 2. Verify Caffeinate is Running
+
+```bash
+ps aux | grep caffeinate | grep -v grep
+# Should show: caffeinate -d -i -s -w <PID>
+```
+
+### 3. Use nohup for Session Independence
+
+The process should survive terminal/session closure:
+```bash
+nohup python3 run_overnight_v3.py > overnight.out 2>&1 &
+```
+
+**This is NON-NEGOTIABLE for any run expected to take more than 30 minutes.**
+
+---
+
 ## Pre-Flight Checks (Before Running Any Script)
 
 Before executing any script, especially overnight runs, verify:
@@ -79,6 +122,24 @@ path = Path(__file__).parent / "relative" / "path"
   - `chore: remove deprecated files`
   - `docs: update README with architecture diagram`
 
+### Context Preservation Commits
+
+**CRITICAL**: To prevent loss of work history when conversation context is summarized:
+
+1. **Commit at summarization intervals** - When the conversation approaches context limits and summarization occurs, immediately commit all current work before continuing
+2. **Commit before overnight runs** - Always commit the current state before launching any long-running script
+3. **Commit after significant changes** - Don't batch too many changes; commit after each logical unit of work
+
+**Standard commit routine:**
+```bash
+cd /Users/cankonuk/Documents/card-games-modeling
+git add -A
+git status  # Review what's being committed
+git commit -m "chore: checkpoint - <brief description of recent work>"
+```
+
+This ensures that even if conversation context is lost, the git history preserves what was accomplished.
+
 ## Logging Requirements
 
 Logging should be **as detailed as possible** to enable post-hoc analysis:
@@ -122,10 +183,12 @@ This serves as institutional memory for future development.
 | Purpose | Authoritative File |
 |---------|-------------------|
 | Primitives | `src/dreamcoder_core/lean_primitives.py` |
-| Main overnight script | `src/run_overnight_cython.py` |
+| Main overnight script | `src/run_overnight_v3.py` |
+| Resume interrupted runs | `src/resume_overnight_v3.py` |
 | Known issues | `src/KNOWN_ISSUES.md` |
 | Rules catalogue | `src/rules/catalogue.py` |
 | Card representations | `src/rules/cards.py` |
+| Recognition network | `src/dreamcoder_core/neural_recognition.py` |
 
 ## Testing Requirements
 
@@ -135,6 +198,47 @@ Before committing changes to experiment scripts:
 2. **Verify task-result mapping** - Check logs to confirm correct task-solution pairing
 3. **Check solution validity** - Ensure valid solutions are not being rejected
 4. **Verify holdout accuracy** - Solutions should pass holdout verification
+
+## Overnight Run Debrief Protocol
+
+When the user asks for a "debrief" of an overnight run (or similar phrasing like "what happened last night", "how did the run go", etc.), provide a **comprehensive analysis** that includes:
+
+### 1. Generate the HTML Report
+Always run the report generator script first:
+```bash
+cd /Users/cankonuk/Documents/card-games-modeling/src
+python3 generate_systematic_report.py --run-dir <results_directory>
+open <results_directory>/report.html
+```
+
+### 2. Provide Text Summary
+Include the following in your text debrief:
+
+- **Run Summary**: Duration, tasks solved/total, success rate, grammar growth
+- **Learning Curve**: How metrics evolved across iterations
+- **Task Analysis**: Solved tasks by family, search effort distribution
+- **Library Evolution**: Number and examples of learned abstractions
+- **Unsolved Tasks**: List with brief analysis of why they might be hard
+- **Recognition Model**: Training progress, loss trajectory
+- **Timing Breakdown**: Enumeration time, programs/second throughput
+- **Phase Comparison** (if multi-phase): Performance differences between phases
+- **Any anomalies or bugs** observed in logs
+
+### 3. Check for System Issues
+If the user mentions system problems (crashes, freezes, unresponsiveness):
+- Check `/Library/Logs/DiagnosticReports/` for JetsamEvent files (memory pressure)
+- Check for crash reports
+- Correlate timestamps with the run timeline
+- Provide diagnosis and recommendations
+
+### 4. Results Location
+Always mention where the results are saved:
+- Main results JSON
+- HTML report location
+- Iteration checkpoints
+- Model files
+
+---
 
 ## Project Context
 
