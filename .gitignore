@@ -69,3 +69,7 @@ docs/_templates/
 
 # Logs
 *.log
+*.out
+
+# Claude Code agent guidelines (local only)
+CLAUDE.md

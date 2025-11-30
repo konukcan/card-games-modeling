@@ -32,23 +32,26 @@ See `docs/DREAMCODER_INTEGRATION.md` for detailed comparison.
 ```
 card-games-modeling/
 ├── src/
-│   ├── dreamcoder/          # Core DreamCoder components
-│   │   ├── dsl.py           # Type system + primitive library
-│   │   ├── enumeration.py   # Program enumeration
-│   │   ├── recognition.py   # Neural recognition network
-│   │   ├── compression.py   # Library learning
-│   │   └── wake_sleep.py    # Training loop
-│   ├── rules/               # Card game domain
-│   │   ├── cards.py         # Card/Hand representations
-│   │   ├── primitives.py    # Level 0-4 primitives
-│   │   └── catalogue.py     # All 56 rules
-│   └── visualization/       # Analysis & plotting
-│       ├── plots.py         # Visualization suite
-│       └── analysis.py      # Metrics & statistics
-├── data/                    # Generated tasks
-├── results/                 # Outputs & figures
-├── docs/                    # Documentation
-└── tests/                   # Unit tests
+│   ├── dreamcoder_core/         # Core DreamCoder components (active)
+│   │   ├── lean_primitives.py   # Authoritative primitive library (60 base primitives)
+│   │   ├── neural_recognition.py # Neural recognition network
+│   │   ├── enumeration.py       # Program enumeration with PyPy workers
+│   │   ├── compression.py       # Library learning
+│   │   ├── interpretability.py  # Feature importance, embeddings
+│   │   └── cython_src/          # Cython modules (not currently active)
+│   ├── dreamcoder/              # Legacy components (reference only)
+│   ├── rules/                   # Card game domain
+│   │   ├── cards.py             # Card/Hand representations
+│   │   └── catalogue.py         # All 56 rules
+│   ├── visualization/           # Analysis & plotting
+│   ├── results/                 # Experiment outputs
+│   │   └── overnight_v3/        # Current overnight runs
+│   ├── run_overnight_v3.py      # Main overnight experiment script
+│   ├── resume_overnight_v3.py   # Resume interrupted runs
+│   └── KNOWN_ISSUES.md          # Bug documentation
+├── docs/                        # Documentation
+├── CLAUDE.md                    # Coding agent guidelines
+└── requirements.txt             # Python dependencies
 ```
 
 ## Quick Start
@@ -56,38 +59,36 @@ card-games-modeling/
 ### Installation
 
 ```bash
-# Clone this repository
 cd card-games-modeling
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Verify installation
-python -m pytest tests/
 ```
 
-### Running the Demo
+### Running Overnight Experiments
+
+The main experiment script runs a multi-phase wake-sleep training loop:
 
 ```bash
-# Run on 10 representative rules
-python src/main.py --demo
+cd src
 
-# Full run on all 56 rules (takes ~30 min)
-python src/main.py --full
+# Launch overnight run with caffeinate (prevents system sleep)
+nohup caffeinate -d -i -s python3 run_overnight_v3.py > overnight_v3.out 2>&1 &
 
-# Custom subset
-python src/main.py --rules Sorted_by_rank,Has_pair_ranks,Halves_copy_suits
+# Monitor progress
+tail -f overnight_v3.out
+
+# Resume an interrupted run
+python3 resume_overnight_v3.py --run-dir results/overnight_v3/run_v3_YYYYMMDD_HHMMSS
 ```
 
 ### Output
 
-The demo generates:
+Each run generates a timestamped directory under `src/results/overnight_v3/` containing:
 
-1. **Search visualizations**: Program enumeration traces
-2. **Recognition analysis**: Neural network predictions
-3. **Compression metrics**: Library learning over iterations
-4. **Transfer analysis**: Cross-rule generalization
-5. **Summary report**: `results/report.html`
+1. **Iteration checkpoints**: `iteration_checkpoints/iteration_NNNN.json`
+2. **Model weights**: `recognition_model_*.pt`
+3. **Grammar snapshots**: `grammar_phase*.json`
+4. **Frontiers**: `frontiers_phase*.json` (solved programs)
+5. **Summary report**: `report.html`
 
 ## Key Features
 
@@ -194,14 +195,12 @@ Compression through:
 
 ## Visualizations
 
-All plots saved to `results/`:
+The HTML report (`report.html`) in each run directory includes:
 
-1. **`search_trace.png`**: Enumeration tree with neural scores
-2. **`recognition_heatmap.png`**: Predicted vs. true primitives
-3. **`compression_curve.png`**: Description length over iterations
-4. **`transfer_matrix.png`**: Cross-rule generalization
-5. **`embedding_space.png`**: t-SNE of task representations
-6. **`primitive_usage.png`**: Frequency distribution
+1. **Training progress**: Loss curves, solve rates per iteration
+2. **Grammar growth**: Primitives added through library learning
+3. **Solution details**: Programs discovered for each task
+4. **Timing analysis**: Enumeration and training durations
 
 ## Experimental Questions
 
@@ -237,28 +236,27 @@ Predicted learning curves
 Compare to human data
 ```
 
-See `docs/INTEGRATION.md` for details on fitting procedure.
-
 ## Development Status
 
-**Current (v0.1 - Foundation)**:
-- ✅ Complete DSL implementation
-- ✅ All 56 rules ported to Python
-- ✅ Basic enumeration search
-- ✅ Recognition network architecture
-- ✅ Visualization suite
-- ✅ Demo on 10 rules
+**Current (v0.3 - Working Pipeline)**:
+- ✅ Complete DSL with 60 base primitives
+- ✅ All 56 rules implemented in catalogue
+- ✅ Neural recognition network (bidirectional GRU + attention)
+- ✅ PyPy-accelerated parallel enumeration
+- ✅ Library learning with compression
+- ✅ Wake-sleep training loop
+- ✅ Multi-phase pretraining on 43 rules
+- ✅ Checkpoint/resume system for long runs
 
-**Next Steps (v0.2 - Full Pipeline)**:
-- ⏳ Library learning with compression
-- ⏳ Wake-sleep training loop
-- ⏳ Scaling to all 56 rules
-- ⏳ Integration with Ellis et al.'s codebase
+**Latest Results (Nov 2024)**:
+- 26/43 pretraining tasks solved (60.5%)
+- Grammar grew from 60 to 170 primitives via abstraction
+- Recognition model loss: 5.60 → 4.82
 
-**Future (v1.0 - Empirical Modeling)**:
-- ⏳ Fit to human behavioral data
-- ⏳ Predict transfer patterns
-- ⏳ Generate experimental curricula
+**Next Steps**:
+- Scale to full 56 rules
+- Optimize memory usage for longer runs
+- Fit to human behavioral data
 
 ## Citation
 
