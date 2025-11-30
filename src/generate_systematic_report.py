@@ -538,6 +538,7 @@ def generate_html_report(run_data: RunData) -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DreamCoder Run Report</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         :root {{
             --bg-primary: #1a1a2e;
@@ -854,6 +855,193 @@ def generate_html_report(run_data: RunData) -> str:
             border-radius: 3px;
             margin: 2px;
         }}
+
+        /* Multi-level composition tree styles */
+        .deep-tree-container {{
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            min-height: 400px;
+        }}
+
+        .deep-tree-node {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 5px;
+        }}
+
+        .deep-tree-content {{
+            background: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            max-width: 200px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }}
+
+        .deep-tree-content:hover {{
+            border-color: var(--success);
+        }}
+
+        .deep-tree-content.base-prim {{
+            border-left: 3px solid var(--success);
+        }}
+
+        .deep-tree-content.abstraction {{
+            border-left: 3px solid var(--warning);
+        }}
+
+        .deep-tree-content.task {{
+            border-left: 3px solid var(--accent);
+        }}
+
+        .deep-tree-children {{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--text-secondary);
+        }}
+
+        /* Hypothesis space visualization styles */
+        .hypothesis-space-container {{
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }}
+
+        .search-beam-viz {{
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }}
+
+        .search-level {{
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }}
+
+        .search-level-label {{
+            width: 80px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }}
+
+        .search-candidates {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }}
+
+        .search-candidate {{
+            background: var(--bg-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }}
+
+        .search-candidate:hover {{
+            transform: scale(1.05);
+        }}
+
+        .search-candidate.high-prob {{
+            border-color: var(--success);
+            opacity: 1;
+        }}
+
+        .search-candidate.med-prob {{
+            border-color: var(--warning);
+            opacity: 0.85;
+        }}
+
+        .search-candidate.low-prob {{
+            border-color: var(--accent);
+            opacity: 0.6;
+        }}
+
+        .primitive-heatmap {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 4px;
+            margin: 15px 0;
+        }}
+
+        .heatmap-cell {{
+            padding: 6px 4px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-family: monospace;
+            border-radius: 4px;
+            cursor: pointer;
+        }}
+
+        .entropy-meter {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }}
+
+        .entropy-bar {{
+            flex: 1;
+            height: 20px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            overflow: hidden;
+        }}
+
+        .entropy-fill {{
+            height: 100%;
+            transition: width 0.3s;
+        }}
+
+        .entropy-label {{
+            width: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }}
+
+        /* Interactive D3 tree styles */
+        .d3-tree-container {{
+            width: 100%;
+            height: 600px;
+            overflow: auto;
+        }}
+
+        .d3-tree-container svg {{
+            display: block;
+        }}
+
+        .d3-node circle {{
+            cursor: pointer;
+        }}
+
+        .d3-node text {{
+            font-size: 11px;
+            fill: var(--text-primary);
+        }}
+
+        .d3-link {{
+            fill: none;
+            stroke: var(--text-secondary);
+            stroke-opacity: 0.4;
+            stroke-width: 1.5px;
+        }}
     </style>
 </head>
 <body>
@@ -869,6 +1057,10 @@ def generate_html_report(run_data: RunData) -> str:
 
         {generate_recognition_analysis_section(run_data, snapshot_indices)}
 
+        {generate_hypothesis_space_section(run_data, snapshot_indices)}
+
+        {generate_deep_composition_tree_section(run_data)}
+
         {generate_composition_dag_section(run_data)}
 
         {generate_abstraction_tree_section(run_data)}
@@ -883,6 +1075,341 @@ def generate_html_report(run_data: RunData) -> str:
 </html>
 """
     return html
+
+
+def generate_hypothesis_space_section(run_data: RunData, snapshot_indices: List[int]) -> str:
+    """
+    Generate the Hypothesis Space Navigation visualization.
+
+    This visualization shows how the recognition model guides search through the space
+    of possible programs - in the tradition of Newell & Simon / Simon & Kaplan's work
+    on problem-solving as search through a hypothesis space.
+    """
+
+    if not run_data.iterations:
+        return "<h2>Hypothesis Space Navigation</h2><p>No iteration data available.</p>"
+
+    # Check if we have primitive predictions data
+    has_predictions = any(
+        it.primitive_predictions for it in run_data.iterations
+        if it.primitive_predictions
+    )
+
+    if not has_predictions:
+        return """
+            <h2>Hypothesis Space Navigation</h2>
+            <p style="color: var(--text-secondary);">
+                Primitive prediction data was not logged in this run.
+                To enable this visualization, ensure <code>primitive_predictions</code> are saved
+                in iteration checkpoints.
+            </p>
+        """
+
+    sections = ["""
+        <h2>Hypothesis Space Navigation</h2>
+        <p>
+            How the recognition model guides search through the space of possible programs.
+            This visualizes the model's "theory of each task" - which primitives it believes
+            are most likely to be useful (Newell & Simon's perspective on problem-solving as search).
+        </p>
+    """]
+
+    # Select iterations to visualize
+    for idx in snapshot_indices[:3]:  # Show 3 snapshots
+        if idx >= len(run_data.iterations):
+            continue
+
+        iteration = run_data.iterations[idx]
+        if not iteration.primitive_predictions:
+            continue
+
+        section_html = generate_hypothesis_space_snapshot(iteration, run_data.frontiers)
+        sections.append(section_html)
+
+    return "\n".join(sections)
+
+
+def generate_hypothesis_space_snapshot(
+    iteration: IterationData,
+    frontiers: Dict[str, FrontierData]
+) -> str:
+    """Generate hypothesis space visualization for a single iteration."""
+
+    predictions = iteration.primitive_predictions
+    if not predictions:
+        return ""
+
+    # Pick 3-4 representative tasks (mix of solved and unsolved)
+    task_names = list(predictions.keys())
+    solved_tasks = [t for t in task_names if frontiers.get(t, FrontierData(t, False, None, 0)).solved]
+    unsolved_tasks = [t for t in task_names if not frontiers.get(t, FrontierData(t, False, None, 0)).solved]
+
+    selected_tasks = (solved_tasks[:2] + unsolved_tasks[:2])[:4]
+
+    if not selected_tasks:
+        return ""
+
+    task_visualizations = []
+
+    for task_name in selected_tasks:
+        task_pred = predictions.get(task_name, {})
+
+        # Get top 10 primitives
+        top_10 = task_pred.get('top_10', [])
+        entropy = task_pred.get('entropy', 0)
+        max_prob = task_pred.get('max_prob', 0)
+
+        frontier = frontiers.get(task_name, FrontierData(task_name, False, None, 0))
+        status = "Solved" if frontier.solved else "Unsolved"
+        status_class = "solved" if frontier.solved else "unsolved"
+
+        # Build primitive probability visualization
+        primitives_html = []
+        for i, prim_info in enumerate(top_10):
+            prim_name = prim_info.get('primitive', f'p{i}')
+            log_prob = prim_info.get('log_prob', -10)
+            prob = np.exp(log_prob)
+
+            # Classify probability level
+            if prob > 0.1:
+                prob_class = "high-prob"
+            elif prob > 0.03:
+                prob_class = "med-prob"
+            else:
+                prob_class = "low-prob"
+
+            tooltip = f"<strong>{prim_name}</strong><br>P = {prob:.3f} (log = {log_prob:.2f})"
+            primitives_html.append(f'''
+                <span class="search-candidate {prob_class}" data-tooltip="{html_escape(tooltip)}">
+                    {prim_name[:12]} <small>({prob:.2f})</small>
+                </span>
+            ''')
+
+        # Entropy visualization (lower = more focused search)
+        # Typical entropy range is 0-5, normalize to percentage
+        entropy_pct = min(100, (entropy / 5.0) * 100)
+        if entropy < 2:
+            entropy_color = "#4ecca3"  # Green - focused
+            entropy_desc = "Focused"
+        elif entropy < 3.5:
+            entropy_color = "#ffc107"  # Yellow - moderate
+            entropy_desc = "Moderate"
+        else:
+            entropy_color = "#e94560"  # Red - diffuse
+            entropy_desc = "Diffuse"
+
+        task_visualizations.append(f'''
+            <div class="hypothesis-space-container">
+                <h4 class="{status_class}">{task_name} ({status})</h4>
+
+                <div class="entropy-meter">
+                    <span class="entropy-label">Search Focus:</span>
+                    <div class="entropy-bar">
+                        <div class="entropy-fill" style="width: {100 - entropy_pct}%; background: {entropy_color};"></div>
+                    </div>
+                    <span style="color: {entropy_color};">{entropy_desc}</span>
+                    <small style="color: var(--text-secondary);">(H={entropy:.2f})</small>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <strong>Top predicted primitives:</strong>
+                    <div class="search-candidates" style="margin-top: 8px;">
+                        {''.join(primitives_html)}
+                    </div>
+                </div>
+            </div>
+        ''')
+
+    return f'''
+        <div class="snapshot-section">
+            <h3>Iteration {iteration.iteration}: Model's Search Guidance</h3>
+            <p>
+                The recognition model provides a probability distribution over primitives for each task.
+                <strong>Focused search</strong> (low entropy) means the model has a strong hypothesis;
+                <strong>diffuse search</strong> (high entropy) means the model is uncertain.
+            </p>
+            {''.join(task_visualizations)}
+        </div>
+    '''
+
+
+def generate_deep_composition_tree_section(run_data: RunData) -> str:
+    """
+    Generate multi-level (3-4 levels) abstraction composition tree.
+
+    This shows how complex abstractions are built by composing simpler ones,
+    which in turn compose base primitives - revealing the hierarchical structure
+    of learned knowledge.
+    """
+
+    abstractions = run_data.learned_abstractions
+    if not abstractions:
+        return ""
+
+    # Build a dependency graph
+    def extract_components(name: str) -> List[str]:
+        """Extract component primitives/abstractions from an abstraction."""
+        # Remove #(( and ))
+        body = name
+        if body.startswith('#('):
+            body = body[2:-1]
+
+        # Find all word tokens that could be primitives
+        tokens = re.findall(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b', body)
+        # Filter out lambda and common syntax tokens
+        keywords = {'lambda', 'λ', 'if', 'else', 'let', 'in'}
+        return [t for t in tokens if t not in keywords and t != '$0' and t != '$1']
+
+    # Build name->abstraction mapping
+    abstr_by_name = {}
+    for abstr in abstractions:
+        # Create a short identifier
+        short_id = f"A{abstractions.index(abstr)+1}"
+        abstr_by_name[abstr.name] = {
+            'id': short_id,
+            'full_name': abstr.name,
+            'iteration': abstr.iteration_invented,
+            'components': extract_components(abstr.name),
+            'paraphrase': paraphrase_abstraction(abstr.name)
+        }
+
+    # Find abstractions with deepest composition (those that use other abstractions)
+    def compute_depth(name: str, visited: Set[str] = None) -> int:
+        if visited is None:
+            visited = set()
+        if name in visited:
+            return 0
+        visited.add(name)
+
+        if name not in abstr_by_name:
+            return 0  # Base primitive
+
+        components = abstr_by_name[name]['components']
+        depths = []
+        for comp in components:
+            # Check if component is another abstraction
+            for abstr_name, info in abstr_by_name.items():
+                if comp in abstr_name:
+                    depths.append(1 + compute_depth(abstr_name, visited.copy()))
+
+        return max(depths) if depths else 1
+
+    # Find the deepest abstractions to visualize
+    depths = [(name, compute_depth(name)) for name in abstr_by_name.keys()]
+    depths.sort(key=lambda x: -x[1])
+
+    # Build interactive D3 tree data for top abstractions
+    tree_data = []
+    for name, depth in depths[:10]:  # Top 10 by depth
+        info = abstr_by_name[name]
+        tree_data.append({
+            'name': info['id'],
+            'fullName': name,
+            'paraphrase': info['paraphrase'],
+            'iteration': info['iteration'],
+            'depth': depth,
+            'children': [{'name': c, 'type': 'component'} for c in info['components'][:8]]
+        })
+
+    # Generate collapsible HTML tree
+    tree_html = []
+    for item in tree_data[:8]:
+        components_html = ""
+        if item['children']:
+            children_items = []
+            for child in item['children']:
+                child_name = child['name']
+                # Check if child is itself an abstraction
+                is_abstraction = any(child_name in a for a in abstr_by_name.keys())
+                css_class = "abstraction" if is_abstraction else "base-prim"
+                children_items.append(f'''
+                    <div class="deep-tree-content {css_class}">
+                        {child_name}
+                    </div>
+                ''')
+            components_html = f'''
+                <div class="deep-tree-children">
+                    {''.join(children_items)}
+                </div>
+            '''
+
+        tooltip = f"<strong>{item['name']}</strong>: {item['paraphrase']}<br>Iteration: {item['iteration']}, Depth: {item['depth']}"
+        tree_html.append(f'''
+            <div class="deep-tree-node">
+                <div class="deep-tree-content abstraction" data-tooltip="{html_escape(tooltip)}">
+                    <div><strong>{item['name']}</strong></div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary);">{item['paraphrase'][:30]}...</div>
+                </div>
+                {components_html}
+            </div>
+        ''')
+
+    # Also generate a depth distribution chart
+    depth_counts = defaultdict(int)
+    for _, depth in depths:
+        depth_counts[depth] += 1
+
+    return f'''
+        <h2>Deep Abstraction Composition</h2>
+        <p>
+            How complex abstractions are built from simpler components across multiple levels.
+            Deeper abstractions represent more sophisticated compositional knowledge.
+        </p>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 20px;">
+            <div class="stat-card">
+                <div class="stat-value">{max(d for _, d in depths) if depths else 0}</div>
+                <div class="stat-label">Max Composition Depth</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{sum(1 for _, d in depths if d >= 2)}</div>
+                <div class="stat-label">Multi-level Abstractions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{sum(1 for _, d in depths if d >= 3)}</div>
+                <div class="stat-label">3+ Levels Deep</div>
+            </div>
+        </div>
+
+        <h3>Composition Hierarchy</h3>
+        <p>Each abstraction shown with its immediate components. <strong>Yellow border</strong> = learned abstraction, <strong>Green border</strong> = base primitive.</p>
+
+        <div class="deep-tree-container">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                {''.join(tree_html)}
+            </div>
+        </div>
+
+        <h3>Depth Distribution</h3>
+        <p>How many abstractions exist at each composition depth level:</p>
+        <div class="chart-container">
+            <canvas id="depthChart"></canvas>
+        </div>
+
+        <script>
+            new Chart(document.getElementById('depthChart'), {{
+                type: 'bar',
+                data: {{
+                    labels: {json.dumps(list(range(1, max(depth_counts.keys()) + 1 if depth_counts else 2)))},
+                    datasets: [{{
+                        label: 'Abstractions at Depth',
+                        data: {json.dumps([depth_counts.get(d, 0) for d in range(1, max(depth_counts.keys()) + 1 if depth_counts else 2)])},
+                        backgroundColor: '#ffc107',
+                        borderColor: '#ffc107',
+                        borderWidth: 1
+                    }}]
+                }},
+                options: {{
+                    responsive: true,
+                    scales: {{
+                        y: {{ beginAtZero: true, grid: {{ color: '#333' }}, title: {{ display: true, text: 'Count', color: '#888' }} }},
+                        x: {{ grid: {{ color: '#333' }}, title: {{ display: true, text: 'Composition Depth', color: '#888' }} }}
+                    }},
+                    plugins: {{ legend: {{ labels: {{ color: '#e8e8e8' }} }} }}
+                }}
+            }});
+        </script>
+    '''
 
 
 def generate_executive_summary_section(run_data: RunData) -> str:
