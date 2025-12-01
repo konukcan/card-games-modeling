@@ -1235,179 +1235,386 @@ def generate_hypothesis_space_snapshot(
 
 def generate_deep_composition_tree_section(run_data: RunData) -> str:
     """
-    Generate multi-level (3-4 levels) abstraction composition tree.
+    Generate multi-level abstraction composition visualization.
 
-    This shows how complex abstractions are built by composing simpler ones,
-    which in turn compose base primitives - revealing the hierarchical structure
-    of learned knowledge.
+    Shows how complex abstractions are built by composing simpler ones,
+    revealing the hierarchical structure of learned knowledge.
+    Uses an interactive D3.js collapsible tree for multi-level exploration.
     """
 
     abstractions = run_data.learned_abstractions
     if not abstractions:
-        return ""
+        return """
+            <h2>Abstraction Composition Hierarchy</h2>
+            <p style="color: var(--text-secondary);">No learned abstractions in this run.</p>
+        """
 
-    # Build a dependency graph
-    def extract_components(name: str) -> List[str]:
-        """Extract component primitives/abstractions from an abstraction."""
-        # Remove #(( and ))
-        body = name
-        if body.startswith('#('):
-            body = body[2:-1]
+    # Get base primitives from the grammar
+    base_primitive_names = set(run_data.base_primitives)
 
-        # Find all word tokens that could be primitives
-        tokens = re.findall(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b', body)
-        # Filter out lambda and common syntax tokens
-        keywords = {'lambda', 'λ', 'if', 'else', 'let', 'in'}
-        return [t for t in tokens if t not in keywords and t != '$0' and t != '$1']
-
-    # Build name->abstraction mapping
+    # Build name->abstraction mapping with proper indexing
     abstr_by_name = {}
-    for abstr in abstractions:
-        # Create a short identifier
-        short_id = f"A{abstractions.index(abstr)+1}"
+    for i, abstr in enumerate(abstractions):
+        short_id = f"A{i+1}"
+        # Extract the body (remove #( prefix and ) suffix)
+        body = abstr.name
+        if body.startswith('#('):
+            body = body[2:]
+        if body.endswith(')'):
+            body = body[:-1]
+
         abstr_by_name[abstr.name] = {
             'id': short_id,
             'full_name': abstr.name,
+            'body': body,
             'iteration': abstr.iteration_invented,
-            'components': extract_components(abstr.name),
-            'paraphrase': paraphrase_abstraction(abstr.name)
+            'paraphrase': paraphrase_abstraction(abstr.name),
+            'used_in': abstr.used_in_tasks[:5] if abstr.used_in_tasks else []
         }
 
-    # Find abstractions with deepest composition (those that use other abstractions)
-    def compute_depth(name: str, visited: Set[str] = None) -> int:
-        if visited is None:
-            visited = set()
-        if name in visited:
-            return 0
-        visited.add(name)
+    def extract_direct_primitives(body: str) -> List[str]:
+        """Extract primitive names directly used in an abstraction body."""
+        # Find all word tokens
+        tokens = re.findall(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\b', body)
+        # Filter out lambda syntax and variable references
+        keywords = {'lambda', 'λ', 'if', 'else', 'let', 'in', 'true', 'false'}
+        return [t for t in tokens if t not in keywords and not t.startswith('$')]
 
-        if name not in abstr_by_name:
-            return 0  # Base primitive
+    def is_base_primitive(name: str) -> bool:
+        """Check if a name is a base primitive (not a learned abstraction)."""
+        # It's a base primitive if it's in the base primitive set
+        # and NOT a learned abstraction name
+        return name in base_primitive_names
 
-        components = abstr_by_name[name]['components']
-        depths = []
-        for comp in components:
-            # Check if component is another abstraction
-            for abstr_name, info in abstr_by_name.items():
-                if comp in abstr_name:
-                    depths.append(1 + compute_depth(abstr_name, visited.copy()))
+    # Build table showing abstractions with their components
+    table_rows = []
+    for abstr_name, info in sorted(abstr_by_name.items(), key=lambda x: x[1]['iteration']):
+        primitives_used = extract_direct_primitives(info['body'])
+        unique_prims = list(dict.fromkeys(primitives_used))  # Preserve order, remove dups
 
-        return max(depths) if depths else 1
+        # Classify each primitive
+        prim_badges = []
+        for p in unique_prims[:8]:  # Limit to 8 for display
+            if is_base_primitive(p):
+                prim_badges.append(f'<span class="prim-badge base">{p}</span>')
+            else:
+                prim_badges.append(f'<span class="prim-badge learned">{p}</span>')
 
-    # Find the deepest abstractions to visualize
-    depths = [(name, compute_depth(name)) for name in abstr_by_name.keys()]
-    depths.sort(key=lambda x: -x[1])
+        # Truncate body for display
+        display_body = info['body']
+        if len(display_body) > 60:
+            display_body = display_body[:57] + "..."
 
-    # Build interactive D3 tree data for top abstractions
-    tree_data = []
-    for name, depth in depths[:10]:  # Top 10 by depth
-        info = abstr_by_name[name]
-        tree_data.append({
-            'name': info['id'],
-            'fullName': name,
-            'paraphrase': info['paraphrase'],
-            'iteration': info['iteration'],
-            'depth': depth,
-            'children': [{'name': c, 'type': 'component'} for c in info['components'][:8]]
-        })
+        tasks_str = ", ".join(info['used_in'][:3]) if info['used_in'] else "-"
 
-    # Generate collapsible HTML tree
-    tree_html = []
-    for item in tree_data[:8]:
-        components_html = ""
-        if item['children']:
-            children_items = []
-            for child in item['children']:
-                child_name = child['name']
-                # Check if child is itself an abstraction
-                is_abstraction = any(child_name in a for a in abstr_by_name.keys())
-                css_class = "abstraction" if is_abstraction else "base-prim"
-                children_items.append(f'''
-                    <div class="deep-tree-content {css_class}">
-                        {child_name}
-                    </div>
-                ''')
-            components_html = f'''
-                <div class="deep-tree-children">
-                    {''.join(children_items)}
-                </div>
-            '''
-
-        tooltip = f"<strong>{item['name']}</strong>: {item['paraphrase']}<br>Iteration: {item['iteration']}, Depth: {item['depth']}"
-        tree_html.append(f'''
-            <div class="deep-tree-node">
-                <div class="deep-tree-content abstraction" data-tooltip="{html_escape(tooltip)}">
-                    <div><strong>{item['name']}</strong></div>
-                    <div style="font-size: 0.7rem; color: var(--text-secondary);">{item['paraphrase'][:30]}...</div>
-                </div>
-                {components_html}
-            </div>
+        table_rows.append(f'''
+            <tr>
+                <td><strong>{info['id']}</strong></td>
+                <td class="program" title="{html_escape(info['full_name'])}">{html_escape(display_body)}</td>
+                <td>{info['paraphrase']}</td>
+                <td>{info['iteration']}</td>
+                <td>{''.join(prim_badges)}</td>
+                <td style="font-size: 0.8rem;">{tasks_str}</td>
+            </tr>
         ''')
 
-    # Also generate a depth distribution chart
-    depth_counts = defaultdict(int)
-    for _, depth in depths:
-        depth_counts[depth] += 1
+    # Build D3 hierarchical data for interactive tree
+    # Group abstractions by what primitives they use
+    def build_tree_node(abstr_name: str, visited: Set[str]) -> dict:
+        """Recursively build tree node for an abstraction."""
+        if abstr_name in visited:
+            return None
+        visited.add(abstr_name)
+
+        if abstr_name not in abstr_by_name:
+            # It's a base primitive
+            return {
+                'name': abstr_name,
+                'type': 'base',
+                'children': []
+            }
+
+        info = abstr_by_name[abstr_name]
+        prims = extract_direct_primitives(info['body'])
+        unique_prims = list(dict.fromkeys(prims))
+
+        children = []
+        for p in unique_prims[:6]:  # Limit children
+            child = build_tree_node(p, visited.copy())
+            if child:
+                children.append(child)
+
+        return {
+            'name': info['id'],
+            'fullName': abstr_name,
+            'body': info['body'][:50],
+            'paraphrase': info['paraphrase'],
+            'iteration': info['iteration'],
+            'type': 'abstraction',
+            'children': children
+        }
+
+    # Build tree starting from abstractions that are used in solutions
+    root_abstractions = []
+    for abstr_name, info in abstr_by_name.items():
+        if info['used_in']:  # Only show abstractions actually used
+            tree = build_tree_node(abstr_name, set())
+            if tree and tree.get('children'):
+                root_abstractions.append(tree)
+
+    # If no abstractions used in solutions, show all
+    if not root_abstractions:
+        for abstr_name in list(abstr_by_name.keys())[:8]:
+            tree = build_tree_node(abstr_name, set())
+            if tree:
+                root_abstractions.append(tree)
+
+    tree_data_json = json.dumps(root_abstractions[:6])  # Limit for performance
 
     return f'''
-        <h2>Deep Abstraction Composition</h2>
+        <h2>Abstraction Composition Hierarchy</h2>
         <p>
-            How complex abstractions are built from simpler components across multiple levels.
-            Deeper abstractions represent more sophisticated compositional knowledge.
+            How learned abstractions compose base primitives and other abstractions.
+            <span class="prim-badge base">Green</span> = base primitive,
+            <span class="prim-badge learned">Yellow</span> = learned abstraction.
         </p>
 
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 20px;">
-            <div class="stat-card">
-                <div class="stat-value">{max(d for _, d in depths) if depths else 0}</div>
-                <div class="stat-label">Max Composition Depth</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{sum(1 for _, d in depths if d >= 2)}</div>
-                <div class="stat-label">Multi-level Abstractions</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{sum(1 for _, d in depths if d >= 3)}</div>
-                <div class="stat-label">3+ Levels Deep</div>
-            </div>
-        </div>
+        <style>
+            .prim-badge {{
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 0.75rem;
+                margin: 2px;
+            }}
+            .prim-badge.base {{
+                background: rgba(78, 204, 163, 0.2);
+                border: 1px solid var(--success);
+                color: var(--success);
+            }}
+            .prim-badge.learned {{
+                background: rgba(255, 193, 7, 0.2);
+                border: 1px solid var(--warning);
+                color: var(--warning);
+            }}
+            .abstraction-table {{
+                font-size: 0.85rem;
+            }}
+            .abstraction-table td {{
+                vertical-align: top;
+            }}
 
-        <h3>Composition Hierarchy</h3>
-        <p>Each abstraction shown with its immediate components. <strong>Yellow border</strong> = learned abstraction, <strong>Green border</strong> = base primitive.</p>
+            /* D3 Tree Styles */
+            .tree-container {{
+                background: var(--bg-card);
+                border-radius: 12px;
+                padding: 20px;
+                margin: 20px 0;
+                overflow-x: auto;
+            }}
+            .tree-node {{
+                cursor: pointer;
+            }}
+            .tree-node circle {{
+                stroke-width: 2px;
+            }}
+            .tree-node.base circle {{
+                fill: rgba(78, 204, 163, 0.3);
+                stroke: var(--success);
+            }}
+            .tree-node.abstraction circle {{
+                fill: rgba(255, 193, 7, 0.3);
+                stroke: var(--warning);
+            }}
+            .tree-node text {{
+                font-size: 11px;
+                fill: var(--text-primary);
+            }}
+            .tree-link {{
+                fill: none;
+                stroke: var(--text-secondary);
+                stroke-opacity: 0.5;
+                stroke-width: 1.5px;
+            }}
+            .tree-tooltip {{
+                position: absolute;
+                background: var(--bg-primary);
+                border: 1px solid var(--bg-card);
+                border-radius: 6px;
+                padding: 10px;
+                font-size: 0.8rem;
+                max-width: 300px;
+                pointer-events: none;
+                z-index: 1000;
+            }}
+        </style>
 
-        <div class="deep-tree-container">
-            <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-                {''.join(tree_html)}
-            </div>
-        </div>
+        <h3>Abstraction Table</h3>
+        <p>All learned abstractions with the primitives they directly use:</p>
+        <table class="abstraction-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Expression</th>
+                    <th>Meaning</th>
+                    <th>Iter</th>
+                    <th>Uses</th>
+                    <th>Solves</th>
+                </tr>
+            </thead>
+            <tbody>
+                {''.join(table_rows)}
+            </tbody>
+        </table>
 
-        <h3>Depth Distribution</h3>
-        <p>How many abstractions exist at each composition depth level:</p>
-        <div class="chart-container">
-            <canvas id="depthChart"></canvas>
-        </div>
+        <h3>Composition Tree</h3>
+        <p>Click nodes to expand/collapse. Shows how abstractions build on each other:</p>
+        <div class="tree-container" id="compositionTree"></div>
+        <div class="tree-tooltip" id="treeTooltip" style="display: none;"></div>
 
         <script>
-            new Chart(document.getElementById('depthChart'), {{
-                type: 'bar',
-                data: {{
-                    labels: {json.dumps(list(range(1, max(depth_counts.keys()) + 1 if depth_counts else 2)))},
-                    datasets: [{{
-                        label: 'Abstractions at Depth',
-                        data: {json.dumps([depth_counts.get(d, 0) for d in range(1, max(depth_counts.keys()) + 1 if depth_counts else 2)])},
-                        backgroundColor: '#ffc107',
-                        borderColor: '#ffc107',
-                        borderWidth: 1
-                    }}]
-                }},
-                options: {{
-                    responsive: true,
-                    scales: {{
-                        y: {{ beginAtZero: true, grid: {{ color: '#333' }}, title: {{ display: true, text: 'Count', color: '#888' }} }},
-                        x: {{ grid: {{ color: '#333' }}, title: {{ display: true, text: 'Composition Depth', color: '#888' }} }}
-                    }},
-                    plugins: {{ legend: {{ labels: {{ color: '#e8e8e8' }} }} }}
+        (function() {{
+            const treeData = {tree_data_json};
+            if (!treeData || treeData.length === 0) {{
+                document.getElementById('compositionTree').innerHTML =
+                    '<p style="color: var(--text-secondary);">No composition hierarchy to display.</p>';
+                return;
+            }}
+
+            // Create a forest (multiple roots)
+            const root = {{
+                name: "Abstractions",
+                children: treeData,
+                type: "root"
+            }};
+
+            const width = 900;
+            const margin = {{top: 20, right: 120, bottom: 20, left: 120}};
+
+            const svg = d3.select("#compositionTree")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", 400)
+                .append("g")
+                .attr("transform", `translate(${{margin.left}},${{margin.top}})`);
+
+            const tree = d3.tree().size([360, width - margin.left - margin.right - 200]);
+            const hierarchy = d3.hierarchy(root);
+
+            // Collapse children initially except first level
+            hierarchy.descendants().forEach((d, i) => {{
+                if (d.depth > 1) {{
+                    d._children = d.children;
+                    d.children = null;
                 }}
             }});
+
+            let i = 0;
+
+            function update(source) {{
+                const treeLayout = tree(hierarchy);
+                const nodes = hierarchy.descendants();
+                const links = hierarchy.links();
+
+                // Normalize depth
+                nodes.forEach(d => {{ d.y = d.depth * 150; }});
+
+                // Update height based on nodes
+                const height = Math.max(400, nodes.length * 25);
+                d3.select("#compositionTree svg").attr("height", height);
+
+                // Nodes
+                const node = svg.selectAll("g.tree-node")
+                    .data(nodes, d => d.id || (d.id = ++i));
+
+                const nodeEnter = node.enter().append("g")
+                    .attr("class", d => `tree-node ${{d.data.type || 'base'}}`)
+                    .attr("transform", d => `translate(${{source.y0 || 0}},${{source.x0 || 0}})`)
+                    .on("click", (event, d) => {{
+                        if (d.children) {{
+                            d._children = d.children;
+                            d.children = null;
+                        }} else {{
+                            d.children = d._children;
+                            d._children = null;
+                        }}
+                        update(d);
+                    }})
+                    .on("mouseover", (event, d) => {{
+                        const tooltip = document.getElementById('treeTooltip');
+                        let content = `<strong>${{d.data.name}}</strong>`;
+                        if (d.data.paraphrase) content += `<br>${{d.data.paraphrase}}`;
+                        if (d.data.body) content += `<br><code>${{d.data.body}}</code>`;
+                        if (d.data.iteration !== undefined) content += `<br>Iteration: ${{d.data.iteration}}`;
+                        tooltip.innerHTML = content;
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = (event.pageX + 10) + 'px';
+                        tooltip.style.top = (event.pageY - 10) + 'px';
+                    }})
+                    .on("mouseout", () => {{
+                        document.getElementById('treeTooltip').style.display = 'none';
+                    }});
+
+                nodeEnter.append("circle")
+                    .attr("r", 6);
+
+                nodeEnter.append("text")
+                    .attr("dy", ".35em")
+                    .attr("x", d => d.children || d._children ? -10 : 10)
+                    .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                    .text(d => d.data.name);
+
+                // Transition
+                const nodeUpdate = nodeEnter.merge(node);
+                nodeUpdate.transition().duration(300)
+                    .attr("transform", d => `translate(${{d.y}},${{d.x}})`);
+
+                nodeUpdate.select("circle")
+                    .attr("r", 6)
+                    .style("fill", d => d._children ? "#555" : null);
+
+                const nodeExit = node.exit().transition().duration(300)
+                    .attr("transform", d => `translate(${{source.y}},${{source.x}})`)
+                    .remove();
+
+                // Links
+                const link = svg.selectAll("path.tree-link")
+                    .data(links, d => d.target.id);
+
+                const linkEnter = link.enter().insert("path", "g")
+                    .attr("class", "tree-link")
+                    .attr("d", d => {{
+                        const o = {{x: source.x0 || 0, y: source.y0 || 0}};
+                        return diagonal(o, o);
+                    }});
+
+                linkEnter.merge(link).transition().duration(300)
+                    .attr("d", d => diagonal(d.source, d.target));
+
+                link.exit().transition().duration(300)
+                    .attr("d", d => {{
+                        const o = {{x: source.x, y: source.y}};
+                        return diagonal(o, o);
+                    }})
+                    .remove();
+
+                // Store positions
+                nodes.forEach(d => {{
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                }});
+            }}
+
+            function diagonal(s, d) {{
+                return `M ${{s.y}} ${{s.x}}
+                        C ${{(s.y + d.y) / 2}} ${{s.x}},
+                          ${{(s.y + d.y) / 2}} ${{d.x}},
+                          ${{d.y}} ${{d.x}}`;
+            }}
+
+            update(hierarchy);
+        }})();
         </script>
     '''
 
