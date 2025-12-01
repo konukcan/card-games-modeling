@@ -203,13 +203,13 @@ Before committing changes to experiment scripts:
 
 When the user asks for a "debrief" of an overnight run (or similar phrasing like "what happened last night", "how did the run go", etc.), provide a **comprehensive analysis** that includes:
 
-### 1. Generate the HTML Report
-Always run the report generator script first:
+### 1. Generate the HTML Report (MANDATORY)
+**Every fresh debrief MUST start with generating the HTML report.** Always run the report generator script first:
 ```bash
 cd /Users/cankonuk/Documents/card-games-modeling/src
 python3 generate_systematic_report.py --run-dir <results_directory>
-open <results_directory>/report.html
 ```
+Then tell the user where the report is located so they can open it.
 
 ### 2. Provide Text Summary
 Include the following in your text debrief:
