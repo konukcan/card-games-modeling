@@ -198,6 +198,67 @@ def make_position_ops() -> List[Primitive]:
 
 
 # ============================================================================
+# LEVEL 2b: LIST SLICING (Essential for positional rules)
+# ============================================================================
+
+def make_list_slicing() -> List[Primitive]:
+    """
+    List slicing primitives for positional operations.
+
+    These enable rules that compare halves, check palindromes, etc.
+    Essential for rules like:
+    - Halves_copy_suits: take 3 vs drop 3
+    - Suits_palindrome: zip_with eq xs (reverse xs)
+    - Sorted_by_rank: adjacent pairs via zip_with
+    """
+    prims = []
+
+    a = TypeVariable(0)
+    b = TypeVariable(1)
+
+    # Take first n elements - "first half" (take 3 [1,2,3,4,5,6] → [1,2,3])
+    prims.append(Primitive(
+        'take',
+        arrow(INT, ListType(a), ListType(a)),
+        lambda n: lambda xs: xs[:n] if n >= 0 else []
+    ))
+
+    # Drop first n elements - "second half" (drop 3 [1,2,3,4,5,6] → [4,5,6])
+    prims.append(Primitive(
+        'drop',
+        arrow(INT, ListType(a), ListType(a)),
+        lambda n: lambda xs: xs[n:] if n >= 0 else xs
+    ))
+
+    # Zip with function - combine two lists element-wise
+    # Essential for: palindrome checks, halves comparison, sorted checks
+    # (zip_with eq suits (reverse suits)) → all same forward/backward
+    prims.append(Primitive(
+        'zip_with',
+        arrow(arrow(a, b, BOOL), ListType(a), ListType(b), LIST_BOOL),
+        lambda f: lambda xs: lambda ys: [f(x)(y) for x, y in zip(xs, ys)]
+    ))
+
+    # Adjacent pairs - for checking sorted, adjacent constraints
+    # Returns list of (prev, curr) pairs: [1,2,3] → [(1,2), (2,3)]
+    # We represent pairs as 2-element lists for simplicity
+    prims.append(Primitive(
+        'adjacent_pairs',
+        arrow(ListType(a), ListType(ListType(a))),
+        lambda xs: [[xs[i], xs[i+1]] for i in range(len(xs)-1)] if len(xs) > 1 else []
+    ))
+
+    # Half length - divides list length by 2 (for halves operations)
+    prims.append(Primitive(
+        'half_len',
+        arrow(ListType(a), INT),
+        lambda xs: len(xs) // 2
+    ))
+
+    return prims
+
+
+# ============================================================================
 # LEVEL 3: DIRECT PROPERTY QUERIES (NEW - High cognitive reality)
 # ============================================================================
 
@@ -500,6 +561,7 @@ def build_lean_primitives() -> List[Primitive]:
     prims.extend(make_constants())       # ~19 primitives
     prims.extend(make_card_accessors())  # 4 primitives
     prims.extend(make_position_ops())    # 5 primitives
+    prims.extend(make_list_slicing())    # 5 primitives (NEW - for positional rules)
     prims.extend(make_direct_queries())  # 9 primitives (NEW)
     prims.extend(make_aggregates())      # 3 primitives (NEW)
     prims.extend(make_comparisons())     # 6 primitives
@@ -605,6 +667,7 @@ if __name__ == "__main__":
         ("Constants", make_constants()),
         ("Card Accessors", make_card_accessors()),
         ("Position Ops", make_position_ops()),
+        ("List Slicing (NEW)", make_list_slicing()),
         ("Direct Queries (NEW)", make_direct_queries()),
         ("Aggregates (NEW)", make_aggregates()),
         ("Comparisons", make_comparisons()),
