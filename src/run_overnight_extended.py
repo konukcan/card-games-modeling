@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """
-Overnight Run: Extended Primitives - Full Lambda Calculus Test
+Overnight Run: Extended Primitives - DreamCoder + Y&P Test
 
 This script tests whether the lambda calculus paradigm can solve our 56 rules
-when equipped with the FULL set of primitives from:
-- DreamCoder: fold, cons, tail, empty
-- Yang & Piantadosi: pair, fst, snd
-- Type-gap bridging: all_true, any_true
-- Convenience: first_half, second_half, is_sorted_by, is_palindrome_by
+when equipped with primitives from the literature:
 
-Design Philosophy:
-- We add ALL the primitives that could theoretically help
-- We use a 6-phase curriculum with increasing search depth and budget
-- We track which rules are solved at each phase
-- We log extensively for post-hoc analysis
+From DreamCoder (Ellis et al.):
+- fold, foldr: Universal list iteration
+- cons, empty, tail, is_empty: List construction/destruction
+
+From Yang & Piantadosi:
+- pair, fst, snd: Tuple operations for state threading
+
+Type-gap bridging:
+- all_true, any_true: list(bool) -> bool (equivalent to fold and/or)
+
+NO convenience primitives - the system should LEARN patterns like palindromes,
+sorted sequences, halves operations, etc.
 
 Expected Runtime: 10-12 hours
 Expected Outcome: This will tell us the practical limits of lambda calculus
-for our rule set. If rules remain unsolved, it's a paradigm issue, not a
-primitive issue.
+for our rule set with standard primitives from the literature.
 
 IMPORTANT: Run with caffeinate to prevent sleep!
     nohup caffeinate -d -i -s python3 run_overnight_extended.py > extended.out 2>&1 &
@@ -84,114 +86,110 @@ def setup_logging(log_dir: Path) -> logging.Logger:
 
 # ============================================================================
 # RULE CLASSIFICATION BY EXPECTED PROGRAM DEPTH
+# Without convenience primitives, depths are higher
 # ============================================================================
 
 def classify_rules_by_depth() -> Dict[str, List[Rule]]:
     """
-    Classify rules by expected program depth with extended primitives.
+    Classify rules by expected program depth with standard primitives only.
 
-    This is a more nuanced classification than before, based on our analysis
-    of what it takes to express each rule with the new primitives.
+    Without is_palindrome_by, is_sorted_by, first_half, etc., the system
+    must compose these from basic primitives, resulting in deeper programs.
     """
     all_rules = create_all_rules()
 
-    # Phase 1: Trivial (depth 2-3) - Direct primitives available
+    # Phase 1: Trivial (depth 2-4) - Direct aggregate queries
     trivial_ids = {
-        # Direct aggregate queries
-        'Uniform_color',           # all_same_color
-        'Exactly_two_suits',       # eq 2 (n_unique_suits)
-        'At_most_three_suits',     # le (n_unique_suits) 3
-        'Exactly_one_club',        # eq 1 (count_suit CLUBS)
-        'Has_pair_ranks',          # lt (n_unique_ranks) (length)
-        'Uniform_rank_parity',     # all same parity (with get_parity)
+        'Uniform_color',           # all_same_color $0
+        'Exactly_two_suits',       # eq 2 (n_unique_suits $0)
+        'At_most_three_suits',     # le (n_unique_suits $0) 3
+        'Exactly_one_club',        # eq 1 (count_suit $0 CLUBS)
+        'Has_pair_ranks',          # lt (n_unique_ranks $0) (length $0)
     }
 
-    # Phase 2: Easy (depth 3-4) - Simple compositions
+    # Phase 2: Easy (depth 4-6) - Simple compositions
     easy_ids = {
-        # Endpoints
-        'Ends_same_suit',          # eq (get_suit (head)) (get_suit (last))
-        'Ends_same_color',         # eq (get_color (head)) (get_color (last))
-        'Ends_same_altcolor1',     # eq (get_altcolor1 (head)) (get_altcolor1 (last))
+        # Endpoints - depth ~4
+        'Ends_same_suit',          # eq (get_suit (head $0)) (get_suit (last $0))
+        'Ends_same_color',         # eq (get_color (head $0)) (get_color (last $0))
 
-        # Position checks
-        'Pos3_is_JQK',             # member (get_rank (at 2)) {J,Q,K}
-        'Pos4_is_2_5_7',           # member (get_rank (at 3)) {2,5,7}
+        # Position checks - depth ~5
+        'Pos3_is_JQK',             # or (eq (rank_val (at $0 2)) 11) (or ... )
+        'Pos4_is_2_5_7',           # similar
 
-        # Token presence
-        'Has_Ace_of_Spades',       # any (and (eq suit S) (eq rank A))
-        'Has_6_of_Diamonds',       # any (and (eq suit D) (eq rank 6))
+        # Token presence - depth ~5
+        'Has_Ace_of_Spades',       # any (λc. and (eq (get_suit c) SPADES) (eq (rank_val c) 14)) $0
+        'Has_6_of_Diamonds',       # similar
 
-        # Sorted (with is_sorted_by)
-        'Sorted_by_rank',          # is_sorted_by rank_val
-
-        # Parity
-        'Only_one_odd_rank',       # eq 1 (count_true (map is_odd_rank))
+        # Parity - depth ~5
+        'Only_one_odd_rank',       # eq 1 (length (filter is_odd $0))
     }
 
-    # Phase 3: Medium (depth 4-5) - Palindromes and halves
+    # Phase 3: Medium (depth 6-8) - Need zip_with + all_true
     medium_ids = {
-        # Palindromes (with is_palindrome_by)
-        'Suits_palindrome',        # is_palindrome_by get_suit
-        'Colors_palindrome',       # is_palindrome_by get_color
-        'Ranks_palindrome',        # is_palindrome_by get_rank
-        'AltColor1_palindrome',    # is_palindrome_by get_altcolor1
-        'AltColor2_palindrome',    # is_palindrome_by get_altcolor2
+        # Sorted - depth ~7: all_true (zip_with le (map rank_val $0) (tail (map rank_val $0)))
+        'Sorted_by_rank',
 
-        # Half comparisons
-        'Half_or_more_same_suit',  # ge (max count_suit) (half_len)
-        'Halves_uniform_color_equal',  # eq (all_same_color first_half) (all_same_color second_half)
-        'Halves_hearts_presence_equal', # eq (has_heart first_half) (has_heart second_half)
-        'Halves_same_suit_set',    # eq (unique suits first_half) (unique suits second_half)
+        # Uniform parity - depth ~6
+        'Uniform_rank_parity',
+
+        # Half comparisons using take/drop - depth ~6-7
+        'Half_or_more_same_suit',
+        'Halves_uniform_color_equal',
+        'Halves_hearts_presence_equal',
+        'Halves_same_suit_set',
     }
 
-    # Phase 4: Hard (depth 5-7) - Complex halves and sequences
+    # Phase 4: Hard (depth 8-10) - Palindromes and complex halves
     hard_ids = {
-        # Halves copy (with list_eq and first_half/second_half)
-        'Halves_copy_suits',       # list_eq (map get_suit first_half) (map get_suit second_half)
-        'Halves_copy_colors',      # list_eq (map get_color first_half) (map get_color second_half)
-        'Halves_copy_ranks',       # list_eq (map get_rank first_half) (map get_rank second_half)
-        'Halves_copy_altcolor1',   # list_eq (map get_altcolor1 first_half) (map get_altcolor1 second_half)
-        'Halves_copy_altcolor2',   # list_eq (map get_altcolor2 first_half) (map get_altcolor2 second_half)
+        # Palindromes - depth ~8: all_true (zip_with eq (map get_suit $0) (reverse (map get_suit $0)))
+        'Suits_palindrome',
+        'Colors_palindrome',
+        'Ranks_palindrome',
 
-        # Halves boolean properties
-        'Halves_uniform_parity_equal',   # eq (uniform_parity first_half) (uniform_parity second_half)
-        'Halves_AP_step1_equal',   # eq (is_run first_half) (is_run second_half)
-        'Halves_AP_len2_step1_equal',  # eq (has_adjacent first_half) (has_adjacent second_half)
+        # Halves copy - depth ~9: all_true (zip_with eq (map get_suit (take 3 $0)) (map get_suit (drop 3 $0)))
+        'Halves_copy_suits',
+        'Halves_copy_colors',
+        'Halves_copy_ranks',
 
-        # Ordering patterns
-        'S_before_H',              # Needs scan/fold
-
-        # Suit cycles
-        'Half_map_samepos_M1',     # all (eq (cycle_m1 (get_suit i)) (get_suit i+k))
-        'Half_map_samepos_M2',     # all (eq (cycle_m2 (get_suit i)) (get_suit i+k))
+        # Other hard rules
+        'S_before_H',              # needs fold with state
+        'Halves_uniform_parity_equal',
     }
 
-    # Phase 5: Very Hard (depth 7-10) - Complex patterns
+    # Phase 5: Very Hard (depth 10-14) - Complex patterns
     very_hard_ids = {
-        # Shift patterns
-        'Shift_half_plus_two',     # all shifted pairs differ by 2
-        'Shift2_plus3',            # all pairs at offset 2 differ by 3
-        'Shift_half_ge',           # all right >= left
+        # Shift patterns - depth ~10
+        'Shift_half_plus_two',
+        'Shift2_plus3',
+        'Shift_half_ge',
 
-        # Adjacent patterns
-        'Adj_same_rank_or_suit',   # all adjacent pairs share rank or suit
-        'Skip2_same_rank_or_suit', # all pairs at offset 2 share rank or suit
-        'Adj_rank_gap_le3',        # all adjacent pairs differ by <= 3
+        # Adjacent patterns - depth ~10
+        'Adj_same_rank_or_suit',
+        'Skip2_same_rank_or_suit',
+        'Adj_rank_gap_le3',
 
-        # Suit cycle patterns
-        'Step2_back_map_M1',       # suit[j] = cycle_m1(suit[j-2])
-        'Step2_back_map_M2',       # suit[j] = cycle_m2(suit[j-2])
-        'Adj_same_or_map_M1',      # adjacent same or next in M1
-        'Adj_same_or_map_M2',      # adjacent same or next in M2
+        # AltColor palindromes
+        'AltColor1_palindrome',
+        'AltColor2_palindrome',
+        'Ends_same_altcolor1',
+
+        # Halves copy with altcolor
+        'Halves_copy_altcolor1',
+        'Halves_copy_altcolor2',
+
+        # AP patterns in halves
+        'Halves_AP_step1_equal',
+        'Halves_AP_len2_step1_equal',
 
         # Score rules
-        'Half_sum_diff_geN',       # left_sum - right_sum >= N
-        'Half_sum_one_side_ge_2x_other',  # one half >= 2x other
+        'Half_sum_diff_geN',
+        'Half_sum_one_side_ge_2x_other',
     }
 
-    # Phase 6: Extreme (depth 10+) - Require fold/recursion
+    # Phase 6: Extreme (depth 14+) - Require complex fold/state
     extreme_ids = {
-        # LANG family - bracket matching (requires fold + state)
+        # LANG family - bracket matching (requires fold + pair state)
         'Well_formed_brackets_by_suit',
         'Even_opens_next_closes',
         'Odd_opens_next_closes',
@@ -201,13 +199,21 @@ def classify_rules_by_depth() -> Dict[str, List[Rule]]:
         'Global_radial_no_dominance',
 
         # Complex scores
-        'Score_threshold_Rstar',   # Complex multi-component score
+        'Score_threshold_Rstar',
 
         # AP patterns
-        'AP_len3_anywhere_anyk',   # Find AP of length 3
-        'AP_len3_step2_anywhere',  # Find AP with step 2
-        'AP_len4_step2_anywhere',  # Find AP of length 4
-        'Halves_AP_len3_any_equal',  # Both halves have AP or both don't
+        'AP_len3_anywhere_anyk',
+        'AP_len3_step2_anywhere',
+        'AP_len4_step2_anywhere',
+        'Halves_AP_len3_any_equal',
+
+        # MAP family - suit cycles
+        'Half_map_samepos_M1',
+        'Half_map_samepos_M2',
+        'Step2_back_map_M1',
+        'Step2_back_map_M2',
+        'Adj_same_or_map_M1',
+        'Adj_same_or_map_M2',
     }
 
     # Build classification
@@ -336,9 +342,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
         ]
 
     return [
-        # Phase 1: Trivial rules (depth 2-3)
+        # Phase 1: Trivial rules (depth 2-4)
         PhaseConfig(
-            name="Phase 1: Trivial Rules (depth 2-3)",
+            name="Phase 1: Trivial Rules (depth 2-4)",
             iterations=3,
             use_all_rules=False,
             enumeration_budget=200000,
@@ -347,9 +353,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
             recognition_epochs=10
         ),
 
-        # Phase 2: Easy rules (depth 3-4)
+        # Phase 2: Easy rules (depth 4-6)
         PhaseConfig(
-            name="Phase 2: Easy Rules (depth 3-4)",
+            name="Phase 2: Easy Rules (depth 4-6)",
             iterations=4,
             use_all_rules=False,
             enumeration_budget=400000,
@@ -358,9 +364,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
             recognition_epochs=15
         ),
 
-        # Phase 3: Medium rules - palindromes and halves (depth 4-5)
+        # Phase 3: Medium rules (depth 6-8)
         PhaseConfig(
-            name="Phase 3: Medium Rules (depth 4-5)",
+            name="Phase 3: Medium Rules (depth 6-8)",
             iterations=5,
             use_all_rules=False,
             enumeration_budget=600000,
@@ -369,9 +375,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
             recognition_epochs=15
         ),
 
-        # Phase 4: Hard rules - complex halves (depth 5-7)
+        # Phase 4: Hard rules (depth 8-10)
         PhaseConfig(
-            name="Phase 4: Hard Rules (depth 5-7)",
+            name="Phase 4: Hard Rules (depth 8-10)",
             iterations=6,
             use_all_rules=False,
             enumeration_budget=800000,
@@ -380,9 +386,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
             recognition_epochs=20
         ),
 
-        # Phase 5: Very hard rules (depth 7-10)
+        # Phase 5: Very hard rules (depth 10-14)
         PhaseConfig(
-            name="Phase 5: Very Hard Rules (depth 7-10)",
+            name="Phase 5: Very Hard Rules (depth 10-14)",
             iterations=6,
             use_all_rules=False,
             enumeration_budget=1000000,
@@ -391,9 +397,9 @@ def create_phase_configs(dry_run: bool = False) -> List[PhaseConfig]:
             recognition_epochs=20
         ),
 
-        # Phase 6: Extreme rules - push limits (depth 10+)
+        # Phase 6: Extreme rules (depth 14+)
         PhaseConfig(
-            name="Phase 6: Extreme Rules (depth 10+)",
+            name="Phase 6: Extreme Rules (depth 14+)",
             iterations=8,
             use_all_rules=True,
             enumeration_budget=1500000,
@@ -412,7 +418,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Extended primitives overnight run - full lambda calculus test"
+        description="Extended primitives overnight run - DreamCoder + Y&P test"
     )
     parser.add_argument("--dry-run", action="store_true", help="Quick test run")
     parser.add_argument("--phase", type=int, default=0,
@@ -423,14 +429,14 @@ def main():
 
     # Create output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_name = "extended_prims" if not args.dry_run else "extended_dryrun"
+    run_name = "dcyp_prims" if not args.dry_run else "dcyp_dryrun"
     log_dir = Path(f"results/overnight_extended/{run_name}_{timestamp}")
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Set up logging
     logger = setup_logging(log_dir)
 
-    print_banner("OVERNIGHT RUN: EXTENDED PRIMITIVES")
+    print_banner("OVERNIGHT RUN: DREAMCODER + Y&P PRIMITIVES")
     logger.info(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info(f"Log directory: {log_dir}")
     logger.info(f"PyPy: {'Available' if USE_PYPY else 'Not available'}")
@@ -443,16 +449,11 @@ def main():
     prims = build_extended_primitives()
     logger.info(f"Grammar: {len(grammar)} primitives")
 
-    # Log new primitives
+    # Log new primitives (corrected list)
     new_primitive_categories = {
-        'fold_prims': ['fold', 'foldr', 'cons', 'empty', 'tail', 'is_empty'],
-        'pair_prims': ['pair', 'fst', 'snd', 'thd', 'triple'],
-        'bool_agg': ['all_true', 'any_true', 'none_true', 'count_true'],
-        'halves': ['first_half', 'second_half', 'list_eq'],
-        'seq_checks': ['is_sorted_by', 'is_strictly_sorted_by', 'is_palindrome_by'],
-        'ext_arith': ['abs', 'max2', 'min2', '*', '//'],
-        'suit_cycles': ['cycle_m1', 'cycle_m2'],
-        'altcolor': ['get_altcolor1', 'get_altcolor2', 'get_parity', 'is_odd_rank', 'is_even_rank']
+        'DreamCoder': ['fold', 'foldr', 'cons', 'empty', 'tail', 'is_empty'],
+        'Yang_Piantadosi': ['pair', 'fst', 'snd'],
+        'type_gap_bridging': ['all_true', 'any_true'],
     }
 
     prim_names = {p.name for p in prims}
@@ -518,9 +519,9 @@ def main():
 
     # Save run configuration
     config = {
-        "run_type": "extended_primitives_full_test",
+        "run_type": "dreamcoder_yp_primitives_test",
         "grammar_size": len(grammar),
-        "primitives_added": sum(len(v) for v in new_primitive_categories.values()),
+        "primitives_added": {k: v for k, v in new_primitive_categories.items()},
         "classification": {k: len(v) for k, v in classified.items()},
         "phases": [
             {
@@ -647,12 +648,12 @@ def main():
 
     # Print key insight
     print_banner("KEY INSIGHTS")
-    if solved_count >= 45:
-        logger.info("SUCCESS: Extended primitives significantly improved coverage!")
-    elif solved_count >= 30:
-        logger.info("PARTIAL SUCCESS: Some improvement, but paradigm limits reached.")
+    if solved_count >= 35:
+        logger.info("SUCCESS: Standard DC+Y&P primitives provide good coverage!")
+    elif solved_count >= 20:
+        logger.info("MODERATE: Some improvement over baseline, paradigm limits visible.")
     else:
-        logger.info("LIMITED IMPROVEMENT: Lambda calculus may not be ideal for these rules.")
+        logger.info("LIMITED: Standard primitives insufficient for many rules.")
 
     logger.info(f"\nCompare with previous run (8/57 solved) to see improvement.")
 
