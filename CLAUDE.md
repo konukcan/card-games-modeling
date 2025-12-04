@@ -124,21 +124,42 @@ path = Path(__file__).parent / "relative" / "path"
 
 ### Context Preservation Commits
 
-**CRITICAL**: To prevent loss of work history when conversation context is summarized:
+**⚠️ MANDATORY - STRICTLY ENFORCED**: To prevent loss of work history when conversation context is summarized:
 
-1. **Commit at summarization intervals** - When the conversation approaches context limits and summarization occurs, immediately commit all current work before continuing
-2. **Commit before overnight runs** - Always commit the current state before launching any long-running script
-3. **Commit after significant changes** - Don't batch too many changes; commit after each logical unit of work
+#### When to Commit (ALL of these are REQUIRED):
 
-**Standard commit routine:**
+1. **IMMEDIATELY after context summarization** - When the conversation is summarized due to context limits, THE VERY FIRST ACTION must be to commit all uncommitted work. Do NOT continue with any other task until this is done.
+
+2. **Before overnight/long runs** - Always commit the current state before launching any long-running script
+
+3. **After each logical unit of work** - Don't batch too many changes; commit after:
+   - Creating or significantly modifying a script
+   - Completing a debugging session
+   - Finishing an analysis
+   - Making architectural decisions
+
+4. **At minimum every 30 minutes of active work** - Even if changes seem minor
+
+#### Commit Routine (FOLLOW EXACTLY):
+
 ```bash
 cd /Users/cankonuk/Documents/card-games-modeling
 git add -A
 git status  # Review what's being committed
-git commit -m "chore: checkpoint - <brief description of recent work>"
+git diff --cached --stat  # See summary of changes
+git commit -m "feat/fix/chore: <description>
+
+<brief summary of what was accomplished>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
-This ensures that even if conversation context is lost, the git history preserves what was accomplished.
+#### Self-Check Question:
+**Before starting any new task, ask yourself: "Has it been more than 30 minutes or a logical milestone since the last commit?"** If yes, COMMIT FIRST.
+
+This ensures that even if conversation context is lost, the git history preserves what was accomplished. Failure to commit regularly has caused loss of work context in the past.
 
 ## Logging Requirements
 
