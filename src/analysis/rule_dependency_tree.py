@@ -797,424 +797,499 @@ def get_tree_json(nodes: Dict[str, TreeNode]) -> str:
 
 def generate_search_tree_data() -> str:
     """
-    Generate the search tree structure showing program synthesis as hole-filling.
+    Generate a COMPLETE search tree showing program synthesis as hole-filling.
 
-    The tree starts with λh. [?:bool] and branches into possible ways to fill
-    the hole, recursively expanding until reaching complete programs (rules).
+    The tree starts with λh. [?:bool] and branches into ALL possible ways to fill
+    holes, including intermediate steps and dead-ends, covering all 57 rules.
     """
 
-    # Define the search tree structure
-    # Each node has: id, label, type, children, definition (for leaves)
+    # Complete search tree with all rules and intermediate compositions
     search_tree = {
         "id": "root",
         "label": "λh. [?:bool]",
         "type": "hole",
-        "description": "Root: A function from Hand to Bool",
+        "description": "Root: A function from Hand to Bool (57 rules to discover)",
         "children": [
+            # ================================================================
+            # BRANCH 1: Direct hand predicates (depth 2)
+            # ================================================================
             {
-                "id": "apply_predicate",
+                "id": "direct_pred",
                 "label": "[?:Hand→bool] h",
                 "type": "hole",
-                "description": "Apply a hand predicate to the hand",
+                "description": "Apply a direct hand predicate",
                 "children": [
+                    {"id": "r_uniform_color", "label": "all_same_color h", "type": "rule", "rule": "Uniform_color", "depth": 2, "family": "COUNT"},
                     {
-                        "id": "all_same_color",
-                        "label": "all_same_color h",
-                        "type": "rule",
-                        "definition": "λh. all_same_color h",
-                        "rule": "Uniform_color",
-                        "depth": 2
-                    },
-                    {
-                        "id": "all_same_suit",
+                        "id": "dead_all_same_suit",
                         "label": "all_same_suit h",
-                        "type": "rule",
-                        "definition": "λh. all_same_suit h",
-                        "rule": "All_same_suit",
+                        "type": "dead_end",
+                        "description": "Not in our rule set (would be depth 2)",
                         "depth": 2
                     }
                 ]
             },
+
+            # ================================================================
+            # BRANCH 2: Comparisons [?:cmp] [?:int] [?:int]
+            # ================================================================
             {
                 "id": "comparison",
                 "label": "[?:cmp] [?:int] [?:int]",
                 "type": "hole",
-                "description": "Compare two integer values",
+                "description": "Compare two values",
                 "children": [
+                    # --- eq comparisons ---
                     {
-                        "id": "eq_int_int",
+                        "id": "eq_branch",
                         "label": "eq [?:int] [?:int]",
                         "type": "hole",
                         "description": "Equality comparison",
                         "children": [
+                            # eq N (query h)
                             {
                                 "id": "eq_const_query",
-                                "label": "eq [N] [?:Hand→int h]",
+                                "label": "eq [N] ([?:Hand→int] h)",
                                 "type": "hole",
-                                "description": "Compare constant to hand query",
+                                "description": "Compare constant to hand query result",
                                 "children": [
+                                    {"id": "r_exactly_two_suits", "label": "eq 2 (n_unique_suits h)", "type": "rule", "rule": "Exactly_two_suits", "depth": 3, "family": "COUNT"},
+                                    {"id": "r_exactly_one_club", "label": "eq 1 (count_suit h ♣)", "type": "rule", "rule": "Exactly_one_club", "depth": 4, "family": "COUNT"},
                                     {
-                                        "id": "eq_2_nunique",
-                                        "label": "eq 2 (n_unique_suits h)",
-                                        "type": "rule",
-                                        "definition": "λh. eq 2 (n_unique_suits h)",
-                                        "rule": "Exactly_two_suits",
-                                        "depth": 3
+                                        "id": "eq_1_filter_len",
+                                        "label": "eq 1 (length (filter [?:pred] h))",
+                                        "type": "hole",
+                                        "description": "Exactly one card satisfies predicate",
+                                        "children": [
+                                            {"id": "r_only_one_odd", "label": "eq 1 (length (filter (λc. eq 1 (mod (rank_val c) 2)) h))", "type": "rule", "rule": "Only_one_odd_rank", "depth": 7, "family": "PARITY"}
+                                        ]
                                     },
                                     {
-                                        "id": "eq_1_countsuit",
-                                        "label": "eq 1 (count_suit h CLUBS)",
-                                        "type": "rule",
-                                        "definition": "λh. eq 1 (count_suit h CLUBS)",
-                                        "rule": "Exactly_one_club",
-                                        "depth": 4
+                                        "id": "eq_1_unique_len",
+                                        "label": "eq 1 (length (unique (map [?:f] h)))",
+                                        "type": "hole",
+                                        "description": "All cards have same value under f (uniform pattern)",
+                                        "children": [
+                                            {"id": "r_uniform_parity", "label": "eq 1 (length (unique (map get_parity h)))", "type": "rule", "rule": "Uniform_rank_parity", "depth": 8, "family": "PARITY"}
+                                        ]
                                     }
                                 ]
                             },
+                            # eq (f (head h)) (f (last h)) - terminal comparisons
                             {
                                 "id": "eq_terminals",
-                                "label": "eq [?:f (head h)] [?:f (last h)]",
+                                "label": "eq ([?:f] (head h)) ([?:f] (last h))",
                                 "type": "hole",
                                 "description": "Compare first and last card properties",
                                 "children": [
-                                    {
-                                        "id": "terminals_suit",
-                                        "label": "eq (get_suit (head h)) (get_suit (last h))",
-                                        "type": "rule",
-                                        "definition": "λh. eq (get_suit (head h)) (get_suit (last h))",
-                                        "rule": "Ends_same_suit",
-                                        "depth": 5
-                                    },
-                                    {
-                                        "id": "terminals_color",
-                                        "label": "eq (get_color (head h)) (get_color (last h))",
-                                        "type": "rule",
-                                        "definition": "λh. eq (get_color (head h)) (get_color (last h))",
-                                        "rule": "Ends_same_color",
-                                        "depth": 5
-                                    }
+                                    {"id": "r_ends_same_suit", "label": "eq (get_suit (head h)) (get_suit (last h))", "type": "rule", "rule": "Ends_same_suit", "depth": 5, "family": "LOCAL"},
+                                    {"id": "r_ends_same_color", "label": "eq (get_color (head h)) (get_color (last h))", "type": "rule", "rule": "Ends_same_color", "depth": 5, "family": "LOCAL"},
+                                    {"id": "r_ends_same_altcolor1", "label": "eq (get_altcolor1 (head h)) (get_altcolor1 (last h))", "type": "rule", "rule": "Ends_same_altcolor1", "depth": 10, "family": "ALTCLR", "requires": ["get_altcolor1"]}
                                 ]
                             },
+                            # eq (P (first_half h)) (P (second_half h)) - halves property comparison
                             {
-                                "id": "eq_halves",
-                                "label": "eq [?:P (first_half h)] [?:P (second_half h)]",
+                                "id": "eq_halves_prop",
+                                "label": "eq ([?:P] (first_half h)) ([?:P] (second_half h))",
                                 "type": "abstraction",
-                                "description": "Compare halves with some property P",
+                                "description": "Compare halves by some property P",
                                 "requires": ["first_half", "second_half"],
                                 "children": [
-                                    {
-                                        "id": "halves_hearts",
-                                        "label": "eq (has_suit (first_half h) ♥) (has_suit (second_half h) ♥)",
-                                        "type": "rule",
-                                        "definition": "λh. eq (has_suit (first_half h) HEARTS) (has_suit (second_half h) HEARTS)",
-                                        "rule": "Halves_hearts_presence_equal",
-                                        "depth": 10
-                                    },
-                                    {
-                                        "id": "halves_uniform_color",
-                                        "label": "eq (uniform get_color (first_half h)) (uniform get_color (second_half h))",
-                                        "type": "rule",
-                                        "definition": "λh. eq (uniform_by get_color (first_half h)) (uniform_by get_color (second_half h))",
-                                        "rule": "Halves_uniform_color_equal",
-                                        "depth": 12
-                                    }
+                                    {"id": "r_halves_hearts", "label": "eq (has_suit (first_half h) ♥) (has_suit (second_half h) ♥)", "type": "rule", "rule": "Halves_hearts_presence_equal", "depth": 10, "family": "HIER"},
+                                    {"id": "r_halves_uniform_color", "label": "eq (uniform get_color (first_half h)) (uniform get_color (second_half h))", "type": "rule", "rule": "Halves_uniform_color_equal", "depth": 12, "family": "HIER", "requires": ["uniform_by"]},
+                                    {"id": "r_halves_uniform_parity", "label": "eq (uniform get_parity (first_half h)) (uniform get_parity (second_half h))", "type": "rule", "rule": "Halves_uniform_parity_equal", "depth": 13, "family": "HIER", "requires": ["uniform_by", "get_parity"]},
+                                    {"id": "r_halves_ap_step1", "label": "eq (is_run (first_half h)) (is_run (second_half h))", "type": "rule", "rule": "Halves_AP_step1_equal", "depth": 15, "family": "HIER", "requires": ["is_sorted_by"]},
+                                    {"id": "r_halves_ap_len3", "label": "eq (has_AP 3 (first_half h)) (has_AP 3 (second_half h))", "type": "rule", "rule": "Halves_AP_len3_any_equal", "depth": 16, "family": "HIER", "requires": ["has_AP"]},
+                                    {"id": "r_halves_ap_len2", "label": "eq (has_adj_pair (first_half h)) (has_adj_pair (second_half h))", "type": "rule", "rule": "Halves_AP_len2_step1_equal", "depth": 14, "family": "HIER"}
+                                ]
+                            },
+                            # eq (unique sets of halves)
+                            {
+                                "id": "eq_halves_set",
+                                "label": "eq (unique (map [?:f] (first_half h))) (unique (map [?:f] (second_half h)))",
+                                "type": "abstraction",
+                                "description": "Compare halves by set of values",
+                                "requires": ["first_half", "second_half", "halves_set_equal_by"],
+                                "children": [
+                                    {"id": "r_halves_same_suit_set", "label": "eq (unique (map get_suit (first_half h))) (unique (map get_suit (second_half h)))", "type": "rule", "rule": "Halves_same_suit_set", "depth": 11, "family": "COPY"}
                                 ]
                             }
                         ]
                     },
+                    # --- le/lt/ge/gt comparisons ---
                     {
-                        "id": "le_lt_ge_gt",
+                        "id": "ordering_branch",
                         "label": "[le|lt|ge|gt] [?:int] [?:int]",
                         "type": "hole",
                         "description": "Ordering comparisons",
                         "children": [
+                            {"id": "r_at_most_three", "label": "le (n_unique_suits h) 3", "type": "rule", "rule": "At_most_three_suits", "depth": 3, "family": "COUNT"},
+                            {"id": "r_has_pair", "label": "lt (length (unique (map get_rank h))) (length h)", "type": "rule", "rule": "Has_pair_ranks", "depth": 6, "family": "COUNT"},
                             {
-                                "id": "le_nunique_3",
-                                "label": "le (n_unique_suits h) 3",
-                                "type": "rule",
-                                "definition": "λh. le (n_unique_suits h) 3",
-                                "rule": "At_most_three_suits",
-                                "depth": 3
+                                "id": "ge_count_half",
+                                "label": "ge (count_suit h [?:s]) (half_len h)",
+                                "type": "hole",
+                                "description": "At least half the cards have suit s",
+                                "children": [
+                                    {"id": "r_half_same_suit", "label": "any (λs. ge (count_suit h s) (half_len h)) [♣,♦,♥,♠]", "type": "rule", "rule": "Half_or_more_same_suit", "depth": 7, "family": "COUNT"}
+                                ]
                             },
+                            # Score threshold comparisons
                             {
-                                "id": "lt_pair",
-                                "label": "lt (length (unique (map get_rank h))) (length h)",
-                                "type": "rule",
-                                "definition": "λh. lt (length (unique (map get_rank h))) (length h)",
-                                "rule": "Has_pair_ranks",
-                                "depth": 6
+                                "id": "ge_score",
+                                "label": "ge [?:score_expr] [?:threshold]",
+                                "type": "hole",
+                                "description": "Score threshold comparisons",
+                                "children": [
+                                    {"id": "r_score_rstar", "label": "ge (sum_ranks h + bonuses) 50", "type": "rule", "rule": "Score_threshold_Rstar", "depth": 15, "family": "SCORE"},
+                                    {"id": "r_half_sum_diff", "label": "ge (sum_ranks (first_half h) - sum_ranks (second_half h)) (length h)", "type": "rule", "rule": "Half_sum_diff_geN", "depth": 11, "family": "SCORE", "requires": ["first_half", "second_half"]},
+                                    {"id": "r_half_2x", "label": "or (ge L (* 2 R)) (ge R (* 2 L))", "type": "rule", "rule": "Half_sum_one_side_ge_2x_other", "depth": 13, "family": "SCORE", "requires": ["first_half", "second_half"]}
+                                ]
                             }
                         ]
                     }
                 ]
             },
+
+            # ================================================================
+            # BRANCH 3: all_true [?:list(bool)] - Type bridge pattern
+            # ================================================================
             {
-                "id": "all_true_pattern",
+                "id": "all_true_branch",
                 "label": "all_true [?:list(bool)]",
                 "type": "hole",
-                "description": "All elements of a boolean list are true",
+                "description": "All elements of boolean list are true (type bridge)",
                 "children": [
                     {
                         "id": "all_true_zipwith",
                         "label": "all_true (zip_with [?:cmp] [?:list] [?:list])",
                         "type": "hole",
-                        "description": "Compare two lists element-wise",
+                        "description": "Element-wise list comparison",
                         "children": [
+                            # Palindrome pattern
                             {
                                 "id": "palindrome_pattern",
                                 "label": "all_true (zip_with eq (map [?:f] h) (reverse (map [?:f] h)))",
                                 "type": "abstraction",
-                                "description": "Palindrome check pattern",
+                                "description": "Palindrome check: sequence equals its reverse",
                                 "requires": ["is_palindrome_by"],
                                 "children": [
-                                    {
-                                        "id": "suits_pal",
-                                        "label": "all_true (zip_with eq (map get_suit h) (reverse (map get_suit h)))",
-                                        "type": "rule",
-                                        "definition": "λh. all_true (zip_with eq (map get_suit h) (reverse (map get_suit h)))",
-                                        "rule": "Suits_palindrome",
-                                        "depth": 8
-                                    },
-                                    {
-                                        "id": "colors_pal",
-                                        "label": "all_true (zip_with eq (map get_color h) (reverse (map get_color h)))",
-                                        "type": "rule",
-                                        "definition": "λh. all_true (zip_with eq (map get_color h) (reverse (map get_color h)))",
-                                        "rule": "Colors_palindrome",
-                                        "depth": 8
-                                    },
-                                    {
-                                        "id": "ranks_pal",
-                                        "label": "all_true (zip_with eq (map get_rank h) (reverse (map get_rank h)))",
-                                        "type": "rule",
-                                        "definition": "λh. all_true (zip_with eq (map get_rank h) (reverse (map get_rank h)))",
-                                        "rule": "Ranks_palindrome",
-                                        "depth": 8
-                                    }
+                                    {"id": "r_suits_pal", "label": "... eq (map get_suit h) (reverse (map get_suit h))", "type": "rule", "rule": "Suits_palindrome", "depth": 8, "family": "PAL"},
+                                    {"id": "r_colors_pal", "label": "... eq (map get_color h) (reverse (map get_color h))", "type": "rule", "rule": "Colors_palindrome", "depth": 8, "family": "PAL"},
+                                    {"id": "r_ranks_pal", "label": "... eq (map get_rank h) (reverse (map get_rank h))", "type": "rule", "rule": "Ranks_palindrome", "depth": 8, "family": "PAL"},
+                                    {"id": "r_altcolor1_pal", "label": "... eq (map get_altcolor1 h) (reverse ...)", "type": "rule", "rule": "AltColor1_palindrome", "depth": 12, "family": "ALTCLR", "requires": ["get_altcolor1"]},
+                                    {"id": "r_altcolor2_pal", "label": "... eq (map get_altcolor2 h) (reverse ...)", "type": "rule", "rule": "AltColor2_palindrome", "depth": 12, "family": "ALTCLR", "requires": ["get_altcolor2"]}
                                 ]
                             },
+                            # Sorted pattern
                             {
                                 "id": "sorted_pattern",
                                 "label": "all_true (zip_with le (map [?:f] h) (drop 1 (map [?:f] h)))",
                                 "type": "abstraction",
-                                "description": "Sorted check pattern",
+                                "description": "Sorted check: each element <= next",
                                 "requires": ["is_sorted_by"],
                                 "children": [
-                                    {
-                                        "id": "sorted_rank",
-                                        "label": "all_true (zip_with le (map rank_val h) (drop 1 (map rank_val h)))",
-                                        "type": "rule",
-                                        "definition": "λh. all_true (zip_with le (map rank_val h) (drop 1 (map rank_val h)))",
-                                        "rule": "Sorted_by_rank",
-                                        "depth": 9
-                                    }
+                                    {"id": "r_sorted_rank", "label": "... le (map rank_val h) (drop 1 (map rank_val h))", "type": "rule", "rule": "Sorted_by_rank", "depth": 9, "family": "LOCAL"}
                                 ]
                             },
+                            # Halves copy pattern
                             {
                                 "id": "halves_copy_pattern",
                                 "label": "all_true (zip_with eq (map [?:f] (first_half h)) (map [?:f] (second_half h)))",
                                 "type": "abstraction",
-                                "description": "Halves sequence equality",
-                                "requires": ["first_half", "second_half", "lists_equal"],
+                                "description": "Halves have identical sequence under f",
+                                "requires": ["first_half", "second_half", "lists_equal", "halves_equal_by"],
                                 "children": [
-                                    {
-                                        "id": "halves_suits",
-                                        "label": "lists_equal (map get_suit (first_half h)) (map get_suit (second_half h))",
-                                        "type": "rule",
-                                        "definition": "λh. halves_equal_by get_suit h",
-                                        "rule": "Halves_copy_suits",
-                                        "depth": 10
-                                    },
-                                    {
-                                        "id": "halves_colors",
-                                        "label": "lists_equal (map get_color (first_half h)) (map get_color (second_half h))",
-                                        "type": "rule",
-                                        "definition": "λh. halves_equal_by get_color h",
-                                        "rule": "Halves_copy_colors",
-                                        "depth": 10
-                                    },
-                                    {
-                                        "id": "halves_ranks",
-                                        "label": "lists_equal (map get_rank (first_half h)) (map get_rank (second_half h))",
-                                        "type": "rule",
-                                        "definition": "λh. halves_equal_by get_rank h",
-                                        "rule": "Halves_copy_ranks",
-                                        "depth": 10
-                                    }
+                                    {"id": "r_halves_copy_suits", "label": "... eq (map get_suit (first_half h)) (map get_suit (second_half h))", "type": "rule", "rule": "Halves_copy_suits", "depth": 10, "family": "COPY"},
+                                    {"id": "r_halves_copy_colors", "label": "... eq (map get_color (first_half h)) (map get_color (second_half h))", "type": "rule", "rule": "Halves_copy_colors", "depth": 10, "family": "COPY"},
+                                    {"id": "r_halves_copy_ranks", "label": "... eq (map get_rank (first_half h)) (map get_rank (second_half h))", "type": "rule", "rule": "Halves_copy_ranks", "depth": 10, "family": "COPY"},
+                                    {"id": "r_halves_copy_altcolor1", "label": "... eq (map get_altcolor1 (first_half h)) ...", "type": "rule", "rule": "Halves_copy_altcolor1", "depth": 14, "family": "COPY", "requires": ["get_altcolor1"]},
+                                    {"id": "r_halves_copy_altcolor2", "label": "... eq (map get_altcolor2 (first_half h)) ...", "type": "rule", "rule": "Halves_copy_altcolor2", "depth": 14, "family": "COPY", "requires": ["get_altcolor2"]}
                                 ]
                             }
                         ]
                     }
                 ]
             },
+
+            # ================================================================
+            # BRANCH 4: all [?:pred] [?:list] - Universal quantification
+            # ================================================================
             {
-                "id": "all_predicate",
-                "label": "all [?:Card→bool] h",
+                "id": "all_branch",
+                "label": "all [?:a→bool] [?:list(a)]",
                 "type": "hole",
-                "description": "All cards satisfy a predicate",
+                "description": "All elements satisfy predicate",
                 "children": [
+                    # all pred (adjacent_pairs h)
                     {
                         "id": "all_adjacent",
                         "label": "all [?:pair→bool] (adjacent_pairs h)",
                         "type": "hole",
                         "description": "All adjacent pairs satisfy predicate",
                         "children": [
+                            {"id": "r_adj_rank_suit", "label": "all (λp. or (eq ranks) (eq suits)) (adjacent_pairs h)", "type": "rule", "rule": "Adj_same_rank_or_suit", "depth": 8, "family": "ADJ"},
+                            {"id": "r_adj_gap_le3", "label": "all (λp. le (abs (- r1 r2)) 3) (adjacent_pairs h)", "type": "rule", "rule": "Adj_rank_gap_le3", "depth": 10, "family": "ADJ"},
                             {
-                                "id": "adj_rank_suit",
-                                "label": "all (λp. or (eq ranks) (eq suits)) (adjacent_pairs h)",
-                                "type": "rule",
-                                "definition": "λh. all (λp. or (eq (get_rank (fst p)) (get_rank (snd p))) (eq (get_suit (fst p)) (get_suit (snd p)))) (adjacent_pairs h)",
-                                "rule": "Adj_same_rank_or_suit",
-                                "depth": 8
-                            },
-                            {
-                                "id": "adj_gap",
-                                "label": "all (λp. le (abs (diff ranks)) 3) (adjacent_pairs h)",
-                                "type": "rule",
-                                "definition": "λh. all (λp. le (abs (- (rank_val (fst p)) (rank_val (snd p)))) 3) (adjacent_pairs h)",
-                                "rule": "Adj_rank_gap_le3",
-                                "depth": 10
+                                "id": "adj_map_pattern",
+                                "label": "all (λp. or (eq suits) (eq (cycle (suit left)) (suit right))) (adjacent_pairs h)",
+                                "type": "abstraction",
+                                "description": "Adjacent cards: same suit or mapped by cycle",
+                                "requires": ["suit_cycle_m1", "suit_cycle_m2"],
+                                "children": [
+                                    {"id": "r_adj_same_or_m1", "label": "... or eq (suit_cycle_m1 ...) ...", "type": "rule", "rule": "Adj_same_or_map_M1", "depth": 12, "family": "MAP"},
+                                    {"id": "r_adj_same_or_m2", "label": "... or eq (suit_cycle_m2 ...) ...", "type": "rule", "rule": "Adj_same_or_map_M2", "depth": 12, "family": "MAP"}
+                                ]
                             }
                         ]
                     },
+                    # all pred (shifted_pairs k h)
                     {
                         "id": "all_shifted",
                         "label": "all [?:pair→bool] (shifted_pairs [?:k] h)",
                         "type": "abstraction",
-                        "description": "All k-shifted pairs satisfy predicate",
+                        "description": "All k-offset pairs satisfy predicate",
                         "requires": ["shifted_pairs"],
                         "children": [
+                            # Shift with k = 2
                             {
-                                "id": "shift_half_ge",
-                                "label": "all (λp. ge (rank right) (rank left)) (shifted_pairs (half_len h) h)",
-                                "type": "rule",
-                                "definition": "λh. all (λp. ge (rank_val (snd p)) (rank_val (fst p))) (shifted_pairs (half_len h) h)",
-                                "rule": "Shift_half_ge",
-                                "depth": 11
+                                "id": "shift_k2",
+                                "label": "all [?:pred] (shifted_pairs 2 h)",
+                                "type": "hole",
+                                "description": "Skip-2 pairs",
+                                "children": [
+                                    {"id": "r_skip2_rank_suit", "label": "all (λp. or (eq ranks) (eq suits)) (shifted_pairs 2 h)", "type": "rule", "rule": "Skip2_same_rank_or_suit", "depth": 10, "family": "ADJ"},
+                                    {"id": "r_shift2_plus3", "label": "all (λp. eq (diff ranks) 3) (shifted_pairs 2 h)", "type": "rule", "rule": "Shift2_plus3", "depth": 10, "family": "SHIFT"},
+                                    {"id": "r_step2_map_m1", "label": "all (λp. eq (suit_cycle_m1 ...) ...) (shifted_pairs 2 h)", "type": "rule", "rule": "Step2_back_map_M1", "depth": 12, "family": "MAP", "requires": ["suit_cycle_m1"]},
+                                    {"id": "r_step2_map_m2", "label": "all (λp. eq (suit_cycle_m2 ...) ...) (shifted_pairs 2 h)", "type": "rule", "rule": "Step2_back_map_M2", "depth": 12, "family": "MAP", "requires": ["suit_cycle_m2"]}
+                                ]
                             },
+                            # Shift with k = half_len h
                             {
-                                "id": "shift_half_plus2",
-                                "label": "all (λp. eq (diff ranks) 2) (shifted_pairs (half_len h) h)",
-                                "type": "rule",
-                                "definition": "λh. all (λp. eq (- (rank_val (snd p)) (rank_val (fst p))) 2) (shifted_pairs (half_len h) h)",
-                                "rule": "Shift_half_plus_two",
-                                "depth": 12
-                            },
-                            {
-                                "id": "map_m1",
-                                "label": "all (λp. eq (suit_cycle_m1 (suit left)) (suit right)) (shifted_pairs k h)",
-                                "type": "rule",
-                                "definition": "λh. all (λp. eq (suit_cycle_m1 (get_suit (fst p))) (get_suit (snd p))) (shifted_pairs (half_len h) h)",
-                                "rule": "Half_map_samepos_M1",
-                                "depth": 14
+                                "id": "shift_half",
+                                "label": "all [?:pred] (shifted_pairs (half_len h) h)",
+                                "type": "abstraction",
+                                "description": "Half-offset pairs (position i vs i+n/2)",
+                                "requires": ["half_len"],
+                                "children": [
+                                    {"id": "r_shift_half_ge", "label": "all (λp. ge (rank right) (rank left)) (shifted_pairs (half_len h) h)", "type": "rule", "rule": "Shift_half_ge", "depth": 11, "family": "SHIFT"},
+                                    {"id": "r_shift_half_plus2", "label": "all (λp. eq (diff ranks) 2) (shifted_pairs (half_len h) h)", "type": "rule", "rule": "Shift_half_plus_two", "depth": 12, "family": "SHIFT"},
+                                    {"id": "r_half_map_m1", "label": "all (λp. eq (suit_cycle_m1 (suit left)) (suit right)) ...", "type": "rule", "rule": "Half_map_samepos_M1", "depth": 14, "family": "MAP", "requires": ["suit_cycle_m1"]},
+                                    {"id": "r_half_map_m2", "label": "all (λp. eq (suit_cycle_m2 (suit left)) (suit right)) ...", "type": "rule", "rule": "Half_map_samepos_M2", "depth": 14, "family": "MAP", "requires": ["suit_cycle_m2"]}
+                                ]
                             }
                         ]
                     }
                 ]
             },
+
+            # ================================================================
+            # BRANCH 5: any [?:pred] h - Existential quantification
+            # ================================================================
             {
-                "id": "any_predicate",
+                "id": "any_branch",
                 "label": "any [?:Card→bool] h",
                 "type": "hole",
-                "description": "Some card satisfies a predicate",
+                "description": "Some card satisfies predicate",
                 "children": [
+                    # Specific card check
                     {
-                        "id": "any_specific_card",
-                        "label": "any (λc. and (eq suit [?]) (eq rank [?])) h",
+                        "id": "any_specific",
+                        "label": "any (λc. and (eq (get_suit c) [?:s]) (eq (rank_val c) [?:r])) h",
                         "type": "hole",
-                        "description": "Contains a specific card",
+                        "description": "Contains specific card (suit + rank)",
                         "children": [
-                            {
-                                "id": "ace_spades",
-                                "label": "any (λc. and (eq (get_suit c) ♠) (eq (rank_val c) 14)) h",
-                                "type": "rule",
-                                "definition": "λh. any (λc. and (eq (get_suit c) SPADES) (eq (rank_val c) 14)) h",
-                                "rule": "Has_Ace_of_Spades",
-                                "depth": 7
-                            },
-                            {
-                                "id": "six_diamonds",
-                                "label": "any (λc. and (eq (get_suit c) ♦) (eq (rank_val c) 6)) h",
-                                "type": "rule",
-                                "definition": "λh. any (λc. and (eq (get_suit c) DIAMONDS) (eq (rank_val c) 6)) h",
-                                "rule": "Has_6_of_Diamonds",
-                                "depth": 7
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "id": "fold_state",
-                "label": "snd (fold [?:state→Card→state] (pair [?] [?]) h)",
-                "type": "abstraction",
-                "description": "Stateful iteration with fold",
-                "requires": ["fold", "pair", "fst", "snd"],
-                "children": [
-                    {
-                        "id": "bracket_match",
-                        "label": "snd (fold (bracket_step) (pair 0 true) h)",
-                        "type": "abstraction",
-                        "description": "Bracket matching pattern",
-                        "requires": ["bracket_match"],
-                        "children": [
-                            {
-                                "id": "brackets_suit",
-                                "label": "bracket_match {♠:open, ♥:open} {♣:close, ♦:close} h",
-                                "type": "rule",
-                                "definition": "λh. bracket_match suits h",
-                                "rule": "Well_formed_brackets_by_suit",
-                                "depth": 14
-                            },
-                            {
-                                "id": "even_odd_brackets",
-                                "label": "bracket_match_parity even_opens h",
-                                "type": "rule",
-                                "definition": "λh. bracket_match_parity even_opens h",
-                                "rule": "Even_opens_next_closes",
-                                "depth": 16
-                            }
+                            {"id": "r_ace_spades", "label": "any (λc. and (eq (get_suit c) ♠) (eq (rank_val c) 14)) h", "type": "rule", "rule": "Has_Ace_of_Spades", "depth": 7, "family": "TOKEN"},
+                            {"id": "r_6_diamonds", "label": "any (λc. and (eq (get_suit c) ♦) (eq (rank_val c) 6)) h", "type": "rule", "rule": "Has_6_of_Diamonds", "depth": 7, "family": "TOKEN"}
                         ]
                     },
+                    # Suit presence check with threshold
                     {
-                        "id": "s_before_h",
-                        "label": "snd (fold (track_spade_heart) (pair false false) h)",
-                        "type": "rule",
-                        "definition": "λh. fold (λst. λc. ...) (pair false false) h",
-                        "rule": "S_before_H",
-                        "depth": 10
+                        "id": "any_suit_count",
+                        "label": "any (λs. ge (count_suit h s) [?:n]) [suits]",
+                        "type": "hole",
+                        "description": "Some suit has at least n cards",
+                        "children": [
+                            {"id": "r_half_same_suit_alt", "label": "any (λs. ge (count_suit h s) (half_len h)) [♣,♦,♥,♠]", "type": "rule", "rule": "Half_or_more_same_suit", "depth": 7, "family": "COUNT", "note": "Alternative path to same rule"}
+                        ]
                     }
                 ]
             },
+
+            # ================================================================
+            # BRANCH 6: snd (fold ...) - Stateful iteration
+            # ================================================================
             {
-                "id": "or_pattern",
+                "id": "fold_branch",
+                "label": "snd (fold [?:state→Card→state] (pair [?:init] [?:init]) h)",
+                "type": "abstraction",
+                "description": "Stateful fold with pair state",
+                "requires": ["fold", "pair", "fst", "snd"],
+                "children": [
+                    # Bracket matching
+                    {
+                        "id": "bracket_pattern",
+                        "label": "snd (fold (λst.λc. pair (adjust) (check)) (pair 0 true) h)",
+                        "type": "abstraction",
+                        "description": "Bracket matching via counter + validity flag",
+                        "requires": ["bracket_match"],
+                        "children": [
+                            {"id": "r_brackets_suit", "label": "bracket_match {♠,♥:open} {♣,♦:close} h", "type": "rule", "rule": "Well_formed_brackets_by_suit", "depth": 14, "family": "LANG"},
+                            {"id": "r_even_opens", "label": "bracket_match even_rank_opens h", "type": "rule", "rule": "Even_opens_next_closes", "depth": 16, "family": "LANG"},
+                            {"id": "r_odd_opens", "label": "bracket_match odd_rank_opens h", "type": "rule", "rule": "Odd_opens_next_closes", "depth": 16, "family": "LANG"}
+                        ]
+                    },
+                    # Ordering tracking
+                    {
+                        "id": "order_track",
+                        "label": "snd (fold (λst.λc. track_order) (pair false false) h)",
+                        "type": "hole",
+                        "description": "Track ordering between card types",
+                        "children": [
+                            {"id": "r_s_before_h", "label": "snd (fold track_spade_heart (pair false false) h)", "type": "rule", "rule": "S_before_H", "depth": 10, "family": "LOCAL"}
+                        ]
+                    }
+                ]
+            },
+
+            # ================================================================
+            # BRANCH 7: or [?:bool] [?:bool] - Disjunction
+            # ================================================================
+            {
+                "id": "or_branch",
                 "label": "or [?:bool] [?:bool]",
                 "type": "hole",
                 "description": "Disjunction of conditions",
                 "children": [
+                    # Position-based checks
                     {
-                        "id": "pos_check",
-                        "label": "or (eq (rank_val (at h [?])) [?]) ...",
+                        "id": "pos_check_or",
+                        "label": "or (eq (rank_val (at h [?:i])) [?:r]) (or ...)",
                         "type": "hole",
-                        "description": "Position-based rank check",
+                        "description": "Card at position has one of several ranks",
                         "children": [
-                            {
-                                "id": "pos3_jqk",
-                                "label": "or (eq (rank_val (at h 2)) 11) (or (eq ... 12) (eq ... 13))",
-                                "type": "rule",
-                                "definition": "λh. or (eq (rank_val (at h 2)) 11) (or (eq (rank_val (at h 2)) 12) (eq (rank_val (at h 2)) 13))",
-                                "rule": "Pos3_is_JQK",
-                                "depth": 7
-                            },
-                            {
-                                "id": "pos4_257",
-                                "label": "or (eq (rank_val (at h 3)) 2) (or ... 5) (... 7))",
-                                "type": "rule",
-                                "definition": "λh. or (eq (rank_val (at h 3)) 2) (or (eq ... 5) (eq ... 7))",
-                                "rule": "Pos4_is_2_5_7",
-                                "depth": 7
-                            }
+                            {"id": "r_pos3_jqk", "label": "or (eq (rank (at h 2)) 11) (or (eq ... 12) (eq ... 13))", "type": "rule", "rule": "Pos3_is_JQK", "depth": 7, "family": "POSITION"},
+                            {"id": "r_pos4_257", "label": "or (eq (rank (at h 3)) 2) (or (eq ... 5) (eq ... 7))", "type": "rule", "rule": "Pos4_is_2_5_7", "depth": 7, "family": "POSITION"}
                         ]
+                    },
+                    # Half-based disjunction
+                    {
+                        "id": "or_halves",
+                        "label": "or (ge L (* 2 R)) (ge R (* 2 L))",
+                        "type": "abstraction",
+                        "description": "One half dominates the other",
+                        "requires": ["first_half", "second_half"],
+                        "children": [
+                            {"id": "r_half_2x_alt", "label": "or (ge (sum left) (* 2 (sum right))) ...", "type": "rule", "rule": "Half_sum_one_side_ge_2x_other", "depth": 13, "family": "SCORE", "note": "Alternative path"}
+                        ]
+                    }
+                ]
+            },
+
+            # ================================================================
+            # BRANCH 8: and [?:bool] [?:bool] - Conjunction
+            # ================================================================
+            {
+                "id": "and_branch",
+                "label": "and [?:bool] [?:bool]",
+                "type": "hole",
+                "description": "Conjunction of conditions",
+                "children": [
+                    # Radial patterns
+                    {
+                        "id": "radial_pattern",
+                        "label": "and (sorted_desc (reverse (first_half h))) (sorted_desc (second_half h))",
+                        "type": "abstraction",
+                        "description": "Radial pattern: center is highest",
+                        "requires": ["first_half", "second_half", "is_sorted_by"],
+                        "children": [
+                            {"id": "r_radial_nonincr", "label": "and (sorted_desc (reverse (first_half h))) (sorted_desc (second_half h))", "type": "rule", "rule": "Halves_radial_nonincreasing", "depth": 14, "family": "CENTER"},
+                            {"id": "r_radial_no_dom", "label": "forall i j. dist(j)>dist(i) → rank(j)≤rank(i)", "type": "rule", "rule": "Global_radial_no_dominance", "depth": 18, "family": "CENTER"}
+                        ]
+                    }
+                ]
+            },
+
+            # ================================================================
+            # BRANCH 9: Arithmetic progression detection
+            # ================================================================
+            {
+                "id": "ap_branch",
+                "label": "has_AP [?:len] [?:step] h",
+                "type": "abstraction",
+                "description": "Contains arithmetic progression in ranks",
+                "requires": ["has_AP"],
+                "children": [
+                    {"id": "r_ap_len3_any", "label": "has_AP 3 any h", "type": "rule", "rule": "AP_len3_anywhere_anyk", "depth": 13, "family": "AP"},
+                    {"id": "r_ap_len3_step2", "label": "has_AP 3 2 h", "type": "rule", "rule": "AP_len3_step2_anywhere", "depth": 13, "family": "AP"},
+                    {"id": "r_ap_len4_step2", "label": "has_AP 4 2 h", "type": "rule", "rule": "AP_len4_step2_anywhere", "depth": 14, "family": "AP"}
+                ]
+            },
+
+            # ================================================================
+            # DEAD-END BRANCHES (intermediate compositions that don't lead to rules)
+            # ================================================================
+            {
+                "id": "dead_ends",
+                "label": "Other intermediate compositions (no rules)",
+                "type": "dead_end",
+                "description": "Compositions explored during search that don't yield rules",
+                "children": [
+                    {
+                        "id": "dead_not",
+                        "label": "not [?:bool]",
+                        "type": "dead_end",
+                        "description": "Negation - no rules use top-level negation",
+                        "depth": "varies"
+                    },
+                    {
+                        "id": "dead_if",
+                        "label": "if [?:bool] [?:bool] [?:bool]",
+                        "type": "dead_end",
+                        "description": "Conditional - used internally but not at top level",
+                        "depth": "varies"
+                    },
+                    {
+                        "id": "dead_length_direct",
+                        "label": "eq (length h) [?:n]",
+                        "type": "dead_end",
+                        "description": "Direct length check - not a rule (hand size is fixed)",
+                        "depth": 2
+                    },
+                    {
+                        "id": "dead_head_rank",
+                        "label": "eq (rank_val (head h)) [?:n]",
+                        "type": "dead_end",
+                        "description": "First card rank equals n - not in rule set",
+                        "depth": 4
+                    },
+                    {
+                        "id": "dead_sum_eq",
+                        "label": "eq (sum_ranks h) [?:n]",
+                        "type": "dead_end",
+                        "description": "Exact sum - only threshold comparisons are rules",
+                        "depth": 3
+                    },
+                    {
+                        "id": "dead_mod_0",
+                        "label": "eq 0 (mod (sum_ranks h) [?:n])",
+                        "type": "dead_end",
+                        "description": "Sum divisible by n - not in current rule set",
+                        "depth": 5
+                    },
+                    {
+                        "id": "dead_filter_len_gt",
+                        "label": "gt (length (filter [?:pred] h)) [?:n]",
+                        "type": "dead_end",
+                        "description": "More than n cards satisfy pred",
+                        "depth": "varies"
+                    },
+                    {
+                        "id": "dead_reverse_eq",
+                        "label": "eq h (reverse h)",
+                        "type": "dead_end",
+                        "description": "Hand equals its reverse - too strong (palindrome by all properties)",
+                        "depth": 3
                     }
                 ]
             }
@@ -1709,6 +1784,16 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
             border-left: 3px solid var(--accent-green);
         }
 
+        .search-node-dead_end .search-node-label {
+            color: var(--accent-red);
+            opacity: 0.7;
+        }
+
+        .search-node-dead_end .search-node-content {
+            background: rgba(247, 118, 142, 0.08);
+            border-left: 2px dashed var(--accent-red);
+        }
+
         .search-rule-name {
             background: var(--accent-green);
             color: var(--bg-dark);
@@ -1892,7 +1977,11 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
             </div>
             <div class="search-legend-item">
                 <span class="search-legend-sample rule">Complete rule</span>
-                <span>Leaf = solved task</span>
+                <span>Leaf = solved task (57 total)</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample" style="color: var(--accent-red); opacity: 0.7; border-left: 2px dashed var(--accent-red);">dead end</span>
+                <span>No rule at this path</span>
             </div>
         </div>
 
@@ -2396,10 +2485,19 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
                 ruleBadge.textContent = node.rule;
                 label.appendChild(document.createTextNode(' '));
                 label.appendChild(ruleBadge);
+
+                // Add family badge for rules
+                if (node.family) {
+                    const familyBadge = document.createElement('span');
+                    familyBadge.className = 'node-badge badge-' + node.family;
+                    familyBadge.textContent = node.family;
+                    familyBadge.style.marginLeft = '5px';
+                    label.appendChild(familyBadge);
+                }
             }
 
             // Add depth badge if available
-            if (node.depth !== undefined) {
+            if (node.depth !== undefined && node.depth !== 'varies') {
                 const depthBadge = document.createElement('span');
                 depthBadge.className = 'search-depth-badge';
                 depthBadge.textContent = 'd=' + node.depth;
