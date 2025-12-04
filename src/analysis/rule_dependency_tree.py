@@ -795,10 +795,440 @@ def get_tree_json(nodes: Dict[str, TreeNode]) -> str:
 # HTML GENERATION
 # ============================================================================
 
+def generate_search_tree_data() -> str:
+    """
+    Generate the search tree structure showing program synthesis as hole-filling.
+
+    The tree starts with λh. [?:bool] and branches into possible ways to fill
+    the hole, recursively expanding until reaching complete programs (rules).
+    """
+
+    # Define the search tree structure
+    # Each node has: id, label, type, children, definition (for leaves)
+    search_tree = {
+        "id": "root",
+        "label": "λh. [?:bool]",
+        "type": "hole",
+        "description": "Root: A function from Hand to Bool",
+        "children": [
+            {
+                "id": "apply_predicate",
+                "label": "[?:Hand→bool] h",
+                "type": "hole",
+                "description": "Apply a hand predicate to the hand",
+                "children": [
+                    {
+                        "id": "all_same_color",
+                        "label": "all_same_color h",
+                        "type": "rule",
+                        "definition": "λh. all_same_color h",
+                        "rule": "Uniform_color",
+                        "depth": 2
+                    },
+                    {
+                        "id": "all_same_suit",
+                        "label": "all_same_suit h",
+                        "type": "rule",
+                        "definition": "λh. all_same_suit h",
+                        "rule": "All_same_suit",
+                        "depth": 2
+                    }
+                ]
+            },
+            {
+                "id": "comparison",
+                "label": "[?:cmp] [?:int] [?:int]",
+                "type": "hole",
+                "description": "Compare two integer values",
+                "children": [
+                    {
+                        "id": "eq_int_int",
+                        "label": "eq [?:int] [?:int]",
+                        "type": "hole",
+                        "description": "Equality comparison",
+                        "children": [
+                            {
+                                "id": "eq_const_query",
+                                "label": "eq [N] [?:Hand→int h]",
+                                "type": "hole",
+                                "description": "Compare constant to hand query",
+                                "children": [
+                                    {
+                                        "id": "eq_2_nunique",
+                                        "label": "eq 2 (n_unique_suits h)",
+                                        "type": "rule",
+                                        "definition": "λh. eq 2 (n_unique_suits h)",
+                                        "rule": "Exactly_two_suits",
+                                        "depth": 3
+                                    },
+                                    {
+                                        "id": "eq_1_countsuit",
+                                        "label": "eq 1 (count_suit h CLUBS)",
+                                        "type": "rule",
+                                        "definition": "λh. eq 1 (count_suit h CLUBS)",
+                                        "rule": "Exactly_one_club",
+                                        "depth": 4
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "eq_terminals",
+                                "label": "eq [?:f (head h)] [?:f (last h)]",
+                                "type": "hole",
+                                "description": "Compare first and last card properties",
+                                "children": [
+                                    {
+                                        "id": "terminals_suit",
+                                        "label": "eq (get_suit (head h)) (get_suit (last h))",
+                                        "type": "rule",
+                                        "definition": "λh. eq (get_suit (head h)) (get_suit (last h))",
+                                        "rule": "Ends_same_suit",
+                                        "depth": 5
+                                    },
+                                    {
+                                        "id": "terminals_color",
+                                        "label": "eq (get_color (head h)) (get_color (last h))",
+                                        "type": "rule",
+                                        "definition": "λh. eq (get_color (head h)) (get_color (last h))",
+                                        "rule": "Ends_same_color",
+                                        "depth": 5
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "eq_halves",
+                                "label": "eq [?:P (first_half h)] [?:P (second_half h)]",
+                                "type": "abstraction",
+                                "description": "Compare halves with some property P",
+                                "requires": ["first_half", "second_half"],
+                                "children": [
+                                    {
+                                        "id": "halves_hearts",
+                                        "label": "eq (has_suit (first_half h) ♥) (has_suit (second_half h) ♥)",
+                                        "type": "rule",
+                                        "definition": "λh. eq (has_suit (first_half h) HEARTS) (has_suit (second_half h) HEARTS)",
+                                        "rule": "Halves_hearts_presence_equal",
+                                        "depth": 10
+                                    },
+                                    {
+                                        "id": "halves_uniform_color",
+                                        "label": "eq (uniform get_color (first_half h)) (uniform get_color (second_half h))",
+                                        "type": "rule",
+                                        "definition": "λh. eq (uniform_by get_color (first_half h)) (uniform_by get_color (second_half h))",
+                                        "rule": "Halves_uniform_color_equal",
+                                        "depth": 12
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "le_lt_ge_gt",
+                        "label": "[le|lt|ge|gt] [?:int] [?:int]",
+                        "type": "hole",
+                        "description": "Ordering comparisons",
+                        "children": [
+                            {
+                                "id": "le_nunique_3",
+                                "label": "le (n_unique_suits h) 3",
+                                "type": "rule",
+                                "definition": "λh. le (n_unique_suits h) 3",
+                                "rule": "At_most_three_suits",
+                                "depth": 3
+                            },
+                            {
+                                "id": "lt_pair",
+                                "label": "lt (length (unique (map get_rank h))) (length h)",
+                                "type": "rule",
+                                "definition": "λh. lt (length (unique (map get_rank h))) (length h)",
+                                "rule": "Has_pair_ranks",
+                                "depth": 6
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "all_true_pattern",
+                "label": "all_true [?:list(bool)]",
+                "type": "hole",
+                "description": "All elements of a boolean list are true",
+                "children": [
+                    {
+                        "id": "all_true_zipwith",
+                        "label": "all_true (zip_with [?:cmp] [?:list] [?:list])",
+                        "type": "hole",
+                        "description": "Compare two lists element-wise",
+                        "children": [
+                            {
+                                "id": "palindrome_pattern",
+                                "label": "all_true (zip_with eq (map [?:f] h) (reverse (map [?:f] h)))",
+                                "type": "abstraction",
+                                "description": "Palindrome check pattern",
+                                "requires": ["is_palindrome_by"],
+                                "children": [
+                                    {
+                                        "id": "suits_pal",
+                                        "label": "all_true (zip_with eq (map get_suit h) (reverse (map get_suit h)))",
+                                        "type": "rule",
+                                        "definition": "λh. all_true (zip_with eq (map get_suit h) (reverse (map get_suit h)))",
+                                        "rule": "Suits_palindrome",
+                                        "depth": 8
+                                    },
+                                    {
+                                        "id": "colors_pal",
+                                        "label": "all_true (zip_with eq (map get_color h) (reverse (map get_color h)))",
+                                        "type": "rule",
+                                        "definition": "λh. all_true (zip_with eq (map get_color h) (reverse (map get_color h)))",
+                                        "rule": "Colors_palindrome",
+                                        "depth": 8
+                                    },
+                                    {
+                                        "id": "ranks_pal",
+                                        "label": "all_true (zip_with eq (map get_rank h) (reverse (map get_rank h)))",
+                                        "type": "rule",
+                                        "definition": "λh. all_true (zip_with eq (map get_rank h) (reverse (map get_rank h)))",
+                                        "rule": "Ranks_palindrome",
+                                        "depth": 8
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "sorted_pattern",
+                                "label": "all_true (zip_with le (map [?:f] h) (drop 1 (map [?:f] h)))",
+                                "type": "abstraction",
+                                "description": "Sorted check pattern",
+                                "requires": ["is_sorted_by"],
+                                "children": [
+                                    {
+                                        "id": "sorted_rank",
+                                        "label": "all_true (zip_with le (map rank_val h) (drop 1 (map rank_val h)))",
+                                        "type": "rule",
+                                        "definition": "λh. all_true (zip_with le (map rank_val h) (drop 1 (map rank_val h)))",
+                                        "rule": "Sorted_by_rank",
+                                        "depth": 9
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "halves_copy_pattern",
+                                "label": "all_true (zip_with eq (map [?:f] (first_half h)) (map [?:f] (second_half h)))",
+                                "type": "abstraction",
+                                "description": "Halves sequence equality",
+                                "requires": ["first_half", "second_half", "lists_equal"],
+                                "children": [
+                                    {
+                                        "id": "halves_suits",
+                                        "label": "lists_equal (map get_suit (first_half h)) (map get_suit (second_half h))",
+                                        "type": "rule",
+                                        "definition": "λh. halves_equal_by get_suit h",
+                                        "rule": "Halves_copy_suits",
+                                        "depth": 10
+                                    },
+                                    {
+                                        "id": "halves_colors",
+                                        "label": "lists_equal (map get_color (first_half h)) (map get_color (second_half h))",
+                                        "type": "rule",
+                                        "definition": "λh. halves_equal_by get_color h",
+                                        "rule": "Halves_copy_colors",
+                                        "depth": 10
+                                    },
+                                    {
+                                        "id": "halves_ranks",
+                                        "label": "lists_equal (map get_rank (first_half h)) (map get_rank (second_half h))",
+                                        "type": "rule",
+                                        "definition": "λh. halves_equal_by get_rank h",
+                                        "rule": "Halves_copy_ranks",
+                                        "depth": 10
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "all_predicate",
+                "label": "all [?:Card→bool] h",
+                "type": "hole",
+                "description": "All cards satisfy a predicate",
+                "children": [
+                    {
+                        "id": "all_adjacent",
+                        "label": "all [?:pair→bool] (adjacent_pairs h)",
+                        "type": "hole",
+                        "description": "All adjacent pairs satisfy predicate",
+                        "children": [
+                            {
+                                "id": "adj_rank_suit",
+                                "label": "all (λp. or (eq ranks) (eq suits)) (adjacent_pairs h)",
+                                "type": "rule",
+                                "definition": "λh. all (λp. or (eq (get_rank (fst p)) (get_rank (snd p))) (eq (get_suit (fst p)) (get_suit (snd p)))) (adjacent_pairs h)",
+                                "rule": "Adj_same_rank_or_suit",
+                                "depth": 8
+                            },
+                            {
+                                "id": "adj_gap",
+                                "label": "all (λp. le (abs (diff ranks)) 3) (adjacent_pairs h)",
+                                "type": "rule",
+                                "definition": "λh. all (λp. le (abs (- (rank_val (fst p)) (rank_val (snd p)))) 3) (adjacent_pairs h)",
+                                "rule": "Adj_rank_gap_le3",
+                                "depth": 10
+                            }
+                        ]
+                    },
+                    {
+                        "id": "all_shifted",
+                        "label": "all [?:pair→bool] (shifted_pairs [?:k] h)",
+                        "type": "abstraction",
+                        "description": "All k-shifted pairs satisfy predicate",
+                        "requires": ["shifted_pairs"],
+                        "children": [
+                            {
+                                "id": "shift_half_ge",
+                                "label": "all (λp. ge (rank right) (rank left)) (shifted_pairs (half_len h) h)",
+                                "type": "rule",
+                                "definition": "λh. all (λp. ge (rank_val (snd p)) (rank_val (fst p))) (shifted_pairs (half_len h) h)",
+                                "rule": "Shift_half_ge",
+                                "depth": 11
+                            },
+                            {
+                                "id": "shift_half_plus2",
+                                "label": "all (λp. eq (diff ranks) 2) (shifted_pairs (half_len h) h)",
+                                "type": "rule",
+                                "definition": "λh. all (λp. eq (- (rank_val (snd p)) (rank_val (fst p))) 2) (shifted_pairs (half_len h) h)",
+                                "rule": "Shift_half_plus_two",
+                                "depth": 12
+                            },
+                            {
+                                "id": "map_m1",
+                                "label": "all (λp. eq (suit_cycle_m1 (suit left)) (suit right)) (shifted_pairs k h)",
+                                "type": "rule",
+                                "definition": "λh. all (λp. eq (suit_cycle_m1 (get_suit (fst p))) (get_suit (snd p))) (shifted_pairs (half_len h) h)",
+                                "rule": "Half_map_samepos_M1",
+                                "depth": 14
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "any_predicate",
+                "label": "any [?:Card→bool] h",
+                "type": "hole",
+                "description": "Some card satisfies a predicate",
+                "children": [
+                    {
+                        "id": "any_specific_card",
+                        "label": "any (λc. and (eq suit [?]) (eq rank [?])) h",
+                        "type": "hole",
+                        "description": "Contains a specific card",
+                        "children": [
+                            {
+                                "id": "ace_spades",
+                                "label": "any (λc. and (eq (get_suit c) ♠) (eq (rank_val c) 14)) h",
+                                "type": "rule",
+                                "definition": "λh. any (λc. and (eq (get_suit c) SPADES) (eq (rank_val c) 14)) h",
+                                "rule": "Has_Ace_of_Spades",
+                                "depth": 7
+                            },
+                            {
+                                "id": "six_diamonds",
+                                "label": "any (λc. and (eq (get_suit c) ♦) (eq (rank_val c) 6)) h",
+                                "type": "rule",
+                                "definition": "λh. any (λc. and (eq (get_suit c) DIAMONDS) (eq (rank_val c) 6)) h",
+                                "rule": "Has_6_of_Diamonds",
+                                "depth": 7
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "fold_state",
+                "label": "snd (fold [?:state→Card→state] (pair [?] [?]) h)",
+                "type": "abstraction",
+                "description": "Stateful iteration with fold",
+                "requires": ["fold", "pair", "fst", "snd"],
+                "children": [
+                    {
+                        "id": "bracket_match",
+                        "label": "snd (fold (bracket_step) (pair 0 true) h)",
+                        "type": "abstraction",
+                        "description": "Bracket matching pattern",
+                        "requires": ["bracket_match"],
+                        "children": [
+                            {
+                                "id": "brackets_suit",
+                                "label": "bracket_match {♠:open, ♥:open} {♣:close, ♦:close} h",
+                                "type": "rule",
+                                "definition": "λh. bracket_match suits h",
+                                "rule": "Well_formed_brackets_by_suit",
+                                "depth": 14
+                            },
+                            {
+                                "id": "even_odd_brackets",
+                                "label": "bracket_match_parity even_opens h",
+                                "type": "rule",
+                                "definition": "λh. bracket_match_parity even_opens h",
+                                "rule": "Even_opens_next_closes",
+                                "depth": 16
+                            }
+                        ]
+                    },
+                    {
+                        "id": "s_before_h",
+                        "label": "snd (fold (track_spade_heart) (pair false false) h)",
+                        "type": "rule",
+                        "definition": "λh. fold (λst. λc. ...) (pair false false) h",
+                        "rule": "S_before_H",
+                        "depth": 10
+                    }
+                ]
+            },
+            {
+                "id": "or_pattern",
+                "label": "or [?:bool] [?:bool]",
+                "type": "hole",
+                "description": "Disjunction of conditions",
+                "children": [
+                    {
+                        "id": "pos_check",
+                        "label": "or (eq (rank_val (at h [?])) [?]) ...",
+                        "type": "hole",
+                        "description": "Position-based rank check",
+                        "children": [
+                            {
+                                "id": "pos3_jqk",
+                                "label": "or (eq (rank_val (at h 2)) 11) (or (eq ... 12) (eq ... 13))",
+                                "type": "rule",
+                                "definition": "λh. or (eq (rank_val (at h 2)) 11) (or (eq (rank_val (at h 2)) 12) (eq (rank_val (at h 2)) 13))",
+                                "rule": "Pos3_is_JQK",
+                                "depth": 7
+                            },
+                            {
+                                "id": "pos4_257",
+                                "label": "or (eq (rank_val (at h 3)) 2) (or ... 5) (... 7))",
+                                "type": "rule",
+                                "definition": "λh. or (eq (rank_val (at h 3)) 2) (or (eq ... 5) (eq ... 7))",
+                                "rule": "Pos4_is_2_5_7",
+                                "depth": 7
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+
+    return json.dumps(search_tree)
+
+
 def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
-    """Generate an interactive tree visualization."""
+    """Generate an interactive tree visualization with two tabs."""
 
     tree_json = get_tree_json(nodes)
+    search_tree_json = generate_search_tree_data()
 
     # Count statistics
     n_primitives = sum(1 for n in nodes.values() if n.node_type == 'primitive')
@@ -809,7 +1239,7 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Rule Dependency Tree - Interactive</title>
+    <title>Rule Dependency & Search Tree - Interactive</title>
     <style>
         :root {
             --bg-dark: #1a1a2e;
@@ -1165,51 +1595,317 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
             background: var(--accent-purple);
             color: var(--bg-dark);
         }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-card);
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 12px 30px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Search Tree Specific Styles */
+        .search-tree-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 70vh;
+        }
+
+        .search-node {
+            list-style: none;
+            margin: 4px 0;
+        }
+
+        .search-node-content {
+            display: flex;
+            align-items: flex-start;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            gap: 10px;
+        }
+
+        .search-node-content:hover {
+            background: var(--bg-hover);
+        }
+
+        .search-toggle {
+            width: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .search-node-label {
+            flex-grow: 1;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.95em;
+        }
+
+        .search-node-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .search-node-desc {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            font-style: italic;
+        }
+
+        /* Search node types */
+        .search-node-hole .search-node-label {
+            color: var(--accent-yellow);
+        }
+
+        .search-node-abstraction .search-node-label {
+            color: var(--accent-cyan);
+        }
+
+        .search-node-rule .search-node-label {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .search-node-rule .search-node-content {
+            background: rgba(158, 206, 106, 0.1);
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .search-rule-name {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .search-depth-badge {
+            background: var(--accent-orange);
+            color: var(--bg-dark);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+
+        .search-requires {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .search-requires-tag {
+            background: var(--accent-purple);
+            color: var(--bg-dark);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+        }
+
+        .search-children {
+            padding-left: 28px;
+            border-left: 2px dashed var(--text-secondary);
+            margin-left: 10px;
+            display: none;
+        }
+
+        .search-children.expanded {
+            display: block;
+        }
+
+        /* Hole placeholder styling */
+        .hole-placeholder {
+            background: rgba(224, 175, 104, 0.2);
+            border: 1px dashed var(--accent-yellow);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .search-legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .search-legend-sample {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85em;
+        }
+
+        .search-legend-sample.hole {
+            color: var(--accent-yellow);
+            background: rgba(224, 175, 104, 0.15);
+            border: 1px dashed var(--accent-yellow);
+        }
+
+        .search-legend-sample.abstraction {
+            color: var(--accent-cyan);
+            background: rgba(125, 207, 255, 0.15);
+        }
+
+        .search-legend-sample.rule {
+            color: var(--accent-green);
+            background: rgba(158, 206, 106, 0.15);
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .search-intro {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .search-intro code {
+            background: var(--bg-hover);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-yellow);
+        }
     </style>
 </head>
 <body>
-    <h1>🌳 Rule Dependency Tree</h1>
-    <p class="subtitle">Interactive visualization of rule → abstraction → primitive dependencies</p>
+    <h1>🌳 Rule Dependency & Search Tree</h1>
+    <p class="subtitle">Interactive visualization of program synthesis structure</p>
 
-    <div class="stats">
-        <div class="stat">
-            <div class="value">""" + str(n_primitives) + """</div>
-            <div class="label">Primitives</div>
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('dependency')">Dependency Tree</button>
+        <button class="tab-btn" onclick="switchTab('search')">Search Tree</button>
+    </div>
+
+    <!-- Tab 1: Dependency Tree -->
+    <div id="dependency-tab" class="tab-content active">
+        <div class="stats">
+            <div class="stat">
+                <div class="value">""" + str(n_primitives) + """</div>
+                <div class="label">Primitives</div>
+            </div>
+            <div class="stat">
+                <div class="value">""" + str(n_abstractions) + """</div>
+                <div class="label">Abstractions</div>
+            </div>
+            <div class="stat">
+                <div class="value">""" + str(n_rules) + """</div>
+                <div class="label">Rules</div>
+            </div>
         </div>
-        <div class="stat">
-            <div class="value">""" + str(n_abstractions) + """</div>
-            <div class="label">Abstractions</div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot primitive"></div> Primitive (depth 0)</div>
+            <div class="legend-item"><div class="legend-dot abstraction"></div> Abstraction (depth 2-12)</div>
+            <div class="legend-item"><div class="legend-dot rule"></div> Rule (target)</div>
         </div>
-        <div class="stat">
-            <div class="value">""" + str(n_rules) + """</div>
-            <div class="label">Rules</div>
+
+        <div class="controls">
+            <input type="text" id="search" placeholder="Search nodes..." onkeyup="searchNodes()">
+            <button onclick="expandAll()">Expand All</button>
+            <button onclick="collapseAll()">Collapse All</button>
+            <button onclick="showRulesOnly()">Show Rules</button>
+            <button onclick="showAbstractionsOnly()">Show Abstractions</button>
+            <button onclick="showAll()">Show All</button>
+        </div>
+
+        <div class="root-selector" id="rootSelector">
+            <span style="color: var(--text-secondary); margin-right: 10px;">View from:</span>
+            <button class="root-btn active" onclick="setView('rules')">Rules (top-down)</button>
+            <button class="root-btn" onclick="setView('families')">By Family</button>
+            <button class="root-btn" onclick="setView('abstractions')">Key Abstractions</button>
+        </div>
+
+        <div class="tree-container">
+            <ul class="tree-view" id="treeView"></ul>
         </div>
     </div>
 
-    <div class="legend">
-        <div class="legend-item"><div class="legend-dot primitive"></div> Primitive (depth 0)</div>
-        <div class="legend-item"><div class="legend-dot abstraction"></div> Abstraction (depth 2-12)</div>
-        <div class="legend-item"><div class="legend-dot rule"></div> Rule (target)</div>
-    </div>
+    <!-- Tab 2: Search Tree -->
+    <div id="search-tab" class="tab-content">
+        <p class="search-intro">
+            This tree shows program synthesis as <strong>hole-filling</strong>. Starting from the root
+            <code>λh. [?:bool]</code> (a function from Hand to Bool), each branch represents a way to
+            fill a typed hole <code>[?:type]</code> with a primitive, abstraction, or further holes.
+            Click on nodes to expand and explore paths to complete rule programs at the leaves.
+        </p>
 
-    <div class="controls">
-        <input type="text" id="search" placeholder="Search nodes..." onkeyup="searchNodes()">
-        <button onclick="expandAll()">Expand All</button>
-        <button onclick="collapseAll()">Collapse All</button>
-        <button onclick="showRulesOnly()">Show Rules</button>
-        <button onclick="showAbstractionsOnly()">Show Abstractions</button>
-        <button onclick="showAll()">Show All</button>
-    </div>
+        <div class="search-legend">
+            <div class="search-legend-item">
+                <span class="search-legend-sample hole">[?:type]</span>
+                <span>Unfilled hole</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample abstraction">abstraction</span>
+                <span>Requires learned abstraction</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample rule">Complete rule</span>
+                <span>Leaf = solved task</span>
+            </div>
+        </div>
 
-    <div class="root-selector" id="rootSelector">
-        <span style="color: var(--text-secondary); margin-right: 10px;">View from:</span>
-        <button class="root-btn active" onclick="setView('rules')">Rules (top-down)</button>
-        <button class="root-btn" onclick="setView('families')">By Family</button>
-        <button class="root-btn" onclick="setView('abstractions')">Key Abstractions</button>
-    </div>
+        <div class="controls">
+            <button onclick="expandSearchAll()">Expand All</button>
+            <button onclick="collapseSearchAll()">Collapse All</button>
+            <button onclick="expandSearchToDepth(2)">Expand 2 Levels</button>
+            <button onclick="expandSearchToDepth(3)">Expand 3 Levels</button>
+        </div>
 
-    <div class="tree-container">
-        <ul class="tree-view" id="treeView"></ul>
+        <div class="search-tree-container">
+            <ul class="search-tree-view" id="searchTreeView"></ul>
+        </div>
     </div>
 
     <div class="detail-panel" id="detailPanel">
@@ -1629,6 +2325,184 @@ def generate_html_report(nodes: Dict[str, TreeNode], output_path: str):
 
         // Initial render
         renderTree();
+
+        // =====================================================================
+        // TAB SWITCHING
+        // =====================================================================
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Close detail panel when switching tabs
+            closeDetail();
+
+            // Render search tree on first view
+            if (tabName === 'search' && !searchTreeRendered) {
+                renderSearchTree();
+                searchTreeRendered = true;
+            }
+        }
+
+        // =====================================================================
+        // SEARCH TREE RENDERING
+        // =====================================================================
+
+        const searchTreeData = """ + search_tree_json + """;
+        let searchTreeRendered = false;
+
+        function createSearchNodeElement(node, depth = 0) {
+            const li = document.createElement('li');
+            li.className = `search-node search-node-${node.type}`;
+            li.dataset.depth = depth;
+
+            const content = document.createElement('div');
+            content.className = 'search-node-content';
+
+            // Toggle icon
+            const toggle = document.createElement('span');
+            toggle.className = 'search-toggle';
+            if (node.children && node.children.length > 0) {
+                toggle.textContent = '▶';
+                toggle.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSearchNode(li);
+                };
+            }
+            content.appendChild(toggle);
+
+            // Node info container
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'search-node-info';
+
+            // Label (the program expression)
+            const label = document.createElement('div');
+            label.className = 'search-node-label';
+
+            // Highlight holes in the label
+            let labelText = node.label;
+            labelText = labelText.replace(/\\[\\?:[^\\]]+\\]/g, '<span class="hole-placeholder">$&</span>');
+            label.innerHTML = labelText;
+
+            // Add rule badge if it's a rule
+            if (node.type === 'rule' && node.rule) {
+                const ruleBadge = document.createElement('span');
+                ruleBadge.className = 'search-rule-name';
+                ruleBadge.textContent = node.rule;
+                label.appendChild(document.createTextNode(' '));
+                label.appendChild(ruleBadge);
+            }
+
+            // Add depth badge if available
+            if (node.depth !== undefined) {
+                const depthBadge = document.createElement('span');
+                depthBadge.className = 'search-depth-badge';
+                depthBadge.textContent = 'd=' + node.depth;
+                label.appendChild(depthBadge);
+            }
+
+            infoDiv.appendChild(label);
+
+            // Description
+            if (node.description) {
+                const desc = document.createElement('div');
+                desc.className = 'search-node-desc';
+                desc.textContent = node.description;
+                infoDiv.appendChild(desc);
+            }
+
+            // Required abstractions
+            if (node.requires && node.requires.length > 0) {
+                const reqDiv = document.createElement('div');
+                reqDiv.className = 'search-requires';
+                for (const req of node.requires) {
+                    const tag = document.createElement('span');
+                    tag.className = 'search-requires-tag';
+                    tag.textContent = req;
+                    reqDiv.appendChild(tag);
+                }
+                infoDiv.appendChild(reqDiv);
+            }
+
+            content.appendChild(infoDiv);
+            li.appendChild(content);
+
+            // Children
+            if (node.children && node.children.length > 0) {
+                const childrenUl = document.createElement('ul');
+                childrenUl.className = 'search-children';
+
+                for (const child of node.children) {
+                    const childEl = createSearchNodeElement(child, depth + 1);
+                    childrenUl.appendChild(childEl);
+                }
+                li.appendChild(childrenUl);
+            }
+
+            return li;
+        }
+
+        function toggleSearchNode(li) {
+            const children = li.querySelector('.search-children');
+            const toggle = li.querySelector('.search-toggle');
+            if (children) {
+                children.classList.toggle('expanded');
+                toggle.textContent = children.classList.contains('expanded') ? '▼' : '▶';
+            }
+        }
+
+        function renderSearchTree() {
+            const container = document.getElementById('searchTreeView');
+            container.innerHTML = '';
+
+            const rootEl = createSearchNodeElement(searchTreeData, 0);
+            container.appendChild(rootEl);
+
+            // Expand root by default
+            const rootChildren = rootEl.querySelector('.search-children');
+            const rootToggle = rootEl.querySelector('.search-toggle');
+            if (rootChildren) {
+                rootChildren.classList.add('expanded');
+                rootToggle.textContent = '▼';
+            }
+        }
+
+        function expandSearchAll() {
+            document.querySelectorAll('.search-children').forEach(el => el.classList.add('expanded'));
+            document.querySelectorAll('.search-toggle').forEach(el => {
+                if (el.textContent === '▶') el.textContent = '▼';
+            });
+        }
+
+        function collapseSearchAll() {
+            document.querySelectorAll('.search-children').forEach(el => el.classList.remove('expanded'));
+            document.querySelectorAll('.search-toggle').forEach(el => {
+                if (el.textContent === '▼') el.textContent = '▶';
+            });
+        }
+
+        function expandSearchToDepth(maxDepth) {
+            // First collapse all
+            collapseSearchAll();
+
+            // Then expand up to maxDepth
+            document.querySelectorAll('.search-node').forEach(node => {
+                const depth = parseInt(node.dataset.depth);
+                if (depth < maxDepth) {
+                    const children = node.querySelector(':scope > .search-children');
+                    const toggle = node.querySelector(':scope > .search-node-content > .search-toggle');
+                    if (children) {
+                        children.classList.add('expanded');
+                        if (toggle) toggle.textContent = '▼';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
