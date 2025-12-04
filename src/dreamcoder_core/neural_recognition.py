@@ -648,6 +648,10 @@ class NeuralRecognitionModel(nn.Module):
             'epochs': epochs
         })
 
+        # Clear embedding cache after training so subsequent calls
+        # to get_task_embedding() use the updated model weights
+        self.clear_embedding_cache()
+
         return total_loss
 
     def _collect_primitives(self, program, primitives: Set[str]):
@@ -674,12 +678,40 @@ class NeuralRecognitionModel(nn.Module):
             elif isinstance(program, CythonAbstraction):
                 self._collect_primitives(program.body, primitives)
 
-    def get_task_embedding(self, task) -> torch.Tensor:
-        """Get cached task embedding for interpretability."""
-        if task.name not in self._task_embeddings:
-            with torch.no_grad():
-                self._task_embeddings[task.name] = self.encode_task(task).cpu()
-        return self._task_embeddings[task.name]
+    def get_task_embedding(self, task, use_cache: bool = False) -> torch.Tensor:
+        """
+        Get task embedding for interpretability.
+
+        Args:
+            task: Task object with examples
+            use_cache: If True, use cached embedding if available.
+                      Default is False to ensure fresh embeddings after training.
+
+        Returns:
+            Task embedding tensor of shape (hidden_dim,)
+
+        Note:
+            The cache should be cleared after training (via clear_embedding_cache())
+            to ensure embeddings reflect the updated model weights.
+        """
+        if use_cache and task.name in self._task_embeddings:
+            return self._task_embeddings[task.name]
+
+        with torch.no_grad():
+            embedding = self.encode_task(task).cpu()
+            if use_cache:
+                self._task_embeddings[task.name] = embedding
+            return embedding
+
+    def clear_embedding_cache(self):
+        """
+        Clear the task embedding cache.
+
+        This should be called after training to ensure that subsequent calls
+        to get_task_embedding() return embeddings computed with the updated
+        model weights rather than stale cached values.
+        """
+        self._task_embeddings.clear()
 
     def get_top_predictions(self, task, n: int = 10) -> List[Tuple[str, float]]:
         """Get top-n predicted primitives for interpretability."""
