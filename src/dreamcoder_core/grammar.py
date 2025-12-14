@@ -518,7 +518,7 @@ class Grammar:
                         self._type_description_length(tp.ret)
 
         if isinstance(tp, ListType):
-            return 1.0 + self._type_description_length(tp.elem)
+            return 1.0 + self._type_description_length(tp.element)
 
         if isinstance(tp, TypeVariable):
             # Type variables are "free" (polymorphism is cheap)
