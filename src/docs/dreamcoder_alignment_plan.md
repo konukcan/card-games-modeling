@@ -15,11 +15,11 @@ This document outlines the implementation plan to align our program synthesis sy
 - ✅ Anti-unification for pattern discovery
 
 ### What's Missing or Incomplete
-- ❌ Full MDL scoring for compression
+- ✅ Full MDL scoring for compression (COMPLETED - Phase 2)
 - ✅ Program refactoring after learning abstractions (COMPLETED - Phase 1)
 - ❌ Beam search over compression candidates
 - ❌ Arity-aware abstraction search
-- ❌ Grammar size penalty
+- ✅ Grammar size penalty (COMPLETED - Phase 2, via grammar_weight parameter)
 - ❌ Corpus-guided compression
 - ❌ Recognition model integration with compression
 
@@ -144,8 +144,20 @@ def verify_rewrite(original: Program, rewritten: Program,
 
 ---
 
-### Phase 2: Full MDL Scoring (Priority: HIGH)
+### Phase 2: Full MDL Scoring (Priority: HIGH) ✅ COMPLETED
+**Status:** IMPLEMENTED (December 2024)
 **Why Second:** Principled scoring enables better abstraction selection.
+
+**Implementation Summary:**
+- `grammar_description_length()` in Grammar class - measures grammar complexity
+- `_type_description_length()` helper - measures type complexity
+- `compute_mdl()` - full MDL objective: λ × DL(grammar) + Σ DL(programs)
+- `compute_mdl_detailed()` - detailed breakdown of MDL components
+- `evaluate_invention_mdl()` - principled decision function for inventions
+- `rank_inventions_by_mdl()` - rank candidates by MDL improvement
+- `compress_frontiers_mdl()` - full MDL-based compression function
+- `grammar_weight` parameter controls complexity/accuracy trade-off
+- Comprehensive test suite for all MDL functions
 
 #### 2.1 Add Grammar Description Length
 

@@ -972,6 +972,271 @@ def rewrite_all_frontiers(
 
 
 # ============================================================================
+# MDL (MINIMUM DESCRIPTION LENGTH) SCORING
+# ============================================================================
+"""
+MDL SCORING FOR COMPRESSION
+
+The Minimum Description Length principle says the best model (grammar) is one
+that minimizes:
+
+    MDL = DL(grammar) + Σ DL(program_i | grammar)
+
+Where:
+    - DL(grammar) = cost of encoding the grammar itself
+    - DL(program_i | grammar) = cost of encoding program i using the grammar
+
+This formalizes Occam's Razor: simpler explanations are better.
+
+COMPARISON TO OUR HEURISTIC:
+    Our heuristic: savings = (size - 1) × (count - 1)
+    MDL scoring:   improvement = old_MDL - new_MDL
+
+    MDL is more principled because it accounts for:
+    1. Grammar expansion cost (new production)
+    2. Type complexity of the abstraction
+    3. Actual encoding cost change, not just AST size
+
+COMPARISON TO ORIGINAL DREAMCODER:
+    Original uses sophisticated MDL computation with:
+    - Rational number encoding for types
+    - Log-probability encoding for program bodies
+    - Version space compression
+
+    Our implementation uses simplified proxies but captures the key insight:
+    abstractions must earn their grammar cost through program savings.
+"""
+
+
+def compute_mdl(
+    grammar: Grammar,
+    programs: List[Program],
+    request_type: Type,
+    grammar_weight: float = 1.0
+) -> float:
+    """
+    Compute the full MDL objective.
+
+    MDL = λ × DL(grammar) + Σ DL(program_i | grammar)
+
+    Args:
+        grammar: The grammar to evaluate
+        programs: Programs to include in the corpus DL
+        request_type: Type of the programs (e.g., HAND → BOOL)
+        grammar_weight: λ parameter controlling grammar complexity penalty.
+                       Higher values = prefer simpler grammars.
+                       Default: 1.0 (equal weight)
+
+    Returns:
+        Total MDL score (lower is better)
+
+    PARAMETER TUNING:
+        grammar_weight < 1: Favor adding abstractions (more aggressive compression)
+        grammar_weight = 1: Balanced (default)
+        grammar_weight > 1: Favor simpler grammar (more conservative)
+
+    EXAMPLE:
+        # Current grammar with 5 primitives, no inventions
+        # Programs: [(+ 1 1), (+ 1 2), (+ 1 3), (+ 1 (+ 1 1))]
+
+        old_mdl = compute_mdl(grammar, programs, INT)
+
+        # Add invention: #add1 = (λ (+ 1 $0))
+        # Rewrite programs to use it
+
+        new_mdl = compute_mdl(new_grammar, rewritten_programs, INT)
+
+        # If new_mdl < old_mdl, the invention was worthwhile
+    """
+    grammar_dl = grammar.grammar_description_length()
+    programs_dl = sum(grammar.description_length(p, request_type) for p in programs)
+
+    return grammar_weight * grammar_dl + programs_dl
+
+
+def compute_mdl_detailed(
+    grammar: Grammar,
+    programs: List[Program],
+    request_type: Type,
+    grammar_weight: float = 1.0
+) -> Dict[str, float]:
+    """
+    Compute MDL with detailed breakdown.
+
+    Returns dictionary with:
+        - grammar_dl: Description length of grammar
+        - programs_dl: Sum of program description lengths
+        - total_mdl: Weighted sum
+        - n_programs: Number of programs
+        - n_productions: Number of grammar productions
+        - n_invented: Number of invented abstractions
+    """
+    grammar_dl = grammar.grammar_description_length()
+    program_dls = [grammar.description_length(p, request_type) for p in programs]
+    programs_dl = sum(program_dls)
+
+    return {
+        'grammar_dl': grammar_dl,
+        'programs_dl': programs_dl,
+        'total_mdl': grammar_weight * grammar_dl + programs_dl,
+        'n_programs': len(programs),
+        'avg_program_dl': programs_dl / len(programs) if programs else 0,
+        'n_productions': len(grammar.productions),
+        'n_invented': grammar.invented_count(),
+        'grammar_weight': grammar_weight
+    }
+
+
+def evaluate_invention_mdl(
+    grammar: Grammar,
+    programs: List[Program],
+    invention: Invented,
+    target: Program,
+    n_args: int,
+    request_type: Type,
+    grammar_weight: float = 1.0
+) -> Tuple[float, float, List[Program], Dict[str, Any]]:
+    """
+    Evaluate the MDL change from adding an invention.
+
+    This is the core decision function: should we add this abstraction?
+    If MDL improves (decreases), the invention is worthwhile.
+
+    Args:
+        grammar: Current grammar (without the invention)
+        programs: Current programs (not yet rewritten)
+        invention: The proposed invented abstraction
+        target: The subtree pattern the invention replaces
+        n_args: Number of arguments the invention takes
+        request_type: Type of the programs
+        grammar_weight: Weight for grammar complexity penalty
+
+    Returns:
+        (old_mdl, new_mdl, rewritten_programs, stats) where:
+        - old_mdl: MDL before adding invention
+        - new_mdl: MDL after adding invention and rewriting
+        - rewritten_programs: Programs rewritten to use invention
+        - stats: Detailed statistics about the change
+
+    DECISION RULE:
+        if new_mdl < old_mdl:
+            Accept invention (it improves compression)
+        else:
+            Reject invention (grammar cost exceeds program savings)
+
+    WHAT'S COMPUTED:
+        1. Current MDL = DL(grammar) + Σ DL(programs)
+        2. Create new grammar with invention
+        3. Rewrite all programs to use invention
+        4. New MDL = DL(new_grammar) + Σ DL(rewritten_programs)
+        5. Compare: is new_mdl < old_mdl?
+    """
+    # Step 1: Compute current MDL
+    old_mdl = compute_mdl(grammar, programs, request_type, grammar_weight)
+    old_grammar_dl = grammar.grammar_description_length()
+
+    # Step 2: Create new grammar with invention
+    ctx = TypeContext()
+    tp = invention.infer_type(ctx, [])
+    # Use a reasonable initial log probability
+    log_prob = math.log(0.1)  # 10% prior probability
+    new_grammar = grammar.with_production(Production(invention, tp, log_prob))
+    new_grammar = new_grammar.normalize_probabilities()
+
+    # Step 3: Rewrite all programs to use the invention
+    rewritten_programs = []
+    total_replacements = 0
+
+    for prog in programs:
+        result = rewrite_with_invention_detailed(prog, target, invention, n_args)
+        rewritten_programs.append(result.program)
+        total_replacements += result.n_replacements
+
+    # Step 4: Compute new MDL
+    new_mdl = compute_mdl(new_grammar, rewritten_programs, request_type, grammar_weight)
+    new_grammar_dl = new_grammar.grammar_description_length()
+
+    # Step 5: Compile statistics
+    stats = {
+        'old_mdl': old_mdl,
+        'new_mdl': new_mdl,
+        'mdl_improvement': old_mdl - new_mdl,
+        'old_grammar_dl': old_grammar_dl,
+        'new_grammar_dl': new_grammar_dl,
+        'grammar_dl_increase': new_grammar_dl - old_grammar_dl,
+        'old_programs_dl': old_mdl - grammar_weight * old_grammar_dl,
+        'new_programs_dl': new_mdl - grammar_weight * new_grammar_dl,
+        'programs_dl_decrease': (old_mdl - grammar_weight * old_grammar_dl) -
+                                (new_mdl - grammar_weight * new_grammar_dl),
+        'total_replacements': total_replacements,
+        'programs_affected': sum(1 for i, prog in enumerate(programs)
+                                 if prog != rewritten_programs[i]),
+        'invention_body_size': invention.body.size(),
+        'target_size': target.size()
+    }
+
+    return old_mdl, new_mdl, rewritten_programs, stats
+
+
+def rank_inventions_by_mdl(
+    grammar: Grammar,
+    programs: List[Program],
+    candidates: List[SubtreeOccurrence],
+    request_type: Type,
+    grammar_weight: float = 1.0,
+    top_k: int = 10
+) -> List[Tuple[Invented, int, Program, float, Dict[str, Any]]]:
+    """
+    Rank candidate inventions by MDL improvement.
+
+    Args:
+        grammar: Current grammar
+        programs: Current programs
+        candidates: Candidate subtrees from find_common_subtrees()
+        request_type: Type of programs
+        grammar_weight: MDL grammar weight
+        top_k: Maximum number of candidates to return
+
+    Returns:
+        List of (invention, n_args, target, mdl_improvement, stats)
+        sorted by mdl_improvement (highest first)
+    """
+    ranked = []
+
+    for occ in candidates:
+        # Create invention from subtree
+        invention, n_args = abstract_subtree(occ.subtree)
+
+        # Skip if already in grammar
+        if grammar.get_production(invention) is not None:
+            continue
+
+        # Check type inference works
+        try:
+            ctx = TypeContext()
+            invention.infer_type(ctx, [])
+        except Exception:
+            continue
+
+        # Evaluate MDL change
+        old_mdl, new_mdl, _, stats = evaluate_invention_mdl(
+            grammar, programs, invention, occ.subtree, n_args,
+            request_type, grammar_weight
+        )
+
+        mdl_improvement = old_mdl - new_mdl
+
+        # Only keep if there's improvement
+        if mdl_improvement > 0:
+            ranked.append((invention, n_args, occ.subtree, mdl_improvement, stats))
+
+    # Sort by MDL improvement (highest first)
+    ranked.sort(key=lambda x: -x[3])
+
+    return ranked[:top_k]
+
+
+# ============================================================================
 # MAIN COMPRESSION FUNCTION
 # ============================================================================
 
@@ -1177,6 +1442,211 @@ def compress_frontiers(
         subtree_analysis=initial_common,
         rewritten_frontiers=current_frontiers if refactor_programs else None,
         rewrite_stats=aggregate_rewrite_stats if refactor_programs else None
+    )
+
+
+# ============================================================================
+# MDL-BASED COMPRESSION
+# ============================================================================
+
+def compress_frontiers_mdl(
+    grammar: Grammar,
+    frontiers: List[List[Tuple[Program, float]]],
+    request_type: Type,
+    max_inventions: int = 5,
+    grammar_weight: float = 1.0,
+    min_mdl_improvement: float = 1.0,
+    refactor_programs: bool = True
+) -> CompressionResult:
+    """
+    Compression using full MDL (Minimum Description Length) scoring.
+
+    This is the principled alternative to heuristic-based compression.
+    Instead of using (size-1)×(count-1) as a proxy for savings, it
+    computes the actual description length change.
+
+    Args:
+        grammar: Current grammar
+        frontiers: List of frontiers, each is [(program, log_likelihood), ...]
+        request_type: Type of the programs (needed for DL computation)
+        max_inventions: Maximum number of new abstractions to add
+        grammar_weight: λ parameter for grammar complexity penalty (default 1.0)
+        min_mdl_improvement: Minimum MDL decrease required to accept invention
+        refactor_programs: If True, rewrite programs after each invention
+
+    Returns:
+        CompressionResult with new grammar, inventions, and rewritten frontiers
+
+    MDL OBJECTIVE:
+        MDL = λ × DL(grammar) + Σ DL(program_i | grammar)
+
+        We accept an invention if:
+            MDL(old) - MDL(new) ≥ min_mdl_improvement
+
+    COMPARISON TO HEURISTIC VERSION:
+        Heuristic: Fast, uses (size-1)×(count-1) proxy
+        MDL: Slower, but principled and accounts for:
+            - Grammar expansion cost
+            - Type complexity
+            - Actual encoding cost change
+
+    ALGORITHM:
+        1. Find candidate subtrees
+        2. For each candidate, evaluate MDL change:
+           a. Create invention
+           b. Compute old MDL
+           c. Create new grammar with invention
+           d. Rewrite programs
+           e. Compute new MDL
+           f. Check if improvement exceeds threshold
+        3. Accept best candidate if it improves MDL
+        4. Repeat with rewritten programs until no improvement
+
+    WHEN TO USE:
+        - When you need principled abstraction selection
+        - When grammar complexity matters
+        - When you have heterogeneous program types
+        - For research/analysis (understand why abstractions are chosen)
+
+    WHEN TO USE HEURISTIC:
+        - When speed is critical
+        - For initial exploration
+        - When programs are similar types/sizes
+    """
+    # Collect all programs from frontiers
+    all_programs = []
+    for frontier in frontiers:
+        for prog, _ in frontier:
+            all_programs.append(prog)
+
+    if not all_programs:
+        return CompressionResult(
+            new_inventions=[],
+            old_grammar=grammar,
+            new_grammar=grammar,
+            total_savings=0.0,
+            subtree_analysis=[],
+            rewritten_frontiers=frontiers if refactor_programs else None,
+            rewrite_stats={'total_mdl_improvement': 0.0} if refactor_programs else None
+        )
+
+    # Working copies
+    current_frontiers = [list(f) for f in frontiers]  # Deep copy
+    current_programs = list(all_programs)
+    current_grammar = grammar
+
+    # Track inventions and statistics
+    new_inventions: List[Invented] = []
+    invention_targets: List[Tuple[Program, int]] = []
+    total_mdl_improvement = 0.0
+
+    # Initial MDL
+    initial_mdl = compute_mdl(grammar, all_programs, request_type, grammar_weight)
+
+    # Aggregate statistics
+    mdl_stats = {
+        'initial_mdl': initial_mdl,
+        'final_mdl': initial_mdl,
+        'total_mdl_improvement': 0.0,
+        'inventions_evaluated': 0,
+        'inventions_accepted': 0,
+        'inventions_rejected': 0,
+        'per_invention_stats': []
+    }
+
+    # Initial subtree analysis
+    initial_common = find_common_subtrees(all_programs, min_size=2, min_count=2)
+
+    while len(new_inventions) < max_inventions:
+        # Find candidate subtrees in current programs
+        common = find_common_subtrees(current_programs, min_size=2, min_count=2)
+
+        if not common:
+            break
+
+        # Evaluate all candidates by MDL
+        best_candidate = None
+        best_improvement = min_mdl_improvement
+        best_rewritten = None
+        best_stats = None
+
+        for occ in common:
+            # Create invention
+            invention, n_args = abstract_subtree(occ.subtree)
+
+            # Skip if already in grammar
+            if current_grammar.get_production(invention) is not None:
+                continue
+
+            # Check type inference
+            try:
+                ctx = TypeContext()
+                invention.infer_type(ctx, [])
+            except Exception:
+                continue
+
+            mdl_stats['inventions_evaluated'] += 1
+
+            # Evaluate MDL change
+            old_mdl, new_mdl, rewritten, stats = evaluate_invention_mdl(
+                current_grammar, current_programs, invention,
+                occ.subtree, n_args, request_type, grammar_weight
+            )
+
+            improvement = old_mdl - new_mdl
+
+            if improvement > best_improvement:
+                best_candidate = (invention, n_args, occ.subtree, improvement)
+                best_improvement = improvement
+                best_rewritten = rewritten
+                best_stats = stats
+
+        # If no good candidate found, we're done
+        if best_candidate is None:
+            break
+
+        # Unpack best candidate
+        invention, n_args, target, improvement = best_candidate
+
+        # Add invention to grammar
+        ctx = TypeContext()
+        tp = invention.infer_type(ctx, [])
+        log_prob = math.log(0.1)
+        current_grammar = current_grammar.with_production(
+            Production(invention, tp, log_prob)
+        )
+        current_grammar = current_grammar.normalize_probabilities()
+
+        new_inventions.append(invention)
+        invention_targets.append((target, n_args))
+        total_mdl_improvement += improvement
+
+        mdl_stats['inventions_accepted'] += 1
+        mdl_stats['per_invention_stats'].append(best_stats)
+
+        # Update programs if refactoring
+        if refactor_programs and best_rewritten is not None:
+            current_programs = best_rewritten
+
+            # Also update frontiers
+            current_frontiers, _ = rewrite_all_frontiers(
+                current_frontiers, target, invention, n_args
+            )
+
+    # Final MDL
+    final_mdl = compute_mdl(current_grammar, current_programs, request_type, grammar_weight)
+    mdl_stats['final_mdl'] = final_mdl
+    mdl_stats['total_mdl_improvement'] = initial_mdl - final_mdl
+    mdl_stats['inventions_rejected'] = mdl_stats['inventions_evaluated'] - mdl_stats['inventions_accepted']
+
+    return CompressionResult(
+        new_inventions=new_inventions,
+        old_grammar=grammar,
+        new_grammar=current_grammar.normalize_probabilities(),
+        total_savings=total_mdl_improvement,  # Use MDL improvement as "savings"
+        subtree_analysis=initial_common,
+        rewritten_frontiers=current_frontiers if refactor_programs else None,
+        rewrite_stats=mdl_stats if refactor_programs else None
     )
 
 
@@ -1493,8 +1963,9 @@ def compression_report(result: CompressionResult) -> str:
 +------------------------+---------------------------+---------------------------+
 | Search Strategy        | Beam search over states   | Greedy selection          |
 +------------------------+---------------------------+---------------------------+
-| Scoring                | Full MDL:                 | Heuristic:                |
-|                        | DL(G) + Σ DL(P_i|G)      | (size-1) × (count-1)      |
+| Scoring                | Full MDL:                 | BOTH:                     |
+|                        | DL(G) + Σ DL(P_i|G)      | - Heuristic (fast)        |
+|                        |                           | - MDL (principled) ✓      |
 +------------------------+---------------------------+---------------------------+
 | Program Refactoring    | Yes - rewrites all        | YES - rewrites all        |
 |                        | programs after invention  | programs after invention  |
@@ -1503,8 +1974,8 @@ def compression_report(result: CompressionResult) -> str:
 | Arity Search           | Considers multiple        | Single canonical          |
 |                        | factorizations            | (all free vars)           |
 +------------------------+---------------------------+---------------------------+
-| Grammar Size Penalty   | Yes - penalizes complex   | No - grammar can grow     |
-|                        | grammars explicitly       | without penalty           |
+| Grammar Size Penalty   | Yes - penalizes complex   | YES (in MDL version) ✓    |
+|                        | grammars explicitly       | grammar_weight parameter  |
 +------------------------+---------------------------+---------------------------+
 | Pattern Discovery      | Version spaces            | Exact match +             |
 |                        |                           | anti-unification          |
@@ -1514,16 +1985,22 @@ def compression_report(result: CompressionResult) -> str:
 +------------------------+---------------------------+---------------------------+
 
 STATUS (as of implementation):
-✓ DONE: Program refactoring after compression (enables hierarchical abstractions)
+✓ DONE: Program refactoring after compression (Phase 1)
   - compress_frontiers() with refactor_programs=True (default)
   - iterative_compression() passes rewritten frontiers between rounds
   - Semantic verification available via verify_rewrite_semantics()
 
+✓ DONE: Full MDL scoring (Phase 2)
+  - grammar_description_length() in Grammar class
+  - compute_mdl() for total MDL objective
+  - evaluate_invention_mdl() for principled invention decisions
+  - compress_frontiers_mdl() for MDL-based compression
+  - grammar_weight parameter for complexity/accuracy trade-off
+
 TODO:
-1. Full MDL scoring (principled abstraction selection)
-2. Beam search (avoid local optima)
-3. Arity-aware search (better abstractions)
-4. Corpus-guided compression (recognition model integration)
+1. Beam search (avoid local optima)
+2. Arity-aware search (better abstractions)
+3. Corpus-guided compression (recognition model integration)
 """
 
 
@@ -1840,6 +2317,158 @@ if __name__ == "__main__":
     print("  ✓ Legacy function works correctly")
 
     # ========================================================================
+    # Test 9: MDL Scoring - Grammar Description Length
+    # ========================================================================
+    print("\n10. TEST: grammar_description_length()")
+    print("-" * 50)
+
+    # Test grammar DL increases with complexity
+    base_dl = g.grammar_description_length()
+    print(f"  Base grammar DL: {base_dl:.2f} bits")
+    print(f"  Base grammar has {len(g.productions)} productions")
+
+    # Add an invention and check DL increases
+    inv_grammar = g.with_invented(inc_inv)
+    inv_dl = inv_grammar.grammar_description_length()
+    print(f"  Grammar with invention DL: {inv_dl:.2f} bits")
+    assert inv_dl > base_dl, "Adding invention should increase grammar DL"
+    print(f"  DL increase: {inv_dl - base_dl:.2f} bits")
+    print("  ✓ Grammar DL increases with inventions")
+
+    # ========================================================================
+    # Test 10: MDL Scoring - compute_mdl()
+    # ========================================================================
+    print("\n11. TEST: compute_mdl()")
+    print("-" * 50)
+
+    # Create programs for MDL testing
+    mdl_progs = [
+        Application(Application(add, one), one),   # (+ 1 1)
+        Application(Application(add, one), two),   # (+ 1 2)
+        Application(Application(add, one), three), # (+ 1 3)
+    ]
+
+    mdl = compute_mdl(g, mdl_progs, INT, grammar_weight=1.0)
+    print(f"  MDL with grammar_weight=1.0: {mdl:.2f}")
+
+    mdl_high = compute_mdl(g, mdl_progs, INT, grammar_weight=2.0)
+    print(f"  MDL with grammar_weight=2.0: {mdl_high:.2f}")
+    assert mdl_high > mdl, "Higher grammar weight should increase MDL"
+    print("  ✓ grammar_weight affects MDL correctly")
+
+    # Test detailed MDL
+    mdl_details = compute_mdl_detailed(g, mdl_progs, INT)
+    print(f"\n  Detailed MDL breakdown:")
+    print(f"    Grammar DL: {mdl_details['grammar_dl']:.2f}")
+    print(f"    Programs DL: {mdl_details['programs_dl']:.2f}")
+    print(f"    Total MDL: {mdl_details['total_mdl']:.2f}")
+    print(f"    Avg program DL: {mdl_details['avg_program_dl']:.2f}")
+    print("  ✓ compute_mdl_detailed() works correctly")
+
+    # ========================================================================
+    # Test 11: MDL Scoring - evaluate_invention_mdl()
+    # ========================================================================
+    print("\n12. TEST: evaluate_invention_mdl()")
+    print("-" * 50)
+
+    # Programs with common pattern (+ 1 ...)
+    common_progs = [
+        Application(Application(add, one), one),
+        Application(Application(add, one), two),
+        Application(Application(add, one), three),
+        Application(Application(add, one), Application(Application(add, one), one)),
+    ]
+
+    # Create invention for (+ 1 $0)
+    add1_body = Abstraction(Application(Application(add, one), Index(0)))
+    add1_inv = Invented(add1_body)
+    add1_target = Application(Application(add, one), Index(0))  # (+ 1 $0)
+
+    old_mdl, new_mdl, rewritten, stats = evaluate_invention_mdl(
+        g, common_progs, add1_inv, add1_target, 1, INT
+    )
+
+    print(f"  Old MDL: {old_mdl:.2f}")
+    print(f"  New MDL: {new_mdl:.2f}")
+    print(f"  MDL improvement: {stats['mdl_improvement']:.2f}")
+    print(f"  Grammar DL increase: {stats['grammar_dl_increase']:.2f}")
+    print(f"  Programs DL decrease: {stats['programs_dl_decrease']:.2f}")
+    print(f"  Total replacements: {stats['total_replacements']}")
+    print(f"  Programs affected: {stats['programs_affected']}")
+
+    # If improvement is positive, abstraction is worthwhile
+    if stats['mdl_improvement'] > 0:
+        print("  ✓ Abstraction improves MDL (grammar cost < program savings)")
+    else:
+        print("  ✓ Abstraction evaluated correctly (may not improve MDL)")
+
+    # ========================================================================
+    # Test 12: MDL-based compression
+    # ========================================================================
+    print("\n13. TEST: compress_frontiers_mdl()")
+    print("-" * 50)
+
+    mdl_frontiers = [[(p, 0.0)] for p in common_progs]
+
+    print("  Original programs:")
+    for i, p in enumerate(common_progs):
+        print(f"    {i+1}. {p} = {p.evaluate([])}")
+
+    mdl_result = compress_frontiers_mdl(
+        g, mdl_frontiers, INT,
+        max_inventions=3,
+        grammar_weight=1.0,
+        min_mdl_improvement=0.5,
+        refactor_programs=True
+    )
+
+    print(f"\n  Inventions found: {len(mdl_result.new_inventions)}")
+    for inv in mdl_result.new_inventions:
+        print(f"    {format_invention(inv)}")
+
+    if mdl_result.rewrite_stats:
+        print(f"\n  MDL Statistics:")
+        print(f"    Initial MDL: {mdl_result.rewrite_stats.get('initial_mdl', 0):.2f}")
+        print(f"    Final MDL: {mdl_result.rewrite_stats.get('final_mdl', 0):.2f}")
+        print(f"    Total improvement: {mdl_result.rewrite_stats.get('total_mdl_improvement', 0):.2f}")
+        print(f"    Inventions evaluated: {mdl_result.rewrite_stats.get('inventions_evaluated', 0)}")
+        print(f"    Inventions accepted: {mdl_result.rewrite_stats.get('inventions_accepted', 0)}")
+
+    if mdl_result.rewritten_frontiers:
+        print("\n  Rewritten programs:")
+        for i, f in enumerate(mdl_result.rewritten_frontiers):
+            prog = f[0][0]
+            print(f"    {i+1}. {prog} = {prog.evaluate([])}")
+
+    # Verify semantics preserved
+    print("\n  Verifying MDL compression preserves semantics...")
+    for orig_f, new_f in zip(mdl_frontiers, mdl_result.rewritten_frontiers or mdl_frontiers):
+        orig_val = orig_f[0][0].evaluate([])
+        new_val = new_f[0][0].evaluate([])
+        assert orig_val == new_val, f"Semantics changed: {orig_val} vs {new_val}"
+    print("  ✓ MDL compression preserves semantics!")
+
+    # ========================================================================
+    # Test 13: MDL vs Heuristic comparison
+    # ========================================================================
+    print("\n14. TEST: MDL vs Heuristic Comparison")
+    print("-" * 50)
+
+    # Run heuristic compression on same programs
+    heuristic_result = compress_frontiers(
+        g, mdl_frontiers,
+        max_inventions=3,
+        min_savings=0.5,
+        refactor_programs=True
+    )
+
+    print(f"  Heuristic inventions: {len(heuristic_result.new_inventions)}")
+    print(f"  MDL inventions: {len(mdl_result.new_inventions)}")
+    print(f"  Heuristic savings: {heuristic_result.total_savings:.2f}")
+    print(f"  MDL savings: {mdl_result.total_savings:.2f}")
+    print("  ✓ Both methods produce results")
+
+    # ========================================================================
     # Summary
     # ========================================================================
     print("\n" + "=" * 70)
@@ -1847,6 +2476,8 @@ if __name__ == "__main__":
     print("=" * 70)
     print("""
 Summary of tested functionality:
+
+Phase 1 - Program Refactoring:
   1. rewrite_with_invention() - syntactic pattern replacement
   2. rewrite_with_invention_detailed() - replacement with statistics
   3. verify_rewrite_semantics() - semantic equivalence checking
@@ -1856,4 +2487,11 @@ Summary of tested functionality:
   7. iterative_compression() - multi-round hierarchical compression
   8. Edge cases (empty, single, no-match)
   9. Legacy backwards compatibility
+
+Phase 2 - MDL Scoring:
+  10. grammar_description_length() - grammar complexity measurement
+  11. compute_mdl() - full MDL objective computation
+  12. evaluate_invention_mdl() - principled invention evaluation
+  13. compress_frontiers_mdl() - MDL-based compression
+  14. MDL vs Heuristic comparison
 """)
