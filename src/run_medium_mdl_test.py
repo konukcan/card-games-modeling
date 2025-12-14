@@ -316,14 +316,18 @@ class MediumRunDreamCoder:
             comparison.heuristic_savings = heuristic_result.total_savings
 
             # 2. MDL compression
+            # Using min_mdl_improvement=0.0 means we accept ANY positive improvement
+            # (which is theoretically correct - accept anything that reduces total MDL)
+            # Using grammar_weight=0.5 to be less conservative about grammar expansion
+            # (our global normalization is harsher than original DreamCoder's per-type normalization)
             m_start = time.time()
             mdl_result = compress_frontiers_mdl(
                 self.grammar,
                 all_frontiers,
                 request_type=arrow(HAND, BOOL),
                 max_inventions=self.max_inventions_per_iteration,
-                grammar_weight=1.0,
-                min_mdl_improvement=0.5,
+                grammar_weight=0.5,  # Lower penalty for grammar complexity
+                min_mdl_improvement=0.0,  # Accept any positive improvement
                 refactor_programs=True
             )
             comparison.mdl_time = time.time() - m_start
@@ -337,6 +341,17 @@ class MediumRunDreamCoder:
                     'inventions_evaluated': mdl_result.rewrite_stats.get('inventions_evaluated', 0),
                     'inventions_accepted': mdl_result.rewrite_stats.get('inventions_accepted', 0)
                 }
+
+                # Log candidate diagnostics to understand MDL scoring
+                all_candidates = mdl_result.rewrite_stats.get('all_candidates', [])
+                if all_candidates:
+                    self.log(f"  MDL Candidate Analysis ({len(all_candidates)} candidates):", 1)
+                    # Sort by improvement to see best candidates
+                    sorted_candidates = sorted(all_candidates, key=lambda x: x['improvement'], reverse=True)
+                    for i, cand in enumerate(sorted_candidates[:5]):  # Top 5
+                        self.log(f"    #{i+1}: improvement={cand['improvement']:.2f}, "
+                                f"heuristic={cand['heuristic_savings']:.2f}, "
+                                f"count={cand['count']}, target={cand['target'][:50]}...", 1)
 
             self.compression_comparisons.append(comparison)
 

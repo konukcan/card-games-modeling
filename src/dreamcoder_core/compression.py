@@ -1455,7 +1455,7 @@ def compress_frontiers_mdl(
     request_type: Type,
     max_inventions: int = 5,
     grammar_weight: float = 1.0,
-    min_mdl_improvement: float = 1.0,
+    min_mdl_improvement: float = 0.0,  # Accept any positive improvement (theoretically correct)
     refactor_programs: bool = True
 ) -> CompressionResult:
     """
@@ -1569,6 +1569,7 @@ def compress_frontiers_mdl(
         best_improvement = min_mdl_improvement
         best_rewritten = None
         best_stats = None
+        all_candidates_evaluated = []  # Track all candidates for logging
 
         for occ in common:
             # Create invention
@@ -1595,11 +1596,27 @@ def compress_frontiers_mdl(
 
             improvement = old_mdl - new_mdl
 
+            # Track all candidates for diagnostics
+            all_candidates_evaluated.append({
+                'invention': str(invention),
+                'target': str(occ.subtree),
+                'count': occ.count,
+                'old_mdl': old_mdl,
+                'new_mdl': new_mdl,
+                'improvement': improvement,
+                'heuristic_savings': occ.savings
+            })
+
             if improvement > best_improvement:
                 best_candidate = (invention, n_args, occ.subtree, improvement)
                 best_improvement = improvement
                 best_rewritten = rewritten
                 best_stats = stats
+
+        # Store all candidates in stats for diagnostics
+        if 'all_candidates' not in mdl_stats:
+            mdl_stats['all_candidates'] = []
+        mdl_stats['all_candidates'].extend(all_candidates_evaluated)
 
         # If no good candidate found, we're done
         if best_candidate is None:

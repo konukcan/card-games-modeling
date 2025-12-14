@@ -385,6 +385,18 @@ class Grammar:
                 inst_type = ctx.instantiate(prod.tp)
                 # Unify with target type directly
                 ctx.unify(inst_type, target_type)
+
+                # TYPE-INDEXED NORMALIZATION:
+                # Get all productions that could produce target_type
+                # and normalize among them (not globally)
+                competitors = self.candidates_for_type(target_type, ctx, env, normalize=True)
+
+                # Find the normalized probability for this specific production
+                for comp_prod, _, normalized_lp in competitors:
+                    if comp_prod.program == program:
+                        return normalized_lp
+
+                # Fallback if not found (shouldn't happen)
                 return prod.log_probability
             except UnificationError:
                 return float('-inf')
