@@ -87,6 +87,66 @@ suit = card.suit
 
 ---
 
+### 3. Multiprocessing Pickle Failure on Program Objects
+
+**Severity**: CRITICAL
+**Status**: FIXED (December 2025)
+**Location**: `experiments/run_factorial_experiment.py` lines 215-230, 743-759
+
+**Symptoms:**
+- Experiments show 0 tasks solved despite workers finding solutions
+- Tasks that find solutions show "0 programs enumerated, 0.0s"
+- Tasks that DON'T find solutions show normal program counts
+- `MaybeEncodingError` in logs (at DEBUG level, easy to miss)
+
+**Root Cause:**
+Workers were returning `Program` objects through `ProcessPoolExecutor`, but `Program` objects contain `Primitive.value` fields which are lambda functions. Lambda functions cannot be pickled.
+
+```python
+# BROKEN CODE in worker:
+entries_data.append({
+    'program': entry.program,  # Program contains lambdas - CAN'T PICKLE!
+    'program_str': str(entry.program),
+    ...
+})
+```
+
+When a worker found a solution, the return value contained the unpicklable Program object, causing:
+```
+MaybeEncodingError: "Can't get local object 'make_direct_queries.<locals>.<lambda>'"
+```
+
+The exception was caught at DEBUG level, so the result appeared as 0 programs, 0 seconds (failed return masquerading as empty result).
+
+**Why Solutions Appeared to Fail But Non-Solutions Succeeded:**
+- Workers that FOUND solutions tried to return Program objects → pickle failed → result lost
+- Workers that DIDN'T find solutions returned empty frontiers → no Program objects → success
+
+**Fix:**
+1. Worker returns `program_str` (string) instead of `program` (object):
+```python
+entries_data.append({
+    'program_str': str(entry.program),  # STRING only!
+    # 'program': entry.program,  # REMOVED
+    ...
+})
+```
+
+2. Receiving code parses the string back to Program:
+```python
+from dreamcoder_core.program import parse_program
+primitives_dict = {str(p): p for p in self.grammar.primitives()}
+program = parse_program(entry_data['program_str'], primitives_dict)
+```
+
+**Lesson Learned:**
+- Never pass objects containing lambdas through multiprocessing
+- Test multiprocessing paths with actual solutions, not just empty results
+- Log errors at INFO level for multiprocessing failures, not DEBUG
+- When "successful" tasks show 0 programs while "failed" tasks show normal counts, suspect return path failures
+
+---
+
 ## Architecture Decisions
 
 ### Cython Implementation Status
