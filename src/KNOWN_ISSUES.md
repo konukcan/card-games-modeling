@@ -147,6 +147,65 @@ program = parse_program(entry_data['program_str'], primitives_dict)
 
 ---
 
+### 4. Cost-Banding Redundant Enumeration Bug
+
+**Severity**: HIGH
+**Status**: FIXED (December 2025)
+**Location**: `experiments/run_factorial_experiment.py` lines 152-210 (now removed)
+
+**Symptoms:**
+- Enumeration running 5-6x slower than expected (~130 prog/s instead of ~700 prog/s)
+- Tasks taking 5-10 minutes instead of 30-60 seconds
+- Identical tasks solved, just much slower
+
+**Root Cause:**
+The "cost-banding" implementation created a NEW `TopDownEnumerator` for each cost band:
+
+```python
+# BROKEN CODE:
+cost_bound = 15.0
+while cost_bound <= 50.0 and not solution_found:
+    # BUG: New enumerator resets the `seen` set!
+    enumerator = TopDownEnumerator(grammar, ...)
+    for program, log_prob in enumerator.enumerate(max_cost=cost_bound):
+        # process...
+    cost_bound += 5.0  # 15 → 20 → 25 → 30 → 35 → 40 → 45 → 50
+```
+
+Each `TopDownEnumerator` has its own `seen: Set[str] = set()`. When cost_bound increases from 15 → 20, a NEW enumerator is created and **re-enumerates all programs with cost ≤ 15 again**.
+
+With 8 cost bands, low-cost programs were enumerated up to **8 times**. This turned O(n) into O(8n).
+
+**Why Cost-Banding Was Wrong:**
+`TopDownEnumerator` already implements **best-first search** using a priority queue sorted by cost. Low-cost programs are naturally enumerated first. Cost-banding is completely redundant - the priority queue already guarantees this ordering!
+
+**Impact:**
+- Before fix: 131 programs/second
+- After fix: 789 programs/second
+- **6x speedup** from removing redundant work
+
+**Fix:**
+Use a single enumeration pass instead of multiple cost bands:
+
+```python
+# FIXED CODE:
+enumerator = TopDownEnumerator(grammar, max_depth=max_depth, max_programs=budget)
+
+for program, log_prob in enumerator.enumerate(
+    request_type,
+    max_cost=50.0,  # Single high bound - priority queue handles ordering
+    timeout_seconds=timeout
+):
+    # process...
+```
+
+**Lesson Learned:**
+- Understand the algorithm before adding "optimizations" - `TopDownEnumerator` already implements best-first search
+- Always benchmark before and after changes to catch performance regressions
+- A 6x slowdown was masked by increasing timeouts from 30s to 300s, making the bug harder to notice
+
+---
+
 ## Architecture Decisions
 
 ### Cython Implementation Status

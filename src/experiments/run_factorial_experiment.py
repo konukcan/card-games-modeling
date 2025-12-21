@@ -149,65 +149,50 @@ def _enumerate_task_worker(args: Dict) -> Dict:
     programs_enumerated = 0
     solution_found = False
 
-    # COST-BANDING: Iterate through progressively higher cost bounds
-    # This ensures we explore low-cost (recognition-favored) programs first
-    initial_cost = 15.0
-    cost_increment = 5.0
-    max_cost = 50.0
+    # SINGLE-PASS ENUMERATION: TopDownEnumerator already implements best-first search
+    # using a priority queue sorted by cost. Low-cost (high-probability) programs are
+    # naturally enumerated first. No need for cost-banding which was causing massive
+    # redundant work by re-enumerating low-cost programs multiple times.
+    # See KNOWN_ISSUES.md for details on the cost-banding bug.
 
     try:
-        cost_bound = initial_cost
-        while cost_bound <= max_cost and not solution_found:
-            # Check timeout
-            elapsed = time.time() - task_start
-            if elapsed > timeout:
-                break
+        # Create single enumerator for the entire search
+        enumerator = TopDownEnumerator(
+            grammar,
+            max_depth=max_depth,
+            max_programs=budget
+        )
 
-            remaining_timeout = timeout - elapsed
-            remaining_budget = budget - programs_enumerated
+        for program, log_prob in enumerator.enumerate(
+            request_type,
+            max_cost=50.0,  # Single high bound - priority queue handles ordering
+            timeout_seconds=timeout
+        ):
+            programs_enumerated += 1
 
-            if remaining_budget <= 0:
-                break
+            # Check if program solves the task
+            correct = 0
+            for hand, expected in examples:
+                result_val = eval_program_on_hand(program, hand)
+                if result_val == expected:
+                    correct += 1
 
-            # Create enumerator for this cost band
-            enumerator = TopDownEnumerator(
-                grammar,
-                max_depth=max_depth,
-                max_programs=remaining_budget
-            )
-
-            for program, log_prob in enumerator.enumerate(
-                request_type,
-                max_cost=cost_bound,
-                timeout_seconds=remaining_timeout
-            ):
-                programs_enumerated += 1
-
-                # Check if program solves the task
-                correct = 0
-                for hand, expected in examples:
-                    result_val = eval_program_on_hand(program, hand)
-                    if result_val == expected:
-                        correct += 1
-
-                if correct == len(examples):
-                    # Verify on holdout
-                    passed, accuracy = verify_on_holdout(program, holdout)
-                    if passed:
-                        enum_result = EnumerationResult(
-                            program=program,
-                            log_probability=log_prob,
-                            log_likelihood=0.0,
-                            description_length=-log_prob / 0.693,
-                            programs_enumerated=programs_enumerated,
-                            partial_programs_explored=enumerator.partial_programs_explored,
-                            time_seconds=time.time() - task_start
-                        )
-                        frontier.add(enum_result)
-                        solution_found = True
-                        break
-
-            cost_bound += cost_increment
+            if correct == len(examples):
+                # Verify on holdout
+                passed, accuracy = verify_on_holdout(program, holdout)
+                if passed:
+                    enum_result = EnumerationResult(
+                        program=program,
+                        log_probability=log_prob,
+                        log_likelihood=0.0,
+                        description_length=-log_prob / 0.693,
+                        programs_enumerated=programs_enumerated,
+                        partial_programs_explored=enumerator.partial_programs_explored,
+                        time_seconds=time.time() - task_start
+                    )
+                    frontier.add(enum_result)
+                    solution_found = True
+                    break
 
     except Exception as e:
         pass  # Silent failure, will return empty frontier
@@ -269,22 +254,22 @@ class ExperimentConfig:
     run_id: int = 1
 
     # Progressive enumeration budget (increases per iteration)
-    # Increased to match successful overnight runs (200k → 500k)
-    # Iteration 1: 200k, Iteration 2: 275k, Iteration 3: 350k, Iteration 4: 425k, Iteration 5: 500k
-    base_enumeration_budget: int = 200_000
-    budget_increment_per_iteration: int = 75_000
-    max_enumeration_budget: int = 500_000
+    # Restored to efficient values after fixing cost-banding bug
+    # Iteration 1: 50k, Iteration 2: 65k, Iteration 3: 80k, Iteration 4: 95k, Iteration 5: 100k
+    base_enumeration_budget: int = 50_000
+    budget_increment_per_iteration: int = 15_000
+    max_enumeration_budget: int = 100_000
 
     # Progressive depth limit (same as before, proven adequate)
-    base_max_depth: int = 7
+    base_max_depth: int = 6
     depth_increment_per_iteration: int = 1
-    max_depth_limit: int = 11
+    max_depth_limit: int = 10
 
-    # Timeouts (per task) - dramatically increased for proper enumeration
-    # At ~42 programs/sec, 300s = ~12,600 programs, 600s = ~25,200 programs
-    base_timeout: float = 300.0  # 5 minutes per task
-    timeout_increment: float = 60.0
-    max_timeout: float = 600.0  # 10 minutes per task
+    # Timeouts (per task) - restored to efficient values after fixing cost-banding bug
+    # With single-pass enumeration, ~500+ programs/sec expected
+    base_timeout: float = 45.0  # 45 seconds per task
+    timeout_increment: float = 15.0
+    max_timeout: float = 120.0  # 2 minutes per task max
 
     # Compression
     use_compression: bool = True
