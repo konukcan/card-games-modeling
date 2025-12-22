@@ -37,7 +37,7 @@ import torch
 from dreamcoder_core.type_system import arrow, HAND, BOOL
 from dreamcoder_core.program import Program, Primitive, Invented, parse_program
 from dreamcoder_core.grammar import Grammar
-from dreamcoder_core.enumeration import enumerate_simple
+from dreamcoder_core.enumeration import enumerate_simple, TopDownEnumerator
 
 # Use Set Transformer recognition model
 from dreamcoder_core.set_transformer_recognition import SetTransformerRecognitionModel
@@ -259,14 +259,17 @@ def create_tasks_from_catalogue(
 
 def enumerate_task(task_data, grammar_productions, max_depth, max_programs, timeout):
     """
-    Enumerate programs for a single task.
+    Enumerate programs for a single task using MEMOIZED enumeration.
     This runs in a separate process (potentially with PyPy).
+
+    Uses TopDownEnumerator.enumerate_memoized() for 1000x+ speedup over
+    the legacy enumerate_simple() approach.
     """
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
 
     from dreamcoder_core.type_system import arrow, HAND, BOOL
-    from dreamcoder_core.enumeration import enumerate_simple
+    from dreamcoder_core.enumeration import TopDownEnumerator
     from dreamcoder_core.lean_primitives import build_lean_grammar
     from rules.cards import Card, Suit, Rank
 
@@ -283,17 +286,27 @@ def enumerate_task(task_data, grammar_productions, max_depth, max_programs, time
         hand = [Card(Suit[c['suit']], Rank[c['rank']]) for c in hand_data]
         examples.append((hand, result))
 
-    # Enumerate
+    # Enumerate using MEMOIZED approach (1000x+ speedup)
     programs_found = []
     programs_enumerated = 0
     start_time = time.time()
 
-    for program, log_prob in enumerate_simple(grammar, request_type, max_depth=max_depth):
+    # Create enumerator with memoization
+    enumerator = TopDownEnumerator(
+        grammar=grammar,
+        max_depth=max_depth,
+        max_programs=max_programs
+    )
+
+    for program, log_prob in enumerator.enumerate_memoized(
+        request_type,
+        max_cost=50.0,
+        timeout_seconds=timeout,
+        depth_limit=max_depth
+    ):
         programs_enumerated += 1
 
         if programs_enumerated > max_programs:
-            break
-        if time.time() - start_time > timeout:
             break
 
         # Check if program solves all examples
@@ -318,7 +331,8 @@ def enumerate_task(task_data, grammar_productions, max_depth, max_programs, time
         'task_name': task_data['name'],
         'programs_found': programs_found,
         'programs_enumerated': programs_enumerated,
-        'time_elapsed': time.time() - start_time
+        'time_elapsed': time.time() - start_time,
+        'memo_stats': enumerator.get_memo_stats() if hasattr(enumerator, 'get_memo_stats') else None
     }
 
 
@@ -336,17 +350,32 @@ def serialize_task(task) -> Dict:
 
 
 def enumerate_task_sequential(task, grammar, max_depth, max_programs, timeout):
-    """Sequential enumeration for a task."""
+    """
+    Sequential enumeration for a task using MEMOIZED enumeration.
+
+    Uses TopDownEnumerator.enumerate_memoized() for 1000x+ speedup over
+    the legacy enumerate_simple() approach.
+    """
     programs_found = []
     programs_enumerated = 0
     start_time = time.time()
 
-    for program, log_prob in enumerate_simple(grammar, task.request_type, max_depth=max_depth):
+    # Create enumerator with memoization
+    enumerator = TopDownEnumerator(
+        grammar=grammar,
+        max_depth=max_depth,
+        max_programs=max_programs
+    )
+
+    for program, log_prob in enumerator.enumerate_memoized(
+        task.request_type,
+        max_cost=50.0,
+        timeout_seconds=timeout,
+        depth_limit=max_depth
+    ):
         programs_enumerated += 1
 
         if programs_enumerated > max_programs:
-            break
-        if time.time() - start_time > timeout:
             break
 
         try:
@@ -370,7 +399,8 @@ def enumerate_task_sequential(task, grammar, max_depth, max_programs, timeout):
         'task_name': task.name,
         'programs_found': programs_found,
         'programs_enumerated': programs_enumerated,
-        'time_elapsed': time.time() - start_time
+        'time_elapsed': time.time() - start_time,
+        'memo_stats': enumerator.get_memo_stats()
     }
 
 
