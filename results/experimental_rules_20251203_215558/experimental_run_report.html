@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Experimental Rules DreamCoder Run Report</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card h3 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.9; }
+        .stat-card .value { font-size: 36px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tr:hover { background: #f5f5f5; }
+        .program { font-family: 'SF Mono', Monaco, monospace; background: #f0f0f0; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
+        .solved { color: #28a745; }
+        .unsolved { color: #dc3545; }
+        .warning-box { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .warning-box h3 { color: #856404; margin-top: 0; }
+        .spurious { color: #6c757d; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Experimental Rules DreamCoder Run</h1>
+    <p>Run directory: <code>/Users/cankonuk/Documents/card-games-modeling/results/experimental_rules_20251203_215558</code></p>
+    
+    <div class="warning-box">
+        <h3>Known Issue: Unbalanced Sampling</h3>
+        <p>This run used <strong>random sampling</strong> which produced extreme class imbalance for many rules. 
+        Trivial solutions like <code>(lambda true)</code> and <code>(lambda false)</code> passed holdout verification 
+        because holdout examples had the same skewed distribution.</p>
+        <p>The fix (balanced sampling) has been implemented for future runs.</p>
+    </div>
+    
+    <div class="summary">
+        <div class="stat-card">
+            <h3>Tasks Solved</h3>
+            <div class="value">11/57</div>
+        </div>
+        <div class="stat-card warning">
+            <h3>Trivial Solutions</h3>
+            <div class="value">5</div>
+        </div>
+        <div class="stat-card">
+            <h3>Grammar Size</h3>
+            <div class="value">79</div>
+        </div>
+        <div class="stat-card">
+            <h3>Phases Completed</h3>
+            <div class="value">3</div>
+        </div>
+    </div>
+    
+    <h2>Solved Tasks</h2>
+    <table>
+        <tr>
+            <th>Task</th>
+            <th>Program</th>
+            <th>Log Probability</th>
+            <th>Status</th>
+        </tr>
+
+        <tr>
+            <td>Adj_same_rank_or_suit</td>
+            <td><span class="program">(λ lt (n_unique_ranks $0) (count_suit $0 HEARTS))</span></td>
+            <td>-25.32</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+        <tr>
+            <td>At_most_three_suits</td>
+            <td><span class="program">(λ neq 4 (n_unique_suits $0))</span></td>
+            <td>-16.88</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+        <tr>
+            <td>Even_opens_next_closes</td>
+            <td><span class="program">(λ false)</span></td>
+            <td>-4.22</td>
+            <td class="warning">TRIVIAL</td>
+        </tr>
+    
+        <tr>
+            <td>Exactly_one_club</td>
+            <td><span class="program">(λ eq 1 (count_suit $0 CLUBS))</span></td>
+            <td>-21.10</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+        <tr>
+            <td>Exactly_two_suits</td>
+            <td><span class="program">(λ eq 2 (n_unique_suits $0))</span></td>
+            <td>-16.88</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+        <tr>
+            <td>Halves_AP_len3_any_equal</td>
+            <td><span class="program">(λ true)</span></td>
+            <td>-4.22</td>
+            <td class="warning">TRIVIAL</td>
+        </tr>
+    
+        <tr>
+            <td>Has_pair_ranks</td>
+            <td><span class="program">(λ neq 5 (n_unique_ranks $0))</span></td>
+            <td>-16.88</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+        <tr>
+            <td>Odd_opens_next_closes</td>
+            <td><span class="program">(λ false)</span></td>
+            <td>-4.22</td>
+            <td class="warning">TRIVIAL</td>
+        </tr>
+    
+        <tr>
+            <td>Shift2_plus3</td>
+            <td><span class="program">(λ false)</span></td>
+            <td>-4.22</td>
+            <td class="warning">TRIVIAL</td>
+        </tr>
+    
+        <tr>
+            <td>Shift_half_plus_two</td>
+            <td><span class="program">(λ false)</span></td>
+            <td>-4.22</td>
+            <td class="warning">TRIVIAL</td>
+        </tr>
+    
+        <tr>
+            <td>Uniform_color</td>
+            <td><span class="program">(λ all_same_color $0)</span></td>
+            <td>-8.44</td>
+            <td class="solved">Valid</td>
+        </tr>
+    
+    </table>
+    
+    <h2>Spurious Rejections (by count)</h2>
+    <table>
+        <tr>
+            <th>Task</th>
+            <th>Rejected Programs Count</th>
+        </tr>
+
+        <tr>
+            <td>Halves_copy_ranks</td>
+            <td class="spurious">180</td>
+        </tr>
+    
+        <tr>
+            <td>Adj_same_rank_or_suit</td>
+            <td class="spurious">170</td>
+        </tr>
+    
+        <tr>
+            <td>Step2_back_map_M2</td>
+            <td class="spurious">120</td>
+        </tr>
+    
+        <tr>
+            <td>Even_opens_next_closes</td>
+            <td class="spurious">38</td>
+        </tr>
+    
+        <tr>
+            <td>Odd_opens_next_closes</td>
+            <td class="spurious">28</td>
+        </tr>
+    
+        <tr>
+            <td>Halves_AP_len3_any_equal</td>
+            <td class="spurious">6</td>
+        </tr>
+    
+    </table>
+    
+    <h2>Phase Timeline</h2>
+    <ul>
+<li><code>--- Phase 1, Iteration 1/5 ---</code></li>
+<li><code>--- Phase 1, Iteration 2/5 ---</code></li>
+<li><code>--- Phase 1, Iteration 3/5 ---</code></li>
+<li><code>--- Phase 1, Iteration 4/5 ---</code></li>
+<li><code>--- Phase 1, Iteration 5/5 ---</code></li>
+<li><code>--- Phase 2, Iteration 1/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 2/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 3/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 4/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 5/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 6/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 7/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 8/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 9/10 ---</code></li>
+<li><code>--- Phase 2, Iteration 10/10 ---</code></li>
+<li><code>--- Phase 3, Iteration 1/15 ---</code></li>
+<li><code>--- Phase 3, Iteration 2/15 ---</code></li>
+<li><code>--- Phase 3, Iteration 3/15 ---</code></li>
+<li><code>--- Phase 3, Iteration 4/15 ---</code></li>
+<li><code>--- Phase 3, Iteration 5/15 ---</code></li>
+
+    </ul>
+    
+    <h2>Unsolved Tasks</h2>
+    <ul>
+<li>AP_len3_anywhere_anyk</li>
+<li>AP_len3_step2_anywhere</li>
+<li>AP_len4_step2_anywhere</li>
+<li>Adj_rank_gap_le3</li>
+<li>Adj_same_or_map_M1</li>
+<li>Adj_same_or_map_M2</li>
+<li>AltColor1_palindrome</li>
+<li>AltColor2_palindrome</li>
+<li>Colors_palindrome</li>
+<li>Ends_same_altcolor1</li>
+<li>Ends_same_color</li>
+<li>Ends_same_suit</li>
+<li>Global_radial_no_dominance</li>
+<li>Half_map_samepos_M1</li>
+<li>Half_map_samepos_M2</li>
+<li>Half_or_more_same_suit</li>
+<li>Half_sum_diff_geN</li>
+<li>Half_sum_one_side_ge_2x_other</li>
+<li>Halves_AP_len2_step1_equal</li>
+<li>Halves_AP_step1_equal</li>
+<li>Halves_copy_altcolor1</li>
+<li>Halves_copy_altcolor2</li>
+<li>Halves_copy_colors</li>
+<li>Halves_copy_ranks</li>
+<li>Halves_copy_suits</li>
+<li>Halves_hearts_presence_equal</li>
+<li>Halves_radial_nonincreasing</li>
+<li>Halves_same_suit_set</li>
+<li>Halves_uniform_color_equal</li>
+<li>Halves_uniform_parity_equal</li>
+<li>Has_6_of_Diamonds</li>
+<li>Has_Ace_of_Spades</li>
+<li>Only_one_odd_rank</li>
+<li>Pos3_is_JQK</li>
+<li>Pos4_is_2_5_7</li>
+<li>Ranks_palindrome</li>
+<li>S_before_H</li>
+<li>Score_threshold_Rstar</li>
+<li>Shift_half_ge</li>
+<li>Skip2_same_rank_or_suit</li>
+<li>Sorted_by_rank</li>
+<li>Step2_back_map_M1</li>
+<li>Step2_back_map_M2</li>
+<li>Suits_palindrome</li>
+<li>Uniform_rank_parity</li>
+<li>Well_formed_brackets_by_suit</li>
+
+    </ul>
+</div>
+</body>
+</html>

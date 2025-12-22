@@ -1,0 +1,2093 @@
+{
+  "config": {
+    "recognition_type": "gru",
+    "dream_strategy": "standard",
+    "primitive_variant": "lean",
+    "run_id": 1,
+    "base_enumeration_budget": 40000,
+    "budget_increment_per_iteration": 15000,
+    "max_enumeration_budget": 85000,
+    "base_max_depth": 6,
+    "depth_increment_per_iteration": 1,
+    "max_depth_limit": 10,
+    "base_timeout": 30.0,
+    "timeout_increment": 7.5,
+    "max_timeout": 60.0,
+    "use_compression": true,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "dreams_per_iteration": 50,
+    "n_examples_per_dream": 10,
+    "recognition_hidden_dim": 64,
+    "recognition_lr": 0.001,
+    "recognition_epochs": 5,
+    "keep_top_k": 3,
+    "max_iterations": 5,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "use_easy_rules_only": true,
+    "max_tasks": null,
+    "results_dir": "results_factorial"
+  },
+  "start_time": "2025-12-19T19:36:43.762830",
+  "condition": "gru_standard_lean",
+  "iterations": [
+    {
+      "iteration": 1,
+      "enumeration_budget": 40000,
+      "max_depth": 6,
+      "timeout_per_task": 30.0,
+      "tasks_solved": 0,
+      "total_tasks": 56,
+      "programs_enumerated": 85993,
+      "enumeration_time": 311.3478398323059,
+      "task_details": {
+        "Uniform_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.110162019729614,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.1255362033844,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.07561683654785,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.103615045547485,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.122509956359863,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_two_suits": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.10614776611328,
+          "solution": null,
+          "solution_size": null
+        },
+        "At_most_three_suits": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.083847045898438,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_or_more_same_suit": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.14573073387146,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_one_club": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.10801601409912,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos3_is_JQK": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.11850094795227,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos4_is_2_5_7": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.132648229599,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_Ace_of_Spades": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.11447310447693,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_anywhere_anyk": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.10445499420166,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.12353277206421,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len4_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.093645095825195,
+          "solution": null,
+          "solution_size": null
+        },
+        "Score_threshold_Rstar": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.09090518951416,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_6_of_Diamonds": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.3675799369812,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_diff_geN": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.09444522857666,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_one_side_ge_2x_other": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.09282112121582,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_color_equal": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.124578714370728,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_parity_equal": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.122259855270386,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 2542,
+          "time_seconds": 30.10371708869934,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len3_any_equal": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.074513912200928,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len2_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.06262707710266,
+          "solution": null,
+          "solution_size": null
+        },
+        "Well_formed_brackets_by_suit": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.090900897979736,
+          "solution": null,
+          "solution_size": null
+        },
+        "Odd_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 30.970832109451294,
+          "solution": null,
+          "solution_size": null
+        },
+        "Even_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.121110677719116,
+          "solution": null,
+          "solution_size": null
+        },
+        "Suits_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.013200044631958,
+          "solution": null,
+          "solution_size": null
+        },
+        "Colors_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.086692810058594,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ranks_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.075249910354614,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor1_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.075416803359985,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor2_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1778,
+          "time_seconds": 31.049715995788574,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_hearts_presence_equal": {
+          "solved": false,
+          "programs_enumerated": 1798,
+          "time_seconds": 34.54297399520874,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M2": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 179.46834778785706,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_ranks": {
+          "solved": false,
+          "programs_enumerated": 113,
+          "time_seconds": 182.05907273292542,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_suits": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 182.15231895446777,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 182.04029989242554,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_ge": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 181.82579517364502,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_colors": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 182.132737159729,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_same_suit_set": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 181.9175579547882,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M1": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 181.11577105522156,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 182.18393087387085,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor2": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 182.01743626594543,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_plus_two": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 181.88511204719543,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M2": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.350057125091553,
+          "solution": null,
+          "solution_size": null
+        },
+        "Only_one_odd_rank": {
+          "solved": false,
+          "programs_enumerated": 1678,
+          "time_seconds": 30.354129314422607,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M1": {
+          "solved": false,
+          "programs_enumerated": 1678,
+          "time_seconds": 30.36405086517334,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_radial_nonincreasing": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.368097066879272,
+          "solution": null,
+          "solution_size": null
+        },
+        "Skip2_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 1678,
+          "time_seconds": 30.3745539188385,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 1678,
+          "time_seconds": 30.383872985839844,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_rank_parity": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.39375877380371,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.41535472869873,
+          "solution": null,
+          "solution_size": null
+        },
+        "Global_radial_no_dominance": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.40360999107361,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_rank_gap_le3": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 30.613404989242554,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M2": {
+          "solved": false,
+          "programs_enumerated": 1678,
+          "time_seconds": 30.617372274398804,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 50,
+      "iteration_time": 1385.7093160152435,
+      "timestamp": "2025-12-19T19:36:43.763021"
+    },
+    {
+      "iteration": 2,
+      "enumeration_budget": 55000,
+      "max_depth": 7,
+      "timeout_per_task": 37.5,
+      "tasks_solved": 0,
+      "total_tasks": 56,
+      "programs_enumerated": 739,
+      "enumeration_time": 5946.536129951477,
+      "task_details": {
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.08198595047,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0397429466248,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_or_more_same_suit": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0641431808472,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_color": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0789902210236,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.1313059329987,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_one_club": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0403137207031,
+          "solution": null,
+          "solution_size": null
+        },
+        "At_most_three_suits": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0484671592712,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos3_is_JQK": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.0305290222168,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.1640532016754,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_two_suits": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.1267340183258,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 4,
+          "time_seconds": 1069.1572170257568,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_Ace_of_Spades": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.978367805481,
+          "solution": null,
+          "solution_size": null
+        },
+        "Score_threshold_Rstar": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9560461044312,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len4_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9560310840607,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_6_of_Diamonds": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9906051158905,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_diff_geN": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.958219051361,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_parity_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.926680803299,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_color_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9297966957092,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos4_is_2_5_7": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1033.0112359523773,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_one_side_ge_2x_other": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.955080986023,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_anywhere_anyk": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9763450622559,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1032.9723689556122,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor1_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.955029964447,
+          "solution": null,
+          "solution_size": null
+        },
+        "Suits_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9745149612427,
+          "solution": null,
+          "solution_size": null
+        },
+        "Odd_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.968859910965,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ranks_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9628660678864,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len3_any_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9889011383057,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_hearts_presence_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9902060031891,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9941718578339,
+          "solution": null,
+          "solution_size": null
+        },
+        "Well_formed_brackets_by_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.991142988205,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len2_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.99369597435,
+          "solution": null,
+          "solution_size": null
+        },
+        "Colors_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 980.9976208209991,
+          "solution": null,
+          "solution_size": null
+        },
+        "Even_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 981.0099458694458,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 983.9838888645172,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 983.9880042076111,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 983.9665946960449,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor2_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.0107228755951,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 983.9973499774933,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.0084857940674,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_same_suit_set": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.0061099529266,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_ge": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 983.9958672523499,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_colors": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.0240981578827,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_plus_two": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.0279211997986,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 984.1466188430786,
+          "solution": null,
+          "solution_size": null
+        },
+        "Skip2_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.003937959671,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.026242017746,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.037810087204,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_rank_parity": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 993.992437839508,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0506541728973,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0339567661285,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_rank_gap_le3": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0199670791626,
+          "solution": null,
+          "solution_size": null
+        },
+        "Only_one_odd_rank": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0182249546051,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0282440185547,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 994.0389671325684,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_radial_nonincreasing": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 993.9007389545441,
+          "solution": null,
+          "solution_size": null
+        },
+        "Global_radial_no_dominance": {
+          "solved": false,
+          "programs_enumerated": 431,
+          "time_seconds": 882.0238027572632,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 50,
+      "iteration_time": 5959.835833311081,
+      "timestamp": "2025-12-19T19:59:49.484766"
+    },
+    {
+      "iteration": 3,
+      "enumeration_budget": 70000,
+      "max_depth": 8,
+      "timeout_per_task": 45.0,
+      "tasks_solved": 0,
+      "total_tasks": 56,
+      "programs_enumerated": 594,
+      "enumeration_time": 3692.0073952674866,
+      "task_details": {
+        "Uniform_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos4_is_2_5_7": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1081.0912220478058,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_two_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1087.5695099830627,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1088.1188700199127,
+          "solution": null,
+          "solution_size": null
+        },
+        "At_most_three_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1086.8811190128326,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos3_is_JQK": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1086.6718561649323,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1087.8611676692963,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1089.8707988262177,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_one_club": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1086.7203619480133,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1087.7627980709076,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_or_more_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1086.9578738212585,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1087.8289070129395,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_diff_geN": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1040.9802298545837,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_color_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1040.9766108989716,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_anywhere_anyk": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0102698802948,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len4_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0022428035736,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_Ace_of_Spades": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0194408893585,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_parity_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1040.989708185196,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0091109275818,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1040.98664188385,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_6_of_Diamonds": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0280079841614,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_one_side_ge_2x_other": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0129561424255,
+          "solution": null,
+          "solution_size": null
+        },
+        "Score_threshold_Rstar": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1041.0201811790466,
+          "solution": null,
+          "solution_size": null
+        },
+        "Odd_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.970890045166,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ranks_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.964101076126,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len3_any_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9924190044403,
+          "solution": null,
+          "solution_size": null
+        },
+        "Suits_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9822869300842,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_hearts_presence_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1048.0071749687195,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len2_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9985132217407,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor1_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9361209869385,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor2_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9785108566284,
+          "solution": null,
+          "solution_size": null
+        },
+        "Well_formed_brackets_by_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1048.001116991043,
+          "solution": null,
+          "solution_size": null
+        },
+        "Colors_palindrome": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1047.9995748996735,
+          "solution": null,
+          "solution_size": null
+        },
+        "Even_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1048.010577917099,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_plus_two": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.97087502479553,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.97818183898926,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_ge": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.97507190704346,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.9670181274414,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_colors": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 457.00016593933105,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.9881680011749,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 457.0024628639221,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 456.9922389984131,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 457.0131711959839,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 457.0256848335266,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_same_suit_set": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 457.0012848377228,
+          "solution": null,
+          "solution_size": null
+        },
+        "Global_radial_no_dominance": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.50966238975525,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.554452896118164,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M2": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.56059908866882,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M1": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.56573009490967,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_rank_gap_le3": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.56442904472351,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M2": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.568772077560425,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M1": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.57680010795593,
+          "solution": null,
+          "solution_size": null
+        },
+        "Skip2_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.57914185523987,
+          "solution": null,
+          "solution_size": null
+        },
+        "Only_one_odd_rank": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.56717395782471,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_radial_nonincreasing": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.585132122039795,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_rank_parity": {
+          "solved": false,
+          "programs_enumerated": 30,
+          "time_seconds": 45.58853101730347,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 50,
+      "iteration_time": 4770.5614721775055,
+      "timestamp": "2025-12-19T21:39:09.344815"
+    },
+    {
+      "iteration": 4,
+      "enumeration_budget": 85000,
+      "max_depth": 9,
+      "timeout_per_task": 52.5,
+      "tasks_solved": 0,
+      "total_tasks": 56,
+      "programs_enumerated": 506,
+      "enumeration_time": 5529.608403921127,
+      "task_details": {
+        "Uniform_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos4_is_2_5_7": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 948.0943310260773,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos3_is_JQK": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.0037381649017,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.098974943161,
+          "solution": null,
+          "solution_size": null
+        },
+        "At_most_three_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.0542101860046,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.1183040142059,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.1313400268555,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.1396350860596,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_or_more_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.0913589000702,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_two_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.0991771221161,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.2114639282227,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_one_club": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 950.1299631595612,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_one_side_ge_2x_other": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0314528942108,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.040097951889,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_anywhere_anyk": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0465178489685,
+          "solution": null,
+          "solution_size": null
+        },
+        "Score_threshold_Rstar": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0460290908813,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_Ace_of_Spades": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0830659866333,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_6_of_Diamonds": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0811111927032,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_color_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0552361011505,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_diff_geN": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0613529682159,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_parity_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0010502338409,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len4_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 684.0741198062897,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 683.9995651245117,
+          "solution": null,
+          "solution_size": null
+        },
+        "Odd_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0039501190186,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ranks_palindrome": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 986.9978280067444,
+          "solution": null,
+          "solution_size": null
+        },
+        "Colors_palindrome": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0053570270538,
+          "solution": null,
+          "solution_size": null
+        },
+        "Even_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0226633548737,
+          "solution": null,
+          "solution_size": null
+        },
+        "Well_formed_brackets_by_suit": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0317809581757,
+          "solution": null,
+          "solution_size": null
+        },
+        "Suits_palindrome": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.019241809845,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len3_any_equal": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0463061332703,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor2_palindrome": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0122191905975,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor1_palindrome": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0176570415497,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len2_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.0765988826752,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_hearts_presence_equal": {
+          "solved": false,
+          "programs_enumerated": 22,
+          "time_seconds": 987.1957120895386,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_same_suit_set": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.911699295044,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9353621006012,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.8861329555511,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_plus_two": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9120981693268,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9215590953827,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9253633022308,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.7788128852844,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_ge": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9110140800476,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9464321136475,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_colors": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1060.9645040035248,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 1061.0315198898315,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_radial_nonincreasing": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 944.991072177887,
+          "solution": null,
+          "solution_size": null
+        },
+        "Global_radial_no_dominance": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 944.9002950191498,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_rank_parity": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0154008865356,
+          "solution": null,
+          "solution_size": null
+        },
+        "Skip2_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.031683921814,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0458579063416,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_rank_gap_le3": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0325059890747,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0425789356232,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0393931865692,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M1": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0446982383728,
+          "solution": null,
+          "solution_size": null
+        },
+        "Only_one_odd_rank": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.0645151138306,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M2": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 945.1324632167816,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 50,
+      "iteration_time": 6198.879481077194,
+      "timestamp": "2025-12-19T22:58:39.910468"
+    },
+    {
+      "iteration": 5,
+      "enumeration_budget": 85000,
+      "max_depth": 10,
+      "timeout_per_task": 60.0,
+      "tasks_solved": 0,
+      "total_tasks": 56,
+      "programs_enumerated": 55770,
+      "enumeration_time": 1304.2358379364014,
+      "task_details": {
+        "Uniform_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_or_more_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.6218848228455,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.8503890037537,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos4_is_2_5_7": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 801.4416229724884,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.9055459499359,
+          "solution": null,
+          "solution_size": null
+        },
+        "At_most_three_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.5914289951324,
+          "solution": null,
+          "solution_size": null
+        },
+        "Pos3_is_JQK": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.5452980995178,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.7919998168945,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_two_suits": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.7358629703522,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.8745009899139,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 14,
+          "time_seconds": 810.8507378101349,
+          "solution": null,
+          "solution_size": null
+        },
+        "Exactly_one_club": {
+          "solved": false,
+          "programs_enumerated": 6,
+          "time_seconds": 808.5900778770447,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_color_equal": {
+          "solved": false,
+          "programs_enumerated": 12,
+          "time_seconds": 300.25423288345337,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_6_of_Diamonds": {
+          "solved": false,
+          "programs_enumerated": 16,
+          "time_seconds": 300.29274320602417,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len4_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.37972617149353,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_diff_geN": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.60190081596375,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.6994490623474,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_sum_one_side_ge_2x_other": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.7695906162262,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_uniform_parity_equal": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.88785314559937,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_step2_anywhere": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.9198260307312,
+          "solution": null,
+          "solution_size": null
+        },
+        "AP_len3_anywhere_anyk": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 300.95837211608887,
+          "solution": null,
+          "solution_size": null
+        },
+        "Score_threshold_Rstar": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 301.2047281265259,
+          "solution": null,
+          "solution_size": null
+        },
+        "Has_Ace_of_Spades": {
+          "solved": false,
+          "programs_enumerated": 18,
+          "time_seconds": 301.23604679107666,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_hearts_presence_equal": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.88324999809265,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len3_any_equal": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.64611101150513,
+          "solution": null,
+          "solution_size": null
+        },
+        "Odd_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.672444343566895,
+          "solution": null,
+          "solution_size": null
+        },
+        "Well_formed_brackets_by_suit": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.30775713920593,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ranks_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.99703812599182,
+          "solution": null,
+          "solution_size": null
+        },
+        "Colors_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.04617500305176,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_AP_len2_step1_equal": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.372472047805786,
+          "solution": null,
+          "solution_size": null
+        },
+        "Even_opens_next_closes": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.25714993476868,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor1_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.87640929222107,
+          "solution": null,
+          "solution_size": null
+        },
+        "AltColor2_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.93768095970154,
+          "solution": null,
+          "solution_size": null
+        },
+        "Suits_palindrome": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 63.20706510543823,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.844077825546265,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_suits": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.66518497467041,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_colors": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.061877965927124,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_plus_two": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.60607385635376,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_same_suit_set": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.0444872379303,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_ranks": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.100690841674805,
+          "solution": null,
+          "solution_size": null
+        },
+        "Shift_half_ge": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.97657108306885,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.93757510185242,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 62.1584529876709,
+          "solution": null,
+          "solution_size": null
+        },
+        "Half_map_samepos_M2": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.16944980621338,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_copy_altcolor2": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 63.19594883918762,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.540322065353394,
+          "solution": null,
+          "solution_size": null
+        },
+        "Step2_back_map_M2": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.45106291770935,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M1": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.79472589492798,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_or_map_M2": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.98042607307434,
+          "solution": null,
+          "solution_size": null
+        },
+        "Skip2_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.82560181617737,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_rank_gap_le3": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.79387593269348,
+          "solution": null,
+          "solution_size": null
+        },
+        "Uniform_rank_parity": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.78113389015198,
+          "solution": null,
+          "solution_size": null
+        },
+        "Only_one_odd_rank": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.8766188621521,
+          "solution": null,
+          "solution_size": null
+        },
+        "Halves_radial_nonincreasing": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.73996901512146,
+          "solution": null,
+          "solution_size": null
+        },
+        "Adj_same_rank_or_suit": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 61.00550317764282,
+          "solution": null,
+          "solution_size": null
+        },
+        "Global_radial_no_dominance": {
+          "solved": false,
+          "programs_enumerated": 1682,
+          "time_seconds": 60.52211093902588,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 50,
+      "iteration_time": 1307.816332101822,
+      "timestamp": "2025-12-20T00:41:58.794003"
+    }
+  ],
+  "end_time": "2025-12-20T01:03:46.616802",
+  "total_time": 19622.853972
+}

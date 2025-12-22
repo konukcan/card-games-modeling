@@ -61,7 +61,7 @@ from dreamcoder_core.program import (
     Program, Primitive, Application, Abstraction, Index, Invented
 )
 from dreamcoder_core.grammar import Grammar, Production, uniform_grammar
-from dreamcoder_core.enumeration import enumerate_simple
+# enumerate_simple removed - we now use Grammar.sample() for stochastic sampling
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
@@ -263,25 +263,16 @@ class NeuralDreamer:
         temperature: float,
         max_depth: int = 5
     ) -> Tuple[Optional[Program], float]:
-        """Sample a program from the grammar with temperature scaling."""
-        # Use enumeration to get programs, sample based on probability
-        programs = []
+        """
+        Sample a program from the grammar using direct stochastic sampling.
 
-        for prog, log_prob in enumerate_simple(self.grammar, request_type, max_depth=max_depth):
-            programs.append((prog, log_prob))
-            if len(programs) >= 500:  # Limit for efficiency
-                break
-
-        if not programs:
+        This uses Grammar.sample() which is O(depth) rather than the old
+        enumerate-then-sample approach which was O(enumeration size).
+        """
+        result = self.grammar.sample(request_type, max_depth=max_depth, temperature=temperature)
+        if result is None:
             return None, 0.0
-
-        # Apply temperature and sample
-        log_probs = torch.tensor([lp for _, lp in programs])
-        scaled = log_probs / temperature
-        probs = torch.softmax(scaled, dim=0)
-
-        idx = torch.multinomial(probs, 1).item()
-        return programs[idx]
+        return result
 
     def _generate_examples(
         self,

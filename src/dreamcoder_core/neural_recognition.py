@@ -332,6 +332,8 @@ class PrimitivePredictor(nn.Module):
 
     Takes a task encoding and outputs a vector of log-probabilities,
     one per primitive in the grammar.
+
+    Supports dynamic expansion for newly discovered inventions.
     """
 
     def __init__(self, hidden_dim: int = 64, num_primitives: int = 61):
@@ -363,6 +365,39 @@ class PrimitivePredictor(nn.Module):
         if return_logits:
             return logits
         return F.log_softmax(logits, dim=-1)
+
+    def expand_for_invention(self, init_weight: Optional[torch.Tensor] = None):
+        """
+        Add a new output neuron for a discovered invention.
+
+        This allows the model to predict probabilities for newly learned
+        abstractions discovered during compression.
+
+        Args:
+            init_weight: Optional initialization for the new neuron's weights.
+                        If None, uses Xavier uniform initialization.
+        """
+        # Get the final linear layer
+        old_out = self.predictor[-1]
+        new_num = self.num_primitives + 1
+
+        # Create new layer with one more output
+        new_out = nn.Linear(old_out.in_features, new_num)
+
+        # Copy existing weights
+        new_out.weight.data[:self.num_primitives] = old_out.weight.data
+        new_out.bias.data[:self.num_primitives] = old_out.bias.data
+
+        # Initialize new neuron
+        if init_weight is not None:
+            new_out.weight.data[-1] = init_weight
+        else:
+            nn.init.xavier_uniform_(new_out.weight.data[-1:])
+        new_out.bias.data[-1] = 0.0
+
+        # Replace the layer
+        self.predictor[-1] = new_out
+        self.num_primitives = new_num
 
 
 # ============================================================================
@@ -533,10 +568,16 @@ class NeuralRecognitionModel(nn.Module):
                 'num_primitives': len(self.primitive_names)
             }
 
-    def predict_grammar_weights(self, task) -> Grammar:
+    def predict_grammar_weights(self, task, blend_factor: float = 0.5) -> Grammar:
         """
         Given a task, predict which primitives are likely useful.
         Returns a grammar with adjusted weights.
+
+        Args:
+            task: The task to predict weights for
+            blend_factor: How much to weight neural predictions (0=prior only, 1=neural only)
+                         Default 0.5 for backward compatibility. Recommended: 0.7-0.8 for
+                         later iterations when recognition model is well-trained.
         """
         log_probs = self.predict_primitive_probs(task)
 
@@ -549,14 +590,57 @@ class NeuralRecognitionModel(nn.Module):
             prim_name = str(prod.program)
             if prim_name in self.primitive_to_idx:
                 idx = self.primitive_to_idx[prim_name]
-                # Blend original and predicted (to avoid extreme values)
-                new_lp = 0.5 * prod.log_probability + 0.5 * log_probs_np[idx]
+                # Blend original and predicted with configurable factor
+                new_lp = (1 - blend_factor) * prod.log_probability + blend_factor * log_probs_np[idx]
             else:
                 new_lp = prod.log_probability
 
             new_productions.append(Production(prod.program, prod.tp, new_lp))
 
         return Grammar(new_productions, self.grammar.log_variable).normalize_probabilities()
+
+    def predict_grammar_weights_adaptive(self, task, iteration: int, max_iterations: int) -> Grammar:
+        """
+        Predict grammar weights with adaptive blending based on training progress.
+
+        Early iterations: Conservative (30% neural, 70% prior) - recognition model is untrained
+        Late iterations: Aggressive (80% neural, 20% prior) - recognition model is trained
+
+        This follows the original DreamCoder approach where trust in the recognition
+        model increases as it receives more training signal from solved tasks.
+
+        Args:
+            task: The task to predict weights for
+            iteration: Current iteration number (1-indexed)
+            max_iterations: Maximum number of iterations
+
+        Returns:
+            Grammar with adaptively blended weights
+        """
+        # Linear schedule: 0.3 at iteration 1, 0.8 at max_iterations
+        blend_factor = 0.3 + (0.8 - 0.3) * ((iteration - 1) / max(1, max_iterations - 1))
+        return self.predict_grammar_weights(task, blend_factor=blend_factor)
+
+    def get_primitive_log_probs_dict(self, task) -> Dict[str, float]:
+        """
+        Get predicted log-probabilities as a serializable dictionary.
+
+        This is useful for passing predictions to worker processes that
+        cannot receive the full Grammar object due to pickle issues.
+
+        Args:
+            task: The task to predict weights for
+
+        Returns:
+            Dictionary mapping primitive names to predicted log-probabilities
+        """
+        log_probs = self.predict_primitive_probs(task)
+        log_probs_np = log_probs.cpu().numpy()
+
+        return {
+            name: float(log_probs_np[idx])
+            for name, idx in self.primitive_to_idx.items()
+        }
 
     def train_on_frontiers(
         self,
@@ -726,6 +810,52 @@ class NeuralRecognitionModel(nn.Module):
 
         return results
 
+    # =========================================================================
+    # INVENTION HANDLING
+    # =========================================================================
+
+    def add_invention(self, invention: Invented):
+        """
+        Add a new invention to the model's vocabulary.
+
+        This is called when compression discovers a new abstraction.
+        The model expands its output layer to predict probabilities for the
+        new invention.
+
+        Args:
+            invention: The newly discovered Invented abstraction
+        """
+        name = str(invention)
+
+        # Already have it?
+        if name in self.primitive_to_idx:
+            return
+
+        # Expand vocabulary
+        self.primitive_names.append(name)
+        self.primitive_to_idx[name] = self.num_primitives
+
+        # Expand primitive predictor
+        self.primitive_predictor.expand_for_invention()
+
+        self.num_primitives += 1
+
+    def update_grammar(self, new_grammar: Grammar):
+        """
+        Update the grammar and add any new inventions.
+
+        Args:
+            new_grammar: The updated grammar (possibly with new inventions)
+        """
+        self.grammar = new_grammar
+
+        # Add any new inventions to vocabulary
+        for prod in new_grammar.productions:
+            name = str(prod.program)
+            if name not in self.primitive_to_idx:
+                if isinstance(prod.program, Invented):
+                    self.add_invention(prod.program)
+
     def save(self, path: str):
         """Save model state with verification."""
         import os
@@ -754,8 +884,25 @@ class NeuralRecognitionModel(nn.Module):
             raise RuntimeError(f"Model save failed: file {temp_path} was not created")
 
     def load(self, path: str):
-        """Load model state."""
-        checkpoint = torch.load(path, map_location=self.device)
+        """Load model state, handling vocabulary expansion if needed."""
+        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+
+        # Get saved vocabulary info
+        saved_primitive_names = checkpoint.get('primitive_names', self.primitive_names)
+        saved_num_prims = len(saved_primitive_names)
+
+        # Resize primitive predictor if needed to match checkpoint
+        if saved_num_prims != self.num_primitives:
+            # Expand to match saved size
+            while self.num_primitives < saved_num_prims:
+                self.primitive_predictor.expand_for_invention()
+                self.num_primitives += 1
+
+        # Update vocabulary
+        self.primitive_names = saved_primitive_names
+        self.primitive_to_idx = {name: i for i, name in enumerate(self.primitive_names)}
+
+        # Load weights
         self.load_state_dict(checkpoint['model_state_dict'])
         self.training_losses = checkpoint.get('training_losses', [])
         self.epoch_history = checkpoint.get('epoch_history', [])

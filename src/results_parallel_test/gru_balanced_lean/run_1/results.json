@@ -1,0 +1,209 @@
+{
+  "config": {
+    "recognition_type": "gru",
+    "dream_strategy": "balanced",
+    "primitive_variant": "lean",
+    "run_id": 1,
+    "base_enumeration_budget": 40000,
+    "budget_increment_per_iteration": 15000,
+    "max_enumeration_budget": 85000,
+    "base_max_depth": 6,
+    "depth_increment_per_iteration": 1,
+    "max_depth_limit": 10,
+    "base_timeout": 30.0,
+    "timeout_increment": 7.5,
+    "max_timeout": 60.0,
+    "use_compression": true,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "dreams_per_iteration": 50,
+    "n_examples_per_dream": 10,
+    "recognition_hidden_dim": 64,
+    "recognition_lr": 0.001,
+    "recognition_epochs": 5,
+    "keep_top_k": 3,
+    "max_iterations": 1,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "use_easy_rules_only": true,
+    "max_tasks": null,
+    "results_dir": "results_parallel_test"
+  },
+  "start_time": "2025-12-19T17:25:15.447619",
+  "condition": "gru_balanced_lean",
+  "iterations": [
+    {
+      "iteration": 1,
+      "enumeration_budget": 40000,
+      "max_depth": 6,
+      "timeout_per_task": 30.0,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 47083,
+      "enumeration_time": 62.400447845458984,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.007390022277832031,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.006123065948486328,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.005357027053833008,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.1492018699646,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.165507793426514,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.163367986679077,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.136549949645996,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.190877199172974,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.15959882736206,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.15528392791748,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.160518169403076,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.148585081100464,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.129133224487305,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 2578,
+          "time_seconds": 30.11614489555359,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 4680,
+          "time_seconds": 30.154787063598633,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 4680,
+          "time_seconds": 30.159860134124756,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 4680,
+          "time_seconds": 30.158358812332153,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 4680,
+          "time_seconds": 30.16264009475708,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 67,
+      "recognition_loss": 4.132427978515625,
+      "recognition_train_time": 0.3790431022644043,
+      "dreams_generated": 7,
+      "iteration_time": 108.04885816574097,
+      "timestamp": "2025-12-19T17:25:15.447648"
+    }
+  ]
+}

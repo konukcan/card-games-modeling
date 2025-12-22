@@ -255,6 +255,22 @@ def make_list_slicing() -> List[Primitive]:
         lambda xs: len(xs) // 2
     ))
 
+    # First half - direct primitive (more cognitively natural than "take (half_len xs) xs")
+    # For 6-card hand: first_half → [card0, card1, card2]
+    prims.append(Primitive(
+        'first_half',
+        arrow(ListType(a), ListType(a)),
+        lambda xs: xs[:len(xs) // 2]
+    ))
+
+    # Second half - direct primitive (more cognitively natural than "drop (half_len xs) xs")
+    # For 6-card hand: second_half → [card3, card4, card5]
+    prims.append(Primitive(
+        'second_half',
+        arrow(ListType(a), ListType(a)),
+        lambda xs: xs[len(xs) // 2:]
+    ))
+
     return prims
 
 
@@ -561,7 +577,7 @@ def build_lean_primitives() -> List[Primitive]:
     prims.extend(make_constants())       # ~19 primitives
     prims.extend(make_card_accessors())  # 4 primitives
     prims.extend(make_position_ops())    # 5 primitives
-    prims.extend(make_list_slicing())    # 5 primitives (NEW - for positional rules)
+    prims.extend(make_list_slicing())    # 7 primitives (take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half)
     prims.extend(make_direct_queries())  # 9 primitives (NEW)
     prims.extend(make_aggregates())      # 3 primitives (NEW)
     prims.extend(make_comparisons())     # 6 primitives
@@ -730,6 +746,36 @@ if __name__ == "__main__":
 
     min_rank = prim_dict['min_rank'].value
     print(f"  min_rank hand: {min_rank(test_hand)}")  # 10
+
+    # Test halves primitives
+    print("\nHalves Primitives Tests:")
+
+    test_hand_6 = [
+        Card(Suit.HEARTS, Rank.ACE),
+        Card(Suit.HEARTS, Rank.KING),
+        Card(Suit.HEARTS, Rank.QUEEN),
+        Card(Suit.SPADES, Rank.JACK),
+        Card(Suit.SPADES, Rank.TEN),
+        Card(Suit.SPADES, Rank.NINE),
+    ]
+    print(f"  Test hand (6 cards): {[f'{c.rank.name} of {c.suit.name}' for c in test_hand_6]}")
+
+    first_half = prim_dict['first_half'].value
+    second_half = prim_dict['second_half'].value
+
+    fh = first_half(test_hand_6)
+    sh = second_half(test_hand_6)
+
+    print(f"  first_half: {[f'{c.rank.name} of {c.suit.name}' for c in fh]}")
+    print(f"  second_half: {[f'{c.rank.name} of {c.suit.name}' for c in sh]}")
+
+    # Verify the halves are correct
+    assert len(fh) == 3, f"Expected first_half length 3, got {len(fh)}"
+    assert len(sh) == 3, f"Expected second_half length 3, got {len(sh)}"
+    assert fh[0].suit == Suit.HEARTS, "First half should be hearts"
+    assert sh[0].suit == Suit.SPADES, "Second half should be spades"
+
+    print("  ✓ Halves primitives working correctly!")
 
     print("\n" + "=" * 70)
     print("ALL TESTS PASSED!")

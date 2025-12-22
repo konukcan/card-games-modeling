@@ -17,8 +17,8 @@ This document outlines the implementation plan to align our program synthesis sy
 ### What's Missing or Incomplete
 - ✅ Full MDL scoring for compression (COMPLETED - Phase 2)
 - ✅ Program refactoring after learning abstractions (COMPLETED - Phase 1)
-- ❌ Beam search over compression candidates
-- ❌ Arity-aware abstraction search
+- ✅ Beam search over compression candidates (COMPLETED - Phase 3)
+- ✅ Arity-aware abstraction search (COMPLETED - Phase 4)
 - ✅ Grammar size penalty (COMPLETED - Phase 2, via grammar_weight parameter)
 - ❌ Corpus-guided compression
 - ❌ Recognition model integration with compression
@@ -313,8 +313,17 @@ def compress_frontiers_mdl(
 
 ---
 
-### Phase 3: Beam Search (Priority: MEDIUM)
+### Phase 3: Beam Search (Priority: MEDIUM) ✅ COMPLETED
+**Status:** IMPLEMENTED (December 2024)
 **Why Third:** Avoids local optima once we have good scoring.
+
+**Implementation Summary:**
+- `CompressionState` dataclass - tracks grammar, programs, inventions, MDL, and history
+- `beam_search_compression()` - main beam search function with configurable beam width
+- `beam_search_compression_with_arity()` - convenience wrapper combining Phase 3 + Phase 4
+- State deduplication to avoid redundant exploration
+- Comprehensive statistics tracking (states explored, candidates evaluated, MDL history)
+- Integration with arity-aware search via `use_arity_search` parameter
 
 #### 3.1 Define Search State
 
@@ -416,8 +425,17 @@ def beam_search_compression(
 
 ---
 
-### Phase 4: Arity-Aware Search (Priority: MEDIUM)
+### Phase 4: Arity-Aware Search (Priority: MEDIUM) ✅ COMPLETED
+**Status:** IMPLEMENTED (December 2024)
 **Why Fourth:** Better abstractions once we have good search.
+
+**Implementation Summary:**
+- `Factorization` dataclass - represents a specific way to abstract a subtree
+- `enumerate_factorizations()` - generates all valid arities for a subtree
+- `abstract_subtree_partial()` - creates abstraction over subset of free variables
+- `best_factorization()` - picks optimal arity by MDL improvement
+- `rank_factorizations_by_mdl()` - ranks all factorizations for debugging/analysis
+- Handles edge cases: no free vars, too many free vars, invalid subsets
 
 #### 4.1 Enumerate Factorizations
 

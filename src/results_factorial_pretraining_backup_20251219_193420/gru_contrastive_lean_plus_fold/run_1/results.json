@@ -1,0 +1,901 @@
+{
+  "config": {
+    "recognition_type": "gru",
+    "dream_strategy": "contrastive",
+    "primitive_variant": "lean_plus_fold",
+    "run_id": 1,
+    "base_enumeration_budget": 40000,
+    "budget_increment_per_iteration": 15000,
+    "max_enumeration_budget": 85000,
+    "base_max_depth": 6,
+    "depth_increment_per_iteration": 1,
+    "max_depth_limit": 10,
+    "base_timeout": 30.0,
+    "timeout_increment": 7.5,
+    "max_timeout": 60.0,
+    "use_compression": true,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "dreams_per_iteration": 50,
+    "n_examples_per_dream": 10,
+    "recognition_hidden_dim": 64,
+    "recognition_lr": 0.001,
+    "recognition_epochs": 5,
+    "keep_top_k": 3,
+    "max_iterations": 5,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "use_easy_rules_only": true,
+    "max_tasks": null,
+    "results_dir": "results_factorial"
+  },
+  "start_time": "2025-12-19T18:38:08.818773",
+  "condition": "gru_contrastive_lean_plus_fold",
+  "iterations": [
+    {
+      "iteration": 1,
+      "enumeration_budget": 40000,
+      "max_depth": 6,
+      "timeout_per_task": 30.0,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 49746,
+      "enumeration_time": 62.82432198524475,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.02066493034362793,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.03690505027770996,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.024868011474609375,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.11628484725952,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 2871,
+          "time_seconds": 30.11263608932495,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.11383318901062,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.167941093444824,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 2861,
+          "time_seconds": 30.152989149093628,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.116080045700073,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 2876,
+          "time_seconds": 30.153473138809204,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 2866,
+          "time_seconds": 30.137962102890015,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.15378212928772,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 2875,
+          "time_seconds": 30.144365787506104,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 2863,
+          "time_seconds": 30.121022939682007,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 3656,
+          "time_seconds": 30.137534856796265,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 3510,
+          "time_seconds": 30.166362047195435,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 3703,
+          "time_seconds": 30.169565200805664,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 3626,
+          "time_seconds": 30.15785789489746,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 3659,
+          "time_seconds": 30.391652822494507,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 78,
+      "recognition_loss": 4.296260356903076,
+      "recognition_train_time": 0.4495258331298828,
+      "dreams_generated": 50,
+      "iteration_time": 91.8851969242096,
+      "timestamp": "2025-12-19T18:38:08.818805"
+    },
+    {
+      "iteration": 2,
+      "enumeration_budget": 55000,
+      "max_depth": 7,
+      "timeout_per_task": 37.5,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 35749,
+      "enumeration_time": 78.09560203552246,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.028296947479248047,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.05291008949279785,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.019238948822021484,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 2049,
+          "time_seconds": 37.793545961380005,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 2045,
+          "time_seconds": 37.776036739349365,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 2048,
+          "time_seconds": 37.75426697731018,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 2080,
+          "time_seconds": 37.84907007217407,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 2040,
+          "time_seconds": 37.78113889694214,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 2066,
+          "time_seconds": 37.836179971694946,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 2073,
+          "time_seconds": 37.81834697723389,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 2025,
+          "time_seconds": 37.82727909088135,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 2048,
+          "time_seconds": 37.79378604888916,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 2077,
+          "time_seconds": 37.83203411102295,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 2067,
+          "time_seconds": 37.77718210220337,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 2615,
+          "time_seconds": 37.816401958465576,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 2635,
+          "time_seconds": 37.821382999420166,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 2634,
+          "time_seconds": 37.80464792251587,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 2606,
+          "time_seconds": 37.81169104576111,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 2636,
+          "time_seconds": 38.260212898254395,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 78,
+      "recognition_loss": 4.181949234008789,
+      "recognition_train_time": 0.42462778091430664,
+      "dreams_generated": 50,
+      "iteration_time": 108.36245083808899,
+      "timestamp": "2025-12-19T18:39:40.707081"
+    },
+    {
+      "iteration": 3,
+      "enumeration_budget": 70000,
+      "max_depth": 8,
+      "timeout_per_task": 45.0,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 20261,
+      "enumeration_time": 93.48888301849365,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.030322790145874023,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.02532482147216797,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.045165061950683594,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.564342975616455,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 921,
+          "time_seconds": 45.559890270233154,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.62756395339966,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.63624691963196,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.74049687385559,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.74050498008728,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.7641179561615,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.8532509803772,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 46.383419036865234,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 46.31121778488159,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 45.44003486633301,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 1983,
+          "time_seconds": 45.452768087387085,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 1983,
+          "time_seconds": 45.46514105796814,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 1983,
+          "time_seconds": 45.39165210723877,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 1983,
+          "time_seconds": 45.837453842163086,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 1983,
+          "time_seconds": 45.85966396331787,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 78,
+      "recognition_loss": 3.909151077270508,
+      "recognition_train_time": 0.4302799701690674,
+      "dreams_generated": 50,
+      "iteration_time": 125.6532838344574,
+      "timestamp": "2025-12-19T18:41:29.071910"
+    },
+    {
+      "iteration": 4,
+      "enumeration_budget": 85000,
+      "max_depth": 9,
+      "timeout_per_task": 52.5,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 14812,
+      "enumeration_time": 110.3569347858429,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.019989013671875,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.031196117401123047,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.02686023712158203,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.14332699775696,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.151190996170044,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.14362168312073,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.174543142318726,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.217365980148315,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.20091009140015,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.181288957595825,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.20167803764343,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.20385408401489,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 55.16792106628418,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 54.07075595855713,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 944,
+          "time_seconds": 52.89599108695984,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 944,
+          "time_seconds": 52.90287399291992,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 944,
+          "time_seconds": 52.9868221282959,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 944,
+          "time_seconds": 52.99270796775818,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 944,
+          "time_seconds": 52.97626781463623,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 78,
+      "recognition_loss": 2.810737419128418,
+      "recognition_train_time": 0.43169307708740234,
+      "dreams_generated": 50,
+      "iteration_time": 144.9345986843109,
+      "timestamp": "2025-12-19T18:43:34.728497"
+    },
+    {
+      "iteration": 5,
+      "enumeration_budget": 85000,
+      "max_depth": 10,
+      "timeout_per_task": 60.0,
+      "tasks_solved": 3,
+      "total_tasks": 22,
+      "programs_enumerated": 14727,
+      "enumeration_time": 126.70244812965393,
+      "task_details": {
+        "poker_flush": {
+          "solved": true,
+          "programs_enumerated": 1,
+          "time_seconds": 0.02064681053161621,
+          "solution": "(\u03bb false)",
+          "solution_size": 2
+        },
+        "poker_two_suits": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.024036169052124023,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "bj_stand_17": {
+          "solved": true,
+          "programs_enumerated": 2,
+          "time_seconds": 0.02520608901977539,
+          "solution": "(\u03bb true)",
+          "solution_size": 2
+        },
+        "poker_same_color": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_pair": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.79505777359009,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_all_different": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.752297163009644,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_suit": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.746994972229004,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_high_card": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.81077194213867,
+          "solution": null,
+          "solution_size": null
+        },
+        "rummy_three_ranks": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.833903074264526,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_under_21": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.85207986831665,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_first_red": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.86152219772339,
+          "solution": null,
+          "solution_size": null
+        },
+        "bj_sum_even": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.88228392601013,
+          "solution": null,
+          "solution_size": null
+        },
+        "poker_has_ace": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.9066367149353,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_last_black": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 63.88160419464111,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_color": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 62.58322501182556,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_spade": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_has_heart": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_ends_rank": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 60.67400813102722,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_diverse_ranks": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 60.539867877960205,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_two_red": {
+          "solved": false,
+          "programs_enumerated": 917,
+          "time_seconds": 60.67588496208191,
+          "solution": null,
+          "solution_size": null
+        },
+        "simple_two_suits": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 60.771023988723755,
+          "solution": null,
+          "solution_size": null
+        },
+        "count_more_red": {
+          "solved": false,
+          "programs_enumerated": 942,
+          "time_seconds": 60.75923418998718,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 78,
+      "recognition_loss": 1.5625994682312012,
+      "recognition_train_time": 0.447678804397583,
+      "dreams_generated": 50,
+      "iteration_time": 158.20652604103088,
+      "timestamp": "2025-12-19T18:45:59.667473"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+condition,recognition,dreams,primitives,tasks_solved,total_tasks,solve_rate,total_time,inventions
+gru_balanced_lean,gru,balanced,lean,2,22,0.09090909090909091,688.29653,0
+gru_balanced_lean_plus_fold,gru,balanced,lean_plus_fold,4,22,0.18181818181818182,723.601772,1
+gru_balanced_minimal,gru,balanced,minimal,4,22,0.18181818181818182,690.463327,1
+gru_contrastive_lean,gru,contrastive,lean,3,22,0.13636363636363635,574.113575,0
+gru_standard_lean,gru,standard,lean,2,22,0.09090909090909091,486.594651,0
+gru_standard_lean_plus_fold,gru,standard,lean_plus_fold,4,22,0.18181818181818182,530.663017,1
+gru_standard_minimal,gru,standard,minimal,3,22,0.13636363636363635,489.62804,0

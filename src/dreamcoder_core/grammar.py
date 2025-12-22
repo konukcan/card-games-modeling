@@ -548,6 +548,170 @@ class Grammar:
         return sum(1 for p in self.productions if isinstance(p.program, Primitive))
 
     # ========================================================================
+    # STOCHASTIC SAMPLING (for dream generation)
+    # ========================================================================
+
+    def sample(
+        self,
+        request_type: Type,
+        max_depth: int = 6,
+        temperature: float = 1.0
+    ) -> Optional[Tuple[Program, float]]:
+        """
+        Stochastically sample a program from the grammar.
+
+        This is the CORRECT way to sample programs for dream generation.
+        It uses direct stochastic recursion (O(depth)) rather than
+        enumeration-then-sample (O(enumeration size)).
+
+        Algorithm:
+        1. Get all productions that can produce the request_type
+        2. Sample one production according to probabilities (with temperature)
+        3. If the production has argument types, recursively sample for each
+        4. Compose the final program using Application
+
+        Args:
+            request_type: The type of program to sample (e.g., HAND -> BOOL)
+            max_depth: Maximum recursion depth to prevent infinite loops
+            temperature: Sampling temperature (1.0 = proportional to probs,
+                        <1 = more greedy, >1 = more uniform)
+
+        Returns:
+            (program, log_probability) tuple, or None if sampling fails
+        """
+        return self._sample_helper(
+            request_type,
+            TypeContext(),
+            env=[],  # No bound variables initially
+            depth=0,
+            max_depth=max_depth,
+            temperature=temperature
+        )
+
+    def _sample_helper(
+        self,
+        target_type: Type,
+        ctx: TypeContext,
+        env: List[Type],
+        depth: int,
+        max_depth: int,
+        temperature: float
+    ) -> Optional[Tuple[Program, float]]:
+        """
+        Recursive helper for stochastic sampling.
+
+        Args:
+            target_type: Type to produce
+            ctx: Type context for unification
+            env: Types of bound variables (for sampling inside lambdas)
+            depth: Current recursion depth
+            max_depth: Maximum allowed depth
+            temperature: Sampling temperature
+
+        When target_type is a function type A -> B, we create a lambda:
+            λ. <body of type B>
+        where the body is sampled with env extended to include type A.
+        """
+        if depth > max_depth:
+            return None
+
+        # CASE 1: Target is a function type - create a lambda abstraction
+        # When we need type A -> B, we construct: λ. <body of type B>
+        # The body is sampled with env extended to include A (at index 0)
+        if isinstance(target_type, Arrow):
+            arg_type = target_type.arg
+            body_type = target_type.ret
+
+            # Extend environment: new variable at index 0, shift others
+            # In de Bruijn notation, $0 is the innermost bound variable
+            new_env = [arg_type] + env
+
+            # Sample the body
+            body_result = self._sample_helper(
+                body_type, ctx, new_env, depth + 1, max_depth, temperature
+            )
+
+            if body_result is None:
+                return None
+
+            body_program, body_log_prob = body_result
+
+            # Wrap in lambda - no additional log prob cost for lambda itself
+            # (the grammar implicitly requires functions for function types)
+            return (Abstraction(body_program), body_log_prob)
+
+        # CASE 2: Target is a base type - sample a production or variable
+        # Get all candidates that can produce this type
+        candidates = self.candidates_for_type(target_type, ctx, env, normalize=True)
+
+        # Also include variable candidates if inside a lambda
+        var_candidates = self.variable_candidates(target_type, ctx, env)
+
+        if not candidates and not var_candidates:
+            return None
+
+        # Build combined candidate list with log-probs
+        all_choices = []  # List of (choice_type, choice_data, log_prob)
+
+        for prod, inst_type, log_prob in candidates:
+            all_choices.append(('production', (prod, inst_type), log_prob))
+
+        for var_idx, log_prob in var_candidates:
+            all_choices.append(('variable', var_idx, log_prob))
+
+        if not all_choices:
+            return None
+
+        # Apply temperature and sample
+        log_probs = [lp for _, _, lp in all_choices]
+
+        # Temperature scaling
+        if temperature != 1.0:
+            log_probs = [lp / temperature for lp in log_probs]
+
+        # Convert to probabilities
+        max_lp = max(log_probs)
+        probs = [math.exp(lp - max_lp) for lp in log_probs]
+        total = sum(probs)
+        probs = [p / total for p in probs]
+
+        # Sample
+        choice_idx = random.choices(range(len(all_choices)), weights=probs, k=1)[0]
+        choice_type, choice_data, choice_log_prob = all_choices[choice_idx]
+
+        if choice_type == 'variable':
+            # Return a de Bruijn index
+            return (Index(choice_data), choice_log_prob)
+
+        # It's a production
+        prod, inst_type = choice_data
+        program = prod.program
+        total_log_prob = choice_log_prob
+
+        # If the production is a function type, we need to sample arguments
+        current_type = inst_type
+        while isinstance(current_type, Arrow):
+            arg_type = current_type.arg
+            ret_type = current_type.ret
+
+            # Recursively sample an argument
+            arg_result = self._sample_helper(
+                arg_type, ctx, env, depth + 1, max_depth, temperature
+            )
+
+            if arg_result is None:
+                return None
+
+            arg_program, arg_log_prob = arg_result
+            total_log_prob += arg_log_prob
+
+            # Apply the argument
+            program = Application(program, arg_program)
+            current_type = ret_type
+
+        return (program, total_log_prob)
+
+    # ========================================================================
     # GRAMMAR UPDATES (for wake-sleep learning)
     # ========================================================================
 

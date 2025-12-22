@@ -1,0 +1,200 @@
+{
+  "config": {
+    "recognition_type": "gru",
+    "dream_strategy": "balanced",
+    "primitive_variant": "lean",
+    "run_id": 999,
+    "base_enumeration_budget": 200000,
+    "budget_increment_per_iteration": 75000,
+    "max_enumeration_budget": 500000,
+    "base_max_depth": 7,
+    "depth_increment_per_iteration": 1,
+    "max_depth_limit": 11,
+    "base_timeout": 300.0,
+    "timeout_increment": 60.0,
+    "max_timeout": 600.0,
+    "use_compression": true,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "dreams_per_iteration": 50,
+    "n_examples_per_dream": 10,
+    "recognition_hidden_dim": 64,
+    "recognition_lr": 0.001,
+    "recognition_epochs": 5,
+    "keep_top_k": 3,
+    "max_iterations": 3,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "use_easy_rules_only": true,
+    "max_tasks": 5,
+    "results_dir": "results_quick_test"
+  },
+  "start_time": "2025-12-20T17:10:28.125871",
+  "condition": "gru_balanced_lean",
+  "iterations": [
+    {
+      "iteration": 1,
+      "enumeration_budget": 200000,
+      "max_depth": 7,
+      "timeout_per_task": 300.0,
+      "tasks_solved": 0,
+      "total_tasks": 5,
+      "programs_enumerated": 47448,
+      "enumeration_time": 304.1749529838562,
+      "task_details": {
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 11966,
+          "time_seconds": 302.9182941913605,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 11966,
+          "time_seconds": 302.92891001701355,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 11966,
+          "time_seconds": 302.9555118083954,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 11550,
+          "time_seconds": 302.9778060913086,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 8,
+      "iteration_time": 349.74187326431274,
+      "timestamp": "2025-12-20T17:10:28.125903"
+    },
+    {
+      "iteration": 2,
+      "enumeration_budget": 275000,
+      "max_depth": 8,
+      "timeout_per_task": 360.0,
+      "tasks_solved": 0,
+      "total_tasks": 5,
+      "programs_enumerated": 19912,
+      "enumeration_time": 394.2765622138977,
+      "task_details": {
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 4978,
+          "time_seconds": 392.4193410873413,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 4978,
+          "time_seconds": 392.5255060195923,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 4978,
+          "time_seconds": 392.5368790626526,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 4978,
+          "time_seconds": 392.9194598197937,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 6,
+      "iteration_time": 438.52311277389526,
+      "timestamp": "2025-12-20T17:16:17.872786"
+    },
+    {
+      "iteration": 3,
+      "enumeration_budget": 350000,
+      "max_depth": 9,
+      "timeout_per_task": 420.0,
+      "tasks_solved": 0,
+      "total_tasks": 5,
+      "programs_enumerated": 18788,
+      "enumeration_time": 458.60968494415283,
+      "task_details": {
+        "Has_pair_ranks": {
+          "solved": false,
+          "programs_enumerated": 0,
+          "time_seconds": 0,
+          "solution": null,
+          "solution_size": null
+        },
+        "Sorted_by_rank": {
+          "solved": false,
+          "programs_enumerated": 4728,
+          "time_seconds": 454.76488614082336,
+          "solution": null,
+          "solution_size": null
+        },
+        "S_before_H": {
+          "solved": false,
+          "programs_enumerated": 4686,
+          "time_seconds": 456.6823470592499,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_color": {
+          "solved": false,
+          "programs_enumerated": 4687,
+          "time_seconds": 457.2345929145813,
+          "solution": null,
+          "solution_size": null
+        },
+        "Ends_same_suit": {
+          "solved": false,
+          "programs_enumerated": 4687,
+          "time_seconds": 457.2927300930023,
+          "solution": null,
+          "solution_size": null
+        }
+      },
+      "new_inventions": [],
+      "grammar_size": 0,
+      "recognition_loss": 0.0,
+      "recognition_train_time": 0.0,
+      "dreams_generated": 6,
+      "iteration_time": 502.00032901763916,
+      "timestamp": "2025-12-20T17:23:36.398519"
+    }
+  ],
+  "end_time": "2025-12-20T17:31:58.402564",
+  "total_time": 1290.276693
+}

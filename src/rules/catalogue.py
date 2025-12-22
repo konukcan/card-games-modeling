@@ -289,20 +289,8 @@ def create_all_rules() -> List[Rule]:
 
     # =========================================================================
     # FAMILY: POSITION (Specific position constraints)
+    # NOTE: Pos3_is_JQK (r7x) removed - requires face card constants (11, 12, 13)
     # =========================================================================
-
-    # r7x: Position 3 is JQK
-    rules.append(Rule(
-        id="Pos3_is_JQK",
-        token="r7x",
-        name="Card #3 is a face card (J/Q/K)",
-        predicate=lambda h: len(h) >= 3 and get_rank(h[2]) in {Rank.JACK, Rank.QUEEN, Rank.KING},
-        family="POSITION",
-        description="The 3rd card (counting from the left) is J, Q, or K.",
-        composition=C("member", C("at", index=2), C("set", values=["J", "Q", "K"])),
-        primitives_used=["at", "get_rank", "member", "set"],
-        level=0
-    ))
 
     # r8x: Position 4 is 2, 5, 7
     rules.append(Rule(
@@ -319,33 +307,9 @@ def create_all_rules() -> List[Rule]:
 
     # =========================================================================
     # FAMILY: TOKEN (Specific card presence)
+    # NOTE: Has_Ace_of_Spades (r9x) and Has_6_of_Diamonds (r10x) removed
+    #       - These require specific rank constants (14, 6) that we're eliminating
     # =========================================================================
-
-    # r9x: Has Ace of Spades
-    rules.append(Rule(
-        id="Has_Ace_of_Spades",
-        token="r9x",
-        name="Contains the Ace of ♠",
-        predicate=lambda h: any(get_suit(c) == Suit.SPADES and get_rank(c) == Rank.ACE for c in h),
-        family="TOKEN",
-        description="Somewhere in the hand there is the Ace of Spades.",
-        composition=C("any", C("and", C("eq", C("get_suit"), value="SPADES"), C("eq", C("get_rank"), value="A"))),
-        primitives_used=["any", "get_suit", "get_rank", "eq", "and"],
-        level=1
-    ))
-
-    # r10x: Has 6 of Diamonds
-    rules.append(Rule(
-        id="Has_6_of_Diamonds",
-        token="r10x",
-        name="Contains the 6 of ♦",
-        predicate=lambda h: any(get_suit(c) == Suit.DIAMONDS and get_rank(c) == Rank.SIX for c in h),
-        family="TOKEN",
-        description="Somewhere in the hand there is the 6 of Diamonds.",
-        composition=C("any", C("and", C("eq", C("get_suit"), value="DIAMONDS"), C("eq", C("get_rank"), value="6"))),
-        primitives_used=["any", "get_suit", "get_rank", "eq", "and"],
-        level=1
-    ))
 
     # =========================================================================
     # FAMILY: AP (Arithmetic Progression rules)
