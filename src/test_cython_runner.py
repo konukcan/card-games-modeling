@@ -317,7 +317,7 @@ def test_frontier_population():
     from dreamcoder_core.cython_src.type_system_cy import arrow, HAND, BOOL
     from dreamcoder_core.cython_src.enumeration_cy import enumerate_simple
     from dreamcoder_core.cython_src.lean_primitives_cy import build_lean_grammar_cy
-    from dreamcoder_core.dreamcoder_v2 import Task, TaskFrontier, SolutionEntry
+    from dreamcoder_core.dreamcoder_original import Task, TaskFrontier, SolutionEntry
     from rules.cards import Card, Suit, Rank
 
     grammar = build_lean_grammar_cy()
@@ -376,7 +376,7 @@ def test_frontier_population():
 
                 if solutions_found >= 3:
                     break
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
             pass
 
     print(f"  ✓ Searched {programs_tried} programs")
@@ -407,7 +407,7 @@ def test_recognition_training():
     from dreamcoder_core.cython_src.lean_primitives_cy import build_lean_grammar_cy
     from dreamcoder_core.lean_primitives import build_lean_grammar  # Python version for neural
     from dreamcoder_core.neural_recognition import NeuralRecognitionModel
-    from dreamcoder_core.dreamcoder_v2 import Task, TaskFrontier, SolutionEntry
+    from dreamcoder_core.dreamcoder_original import Task, TaskFrontier, SolutionEntry
     from dreamcoder_core.cython_src.enumeration_cy import enumerate_simple
     from rules.cards import Card, Suit, Rank
 
@@ -454,7 +454,7 @@ def test_recognition_training():
                 frontier1.add(entry)
                 if len(frontier1.entries) >= 1:
                     break
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
             pass
     frontiers[task1.name] = frontier1
     print(f"    ✓ Task 1 solved: {frontier1.solved}")
@@ -482,7 +482,7 @@ def test_recognition_training():
                 frontier2.add(entry)
                 if len(frontier2.entries) >= 1:
                     break
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
             pass
     frontiers[task2.name] = frontier2
     print(f"    ✓ Task 2 solved: {frontier2.solved}")
@@ -518,7 +518,7 @@ def test_mini_wake_sleep():
     from dreamcoder_core.cython_src.enumeration_cy import enumerate_simple
     from dreamcoder_core.lean_primitives import build_lean_grammar
     from dreamcoder_core.neural_recognition import NeuralRecognitionModel
-    from dreamcoder_core.dreamcoder_v2 import Task, TaskFrontier, SolutionEntry, make_eval_fn
+    from dreamcoder_core.dreamcoder_original import Task, TaskFrontier, SolutionEntry, make_eval_fn
     from rules.cards import Card, Suit, Rank
 
     print("  Setting up mini wake-sleep test...")
@@ -597,7 +597,7 @@ def test_mini_wake_sleep():
                     print(f"    SOLVED {task.name}: {prog}")
                     solved_count += 1
                     break
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
                 pass
 
     print(f"    ✓ Wake: Solved {solved_count}/{len(tasks)} tasks")

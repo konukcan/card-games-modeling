@@ -532,7 +532,7 @@ class PreFlightValidator:
         print("\n5. Validating task creation...")
 
         try:
-            from dreamcoder_core.dreamcoder_v2 import create_tasks_from_rules
+            from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
 
             tasks_by_type = {}
 

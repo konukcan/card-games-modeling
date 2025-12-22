@@ -34,7 +34,7 @@ from run_overnight_cython import (
     USE_CYTHON
 )
 from dreamcoder_core.lean_primitives import build_lean_grammar
-from dreamcoder_core.dreamcoder_v2 import create_tasks_from_rules, Task
+from dreamcoder_core.dreamcoder_original import create_tasks_from_rules, Task
 from dreamcoder_core.type_system import arrow, HAND, BOOL
 from rules.pretraining_rules import get_easy_pretraining_rules, get_all_pretraining_rules
 from rules.catalogue import create_all_rules
@@ -93,7 +93,8 @@ def create_catalogue_tasks(n_examples=100, n_holdout=20, hand_size=6, seed=42):
                         negatives.append((hand, False))
                     elif len(holdout_negatives) < holdout_target:
                         holdout_negatives.append((hand, False))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
+                # Rule predicate evaluation failed for this hand - skip it
                 continue
 
             # Check if we have enough

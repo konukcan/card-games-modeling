@@ -41,7 +41,7 @@ import torch
 
 def create_catalogue_tasks(n_examples=100, n_holdout=20, hand_size=6, seed=42):
     """Create tasks from the full catalogue of 57 experimental rules."""
-    from dreamcoder_core.dreamcoder_v2 import Task
+    from dreamcoder_core.dreamcoder_original import Task
 
     catalogue_rules = create_all_rules()
     print(f"Catalogue has {len(catalogue_rules)} rules")
@@ -77,7 +77,7 @@ def create_catalogue_tasks(n_examples=100, n_holdout=20, hand_size=6, seed=42):
                         negatives.append((hand, False))
                     elif len(holdout_negatives) < holdout_target:
                         holdout_negatives.append((hand, False))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
                 continue
 
             if (len(positives) >= target and len(negatives) >= target and
@@ -202,7 +202,7 @@ def main():
     print()
 
     # Create catalogue tasks
-    print("Creating catalogue tasks (57 rules, 100 examples + 20 holdout each)...")
+    print("Creating catalogue tasks (45 rules, 100 examples + 20 holdout each)...")
     catalogue_tasks = create_catalogue_tasks(n_examples=100, n_holdout=20, seed=42)
     print(f"Created {len(catalogue_tasks)} catalogue tasks")
     print()

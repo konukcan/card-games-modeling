@@ -142,7 +142,7 @@ def generate_tasks_and_evaluate(num_examples: int = 100, use_real_metrics: bool 
             try:
                 if rule.eval(hand):
                     true_count += 1
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
                 pass
 
         base_rate = true_count / total
@@ -434,7 +434,7 @@ def create_visualizations(results: Dict, output_dir: Path) -> Dict[str, str]:
     # Layer 1: Data/Input Layer (bottom)
     draw_box(5, 5, 25, 12, 'cards.py', '#27ae60', sublabel='Card/Hand types')
     draw_box(35, 5, 30, 12, 'primitives.py', '#27ae60', sublabel='60+ compositional functions')
-    draw_box(70, 5, 25, 12, 'catalogue.py', '#27ae60', sublabel='57 rules + compositions')
+    draw_box(70, 5, 25, 12, 'catalogue.py', '#27ae60', sublabel='45 rules + compositions')
 
     # Layer 2: Processing Layer
     draw_box(5, 25, 40, 12, 'Task Generation', '#3498db', sublabel='Sample hands → evaluate rules')
@@ -941,7 +941,7 @@ def generate_html_report(results: Dict, images: Dict, subtree_analysis: Dict, ou
         <ul>
             <li><strong>cards.py</strong>: Defines Card, Hand, Suit, Rank, Color, Parity types. The foundation.</li>
             <li><strong>primitives.py</strong>: 60+ compositional functions organized in 5 levels (0-4).</li>
-            <li><strong>catalogue.py</strong>: All 57 rules with their compositional decompositions.</li>
+            <li><strong>catalogue.py</strong>: All 45 rules with their compositional decompositions.</li>
             <li><strong>Task Generation</strong>: Samples random hands, evaluates rules, creates training examples.</li>
             <li><strong>Feature Extraction</strong>: Converts example hands into 158-dimensional numeric vectors.</li>
             <li><strong>Primitive/Subtree/Abstraction Analysis</strong>: Identifies shared structure across rules.</li>
@@ -1126,7 +1126,7 @@ def generate_html_report(results: Dict, images: Dict, subtree_analysis: Dict, ou
         The accuracy values shown are from a <strong>trained recognition network</strong> achieving
         <strong>{overall_accuracy*100:.2f}% overall accuracy</strong> on primitive prediction:
         <ul>
-            <li><strong>Training Data</strong>: 5,700 tasks (100 per rule × 57 rules)</li>
+            <li><strong>Training Data</strong>: 4,500 tasks (100 per rule × 45 rules)</li>
             <li><strong>Architecture</strong>: 158-dim features → attention aggregation → 60-output multilabel classifier</li>
             <li><strong>Training</strong>: 30 epochs, Adam optimizer, BCEWithLogitsLoss</li>
             <li><strong>Validation</strong>: 20% held-out per rule</li>
@@ -1251,7 +1251,7 @@ def generate_html_report(results: Dict, images: Dict, subtree_analysis: Dict, ou
         <img src="data:image/png;base64,{images_b64['rule_accuracy_distribution']}" alt="Per-Rule Accuracy">
         <div class="figure-caption">
             <strong>Figure 7b: Per-Rule Recognition Network Accuracy</strong><br>
-            Accuracy distribution across all 57 rules, sorted from lowest to highest.
+            Accuracy distribution across all 45 rules, sorted from lowest to highest.
             Colors indicate relative performance (red = lower, green = higher).
         </div>
     </div>
@@ -1418,7 +1418,7 @@ def generate_html_report(results: Dict, images: Dict, subtree_analysis: Dict, ou
         Each rule is built from primitive functions composed in a tree structure.
         The tree shows exactly how primitives combine to implement the rule's logic.
         A separate <a href="composition_trees.html">detailed composition trees page</a> shows
-        all 57 rules with both ASCII and graphical representations.
+        all 45 rules with both ASCII and graphical representations.
     </div>
 
     <h3>Sample Composition Trees</h3>

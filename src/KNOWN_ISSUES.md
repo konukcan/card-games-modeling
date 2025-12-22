@@ -206,6 +206,85 @@ for program, log_prob in enumerator.enumerate(
 
 ---
 
+### 5. TopDownEnumerator Partial Program Explosion (Depth Scaling Bug)
+
+**Severity**: CRITICAL
+**Status**: FIXED (December 2025)
+**Location**: `dreamcoder_core/enumeration.py` - new method `enumerate_memoized()`
+
+**Symptoms:**
+- Iteration 1 (depth=6): 405,670 programs in 332.5s (1,220 prog/s)
+- Iteration 2 (depth=7): 87,258 programs in 451.1s (193 prog/s)
+- **6x slowdown** from a single depth increment
+- All unsolved tasks hit TIMEOUT, not budget limit
+- ~99% of exploration time spent on partial programs that never complete
+
+**Root Cause:**
+The TopDownEnumerator uses a priority queue sorted by **cost** (-log_prob), but re-enumerates the same subproblems repeatedly. When filling holes, the same subproblem `(type, env, budget)` appears thousands of times:
+- `(and ?? ??)` needs two BOOL-producing subexpressions
+- `(eq ?? ??)` needs two INT-producing subexpressions
+- Each subproblem was enumerated from scratch
+
+**Efficiency by depth (BEFORE FIX):**
+| max_depth | Efficiency | Wasted Work |
+|-----------|------------|-------------|
+| 5 | 32% | 68% |
+| 6 | 4% | 96% |
+| 7 | 3% | 97% |
+| 8 | 1.3% | **99%** |
+
+**The Fix: Memoized Enumeration (Option C)**
+
+Implemented DreamCoder-style **memoization/dynamic programming**:
+1. Cache subproblem solutions by `(type, env, budget_bucket)`
+2. When filling a hole, check cache first - if hit, return cached results
+3. Use discretized budget buckets (2.0 units) to increase cache reuse
+4. Use recursive descent instead of priority queue to naturally share subproblems
+
+```python
+# NEW METHOD: enumerate_memoized()
+# Key insight: same subproblem appears 1000s of times
+# Cache hit rate: 98-99%
+
+def enumerate_memoized(self, request_type, max_cost=50.0, ...):
+    # Recursive descent with memoization
+    for prog, cost in self._enumerate_type_memoized(
+        request_type, env, max_cost, depth_limit, ...
+    ):
+        yield (prog, -cost)
+```
+
+**Performance After Fix (benchmark results):**
+| Depth | Original | Memoized | Speedup |
+|-------|----------|----------|---------|
+| 6 | 298 prog/s | 318,130 prog/s | **1,067x** |
+| 7 | 51 prog/s | 68,175 prog/s | **1,339x** |
+| 8 | 24 prog/s | 204,410 prog/s | **8,415x** |
+
+- Cache hit rate: 98-99%
+- 50,000 programs enumerated in <1 second at all depths
+- Efficiency improved from ~2% to ~20%
+
+**Why This Works:**
+DreamCoder's OCaml backend uses this same approach - they call it `dynamic_programming_enumeration`. The insight is that program synthesis has massive subproblem overlap:
+- Filling a BOOL hole in one context uses the same BOOL programs as another context
+- Memoization turns exponential re-enumeration into constant-time lookup
+
+**Approaches That Did NOT Work:**
+1. **Cost bands without memoization**: Same programs/s, no improvement
+2. **Predictive depth pruning alone**: Minor improvement, doesn't address redundant work
+3. **Iterative cost deepening**: Redundant re-enumeration without state preservation
+
+**Integration Notes:**
+- Use `enumerator.enumerate_memoized()` instead of `enumerate()`
+- Call `enumerator.clear_memo_cache()` between tasks if needed
+- Check cache stats with `enumerator.get_memo_stats()`
+
+**Lesson Learned:**
+The critical insight from DreamCoder's OCaml backend is **memoization**, not just cost-based search. Program synthesis involves massive subproblem overlap - the same (type, context, budget) query appears thousands of times. Caching these results provides 1000x+ speedup.
+
+---
+
 ## Architecture Decisions
 
 ### Cython Implementation Status
@@ -335,7 +414,7 @@ This enables post-hoc analysis of:
 
 ### Code Quality Issues
 
-1. **Bare Exception Handlers**: Some modules use `except:` without specifying exception types, which can mask unexpected errors.
+1. **Bare Exception Handlers**: ~~Some modules use `except:` without specifying exception types, which can mask unexpected errors.~~ **FIXED** (2024-12-22): All bare `except:` blocks have been replaced with specific exception types like `except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):`.
 
 2. **Hardcoded Paths**: Some scripts have hardcoded paths that may need adjustment for different environments.
 

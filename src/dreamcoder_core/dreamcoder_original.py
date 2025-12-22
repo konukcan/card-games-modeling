@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """
-DreamCoder V2 - Full Neural Implementation
+DreamCoder Original - Reference Implementation
 
-This is a complete, cognitively-realistic implementation of DreamCoder
-with all the components from Ellis et al. (2021):
+This is the canonical reference implementation of DreamCoder with all
+components from Ellis et al. (2021). It serves as:
+
+1. A clean reference showing how all components connect
+2. Source of helper classes (TaskFrontier, SolutionEntry, etc.)
+3. Utility functions used by production runners
+
+NOTE: Production overnight runners typically implement their own wake-sleep
+loops inline (for parallelization, checkpointing, custom logging) but import
+helper classes and utilities from this module.
+
+Components from Ellis et al. (2021):
 
 1. NEURAL Recognition Model (not feature-based!)
    - GRU encoder for input/output examples
@@ -61,31 +71,18 @@ from dreamcoder_core.program import (
     Program, Primitive, Application, Abstraction, Index, Invented
 )
 from dreamcoder_core.grammar import Grammar, Production, uniform_grammar
-# enumerate_simple removed - we now use Grammar.sample() for stochastic sampling
+# enumerate_simple removed - we now use TopDownEnumerator for enumeration
+# and Grammar.sample() or Grammar.sample_requiring_variable() for dreaming
+from dreamcoder_core.enumeration import TopDownEnumerator
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.task import Task  # Canonical Task definition
 
 
 # ============================================================================
 # DATA STRUCTURES
 # ============================================================================
-
-@dataclass
-class Task:
-    """A learning task defined by examples."""
-    name: str
-    request_type: Type
-    examples: List[Tuple[Any, Any]]
-    family: str = ""
-    difficulty_level: int = 0
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __eq__(self, other):
-        return self.name == other.name
-
 
 @dataclass
 class SolutionEntry:
@@ -289,7 +286,8 @@ class NeuralDreamer:
                 out = fn(inp)
                 if isinstance(out, bool):  # Only keep boolean outputs for classification
                     examples.append((inp, out))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors from programs - skip this input
                 continue
 
             if len(examples) >= 10:
@@ -503,14 +501,18 @@ class DreamCoderV2:
             else:
                 task_grammar = self.grammar
 
-            # Enumerate
+            # Enumerate using TopDownEnumerator (replaces deprecated enumerate_simple)
             programs_tried = 0
             enum_start = time.time()
-
-            for program, log_prob in enumerate_simple(
+            enumerator = TopDownEnumerator(
                 task_grammar,
+                max_depth=self.max_depth,
+                max_programs=self.enumeration_budget
+            )
+
+            for program, log_prob in enumerator.enumerate(
                 task.request_type,
-                max_depth=self.max_depth
+                timeout_seconds=self.enumeration_timeout
             ):
                 programs_tried += 1
 
@@ -546,7 +548,8 @@ class DreamCoderV2:
 
                         if frontier.n_solutions >= self.keep_top_k:
                             break
-                except:
+                except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                    # Expected runtime errors from program evaluation - skip this program
                     pass
 
             frontier.total_programs_searched += programs_tried
@@ -764,7 +767,7 @@ class DreamCoderV2:
         timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 
         # Save JSON results
-        json_path = self.log_dir / f"dreamcoder_v2_{timestamp}.json"
+        json_path = self.log_dir / f"dreamcoder_{timestamp}.json"
         with open(json_path, 'w') as f:
             json.dump(results, f, indent=2, default=str)
 
@@ -829,7 +832,8 @@ def create_tasks_from_rules(
                         negatives.append((hand, False))
                     elif len(holdout_negatives) < holdout_target:
                         holdout_negatives.append((hand, False))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors from rule evaluation - skip this hand
                 continue
 
             # Check if we have enough of everything

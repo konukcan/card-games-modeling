@@ -36,29 +36,14 @@ from .program import (
 from .grammar import Grammar, Production, uniform_grammar
 from .enumeration import (
     Enumerator, Frontier, EnumerationResult,
-    enumerate_simple, enumerate_for_task
+    TopDownEnumerator, enumerate_for_task
 )
+# NOTE: enumerate_simple is deprecated - use TopDownEnumerator instead
 from .compression import (
     compress_frontiers, CompressionResult, compression_report,
     find_common_subtrees
 )
-
-
-@dataclass
-class Task:
-    """
-    A learning task defined by input-output examples.
-
-    For card game rules:
-    - Input: a hand (list of cards)
-    - Output: True/False (does the hand satisfy the rule?)
-    """
-    name: str
-    request_type: Type  # Type of the program (e.g., hand -> bool)
-    examples: List[Tuple[Any, Any]]  # [(input, output), ...]
-
-    def __str__(self) -> str:
-        return f"Task({self.name}, {len(self.examples)} examples)"
+from .task import Task
 
 
 @dataclass
@@ -346,10 +331,16 @@ class DreamCoder:
         start_time = time.time()
         programs_tried = 0
 
-        for program, log_prob in enumerate_simple(
+        # Use TopDownEnumerator (replaces deprecated enumerate_simple)
+        enumerator = TopDownEnumerator(
             self.grammar,
+            max_depth=self.max_depth,
+            max_programs=self.enumeration_budget
+        )
+
+        for program, log_prob in enumerator.enumerate(
             task.request_type,
-            max_depth=self.max_depth
+            timeout_seconds=self.enumeration_timeout
         ):
             programs_tried += 1
 

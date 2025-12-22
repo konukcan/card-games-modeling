@@ -42,7 +42,7 @@ from dreamcoder_core.enumeration import enumerate_simple
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, create_tasks_from_rules, make_eval_fn
 )
@@ -319,7 +319,8 @@ class StagedDreamCoder:
 
                         if frontier.n_solutions >= self.keep_top_k:
                             break
-                except:
+                except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                    # Expected evaluation errors from malformed programs
                     pass
 
             frontier.total_programs_searched += programs_tried

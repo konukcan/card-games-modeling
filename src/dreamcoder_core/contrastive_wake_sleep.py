@@ -39,12 +39,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dreamcoder_core.type_system import Type, arrow, HAND, BOOL
 from dreamcoder_core.program import Program, Primitive, Application, Abstraction, Index, Invented
 from dreamcoder_core.grammar import Grammar, Production
-from dreamcoder_core.enumeration import enumerate_simple, Frontier, EnumerationResult
+from dreamcoder_core.enumeration import TopDownEnumerator, Frontier, EnumerationResult
+# NOTE: enumerate_simple is deprecated - use TopDownEnumerator instead
 from dreamcoder_core.compression import compress_frontiers, CompressionResult
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.contrastive_dreaming import (
-    ContrastiveDreamer, StandardDreamer, HybridDreamer, ContrastiveDream, Task
+    ContrastiveDreamer, StandardDreamer, HybridDreamer, ContrastiveDream
 )
+from dreamcoder_core.task import Task
 
 
 # ============================================================================
@@ -360,14 +362,18 @@ class ContrastiveWakeSleep:
             else:
                 task_grammar = self.grammar
 
-            # Enumerate
+            # Enumerate using TopDownEnumerator (replaces deprecated enumerate_simple)
             programs_tried = 0
             enum_start = time.time()
-
-            for program, log_prob in enumerate_simple(
+            enumerator = TopDownEnumerator(
                 task_grammar,
+                max_depth=self.max_depth,
+                max_programs=self.enumeration_budget
+            )
+
+            for program, log_prob in enumerator.enumerate(
                 task.request_type,
-                max_depth=self.max_depth
+                timeout_seconds=self.enumeration_timeout
             ):
                 programs_tried += 1
 
@@ -399,7 +405,8 @@ class ContrastiveWakeSleep:
 
                         if frontier.n_solutions >= self.keep_top_k:
                             break
-                except:
+                except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                    # Expected evaluation errors from malformed programs
                     pass
 
             frontier.total_programs_searched += programs_tried
@@ -687,7 +694,8 @@ def create_tasks_from_rules(
                     positives.append((hand, True))
                 elif not label and len(negatives) < target:
                     negatives.append((hand, False))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
+                # Rule evaluation failed for this hand - skip it
                 continue
 
             if len(positives) >= target and len(negatives) >= target:

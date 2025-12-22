@@ -1,0 +1,100 @@
+{
+  "recognition_guidance_test": "PASS",
+  "dream_quality_test": "PASS",
+  "iterations": [
+    {
+      "iteration": 1,
+      "tasks_solved": 5,
+      "programs_enumerated": 5,
+      "wake_time": 0.01781916618347168,
+      "dream_time": 0.4231569766998291,
+      "total_time": 0.4409971237182617,
+      "n_dreams": 1,
+      "solutions": [
+        {
+          "task": "Sorted_by_rank",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Has_pair_ranks",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Uniform_color",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_two_suits",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_one_club",
+          "program": "(\u03bb false)"
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "tasks_solved": 5,
+      "programs_enumerated": 5,
+      "wake_time": 0.06895589828491211,
+      "dream_time": 0.4136228561401367,
+      "total_time": 0.4825928211212158,
+      "n_dreams": 3,
+      "solutions": [
+        {
+          "task": "Sorted_by_rank",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Has_pair_ranks",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Uniform_color",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_two_suits",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_one_club",
+          "program": "(\u03bb false)"
+        }
+      ]
+    },
+    {
+      "iteration": 3,
+      "tasks_solved": 5,
+      "programs_enumerated": 5,
+      "wake_time": 0.03909802436828613,
+      "dream_time": 0.4207780361175537,
+      "total_time": 0.45988917350769043,
+      "n_dreams": 2,
+      "solutions": [
+        {
+          "task": "Sorted_by_rank",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Has_pair_ranks",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Uniform_color",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_two_suits",
+          "program": "(\u03bb false)"
+        },
+        {
+          "task": "Exactly_one_club",
+          "program": "(\u03bb false)"
+        }
+      ]
+    }
+  ],
+  "all_passed": true
+}

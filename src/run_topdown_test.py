@@ -55,7 +55,7 @@ from dreamcoder_core.enumeration import TopDownEnumerator, enumerate_simple, Enu
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, create_tasks_from_rules, make_eval_fn
 )
@@ -295,7 +295,7 @@ class TopDownDreamCoder:
                                 result = self.eval_fn(program, inp)
                                 if result == expected:
                                     holdout_correct += 1
-                            except:
+                            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
                                 pass
 
                         if len(holdout) == 0 or holdout_correct >= len(holdout) * 0.9:

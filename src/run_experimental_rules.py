@@ -49,7 +49,7 @@ from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.lean_primitives import build_lean_grammar
 
 # DreamCoder v2 components
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, make_eval_fn
 )

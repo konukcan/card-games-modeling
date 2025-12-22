@@ -1,9 +1,12 @@
 """
-Complete catalogue of 56 card game rules.
+Complete catalogue of 45 card game rules (core experimental set).
 
 Each rule is implemented as a predicate (Hand → bool) using the compositional primitives.
 This module demonstrates the compositional structure and enables analysis of
 shared subprograms across rules.
+
+NOTE: This catalogue matches the 45 core rules in card-games/js/rules.js exactly.
+For pre-training rules (used for model warm-up), see pretraining_rules.py.
 
 COMPOSITIONAL NOTATION:
 - We express each rule as a composition of primitives
@@ -115,12 +118,13 @@ def C(name: str, *args, **params) -> CompositionNode:
 
 
 # ============================================================================
-# RULE CATALOG - ALL 56 RULES
+# RULE CATALOG - CORE 45 RULES
 # Organized by family with full compositional decomposition
+# Matches card-games/js/rules.js exactly
 # ============================================================================
 
 def create_all_rules() -> List[Rule]:
-    """Create all 56 rules with full metadata and compositions."""
+    """Create all 45 core experimental rules with full metadata and compositions."""
     rules = []
 
     # =========================================================================
@@ -288,27 +292,9 @@ def create_all_rules() -> List[Rule]:
     ))
 
     # =========================================================================
-    # FAMILY: POSITION (Specific position constraints)
-    # NOTE: Pos3_is_JQK (r7x) removed - requires face card constants (11, 12, 13)
-    # =========================================================================
-
-    # r8x: Position 4 is 2, 5, 7
-    rules.append(Rule(
-        id="Pos4_is_2_5_7",
-        token="r8x",
-        name="Card #4 is 2, 5, or 7",
-        predicate=lambda h: len(h) >= 4 and get_rank(h[3]) in {Rank.TWO, Rank.FIVE, Rank.SEVEN},
-        family="POSITION",
-        description="The 4th card (from the left) is 2, 5, or 7.",
-        composition=C("member", C("at", index=3), C("set", values=["2", "5", "7"])),
-        primitives_used=["at", "get_rank", "member", "set"],
-        level=0
-    ))
-
-    # =========================================================================
-    # FAMILY: TOKEN (Specific card presence)
-    # NOTE: Has_Ace_of_Spades (r9x) and Has_6_of_Diamonds (r10x) removed
-    #       - These require specific rank constants (14, 6) that we're eliminating
+    # FAMILY: POSITION
+    # NOTE: r7x (Pos3_is_JQK), r8x (Pos4_is_2_5_7) - ARCHIVED (non-contiguous rank sets)
+    # NOTE: r9x (Has_Ace_of_Spades), r10x (Has_6_of_Diamonds) - ARCHIVED (rank constants)
     # =========================================================================
 
     # =========================================================================
@@ -356,35 +342,8 @@ def create_all_rules() -> List[Rule]:
 
     # =========================================================================
     # FAMILY: SCORE (Scoring formulas)
+    # NOTE: r6x (Score_threshold_Rstar) - ARCHIVED (complex compound scoring)
     # =========================================================================
-
-    # r6x: Score threshold
-    def score_rule(hand: Hand, threshold: int = 50) -> bool:
-        rank_sum = sum_values(hand)
-        sorted_bonus = 10 if is_sorted(hand) else 0
-        hearts_count = count_equal(Suit.HEARTS, get_suit)(hand)
-        hearts_bonus = 6 if hearts_count >= 3 else 0
-        score = rank_sum + sorted_bonus + hearts_bonus
-        return score >= threshold
-
-    rules.append(Rule(
-        id="Score_threshold_Rstar",
-        token="r6x",
-        name="Score rule (ranks + order + hearts)",
-        predicate=score_rule,
-        family="SCORE",
-        description="Add ranks; add 10 if non-decreasing; add 6 if ≥3 ♥; win if total ≥ threshold.",
-        composition=C("gte",
-            C("add",
-                C("sum", C("map", C("get_rank_val"))),
-                C("if", C("is_sorted"), then_val=10, else_val=0),
-                C("if", C("gte", C("count_equal", C("get_suit"), value="HEARTS"), value=3), then_val=6, else_val=0)
-            ),
-            threshold=50
-        ),
-        primitives_used=["sum", "map", "get_rank_val", "is_sorted", "count_equal", "get_suit", "gte", "if", "add"],
-        level=1
-    ))
 
     # r42x: Half sum diff >= N
     def half_sum_diff_geN(hand: Hand) -> bool:
@@ -458,27 +417,7 @@ def create_all_rules() -> List[Rule]:
         level=2
     ))
 
-    # r13x: Halves uniform parity equal
-    def halves_uniform_parity_equal(hand: Hand) -> bool:
-        left, right = halves(hand)
-        left_uniform = uniform_property(get_parity)(left)
-        right_uniform = uniform_property(get_parity)(right)
-        return left_uniform == right_uniform
-
-    rules.append(Rule(
-        id="Halves_uniform_parity_equal",
-        token="r13x",
-        name="Both halves uniform in odd/even (or both not)",
-        predicate=halves_uniform_parity_equal,
-        family="HIER",
-        description="Each half either all odd or all even ranks — and the two halves match on this property.",
-        composition=C("eq",
-            C("uniform", C("get_parity"), C("left_half")),
-            C("uniform", C("get_parity"), C("right_half"))
-        ),
-        primitives_used=["halves", "uniform", "get_parity", "eq"],
-        level=2
-    ))
+    # NOTE: r13x (Halves_uniform_parity_equal) - ARCHIVED (double nesting too complex)
 
     # r14x: Halves AP step 1 equal
     def halves_ap_step1_equal(hand: Hand) -> bool:
@@ -842,25 +781,7 @@ def create_all_rules() -> List[Rule]:
         level=2
     ))
 
-    # r25x: Shift 2 plus 3
-    def shift2_plus3(hand: Hand) -> bool:
-        pairs = shifted_pairs(2)(hand)
-        for c1, c2 in pairs:
-            if get_rank_val(c2) != get_rank_val(c1) + 3:
-                return False
-        return len(pairs) > 0
-
-    rules.append(Rule(
-        id="Shift2_plus3",
-        token="r25x",
-        name="Skip-2 positions differ by +3 rank",
-        predicate=shift2_plus3,
-        family="SHIFT",
-        description="Every pair separated by 2 positions differs by exactly 3 ranks.",
-        composition=C("all", C("shifted_pairs", k=2), C("eq", C("diff", C("get_rank_val")), value=3)),
-        primitives_used=["shifted_pairs", "all", "get_rank_val", "diff", "eq"],
-        level=2
-    ))
+    # NOTE: r25x (Shift2_plus3) - ARCHIVED (overlapping constraints too complex)
 
     # r41x: Shift half ge (right >= left)
     def shift_half_ge(hand: Hand) -> bool:
@@ -884,128 +805,9 @@ def create_all_rules() -> List[Rule]:
     ))
 
     # =========================================================================
-    # FAMILY: MAP (Suit cycle mapping rules)
+    # FAMILY: MAP - ARCHIVED
+    # NOTE: r32x-r37x (suit cycle rules) - ARCHIVED (arbitrary suit cycles)
     # =========================================================================
-
-    # r32x: Half map samepos M1
-    def half_map_samepos_m1(hand: Hand) -> bool:
-        n = len(hand)
-        k = n // 2
-        for i in range(k):
-            if suit_cycle_m1(get_suit(hand[i])) != get_suit(hand[i + k]):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Half_map_samepos_M1",
-        token="r32x",
-        name="Right half is the next suit (cycle M1) of left half",
-        predicate=half_map_samepos_m1,
-        family="MAP",
-        description="Cycle M1: ♣→♠→♥→♦→♣. For each position i, the suit on the right equals next(M1) of the suit on the left.",
-        composition=C("all", C("shifted_pairs", k="n/2"), C("eq", C("cycle_M1", C("get_suit", C("first"))), C("get_suit", C("second")))),
-        primitives_used=["shifted_pairs", "all", "get_suit", "cycle_M1", "eq"],
-        level=2
-    ))
-
-    # r33x: Half map samepos M2
-    def half_map_samepos_m2(hand: Hand) -> bool:
-        n = len(hand)
-        k = n // 2
-        for i in range(k):
-            if suit_cycle_m2(get_suit(hand[i])) != get_suit(hand[i + k]):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Half_map_samepos_M2",
-        token="r33x",
-        name="Right half is the next suit (cycle M2) of left half",
-        predicate=half_map_samepos_m2,
-        family="MAP",
-        description="Cycle M2: ♣→♥→♠→♦→♣. For each position i, the suit on the right equals next(M2) of the suit on the left.",
-        composition=C("all", C("shifted_pairs", k="n/2"), C("eq", C("cycle_M2", C("get_suit", C("first"))), C("get_suit", C("second")))),
-        primitives_used=["shifted_pairs", "all", "get_suit", "cycle_M2", "eq"],
-        level=2
-    ))
-
-    # r34x: Step2 back map M1
-    def step2_back_map_m1(hand: Hand) -> bool:
-        for j in range(2, len(hand)):
-            if suit_cycle_m1(get_suit(hand[j-2])) != get_suit(hand[j]):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Step2_back_map_M1",
-        token="r34x",
-        name="Suit at j follows next(M1) of suit at j−2",
-        predicate=step2_back_map_m1,
-        family="MAP",
-        description="Cycle M1: ♣→♠→♥→♦→♣. For any position j≥2, suit[j] is next(M1) of suit[j−2].",
-        composition=C("all", C("shifted_pairs", k=2), C("eq", C("cycle_M1", C("get_suit", C("first"))), C("get_suit", C("second")))),
-        primitives_used=["shifted_pairs", "all", "get_suit", "cycle_M1", "eq"],
-        level=2
-    ))
-
-    # r35x: Step2 back map M2
-    def step2_back_map_m2(hand: Hand) -> bool:
-        for j in range(2, len(hand)):
-            if suit_cycle_m2(get_suit(hand[j-2])) != get_suit(hand[j]):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Step2_back_map_M2",
-        token="r35x",
-        name="Suit at j follows next(M2) of suit at j−2",
-        predicate=step2_back_map_m2,
-        family="MAP",
-        description="Cycle M2: ♣→♥→♠→♦→♣. For any position j≥2, suit[j] is next(M2) of suit[j−2].",
-        composition=C("all", C("shifted_pairs", k=2), C("eq", C("cycle_M2", C("get_suit", C("first"))), C("get_suit", C("second")))),
-        primitives_used=["shifted_pairs", "all", "get_suit", "cycle_M2", "eq"],
-        level=2
-    ))
-
-    # r36x: Adjacent same or map M1
-    def adj_same_or_map_m1(hand: Hand) -> bool:
-        for i in range(len(hand) - 1):
-            a, b = get_suit(hand[i]), get_suit(hand[i+1])
-            if not (a == b or suit_cycle_m1(a) == b):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Adj_same_or_map_M1",
-        token="r36x",
-        name="Adjacent suits: same or next (M1)",
-        predicate=adj_same_or_map_m1,
-        family="MAP",
-        description="For each neighbor pair, the second suit is either the same or the next in cycle M1.",
-        composition=C("all", C("adjacent_pairs"), C("or", C("eq", C("get_suit")), C("eq", C("cycle_M1", C("get_suit", C("first"))), C("get_suit", C("second"))))),
-        primitives_used=["adjacent_pairs", "all", "get_suit", "cycle_M1", "eq", "or"],
-        level=2
-    ))
-
-    # r37x: Adjacent same or map M2
-    def adj_same_or_map_m2(hand: Hand) -> bool:
-        for i in range(len(hand) - 1):
-            a, b = get_suit(hand[i]), get_suit(hand[i+1])
-            if not (a == b or suit_cycle_m2(a) == b):
-                return False
-        return True
-
-    rules.append(Rule(
-        id="Adj_same_or_map_M2",
-        token="r37x",
-        name="Adjacent suits: same or next (M2)",
-        predicate=adj_same_or_map_m2,
-        family="MAP",
-        description="For each neighbor pair, the second suit is either the same or the next in cycle M2.",
-        composition=C("all", C("adjacent_pairs"), C("or", C("eq", C("get_suit")), C("eq", C("cycle_M2", C("get_suit", C("first"))), C("get_suit", C("second"))))),
-        primitives_used=["adjacent_pairs", "all", "get_suit", "cycle_M2", "eq", "or"],
-        level=2
-    ))
 
     # =========================================================================
     # FAMILY: ADJ (Adjacent/skip constraints)
@@ -1065,6 +867,25 @@ def create_all_rules() -> List[Rule]:
         description="For each adjacent pair, rank distance is at most 3.",
         composition=C("all", C("adjacent_pairs"), C("lte", C("abs", C("diff", C("get_rank_val"))), value=3)),
         primitives_used=["adjacent_pairs", "all", "get_rank_val", "diff", "abs", "lte"],
+        level=2
+    ))
+
+    # r57x: Adjacent same rank or color
+    def adj_same_rank_or_color(hand: Hand) -> bool:
+        for i in range(len(hand) - 1):
+            if not (get_rank(hand[i]) == get_rank(hand[i+1]) or get_color(hand[i]) == get_color(hand[i+1])):
+                return False
+        return True
+
+    rules.append(Rule(
+        id="Adj_same_rank_or_color",
+        token="r57x",
+        name="Neighbors share rank or color",
+        predicate=adj_same_rank_or_color,
+        family="ADJ",
+        description="For every adjacent pair, either ranks match or colors match.",
+        composition=C("all", C("adjacent_pairs"), C("or", C("eq", C("get_rank")), C("eq", C("get_color")))),
+        primitives_used=["adjacent_pairs", "all", "get_rank", "get_color", "eq", "or"],
         level=2
     ))
 
@@ -1184,11 +1005,10 @@ DISCOVERED_ABSTRACTIONS = {
         "name": "Halves Property Equal (Boolean)",
         "composition": "λP. λh. P(left_half(h)) = P(right_half(h))",
         "description": "Check if a boolean property holds equally in both halves (both true or both false)",
-        "used_by": ["Halves_uniform_color_equal", "Halves_uniform_parity_equal",
-                    "Halves_AP_step1_equal", "Halves_hearts_presence_equal",
+        "used_by": ["Halves_same_color", "Halves_AP_step1_equal", "Halves_hearts_presence_equal",
                     "Halves_AP_len3_any_equal", "Halves_AP_len2_step1_equal"],
         "level": 4,
-        "frequency": 6
+        "frequency": 5
     },
     "seq_palindrome": {
         "name": "Sequence Palindrome",
@@ -1211,21 +1031,17 @@ DISCOVERED_ABSTRACTIONS = {
         "name": "Shifted Pairs Check",
         "composition": "λk. λR. λh. all(R, shifted_pairs(k, h))",
         "description": "Check if all pairs at offset k satisfy a relation",
-        "used_by": ["Shift_half_plus_two", "Shift2_plus3", "Shift_half_ge",
-                    "Half_map_samepos_M1", "Half_map_samepos_M2",
-                    "Step2_back_map_M1", "Step2_back_map_M2",
-                    "Skip2_same_rank_or_suit"],
+        "used_by": ["Shift_half_plus_two", "Shift_half_ge", "Skip2_same_rank_or_suit"],
         "level": 2,
-        "frequency": 8
+        "frequency": 3
     },
     "adjacent_check": {
         "name": "Adjacent Pairs Check",
         "composition": "λR. λh. all(R, adjacent_pairs(h))",
         "description": "Check if all adjacent pairs satisfy a relation",
-        "used_by": ["Adj_same_rank_or_suit", "Adj_rank_gap_le3",
-                    "Adj_same_or_map_M1", "Adj_same_or_map_M2"],
+        "used_by": ["Adj_same_rank_or_suit", "Adj_rank_gap_le3", "Adj_same_rank_or_color"],
         "level": 2,
-        "frequency": 4
+        "frequency": 3
     },
     "uniform_property": {
         "name": "Uniform Property",

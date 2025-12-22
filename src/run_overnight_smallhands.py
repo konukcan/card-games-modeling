@@ -48,7 +48,7 @@ print("Using Python modules (PyPy workers provide ~3-6x speedup for enumeration)
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, create_tasks_from_rules, make_eval_fn
 )

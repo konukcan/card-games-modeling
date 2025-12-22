@@ -60,7 +60,7 @@ print("Using Python modules (PyPy workers provide ~3-6x speedup for enumeration)
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, create_tasks_from_rules, make_eval_fn
 )
@@ -142,11 +142,15 @@ def deserialize_hand(hand_data):
 
 
 def evaluate_program(program, hand):
-    """Evaluate a program on a hand."""
+    """Evaluate a program on a hand.
+
+    Returns None if evaluation fails due to expected runtime errors.
+    """
     try:
         fn = program.evaluate([])
         return fn(hand)
-    except:
+    except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+        # Expected errors from malformed or incompatible programs
         return None
 
 
@@ -391,7 +395,8 @@ def enumerate_task_with_early_pruning(
                 if frontier.n_solutions >= keep_top_k:
                     break
 
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+            # Expected runtime errors from program evaluation - skip this program
             pass
 
     frontier.total_programs_searched = programs_tried
@@ -999,7 +1004,8 @@ class CythonOptimizedDreamCoder:
             try:
                 emb = self.recognition.get_task_embedding(task)
                 task_embeddings[task.name] = emb.numpy().tolist()
-            except Exception:
+            except (ValueError, TypeError, RuntimeError) as e:
+                # Expected errors from embedding extraction - skip this task
                 pass
 
         # Collect solved status

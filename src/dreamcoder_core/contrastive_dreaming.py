@@ -32,31 +32,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dreamcoder_core.type_system import Type, arrow, HAND, BOOL
 from dreamcoder_core.program import Program, Primitive, Application, Abstraction, Index, Invented
 from dreamcoder_core.grammar import Grammar
+from dreamcoder_core.task import Task
 # enumerate_simple removed - we now use Grammar.sample() for stochastic sampling
 
 
 # ============================================================================
 # DATA STRUCTURES
 # ============================================================================
-
-@dataclass
-class Task:
-    """A learning task defined by examples."""
-    name: str
-    request_type: Type
-    examples: List[Tuple[Any, Any]]  # [(input, output), ...]
-    family: str = ""
-    difficulty_level: int = 0
-
-    # For contrastive tasks, track which examples are near-miss pairs
-    near_miss_pairs: List[Tuple[int, int]] = field(default_factory=list)
-
-    def __hash__(self):
-        return hash(self.name)
-
-    def __eq__(self, other):
-        return self.name == other.name
-
 
 @dataclass
 class ContrastiveDream:
@@ -246,7 +228,8 @@ class ContrastiveDreamer:
         """
         try:
             fn = program.evaluate([])
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+            # Expected errors from malformed programs
             return None
 
         # Step 1: Collect positive examples by rejection sampling
@@ -261,7 +244,8 @@ class ContrastiveDreamer:
                 result = fn(hand)
                 if result == True:
                     positives.append(hand)
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors - skip this hand
                 continue
 
         if len(positives) < n_positives // 2:
@@ -307,7 +291,8 @@ class ContrastiveDreamer:
                 if result == False:
                     examples.append((hand, False))
                     negatives_needed -= 1
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors - skip this hand
                 continue
 
         # Shuffle to mix up the order
@@ -356,7 +341,8 @@ class ContrastiveDreamer:
                     result = program_fn(new_hand)
                     if result == False:
                         return new_hand
-                except:
+                except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                    # Expected runtime errors - skip this modification
                     continue
 
         return None
@@ -511,7 +497,8 @@ class BalancedDreamer:
         """
         try:
             fn = program.evaluate([])
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+            # Expected errors from malformed programs
             return None
 
         n_each = n_examples // 2
@@ -529,7 +516,8 @@ class BalancedDreamer:
                     positives.append((hand, True))
                 elif result == False and len(negatives) < n_each:
                     negatives.append((hand, False))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors - skip this hand
                 continue
 
         # Check if we got enough of each
@@ -673,7 +661,8 @@ class StandardDreamer:
 
         try:
             fn = program.evaluate([])
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+            # Expected errors from malformed programs
             return []
 
         for _ in range(n_examples * 3):
@@ -683,7 +672,8 @@ class StandardDreamer:
                 result = fn(hand)
                 if isinstance(result, bool):
                     examples.append((hand, result))
-            except:
+            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+                # Expected runtime errors - skip this hand
                 continue
 
             if len(examples) >= n_examples:

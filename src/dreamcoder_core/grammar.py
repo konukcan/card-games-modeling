@@ -54,7 +54,7 @@ from .type_system import (
 )
 from .program import (
     Program, Primitive, Application, Abstraction, Index, Invented,
-    apply_args, multi_lambda
+    apply_args, multi_lambda, uses_variable
 )
 
 
@@ -710,6 +710,71 @@ class Grammar:
             current_type = ret_type
 
         return (program, total_log_prob)
+
+    def sample_requiring_variable(
+        self,
+        request_type: Type,
+        variable_index: int = 0,
+        max_depth: int = 6,
+        temperature: float = 1.0,
+        max_retries: int = 10
+    ) -> Optional[Tuple[Program, float]]:
+        """
+        Sample a program that actually uses a specific bound variable.
+
+        This addresses the "dream quality" problem where naive Grammar.sample()
+        often produces trivial constant programs that don't use the input.
+
+        For example, when sampling HAND -> BOOL, we want programs like:
+            λ. (all_same_suit $0)    -- Uses $0 ✓
+            λ. (has_pair $0)         -- Uses $0 ✓
+
+        NOT constant functions like:
+            λ. true                   -- Ignores input ✗
+            λ. false                  -- Ignores input ✗
+
+        Algorithm:
+        1. Sample a program using the regular sample() method
+        2. Check if it uses the specified variable (typically $0)
+        3. If not, retry up to max_retries times
+        4. Return None if all retries produce constant programs
+
+        Args:
+            request_type: The type of program to sample (e.g., HAND -> BOOL)
+            variable_index: Which de Bruijn index must be used (default 0 = $0)
+            max_depth: Maximum recursion depth for sampling
+            temperature: Sampling temperature (1.0 = proportional to probs)
+            max_retries: Maximum attempts before giving up
+
+        Returns:
+            (program, log_probability) tuple, or None if no valid program found
+
+        WHY THIS MATTERS FOR DREAM QUALITY:
+            In DreamCoder's sleep phase, we generate "dreams" (synthetic training
+            examples) by sampling from the grammar. If dreams are trivial
+            constant functions, the recognition model learns nothing useful.
+            By requiring programs to use the input variable, we ensure dreams
+            are actually informative training examples.
+        """
+        for attempt in range(max_retries):
+            result = self.sample(request_type, max_depth, temperature)
+            if result is not None:
+                program, log_prob = result
+
+                # For function types, check if the body uses $0
+                # (the lambda's argument)
+                if isinstance(request_type, Arrow):
+                    # The program should be an Abstraction
+                    if isinstance(program, Abstraction):
+                        if uses_variable(program.body, variable_index):
+                            return result
+                else:
+                    # For non-function types, just return the program
+                    # (no variable requirement makes sense)
+                    return result
+
+        # All retries failed - no program using the variable was found
+        return None
 
     # ========================================================================
     # GRAMMAR UPDATES (for wake-sleep learning)

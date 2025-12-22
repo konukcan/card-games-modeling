@@ -20,4 +20,5 @@ from .program import *
 from .grammar import *
 from .enumeration import *
 from .compression import *
+from .task import *  # Canonical Task definition
 from .wake_sleep import *

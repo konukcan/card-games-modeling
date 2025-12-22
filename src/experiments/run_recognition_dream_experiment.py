@@ -48,6 +48,7 @@ from dreamcoder_core.type_system import arrow, HAND, BOOL
 from dreamcoder_core.enumeration import TopDownEnumerator, EnumerationResult, Frontier
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.grammar import Grammar
+from dreamcoder_core.task import Task
 
 from rules.cards import sample_hand
 from rules.pretraining_rules import get_all_pretraining_rules, get_easy_pretraining_rules
@@ -120,16 +121,6 @@ N_RUNS_PER_CONDITION = 3
 # ============================================================================
 # TASK CREATION
 # ============================================================================
-
-@dataclass
-class Task:
-    """A synthesis task defined by examples."""
-    name: str
-    request_type: Any
-    examples: List[Tuple[Any, bool]]
-    holdout: List[Tuple[Any, bool]]
-    rule_fn: Any  # The underlying rule function
-
 
 def create_tasks_from_rules(
     rules: List,

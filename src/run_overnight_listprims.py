@@ -13,7 +13,7 @@ Curriculum Structure:
 - Phase 4: All remaining rules (LANG, CENTER, SCORE, complex AP)
 
 Expected duration: 8-12 hours
-Expected outcome: ~35-45 of 57 rules solved (vs 8 without list primitives)
+Expected outcome: ~30-40 of 45 rules solved (vs 8 without list primitives)
 """
 
 import sys
@@ -199,7 +199,7 @@ def classify_rules() -> dict:
 
 def create_tasks_from_rules_list(rules: list, n_examples=100, n_holdout=20, hand_size=6, seed=42):
     """Create tasks from a list of Rule objects."""
-    from dreamcoder_core.dreamcoder_v2 import Task
+    from dreamcoder_core.dreamcoder_original import Task
 
     tasks = []
     for rule in rules:
@@ -454,10 +454,10 @@ def main():
     # Ensure frontiers exist for all tasks upfront
     for task in all_tasks:
         if task.name not in dc.frontiers:
-            from dreamcoder_core.dreamcoder_v2 import TaskFrontier
+            from dreamcoder_core.dreamcoder_original import TaskFrontier
             dc.frontiers[task.name] = TaskFrontier(task, max_size=dc.keep_top_k)
         if task.name not in dc.task_metrics:
-            from dreamcoder_core.dreamcoder_v2 import TaskMetrics
+            from dreamcoder_core.dreamcoder_original import TaskMetrics
             dc.task_metrics[task.name] = TaskMetrics(task_name=task.name, family=task.family)
 
     # Run training

@@ -6,7 +6,7 @@ This repository implements a **DreamCoder-inspired program synthesis system** fo
 
 This is a computational modeling companion to the behavioral card game experiment in [card-games](https://github.com/konukcan/card-games). We implement:
 
-1. **Compositional DSL** for card game rules (56 rules decomposed into primitives)
+1. **Compositional DSL** for card game rules (45 core rules decomposed into primitives)
 2. **Program enumeration** with best-first search
 3. **Neural recognition network** to guide search
 4. **Library learning** through compression
@@ -42,7 +42,8 @@ card-games-modeling/
 │   ├── dreamcoder/              # Legacy components (reference only)
 │   ├── rules/                   # Card game domain
 │   │   ├── cards.py             # Card/Hand representations
-│   │   └── catalogue.py         # All 56 rules
+│   │   ├── catalogue.py         # Core 45 experimental rules
+│   │   └── pretraining_rules.py # Alternative 44 pre-training rules
 │   ├── visualization/           # Analysis & plotting
 │   ├── results/                 # Experiment outputs
 │   │   └── overnight_v3/        # Current overnight runs
@@ -240,7 +241,7 @@ Compare to human data
 
 **Current (v0.3 - Working Pipeline)**:
 - ✅ Complete DSL with 60 base primitives
-- ✅ All 56 rules implemented in catalogue
+- ✅ All 45 core rules implemented in catalogue
 - ✅ Neural recognition network (bidirectional GRU + attention)
 - ✅ PyPy-accelerated parallel enumeration
 - ✅ Library learning with compression
@@ -254,7 +255,7 @@ Compare to human data
 - Recognition model loss: 5.60 → 4.82
 
 **Next Steps**:
-- Scale to full 56 rules
+- Scale to full 45 core rules
 - Optimize memory usage for longer runs
 - Fit to human behavioral data
 

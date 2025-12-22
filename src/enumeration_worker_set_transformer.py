@@ -27,11 +27,15 @@ def deserialize_hand(hand_data):
 
 
 def evaluate_program(program, hand):
-    """Evaluate a program on a hand."""
+    """Evaluate a program on a hand.
+
+    Returns None if evaluation fails due to expected runtime errors.
+    """
     try:
         fn = program.evaluate([])
         return fn(hand)
-    except:
+    except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+        # Expected errors from malformed or incompatible programs
         return None
 
 

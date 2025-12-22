@@ -191,7 +191,7 @@ def learn_library(solved_tasks):
     ...
 ```
 
-**Integration**: Our grammar already encodes the "learned library" that DreamCoder would induce. Can validate by running DreamCoder's compression on our 56 rules and comparing.
+**Integration**: Our grammar already encodes the "learned library" that DreamCoder would induce. Can validate by running DreamCoder's compression on our 45 rules and comparing.
 
 ## Full Integration Steps
 
@@ -235,7 +235,7 @@ def learn_library(solved_tasks):
    ```python
    # dreamcoder/domains/cards/tasks.py
    def make_card_tasks():
-       return [Task(f"rule_{i}", examples) for i in range(56)]
+       return [Task(f"rule_{i}", examples) for i in range(45)]
    ```
 
 5. Run DreamCoder:
@@ -325,7 +325,7 @@ Our recognition network (from `dreamcoder_modeling/dreamcoder_demo.py`) is **alr
 
 To validate that our analysis matches DreamCoder's induced library:
 
-1. **Run DreamCoder on our 56 rules** (fresh, no prior library)
+1. **Run DreamCoder on our 45 rules** (fresh, no prior library)
 2. **Compare induced abstractions** with our Level 2-4 primitives
 3. **Hypothesis**: DreamCoder will discover `halves`, `hasAP`, `seqPalindrome`, etc.
 4. **Metric**: Compression ratio and library overlap
@@ -348,7 +348,7 @@ DreamCoder induced: halves (17 uses), hasAP (9 uses), seqPalindrome (5 uses)
 ### Our Implementation
 
 - **Primitives**: `src/rules/primitives.py` (Python)
-- **Catalogue**: `src/rules/catalogue.py` (56 rules)
+- **Catalogue**: `src/rules/catalogue.py` (45 core rules)
 - **Grammar Analysis**: `compositional_grammar_analysis/compositional_rule_grammar.tex`
 - **Recognition Network**: `dreamcoder_modeling/dreamcoder_demo.py` (working!)
 
@@ -361,7 +361,7 @@ DreamCoder induced: halves (17 uses), hasAP (9 uses), seqPalindrome (5 uses)
 
 2. **Medium-term** (next month):
    - Full integration with Ellis's codebase
-   - Run DreamCoder on all 56 rules
+   - Run DreamCoder on all 45 rules
    - Compare induced library with our grammar
 
 3. **Long-term** (next quarter):

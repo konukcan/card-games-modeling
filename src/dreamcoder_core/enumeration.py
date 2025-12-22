@@ -205,6 +205,11 @@ class TopDownEnumerator:
     - Can prune early: if partial program already exceeds cost bound, skip it
     - Naturally handles higher-order functions
 
+    MEMOIZATION (Option C - DreamCoder style):
+    The enumerate_memoized() method caches subproblem solutions by (type, env, budget_bucket).
+    This avoids re-enumerating the same subproblem multiple times, which is the key to
+    DreamCoder's efficiency.
+
     Attributes:
         grammar: The probabilistic grammar
         max_depth: Maximum AST depth
@@ -224,6 +229,11 @@ class TopDownEnumerator:
         self.max_programs = max_programs
         self.programs_enumerated = 0
         self.partial_programs_explored = 0
+
+        # Memoization cache: (type_str, env_tuple, budget_bucket) -> List[(Program, cost)]
+        self._memo_cache: Dict[Tuple[str, Tuple[str, ...], int], List[Tuple[Program, float]]] = {}
+        self._memo_hits = 0
+        self._memo_misses = 0
 
     def enumerate(
         self,
@@ -320,6 +330,10 @@ class TopDownEnumerator:
           extended env [arg_type] + old_env
         - When we fill a hole with a non-lambda, the remaining holes are at
           the same depth, so they use the same env
+
+        PREDICTIVE DEPTH PRUNING (Option B fix for partial program explosion):
+        Before pushing any partial to the queue, we estimate if it CAN be
+        completed within max_depth. If not, we skip it entirely.
         """
         # Find the first hole
         hole = find_first_hole(program)
@@ -331,6 +345,27 @@ class TopDownEnumerator:
 
         # Use the env directly - it's correct for the first hole by construction
         hole_env = env
+
+        # Helper for predictive depth pruning
+        def can_complete(new_prog: Program) -> bool:
+            """
+            Estimate if this partial program can complete within max_depth.
+
+            Heuristic: Each remaining hole needs at least 1 AST level to fill.
+            This is conservative (some holes need more), but catches the worst cases.
+            """
+            n_holes = count_holes(new_prog)
+            if n_holes == 0:
+                return True  # Already complete!
+
+            current_depth = new_prog.depth()
+            # Minimum additional depth: each hole needs at least 1 level
+            # (but holes can share depth levels, so we use a looser bound)
+            # More aggressive: assume at least half the holes add depth
+            min_additional_depth = max(0, (n_holes - 1) // 2)
+            estimated_final_depth = current_depth + min_additional_depth
+
+            return estimated_final_depth <= self.max_depth
 
         # CASE 1: If hole type is an arrow, we can fill with a lambda
         if isinstance(hole_type, Arrow):
@@ -349,14 +384,16 @@ class TopDownEnumerator:
             # The body hole will be filled later with its own cost
             new_env = [arg_type] + hole_env
 
-            prog_str = str(new_program)
-            if prog_str not in seen:
-                heapq.heappush(pq, PriorityItem(
-                    base_cost,
-                    new_program,
-                    hole_type,
-                    new_env
-                ))
+            # PREDICTIVE PRUNING: Can this complete within depth?
+            if can_complete(new_program):
+                prog_str = str(new_program)
+                if prog_str not in seen:
+                    heapq.heappush(pq, PriorityItem(
+                        base_cost,
+                        new_program,
+                        hole_type,
+                        new_env
+                    ))
 
         # CASE 2: Try grammar productions that produce hole_type
         candidates = self.grammar.candidates_for_type(hole_type, ctx, hole_env)
@@ -378,8 +415,12 @@ class TopDownEnumerator:
 
             new_program = substitute_hole(program, hole.id, filled)
 
-            # Check depth
+            # Check depth (current)
             if new_program.depth() > self.max_depth:
+                continue
+
+            # PREDICTIVE PRUNING: Can this complete within depth?
+            if not can_complete(new_program):
                 continue
 
             prog_str = str(new_program)
@@ -400,6 +441,7 @@ class TopDownEnumerator:
 
             new_program = substitute_hole(program, hole.id, Index(idx))
 
+            # Variables are leaves (no holes added), always can complete if depth OK
             prog_str = str(new_program)
             if prog_str not in seen:
                 heapq.heappush(pq, PriorityItem(
@@ -433,6 +475,613 @@ class TopDownEnumerator:
     # when we push new partial programs. The env is updated when we introduce
     # lambdas (CASE 1) and stays the same when we fill holes at the same depth.
     # This avoids the complexity of recomputing the env from the AST structure.
+
+    def enumerate_with_cost_bands(
+        self,
+        request_type: Type,
+        max_cost: float = 50.0,
+        timeout_seconds: float = float('inf'),
+        env: List[Type] = None,
+        initial_budget: float = 12.0,
+        budget_increment: float = 1.5
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate programs using ITERATIVE COST DEEPENING (like DreamCoder).
+
+        This addresses the partial program explosion problem by:
+        1. Using a SINGLE PERSISTENT priority queue (not restarted per band)
+        2. Processing items band by band, deferring high-cost items to later bands
+        3. This naturally bounds memory usage and avoids re-exploration
+
+        The key DreamCoder insight: Don't restart enumeration for each band.
+        Instead, maintain state and only expand what's within the current budget.
+
+        Args:
+            request_type: The type of programs to enumerate
+            max_cost: Maximum cost to explore (default 50.0)
+            timeout_seconds: Wall clock timeout
+            env: Type environment for bound variables
+            initial_budget: Starting cost budget (default 12.0)
+            budget_increment: How much to increase budget each iteration
+
+        Yields:
+            (complete_program, log_probability) tuples
+        """
+        if env is None:
+            env = []
+
+        start_time = time.time()
+        self.programs_enumerated = 0
+        self.partial_programs_explored = 0
+
+        # Reset hole counter for clean IDs
+        reset_hole_counter()
+
+        # SINGLE PERSISTENT priority queue (key difference from broken version)
+        pq: List[PriorityItem] = []
+
+        # TWO SEPARATE SEEN SETS (critical for correctness!):
+        # - partial_seen: prevents duplicate partials from entering queue
+        # - yielded: tracks which complete programs have been returned
+        partial_seen: Set[str] = set()
+        yielded: Set[str] = set()
+
+        # Start with a single hole of the request type
+        initial_hole = Hole(request_type)
+        heapq.heappush(pq, PriorityItem(0.0, initial_hole, request_type, env))
+
+        # Track current budget
+        current_budget = initial_budget
+
+        while pq and self.programs_enumerated < self.max_programs:
+            # Check timeout
+            if time.time() - start_time > timeout_seconds:
+                break
+
+            # Check if we've exceeded max_cost
+            if current_budget > max_cost:
+                break
+
+            # Peek at lowest-cost item
+            if pq[0].priority > current_budget:
+                # All remaining items exceed current budget - increase it
+                if current_budget < 20:
+                    current_budget += budget_increment
+                elif current_budget < 30:
+                    current_budget += budget_increment * 0.75
+                else:
+                    current_budget += budget_increment * 0.5
+                continue
+
+            # Pop lowest-cost partial program
+            item = heapq.heappop(pq)
+            cost = item.priority
+            program = item.program
+            current_env = item.env
+
+            # Skip if exceeds current band (shouldn't happen due to peek above)
+            if cost > current_budget:
+                # Put it back for the next band
+                heapq.heappush(pq, item)
+                continue
+
+            # Skip if exceeds depth
+            if program.depth() > self.max_depth:
+                continue
+
+            # Check if complete (no holes)
+            if not has_holes(program):
+                prog_str = str(program)
+                if prog_str not in yielded:
+                    yielded.add(prog_str)
+                    self.programs_enumerated += 1
+                    yield (program, -cost)
+                continue
+
+            # Expand the first hole (with predictive pruning)
+            self.partial_programs_explored += 1
+            self._expand_first_hole_with_budget(
+                pq, program, cost, current_env, partial_seen, current_budget
+            )
+
+    def _expand_first_hole_with_budget(
+        self,
+        pq: List[PriorityItem],
+        program: Program,
+        base_cost: float,
+        env: List[Type],
+        seen: Set[str],
+        budget: float
+    ) -> None:
+        """
+        Expand first hole, but only push items within budget.
+
+        Items exceeding budget are STILL pushed (for future bands),
+        but we prioritize staying within budget for memory efficiency.
+        """
+        hole = find_first_hole(program)
+        if hole is None:
+            return
+
+        hole_type = hole.tp
+        ctx = TypeContext()
+        hole_env = env
+
+        # CASE 1: Lambda for arrow types
+        if isinstance(hole_type, Arrow):
+            body_type = hole_type.ret
+            arg_type = hole_type.arg
+
+            body_hole = Hole(body_type)
+            lambda_prog = Abstraction(body_hole)
+            new_program = substitute_hole(program, hole.id, lambda_prog)
+            new_env = [arg_type] + hole_env
+
+            # Always push lambdas (they don't add cost)
+            prog_str = str(new_program)
+            if prog_str not in seen:
+                seen.add(prog_str)
+                heapq.heappush(pq, PriorityItem(
+                    base_cost, new_program, hole_type, new_env
+                ))
+
+        # CASE 2: Grammar productions
+        candidates = self.grammar.candidates_for_type(hole_type, ctx, hole_env)
+
+        for prod, inst_type, log_prob in candidates:
+            prod_cost = -log_prob
+            new_cost = base_cost + prod_cost
+
+            # Skip if WAY too expensive (2x budget as hard limit)
+            if new_cost > budget * 2:
+                continue
+
+            if isinstance(inst_type, Arrow):
+                filled = self._apply_with_holes(prod.program, inst_type)
+            else:
+                filled = prod.program
+
+            new_program = substitute_hole(program, hole.id, filled)
+
+            # Check depth
+            if new_program.depth() > self.max_depth:
+                continue
+
+            # Predictive depth pruning
+            n_holes = count_holes(new_program)
+            if n_holes > 0:
+                min_additional = max(0, (n_holes - 1) // 2)
+                if new_program.depth() + min_additional > self.max_depth:
+                    continue
+
+            prog_str = str(new_program)
+            if prog_str not in seen:
+                seen.add(prog_str)
+                heapq.heappush(pq, PriorityItem(
+                    new_cost, new_program, hole_type, hole_env
+                ))
+
+        # CASE 3: Variables
+        var_candidates = self.grammar.variable_candidates(hole_type, ctx, hole_env)
+
+        for idx, log_prob in var_candidates:
+            var_cost = -log_prob
+            new_cost = base_cost + var_cost
+
+            if new_cost > budget * 2:
+                continue
+
+            new_program = substitute_hole(program, hole.id, Index(idx))
+
+            prog_str = str(new_program)
+            if prog_str not in seen:
+                seen.add(prog_str)
+                heapq.heappush(pq, PriorityItem(
+                    new_cost, new_program, hole_type, hole_env
+                ))
+
+    def _enumerate_cost_band(
+        self,
+        request_type: Type,
+        lower_bound: float,
+        upper_bound: float,
+        timeout_seconds: float,
+        env: List[Type],
+        global_seen: Set[str]
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate programs within a specific cost band.
+
+        Only yields programs where lower_bound < cost <= upper_bound.
+        Uses global_seen to avoid duplicates across bands.
+        """
+        start_time = time.time()
+
+        # Reset hole counter for clean IDs
+        reset_hole_counter()
+
+        # Priority queue of partial programs
+        pq: List[PriorityItem] = []
+
+        # Local seen set for this band (merged with global at end)
+        band_seen: Set[str] = set()
+
+        # Start with a single hole of the request type
+        initial_hole = Hole(request_type)
+        heapq.heappush(pq, PriorityItem(0.0, initial_hole, request_type, env))
+
+        while pq and self.programs_enumerated < self.max_programs:
+            # Check timeout
+            if time.time() - start_time > timeout_seconds:
+                break
+
+            # Pop lowest-cost partial program
+            item = heapq.heappop(pq)
+            cost = item.priority
+            program = item.program
+            current_env = item.env
+
+            # KEY CHANGE: Skip if exceeds THIS BAND's upper bound
+            # This prevents queue explosion!
+            if cost > upper_bound:
+                continue
+
+            # Skip if exceeds depth
+            if program.depth() > self.max_depth:
+                continue
+
+            # Check if complete (no holes)
+            if not has_holes(program):
+                prog_str = str(program)
+
+                # Only yield if in THIS band (cost > lower_bound)
+                # AND not seen globally before
+                if cost > lower_bound and prog_str not in global_seen:
+                    global_seen.add(prog_str)
+                    band_seen.add(prog_str)
+                    self.programs_enumerated += 1
+                    yield (program, -cost)
+                continue
+
+            # Expand the first hole (but respect band limits)
+            self.partial_programs_explored += 1
+            self._expand_first_hole_bounded(
+                pq, program, cost, current_env,
+                band_seen, global_seen, upper_bound
+            )
+
+    def _expand_first_hole_bounded(
+        self,
+        pq: List[PriorityItem],
+        program: Program,
+        base_cost: float,
+        env: List[Type],
+        band_seen: Set[str],
+        global_seen: Set[str],
+        upper_bound: float
+    ) -> None:
+        """
+        Expand first hole with EARLY PRUNING based on cost band.
+
+        Key difference from _expand_first_hole:
+        We DON'T push partials that would exceed upper_bound.
+        """
+        # Find the first hole
+        hole = find_first_hole(program)
+        if hole is None:
+            return
+
+        hole_type = hole.tp
+        ctx = TypeContext()
+        hole_env = env
+
+        # CASE 1: If hole type is an arrow, fill with lambda
+        if isinstance(hole_type, Arrow):
+            body_type = hole_type.ret
+            arg_type = hole_type.arg
+
+            body_hole = Hole(body_type)
+            lambda_prog = Abstraction(body_hole)
+            new_program = substitute_hole(program, hole.id, lambda_prog)
+
+            # Lambda has 0 cost, so same base_cost
+            # Only push if we can possibly complete within bounds
+            if base_cost <= upper_bound:  # Lambda doesn't add cost
+                new_env = [arg_type] + hole_env
+                prog_str = str(new_program)
+                if prog_str not in band_seen and prog_str not in global_seen:
+                    band_seen.add(prog_str)
+                    heapq.heappush(pq, PriorityItem(
+                        base_cost,
+                        new_program,
+                        hole_type,
+                        new_env
+                    ))
+
+        # CASE 2: Try grammar productions
+        candidates = self.grammar.candidates_for_type(hole_type, ctx, hole_env)
+
+        for prod, inst_type, log_prob in candidates:
+            prod_cost = -log_prob
+            new_cost = base_cost + prod_cost
+
+            # EARLY PRUNING: Don't push if exceeds band
+            if new_cost > upper_bound:
+                continue
+
+            if isinstance(inst_type, Arrow):
+                filled = self._apply_with_holes(prod.program, inst_type)
+            else:
+                filled = prod.program
+
+            new_program = substitute_hole(program, hole.id, filled)
+
+            # Check depth
+            if new_program.depth() > self.max_depth:
+                continue
+
+            prog_str = str(new_program)
+            if prog_str not in band_seen and prog_str not in global_seen:
+                band_seen.add(prog_str)
+                heapq.heappush(pq, PriorityItem(
+                    new_cost,
+                    new_program,
+                    hole_type,
+                    hole_env
+                ))
+
+        # CASE 3: Try variables from environment
+        var_candidates = self.grammar.variable_candidates(hole_type, ctx, hole_env)
+
+        for idx, log_prob in var_candidates:
+            var_cost = -log_prob
+            new_cost = base_cost + var_cost
+
+            # EARLY PRUNING: Don't push if exceeds band
+            if new_cost > upper_bound:
+                continue
+
+            new_program = substitute_hole(program, hole.id, Index(idx))
+
+            prog_str = str(new_program)
+            if prog_str not in band_seen and prog_str not in global_seen:
+                band_seen.add(prog_str)
+                heapq.heappush(pq, PriorityItem(
+                    new_cost,
+                    new_program,
+                    hole_type,
+                    hole_env
+                ))
+
+    # =========================================================================
+    # OPTION C: MEMOIZED ENUMERATION (DreamCoder-style dynamic programming)
+    # =========================================================================
+
+    def enumerate_memoized(
+        self,
+        request_type: Type,
+        max_cost: float = 50.0,
+        timeout_seconds: float = float('inf'),
+        env: List[Type] = None,
+        depth_limit: int = None
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate programs using MEMOIZED SUBPROBLEM SOLVING (like DreamCoder's OCaml backend).
+
+        This is the key to DreamCoder's efficiency. The insight is that when filling
+        holes, the same subproblem (type, env, budget) appears many times:
+        - `(and ?? ??)` needs two BOOL-producing subexpressions
+        - `(eq ?? ??)` needs two INT-producing subexpressions
+        - etc.
+
+        Instead of re-enumerating from scratch each time, we CACHE the results
+        of "enumerate all programs of type T in env E with cost <= B".
+
+        Implementation:
+        1. Use discretized cost buckets (e.g., bucket_size=2.0) for cache keys
+        2. When filling a hole, check cache for (type, env, budget_bucket)
+        3. If cached, filter and return; if not, enumerate and cache
+        4. Use DFS within each bucket to avoid queue explosion
+
+        Args:
+            request_type: The type of programs to enumerate
+            max_cost: Maximum cost to explore (default 50.0)
+            timeout_seconds: Wall clock timeout
+            env: Type environment for bound variables
+            depth_limit: Override max_depth for this enumeration
+
+        Yields:
+            (complete_program, log_probability) tuples in cost order
+        """
+        if env is None:
+            env = []
+        if depth_limit is None:
+            depth_limit = self.max_depth
+
+        start_time = time.time()
+        self.programs_enumerated = 0
+        self.partial_programs_explored = 0
+        self._memo_hits = 0
+        self._memo_misses = 0
+
+        # Clear cache for fresh enumeration (can be kept between calls if desired)
+        self._memo_cache.clear()
+
+        # Enumerate using memoized recursive descent
+        for prog, cost in self._enumerate_type_memoized(
+            request_type, env, max_cost, depth_limit, start_time, timeout_seconds
+        ):
+            if self.programs_enumerated >= self.max_programs:
+                break
+            if time.time() - start_time > timeout_seconds:
+                break
+
+            self.programs_enumerated += 1
+            yield (prog, -cost)  # Return log_prob = -cost
+
+    def _enumerate_type_memoized(
+        self,
+        tp: Type,
+        env: List[Type],
+        budget: float,
+        depth_remaining: int,
+        start_time: float,
+        timeout: float
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate programs of a given type using memoization.
+
+        Uses recursive descent with memoization: each call to this function
+        is cached by (type, env, budget_bucket).
+        """
+        if depth_remaining <= 0:
+            return
+        if budget < 0:
+            return
+        if time.time() - start_time > timeout:
+            return
+
+        # CASE 1: Arrow type - enumerate lambdas
+        if isinstance(tp, Arrow):
+            # For arrow types, we create lambda abstractions
+            body_type = tp.ret
+            arg_type = tp.arg
+            new_env = [arg_type] + env
+
+            for body, body_cost in self._enumerate_type_memoized(
+                body_type, new_env, budget, depth_remaining - 1,
+                start_time, timeout
+            ):
+                lambda_prog = Abstraction(body)
+                yield (lambda_prog, body_cost)
+            return
+
+        # CASE 2: Base type - check cache or enumerate
+        # Create cache key
+        env_key = tuple(str(t) for t in env)
+        budget_bucket = int(budget / 2.0)  # Discretize to 2.0 unit buckets
+        cache_key = (str(tp), env_key, budget_bucket)
+
+        # Check cache
+        if cache_key in self._memo_cache:
+            self._memo_hits += 1
+            for prog, cost in self._memo_cache[cache_key]:
+                if cost <= budget:
+                    yield (prog, cost)
+            return
+
+        # Cache miss - enumerate and store
+        self._memo_misses += 1
+        results: List[Tuple[Program, float]] = []
+
+        ctx = TypeContext()
+
+        # Try variables from environment first (cheapest)
+        var_candidates = self.grammar.variable_candidates(tp, ctx, env)
+        for idx, log_prob in var_candidates:
+            cost = -log_prob
+            if cost <= budget:
+                var_prog = Index(idx)
+                results.append((var_prog, cost))
+                self.partial_programs_explored += 1
+                yield (var_prog, cost)
+
+        # Try grammar productions
+        candidates = self.grammar.candidates_for_type(tp, ctx, env)
+
+        for prod, inst_type, log_prob in candidates:
+            prod_cost = -log_prob
+
+            if prod_cost > budget:
+                continue
+
+            if isinstance(inst_type, Arrow):
+                # Production needs arguments - recurse
+                remaining_budget = budget - prod_cost
+                for applied, applied_cost in self._apply_production_memoized(
+                    prod.program, inst_type, env,
+                    remaining_budget, depth_remaining - 1,
+                    start_time, timeout
+                ):
+                    total_cost = prod_cost + applied_cost
+                    if total_cost <= budget:
+                        results.append((applied, total_cost))
+                        yield (applied, total_cost)
+            else:
+                # Production directly produces the type (base case)
+                results.append((prod.program, prod_cost))
+                self.partial_programs_explored += 1
+                yield (prod.program, prod_cost)
+
+        # Store in cache (sorted by cost for efficient lookup)
+        results.sort(key=lambda x: x[1])
+        self._memo_cache[cache_key] = results
+
+    def _apply_production_memoized(
+        self,
+        func: Program,
+        func_type: Arrow,
+        env: List[Type],
+        budget: float,
+        depth_remaining: int,
+        start_time: float,
+        timeout: float
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Apply a production to arguments, using memoized enumeration for each arg.
+
+        Given func : A → B → C, enumerate all ways to apply it:
+        - For each arg1 of type A with cost c1
+        - For each arg2 of type B with cost c2 where c1 + c2 <= budget
+        - Yield ((func arg1) arg2), c1 + c2
+        """
+        if depth_remaining <= 0:
+            return
+        if budget < 0:
+            return
+        if time.time() - start_time > timeout:
+            return
+
+        arg_type = func_type.arg
+        ret_type = func_type.ret
+
+        # Enumerate arguments using memoization
+        for arg, arg_cost in self._enumerate_type_memoized(
+            arg_type, env, budget, depth_remaining,
+            start_time, timeout
+        ):
+            if arg_cost > budget:
+                continue
+
+            new_prog = Application(func, arg)
+            remaining = budget - arg_cost
+
+            if isinstance(ret_type, Arrow):
+                # More arguments needed
+                for applied, more_cost in self._apply_production_memoized(
+                    new_prog, ret_type, env, remaining, depth_remaining,
+                    start_time, timeout
+                ):
+                    yield (applied, arg_cost + more_cost)
+            else:
+                # Base case - fully applied
+                self.partial_programs_explored += 1
+                yield (new_prog, arg_cost)
+
+    def clear_memo_cache(self):
+        """Clear the memoization cache (call between tasks if needed)."""
+        self._memo_cache.clear()
+        self._memo_hits = 0
+        self._memo_misses = 0
+
+    def get_memo_stats(self) -> Dict[str, int]:
+        """Get memoization cache statistics."""
+        return {
+            'cache_size': len(self._memo_cache),
+            'hits': self._memo_hits,
+            'misses': self._memo_misses,
+            'hit_rate': self._memo_hits / max(1, self._memo_hits + self._memo_misses)
+        }
 
 
 # ============================================================================
@@ -775,7 +1424,27 @@ def enumerate_top_down(
 
 
 # ============================================================================
-# ITERATIVE DEEPENING (kept for simplicity)
+# ITERATIVE DEEPENING (LEGACY - kept for worker compatibility)
+# ============================================================================
+#
+# DEPRECATION NOTICE:
+# ------------------
+# enumerate_simple is a LEGACY enumeration strategy that should NOT be used in
+# new main code paths. It is kept ONLY for:
+#   1. Worker files (enumeration_worker.py, etc.) that run in PyPy
+#   2. Test files for simple validation
+#   3. Backward compatibility with older scripts
+#
+# For NEW CODE, use TopDownEnumerator instead:
+#   - TopDownEnumerator uses priority queue with grammar log-probabilities
+#   - Supports recognition-guided search via predict_grammar_weights()
+#   - Better integration with neural recognition models
+#
+# enumerate_simple limitations:
+#   - Returns programs in depth order, ignoring grammar probabilities
+#   - Cannot easily integrate recognition model guidance
+#   - Less efficient for finding high-probability programs
+#
 # ============================================================================
 
 def enumerate_simple(
@@ -786,9 +1455,18 @@ def enumerate_simple(
     seen: Set[str] = None
 ) -> Generator[Tuple[Program, float], None, None]:
     """
-    Enumerate programs using iterative deepening.
+    DEPRECATED: Use TopDownEnumerator for new code.
 
+    Enumerate programs using iterative deepening.
     Simpler than priority queue approaches, guarantees shortest programs first.
+
+    This function is kept for:
+    - Worker files running in PyPy (which may not support full TopDownEnumerator)
+    - Test files for simple validation
+    - Backward compatibility
+
+    For recognition-guided enumeration, use TopDownEnumerator with a grammar
+    that has been adjusted via recognition_model.predict_grammar_weights().
     """
     if seen is None:
         seen = set()

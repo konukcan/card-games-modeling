@@ -54,7 +54,7 @@ from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.lean_primitives import build_lean_grammar
 
 # DreamCoder v2 components
-from dreamcoder_core.dreamcoder_v2 import (
+from dreamcoder_core.dreamcoder_original import (
     Task, SolutionEntry, TaskFrontier, IterationMetrics, TaskMetrics,
     NeuralDreamer, create_tasks_from_rules, make_eval_fn
 )
@@ -138,11 +138,15 @@ def deserialize_hand(hand_data):
 
 
 def evaluate_program(program, hand):
-    """Evaluate a program on a hand."""
+    """Evaluate a program on a hand.
+
+    Returns None if evaluation fails due to expected runtime errors.
+    """
     try:
         fn = program.evaluate([])
         return fn(hand)
-    except:
+    except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+        # Expected errors from malformed or incompatible programs
         return None
 
 
@@ -375,7 +379,8 @@ def enumerate_task_with_early_pruning(
                 if frontier.n_solutions >= keep_top_k:
                     break
 
-        except:
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
+            # Expected evaluation errors - continue to next program
             pass
 
     frontier.total_programs_searched = programs_tried

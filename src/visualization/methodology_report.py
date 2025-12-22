@@ -400,7 +400,7 @@ def generate_methodology_html() -> str:
 │                                                                  │
 │  ┌──────────────┐                                               │
 │  │  Catalogue   │──────▶ Subtree Analysis ──────▶ Abstractions  │
-│  │  (57 rules)  │        (symbolic only)                        │
+│  │  (45 rules)  │        (symbolic only)                        │
 │  └──────────────┘                                               │
 │         │                                                        │
 │         │  NO CONNECTION between these paths!                   │
@@ -444,9 +444,9 @@ def generate_methodology_html() -> str:
     <h3>Exactly How We Compute Accuracy</h3>
 
     <h4>Step 1: Training Data Generation</h4>
-    <p>For each of our 57 rules, we generate training examples:</p>
+    <p>For each of our 45 rules, we generate training examples:</p>
 
-    <pre><code>for rule in ALL_RULES:  # 57 rules
+    <pre><code>for rule in ALL_RULES:  # 45 rules
     for _ in range(100):  # 100 examples per rule
         hand = sample_random_hand(6)
         label = rule.eval(hand)  # True or False
@@ -560,7 +560,7 @@ Loss: BCEWithLogitsLoss (multi-label classification)</code></pre>
         </tr>
         <tr>
             <td><strong>Training Data</strong></td>
-            <td>All 57 rules used for training</td>
+            <td>All 45 rules used for training</td>
             <td>Some tasks held out for testing</td>
         </tr>
         <tr>
@@ -715,7 +715,7 @@ test_rules = ALL_RULES[40:]
 
     <div class="box success">
         <strong>✅ Synthesis Benchmark Complete!</strong>
-        <p>We ran the full enumeration benchmark on all 57 rules with an expanded primitive library (104 primitives).
+        <p>We ran the full enumeration benchmark on all 45 rules with an expanded primitive library (104 primitives).
         Here are the TRUE metrics that matter:</p>
     </div>
 
@@ -848,7 +848,7 @@ test_rules = ALL_RULES[40:]
         <tr>
             <td><strong>Task Representation</strong></td>
             <td style="color: var(--success);">✅ Complete</td>
-            <td>57 rules with (hand, label) examples</td>
+            <td>45 rules with (hand, label) examples</td>
         </tr>
         <tr>
             <td><strong>Feature Extraction</strong></td>
@@ -1079,7 +1079,7 @@ test_rules = ALL_RULES[40:]
         </tr>
         <tr>
             <td>Training examples</td>
-            <td>5,700 (100 per rule × 57 rules)</td>
+            <td>4,500 (100 per rule × 45 rules)</td>
         </tr>
         <tr>
             <td>Train/val split</td>

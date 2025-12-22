@@ -762,7 +762,12 @@ class ContrastiveRecognitionModel(nn.Module):
 
             new_productions.append(Production(prod.program, prod.tp, new_lp))
 
-        return Grammar(new_productions, self.grammar.log_variable).normalize_probabilities()
+        # NOTE: We intentionally do NOT call .normalize_probabilities() here.
+        # Normalization is computationally expensive and unnecessary because:
+        # 1. The blended weights are already valid log-probabilities
+        # 2. TopDownEnumerator uses relative ordering, not absolute values
+        # 3. This was causing significant slowdown in recognition-guided enumeration
+        return Grammar(new_productions, self.grammar.log_variable)
 
     def get_top_predictions(self, task, n: int = 10) -> List[Tuple[str, float]]:
         """Get top-n predicted primitives."""

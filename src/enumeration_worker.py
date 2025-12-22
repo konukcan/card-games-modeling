@@ -27,11 +27,23 @@ def deserialize_hand(hand_data):
 
 
 def evaluate_program(program, hand):
-    """Evaluate a program on a hand."""
+    """Evaluate a program on a hand.
+
+    Returns None if evaluation fails due to expected runtime errors.
+    Unexpected errors are logged to stderr for debugging.
+    """
     try:
         fn = program.evaluate([])
         return fn(hand)
-    except:
+    except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
+        # Expected errors from malformed or incompatible programs
+        return None
+    except RecursionError:
+        # Infinite recursion in program - treat as failure
+        return None
+    except Exception as e:
+        # Unexpected error - log for debugging but don't crash worker
+        print(f"UNEXPECTED ERROR in evaluate_program: {type(e).__name__}: {e}", file=sys.stderr)
         return None
 
 
@@ -98,8 +110,13 @@ def enumerate_task(task_data, grammar_productions, max_depth, max_programs, time
                 if len(results) >= 5:
                     break
 
+        except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError) as e:
+            # Expected evaluation errors - continue to next program
+            continue
         except Exception as e:
-            pass
+            # Unexpected error - log but continue enumeration
+            print(f"Unexpected error evaluating program: {type(e).__name__}: {e}", file=sys.stderr)
+            continue
 
     return {
         'task_name': task_name,

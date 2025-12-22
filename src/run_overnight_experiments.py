@@ -3,7 +3,7 @@
 Overnight Experiment Runner for Card Game Rule Learning
 
 This script runs comprehensive experiments overnight:
-1. Difficulty measurement on all 57 rules
+1. Difficulty measurement on all 45 rules
 2. Transfer experiments on key rule pairs
 
 Designed to run unattended with:
