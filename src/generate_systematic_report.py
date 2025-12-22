@@ -132,7 +132,7 @@ def paraphrase_program(program: str) -> str:
         # Count patterns
         r'\(λ eq 2 \(count_color \$0 RED\)\)': "Exactly 2 red cards",
         r'\(λ lt 3 \(count_color \$0 RED\)\)': "More than 3 red cards",
-        r'\(λ neq 3 \(count_color \$0 RED\)\)': "Not exactly 3 red cards (majority color)",
+        r'\(λ not \(eq 3 \(count_color \$0 RED\)\)\)': "Not exactly 3 red cards (majority color)",
         r'\(λ eq 2 \(n_unique_suits \$0\)\)': "Exactly 2 different suits",
 
         # Position patterns
@@ -220,9 +220,10 @@ def paraphrase_abstraction(abstraction: str) -> str:
     if 'lt' in core or 'le' in core:
         return "Less-than comparison"
     if 'eq' in core:
+        if 'not' in core and 'eq' in core:
+            return "Inequality check"  # not (eq x y) pattern
         return "Equality check"
-    if 'neq' in core:
-        return "Inequality check"
+    # Note: 'neq' removed in v3, inequality now expressed as 'not (eq ...)'
 
     return "Learned pattern"
 
@@ -1677,7 +1678,7 @@ def generate_library_refresher_section(run_data: RunData) -> str:
                           'all_same_suit', 'all_same_color', 'n_unique_suits',
                           'n_unique_ranks', 'n_unique_colors'],
         'Aggregates': ['sum_ranks', 'max_rank', 'min_rank'],
-        'Comparisons': ['eq', 'neq', 'lt', 'le', 'gt', 'ge'],
+        'Comparisons': ['eq', 'lt', 'le', 'gt', 'ge'],  # neq removed in v3
         'Boolean Operators': ['and', 'or', 'not', 'if'],
         'Higher-Order': ['map', 'filter', 'all', 'any', 'unique'],
         'Arithmetic': ['+', '-', 'mod']

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cognitive Primitive Library for Card Game Learning (v2)
+Cognitive Primitive Library for Card Game Learning (v3)
 
 Philosophy:
 This library is designed for COGNITIVE REALISM - it contains primitives that
@@ -10,10 +10,10 @@ Key design principles:
 1. Primitives should be "directly nameable" - expressible in short phrases
 2. Include domain-specific operations that humans use naturally
 3. Remove abstract combinators that have low cognitive reality
-4. Include necessary numeric constants for card game rules
+4. Use only small numeric constants (0-5) for counting, not rank thresholds
 5. Keep the grammar size reasonable to maintain search tractability
 
-Changes from v1 (lean_primitives_v1_backup.py):
+Changes from v1:
 REMOVED:
 - compose, flip, const, id (abstract combinators - low cognitive reality)
 - cons, nil (list construction - not how we think about hands)
@@ -26,9 +26,20 @@ ADDED:
 - all_same_suit, all_same_color (gestalt perception)
 - n_unique_suits, n_unique_ranks, n_unique_colors (diversity)
 - sum_ranks, max_rank, min_rank (aggregates)
-- Rank constants: 10, 11, 12, 13, 14, 17, 21 (game-relevant thresholds)
 
-Target: ~50 primitives with high cognitive reality
+Changes from v2:
+REMOVED:
+- Rank constants 10, 11, 12, 13, 14 (face card values - too specific)
+- Game thresholds 17, 21 (blackjack rules - too specific)
+Rules should use relative comparisons (gt, lt) not absolute thresholds.
+
+Changes from v2 to v3:
+REMOVED (unused by any active rule):
+- neq (not equal) - use 'not (eq x y)' instead
+Note: cons, empty, tail, foldr, is_empty were never in this library
+(they existed only in the rule_dependency_tree.py documentation)
+
+Target: ~45 primitives with high cognitive reality
 """
 
 import sys
@@ -69,12 +80,14 @@ LIST_COLOR = ListType(COLOR)
 
 def make_constants() -> List[Primitive]:
     """
-    Constants including game-relevant numeric thresholds.
+    Constants for card game learning.
 
     Numeric constants include:
-    - 0-5: Basic counting (pairs, trips, etc.)
-    - 10, 11, 12, 13, 14: Face card values (10, J, Q, K, A)
-    - 17, 21: Blackjack thresholds
+    - 0-5: Basic counting (pairs, trips, hand length, etc.)
+
+    Note: Rank-specific constants (10-14 for face cards, 17/21 for blackjack)
+    were removed to keep the grammar generalizable. Rules should use relative
+    comparisons (gt, lt, eq) rather than absolute rank thresholds.
     """
     prims = []
 
@@ -91,17 +104,6 @@ def make_constants() -> List[Primitive]:
     # Basic counting constants (0-5)
     for i in range(6):
         prims.append(Primitive(str(i), INT, i))
-
-    # Face card rank values
-    prims.append(Primitive('10', INT, 10))  # Ten
-    prims.append(Primitive('11', INT, 11))  # Jack
-    prims.append(Primitive('12', INT, 12))  # Queen
-    prims.append(Primitive('13', INT, 13))  # King
-    prims.append(Primitive('14', INT, 14))  # Ace (high)
-
-    # Game thresholds
-    prims.append(Primitive('17', INT, 17))  # Blackjack stand threshold
-    prims.append(Primitive('21', INT, 21))  # Blackjack target
 
     # Boolean constants
     prims.append(Primitive('true', BOOL, True))
@@ -407,12 +409,7 @@ def make_comparisons() -> List[Primitive]:
         lambda x: lambda y: x == y
     ))
 
-    # Not equal
-    prims.append(Primitive(
-        'neq',
-        arrow(a, a, BOOL),
-        lambda x: lambda y: x != y
-    ))
+    # Note: 'neq' removed in v3 - use 'not (eq x y)' instead
 
     # Integer comparisons
     prims.append(Primitive(
@@ -574,13 +571,13 @@ def build_lean_primitives() -> List[Primitive]:
     """
     prims = []
 
-    prims.extend(make_constants())       # ~19 primitives
+    prims.extend(make_constants())       # 14 primitives (4 suits + 2 colors + 6 numbers + 2 bools)
     prims.extend(make_card_accessors())  # 4 primitives
     prims.extend(make_position_ops())    # 5 primitives
     prims.extend(make_list_slicing())    # 7 primitives (take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half)
     prims.extend(make_direct_queries())  # 9 primitives (NEW)
     prims.extend(make_aggregates())      # 3 primitives (NEW)
-    prims.extend(make_comparisons())     # 6 primitives
+    prims.extend(make_comparisons())     # 5 primitives (eq, lt, le, gt, ge - neq removed)
     prims.extend(make_boolean_ops())     # 4 primitives
     prims.extend(make_higher_order())    # 5 primitives (reduced)
     prims.extend(make_arithmetic())      # 3 primitives (reduced)

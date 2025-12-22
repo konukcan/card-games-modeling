@@ -98,20 +98,28 @@
 
 | Aspect | card_primitives.py | lean_primitives.py | extended_primitives.py |
 |--------|-------------------|-------------------|----------------------|
-| **Total Count** | ~61 | ~50 | ~70+ |
+| **Total Count** | ~61 | ~54 (v3) | ~70+ |
 | **Philosophy** | Comprehensive baseline | Cognitive realism | Academic rigor |
-| **Constants** | 0-6, suits, colors | 0-5, 10-14, 17, 21 | Base lean + extended |
+| **Constants** | 0-6, suits, colors | 0-5, suits, colors | Base lean + extended |
 | **Abstract Combinators** | Yes (compose, flip, const, id) | **No** (low cognitive reality) | Yes |
 | **List Construction** | Yes (cons, nil) | **No** (not how humans think) | Yes |
-| **Game-Relevant Numbers** | No | **Yes** (10-14 for face cards, 17/21 for Blackjack) | No |
+| **Game-Relevant Numbers** | No | **No** (removed in v3) | No |
 
 ### Lean Primitives Philosophy
 - Primitives should be "directly nameable" in short phrases
 - Removed: `compose`, `flip`, `const`, `id`, `cons`, `nil`
-- Added: `10`, `11`, `12`, `13`, `14` (face card values), `17`, `21` (game thresholds)
-- Target: ~50 primitives with high cognitive realism
+- Target: ~54 primitives with high cognitive realism
 
-### New Primitives (Dec 4, 2024)
+### Lean Primitives v3 Changes (Dec 2024)
+**Removed (unused by any of the 45 active rules):**
+- Rank constants: `10`, `11`, `12`, `13`, `14` (face card values)
+- Game thresholds: `17`, `21` (Blackjack values)
+- Comparison: `neq` (use `not (eq x y)` instead)
+
+**Note**: The following were documented in rule_dependency_tree.py but were never in the actual lean_primitives.py library:
+- `cons`, `empty`, `tail`, `is_empty`, `foldr` (DreamCoder-style primitives, available in extended_primitives.py)
+
+### Primitives Added (Dec 4, 2024)
 - `half_len`: `len(xs) // 2`
 - `first_half`: `xs[:len(xs) // 2]`
 - `second_half`: `xs[len(xs) // 2:]`
@@ -181,7 +189,7 @@
 - **Problem**: `(λ true)` and `(λ false)` passed holdout verification
 - **Root Cause**: Random sampling produces extreme class imbalance for some rules
 - **Solution**: Balanced sampling (rejection sampling for 50/50 split)
-- **Result**: 54/57 rules can be balanced; 3 rules skipped (impossible to balance)
+- **Result**: Most rules can be balanced; a few rules skipped (impossible to balance)
 
 ---
 

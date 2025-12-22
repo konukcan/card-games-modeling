@@ -869,7 +869,7 @@ if __name__ == "__main__":
     print(f"CUDA available: {torch.cuda.is_available()}")
 
     # Import dependencies
-    from dreamcoder_core.card_primitives import build_card_grammar
+    from dreamcoder_core.lean_primitives import build_lean_grammar as build_card_grammar
     from rules.cards import sample_hand
 
     # Build grammar

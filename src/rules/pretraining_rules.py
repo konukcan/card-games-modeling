@@ -2,7 +2,7 @@
 """
 Pre-training Rules for Warm-Starting Neural Recognition Model
 
-This module defines ~50 rules inspired by common card games that people
+This module defines 44 rules inspired by common card games that people
 are familiar with. The purpose is to:
 
 1. Warm-start the neural recognition model before exposure to experimental rules
@@ -118,40 +118,8 @@ def make_poker_rules() -> List[PretrainingRule]:
         expected_program="ge (length (unique (map get_suit hand))) 2"
     ))
 
-    # High card (has a face card: J, Q, K, or A)
-    rules.append(PretrainingRule(
-        id="poker_high_card",
-        name="Has Face Card",
-        family="poker",
-        level=1,
-        eval=lambda h: any(c.rank in (Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE)
-                          for c in h),
-        description="Hand contains at least one face card (J, Q, K, A)",
-        expected_program="any (λc. ge (rank_val c) 11) hand"
-    ))
-
-    # All face cards
-    rules.append(PretrainingRule(
-        id="poker_all_face",
-        name="All Face Cards",
-        family="poker",
-        level=2,
-        eval=lambda h: all(c.rank in (Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE)
-                          for c in h) if h else False,
-        description="All cards are face cards",
-        expected_program="all (λc. ge (rank_val c) 11) hand"
-    ))
-
-    # Has Ace
-    rules.append(PretrainingRule(
-        id="poker_has_ace",
-        name="Has Ace",
-        family="poker",
-        level=1,
-        eval=lambda h: any(c.rank == Rank.ACE for c in h),
-        description="Hand contains at least one Ace",
-        expected_program="any (λc. eq (rank_val c) 14) hand"
-    ))
+    # NOTE: poker_high_card, poker_all_face, poker_has_ace REMOVED
+    # Reason: Required rank constants (≥11, =14) that we've eliminated from the grammar
 
     # Straight (consecutive ranks) - simplified: just check if sorted unique ranks are consecutive
     def is_straight(h):
@@ -178,43 +146,13 @@ def make_poker_rules() -> List[PretrainingRule]:
 # ============================================================================
 
 def make_blackjack_rules() -> List[PretrainingRule]:
-    """Rules based on blackjack scoring."""
+    """Rules based on blackjack scoring (simplified - no arbitrary thresholds)."""
     rules = []
 
-    # Sum <= 21
-    rules.append(PretrainingRule(
-        id="bj_under_21",
-        name="Under 21",
-        family="blackjack",
-        level=1,
-        eval=lambda h: sum(min(RANK_VALUES[c.rank], 10) for c in h) <= 21,
-        description="Sum of card values (face=10) is at most 21",
-        expected_program="le (fold (+) 0 (map rank_val hand)) 21"
-    ))
+    # NOTE: bj_under_21, bj_exactly_21, bj_stand_17, bj_safe_range REMOVED
+    # Reason: Required arbitrary sum thresholds (17, 21, 15-20) that we've eliminated
 
-    # Sum exactly 21
-    rules.append(PretrainingRule(
-        id="bj_exactly_21",
-        name="Exactly 21",
-        family="blackjack",
-        level=2,
-        eval=lambda h: sum(min(RANK_VALUES[c.rank], 10) for c in h) == 21,
-        description="Sum of card values equals exactly 21",
-        expected_program="eq 21 (fold (+) 0 (map rank_val hand))"
-    ))
-
-    # Sum >= 17 (dealer stands)
-    rules.append(PretrainingRule(
-        id="bj_stand_17",
-        name="Sum >= 17",
-        family="blackjack",
-        level=1,
-        eval=lambda h: sum(RANK_VALUES[c.rank] for c in h) >= 17,
-        description="Sum of rank values is at least 17",
-        expected_program="ge (fold (+) 0 (map rank_val hand)) 17"
-    ))
-
-    # Sum is even
+    # Sum is even (kept - only uses mod 2, no arbitrary constants)
     rules.append(PretrainingRule(
         id="bj_sum_even",
         name="Even Sum",
@@ -225,15 +163,15 @@ def make_blackjack_rules() -> List[PretrainingRule]:
         expected_program="eq 0 (mod (fold (+) 0 (map rank_val hand)) 2)"
     ))
 
-    # Sum between 15 and 20
+    # Sum is odd (added to balance - also uses only mod 2)
     rules.append(PretrainingRule(
-        id="bj_safe_range",
-        name="Safe Range",
+        id="bj_sum_odd",
+        name="Odd Sum",
         family="blackjack",
-        level=2,
-        eval=lambda h: 15 <= sum(RANK_VALUES[c.rank] for c in h) <= 20,
-        description="Sum is in the safe range 15-20",
-        expected_program="and (ge sum 15) (le sum 20)"
+        level=1,
+        eval=lambda h: sum(RANK_VALUES[c.rank] for c in h) % 2 == 1,
+        description="Sum of rank values is odd",
+        expected_program="eq 1 (mod (fold (+) 0 (map rank_val hand)) 2)"
     ))
 
     return rules
@@ -324,24 +262,30 @@ def make_solitaire_rules() -> List[PretrainingRule]:
         level=2,
         eval=alternating_colors,
         description="Colors alternate (red-black-red or black-red-black)",
-        expected_program="all (λp. neq (get_color (fst p)) (get_color (snd p))) (pairs hand)"
+        expected_program="all (λp. not (eq (get_color (fst p)) (get_color (snd p)))) (pairs hand)"
     ))
 
-    # Descending ranks
-    def descending_ranks(h):
-        if len(h) < 2:
+    # V-shape ranks (descends then ascends)
+    # Replaces sol_descending for better transfer learning
+    def v_shape_ranks(h):
+        if len(h) < 3:
             return True
         vals = [RANK_VALUES[c.rank] for c in h]
-        return all(vals[i] > vals[i+1] for i in range(len(vals)-1))
+        mid = len(vals) // 2
+        # First half should descend (or be equal)
+        descending = all(vals[i] >= vals[i+1] for i in range(mid))
+        # Second half should ascend (or be equal)
+        ascending = all(vals[i] <= vals[i+1] for i in range(mid, len(vals)-1))
+        return descending and ascending
 
     rules.append(PretrainingRule(
-        id="sol_descending",
-        name="Descending Ranks",
+        id="sol_v_shape",
+        name="V-Shape Ranks",
         family="solitaire",
         level=2,
-        eval=descending_ranks,
-        description="Ranks decrease from left to right",
-        expected_program="all (λp. gt (rank_val (fst p)) (rank_val (snd p))) (pairs hand)"
+        eval=v_shape_ranks,
+        description="Ranks descend to middle then ascend (V shape)",
+        expected_program="and (all (λp. ge (fst p) (snd p)) (pairs (take mid ranks))) (all (λp. le (fst p) (snd p)) (pairs (drop mid ranks)))"
     ))
 
     # Ascending ranks
@@ -526,16 +470,8 @@ def make_simple_rules() -> List[PretrainingRule]:
         expected_program="eq 2 (length (unique (map get_suit hand)))"
     ))
 
-    # Middle card is face card (for 5+ card hands)
-    rules.append(PretrainingRule(
-        id="simple_middle_face",
-        name="Middle is Face",
-        family="simple",
-        level=2,
-        eval=lambda h: h[len(h)//2].rank in (Rank.JACK, Rank.QUEEN, Rank.KING, Rank.ACE) if len(h) >= 3 else False,
-        description="Middle card is a face card",
-        expected_program="ge (rank_val (at hand (/ (length hand) 2))) 11"
-    ))
+    # NOTE: simple_middle_face REMOVED
+    # Reason: Required rank constant (≥11) that we've eliminated from the grammar
 
     return rules
 
@@ -559,15 +495,26 @@ def make_symmetry_rules() -> List[PretrainingRule]:
         expected_program="eq (map get_suit hand) (reverse (map get_suit hand))"
     ))
 
-    # Colors palindrome
+    # Periodic colors (pattern of length 2 or 3 repeats)
+    # Replaces sym_colors_palindrome for better transfer learning
+    def periodic_colors(h):
+        if len(h) < 2:
+            return True
+        colors = [card_color(c) for c in h]
+        # Check period 2: colors[i] == colors[i % 2] for all i
+        period2 = all(colors[i] == colors[i % 2] for i in range(len(colors)))
+        # Check period 3: colors[i] == colors[i % 3] for all i
+        period3 = len(h) >= 3 and all(colors[i] == colors[i % 3] for i in range(len(colors)))
+        return period2 or period3
+
     rules.append(PretrainingRule(
-        id="sym_colors_palindrome",
-        name="Colors Palindrome",
+        id="sym_periodic_colors",
+        name="Periodic Colors",
         family="symmetry",
         level=2,
-        eval=lambda h: [card_color(c) for c in h] == [card_color(c) for c in reversed(h)],
-        description="Color sequence reads the same forwards and backwards",
-        expected_program="eq (map get_color hand) (reverse (map get_color hand))"
+        eval=periodic_colors,
+        description="Color sequence has a repeating pattern of length 2 or 3",
+        expected_program="or (all (λi. eq (at colors i) (at colors (mod i 2))) indices) (all (λi. eq (at colors i) (at colors (mod i 3))) indices)"
     ))
 
     # Ranks palindrome
@@ -657,6 +604,168 @@ def make_counting_rules() -> List[PretrainingRule]:
 
 
 # ============================================================================
+# COMPOSITIONAL BUILDING BLOCKS
+# ============================================================================
+
+def make_compositional_rules() -> List[PretrainingRule]:
+    """
+    Building block rules that prepare for compositional/hierarchical patterns.
+    These are simpler versions of the experimental rules' patterns.
+    """
+    rules = []
+
+    # --- Half-Based Building Blocks ---
+
+    # Left half uniform color
+    def left_half_uniform_color(h):
+        if len(h) < 2:
+            return True
+        mid = len(h) // 2
+        left = h[:mid]
+        if not left:
+            return True
+        first_color = card_color(left[0])
+        return all(card_color(c) == first_color for c in left)
+
+    rules.append(PretrainingRule(
+        id="comp_left_half_uniform_color",
+        name="Left Half Uniform Color",
+        family="compositional",
+        level=2,
+        eval=left_half_uniform_color,
+        description="All cards in the left half have the same color",
+        expected_program="all (λc. eq (get_color (head left)) (get_color c)) (take (/ (length hand) 2) hand)"
+    ))
+
+    # Right half has pair
+    def right_half_has_pair(h):
+        if len(h) < 4:
+            return False
+        mid = len(h) // 2
+        right = h[mid:]
+        ranks = [c.rank for c in right]
+        return len(ranks) != len(set(ranks))
+
+    rules.append(PretrainingRule(
+        id="comp_right_half_has_pair",
+        name="Right Half Has Pair",
+        family="compositional",
+        level=2,
+        eval=right_half_has_pair,
+        description="The right half of the hand contains a pair",
+        expected_program="lt (length (unique (map get_rank (drop (/ (length hand) 2) hand)))) (length (drop (/ (length hand) 2) hand))"
+    ))
+
+    # --- Position Offset Building Blocks ---
+
+    # Every other card same color (positions 0,2,4,... all same; 1,3,5,... all same)
+    def skip1_same_color(h):
+        if len(h) < 3:
+            return True
+        evens = [card_color(h[i]) for i in range(0, len(h), 2)]
+        odds = [card_color(h[i]) for i in range(1, len(h), 2)]
+        return (len(set(evens)) == 1) and (len(set(odds)) == 1 if odds else True)
+
+    rules.append(PretrainingRule(
+        id="comp_skip1_same_color",
+        name="Skip-1 Same Color",
+        family="compositional",
+        level=2,
+        eval=skip1_same_color,
+        description="Cards at even positions share color, cards at odd positions share color",
+        expected_program="and (uniform (map get_color (filter even_idx hand))) (uniform (map get_color (filter odd_idx hand)))"
+    ))
+
+    # Position i matches i+2 in color
+    def shift2_color(h):
+        if len(h) < 3:
+            return True
+        for i in range(len(h) - 2):
+            if card_color(h[i]) != card_color(h[i + 2]):
+                return False
+        return True
+
+    rules.append(PretrainingRule(
+        id="comp_shift2_color",
+        name="Shift-2 Color Match",
+        family="compositional",
+        level=2,
+        eval=shift2_color,
+        description="Each card matches the card 2 positions later in color",
+        expected_program="all (λi. eq (get_color (at hand i)) (get_color (at hand (+ i 2)))) (range 0 (- (length hand) 2))"
+    ))
+
+    # --- Property Comparison Building Blocks ---
+
+    # First two same suit
+    rules.append(PretrainingRule(
+        id="comp_first_two_same_suit",
+        name="First Two Same Suit",
+        family="compositional",
+        level=1,
+        eval=lambda h: h[0].suit == h[1].suit if len(h) >= 2 else True,
+        description="First two cards have the same suit",
+        expected_program="eq (get_suit (at hand 0)) (get_suit (at hand 1))"
+    ))
+
+    # Last two same color
+    rules.append(PretrainingRule(
+        id="comp_last_two_same_color",
+        name="Last Two Same Color",
+        family="compositional",
+        level=1,
+        eval=lambda h: card_color(h[-2]) == card_color(h[-1]) if len(h) >= 2 else True,
+        description="Last two cards have the same color",
+        expected_program="eq (get_color (at hand -2)) (get_color (at hand -1))"
+    ))
+
+    # --- Alternation Building Blocks ---
+
+    # Binary suit alternation (only 2 suits present AND they alternate)
+    def binary_suit_alternation(h):
+        if len(h) < 2:
+            return True
+        suits = [c.suit for c in h]
+        unique_suits = set(suits)
+        if len(unique_suits) != 2:
+            return False
+        # Check alternation
+        return all(suits[i] != suits[i+1] for i in range(len(suits)-1))
+
+    rules.append(PretrainingRule(
+        id="comp_binary_suit_alt",
+        name="Binary Suit Alternation",
+        family="compositional",
+        level=2,
+        eval=binary_suit_alternation,
+        description="Exactly 2 suits present and they alternate throughout",
+        expected_program="and (eq 2 (length (unique (map get_suit hand)))) (all (λp. not (eq (get_suit (fst p)) (get_suit (snd p)))) (pairs hand))"
+    ))
+
+    # Color pairs (groups of 2 consecutive cards share color)
+    def color_pairs(h):
+        if len(h) < 2:
+            return True
+        # Check pairs at positions (0,1), (2,3), (4,5), etc.
+        for i in range(0, len(h) - 1, 2):
+            if card_color(h[i]) != card_color(h[i + 1]):
+                return False
+        return True
+
+    rules.append(PretrainingRule(
+        id="comp_color_pairs",
+        name="Color Pairs",
+        family="compositional",
+        level=2,
+        eval=color_pairs,
+        description="Consecutive pairs of cards share the same color (0-1, 2-3, 4-5, ...)",
+        expected_program="all (λi. eq (get_color (at hand (* 2 i))) (get_color (at hand (+ (* 2 i) 1)))) (range 0 (/ (length hand) 2))"
+    ))
+
+    return rules
+
+
+# ============================================================================
 # COMPILE ALL PRE-TRAINING RULES
 # ============================================================================
 
@@ -670,6 +779,7 @@ def get_all_pretraining_rules() -> List[PretrainingRule]:
     all_rules.extend(make_simple_rules())
     all_rules.extend(make_symmetry_rules())
     all_rules.extend(make_counting_rules())
+    all_rules.extend(make_compositional_rules())
     return all_rules
 
 

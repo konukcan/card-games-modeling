@@ -62,13 +62,8 @@ BASE_PRIMITIVES = {
     '3': ('constant', '3'),
     '4': ('constant', '4'),
     '5': ('constant', '5'),
-    '10': ('constant', '10'),
-    '11': ('constant', '11'),
-    '12': ('constant', '12'),
-    '13': ('constant', '13'),
-    '14': ('constant', '14'),
-    '17': ('constant', '17'),
-    '21': ('constant', '21'),
+    # Note: Rank constants 10-14 and game thresholds 17, 21 were removed
+    # to keep the grammar generalizable (see lean_primitives.py v3)
 
     # Card accessors
     'get_suit': ('accessor', 'λc. c.suit'),
@@ -89,10 +84,7 @@ BASE_PRIMITIVES = {
     'zip_with': ('list', 'λf.λxs.λys. [f(x)(y) for x,y in zip(xs,ys)]'),
     'adjacent_pairs': ('list', 'λxs. [[xs[i],xs[i+1]] for i in range(len(xs)-1)]'),
     'half_len': ('list', 'λxs. len(xs)//2'),
-    'cons': ('list', 'λx.λxs. [x] + xs'),
-    'empty': ('list', '[]'),
-    'tail': ('list', 'λxs. xs[1:]'),
-    'is_empty': ('list', 'λxs. len(xs) == 0'),
+    # Removed in v3: cons, empty, tail, is_empty (unused by active rules)
 
     # Direct queries
     'has_suit': ('query', 'λh.λs. any(c.suit == s for c in h)'),
@@ -112,7 +104,7 @@ BASE_PRIMITIVES = {
 
     # Comparisons
     'eq': ('comparison', 'λx.λy. x == y'),
-    'neq': ('comparison', 'λx.λy. x != y'),
+    # Removed in v3: neq (use 'not (eq x y)' instead)
     'lt': ('comparison', 'λx.λy. x < y'),
     'le': ('comparison', 'λx.λy. x <= y'),
     'gt': ('comparison', 'λx.λy. x > y'),
@@ -131,7 +123,7 @@ BASE_PRIMITIVES = {
     'any': ('higher', 'λp.λxs. any(p(x) for x in xs)'),
     'unique': ('higher', 'λxs. list(dict.fromkeys(xs))'),
     'fold': ('higher', 'λf.λz.λxs. reduce(f, xs, z)'),
-    'foldr': ('higher', 'λf.λz.λxs. reduce(f, reversed(xs), z)'),
+    # Removed in v3: foldr (unused by active rules - use fold with reversed list)
 
     # State threading (Y&P)
     'pair': ('state', 'λx.λy. [x, y]'),
@@ -800,7 +792,7 @@ def generate_search_tree_data() -> str:
     Generate a COMPLETE search tree showing program synthesis as hole-filling.
 
     The tree starts with λh. [?:bool] and branches into ALL possible ways to fill
-    holes, including intermediate steps and dead-ends, covering all 57 rules.
+    holes, including intermediate steps and dead-ends, covering all 45 rules.
     """
 
     # Complete search tree with all rules and intermediate compositions
@@ -808,7 +800,7 @@ def generate_search_tree_data() -> str:
         "id": "root",
         "label": "λh. [?:bool]",
         "type": "hole",
-        "description": "Root: A function from Hand to Bool (57 rules to discover)",
+        "description": "Root: A function from Hand to Bool (45 rules to discover)",
         "children": [
             # ================================================================
             # BRANCH 1: Direct hand predicates (depth 2)

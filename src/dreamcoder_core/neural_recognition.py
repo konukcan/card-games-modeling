@@ -597,7 +597,12 @@ class NeuralRecognitionModel(nn.Module):
 
             new_productions.append(Production(prod.program, prod.tp, new_lp))
 
-        return Grammar(new_productions, self.grammar.log_variable).normalize_probabilities()
+        # NOTE: We intentionally do NOT call .normalize_probabilities() here.
+        # Normalization is computationally expensive and unnecessary because:
+        # 1. The blended weights are already valid log-probabilities
+        # 2. TopDownEnumerator uses relative ordering, not absolute values
+        # 3. This was causing significant slowdown in recognition-guided enumeration
+        return Grammar(new_productions, self.grammar.log_variable)
 
     def predict_grammar_weights_adaptive(self, task, iteration: int, max_iterations: int) -> Grammar:
         """
@@ -1016,7 +1021,7 @@ if __name__ == "__main__":
     print(f"CUDA available: {torch.cuda.is_available()}")
 
     # Import dependencies
-    from dreamcoder_core.card_primitives import build_card_grammar
+    from dreamcoder_core.lean_primitives import build_lean_grammar as build_card_grammar
     from rules.cards import sample_hand
 
     # Build grammar
