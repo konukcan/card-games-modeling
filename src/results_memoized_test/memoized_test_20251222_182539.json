@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "total_time": 208.6284282207489,
+    "iterations_run": 3,
+    "tasks_solved": 0,
+    "tasks_total": 45,
+    "final_grammar_size": 59,
+    "total_abstractions": 0,
+    "total_dreams": 26,
+    "total_contrastive_dreams": 1
+  },
+  "total_time_seconds": 208.62898302078247,
+  "timestamp": "2025-12-22T18:25:39.441774"
+}

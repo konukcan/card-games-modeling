@@ -232,6 +232,8 @@ class TopDownEnumerator:
 
         # Memoization cache: (type_str, env_tuple, budget_bucket) -> List[(Program, cost)]
         self._memo_cache: Dict[Tuple[str, Tuple[str, ...], int], List[Tuple[Program, float]]] = {}
+        # Track keys currently being filled to handle reentrancy
+        self._memo_in_progress: Set[Tuple[str, Tuple[str, ...], int]] = set()
         self._memo_hits = 0
         self._memo_misses = 0
 
@@ -866,22 +868,18 @@ class TopDownEnumerator:
         depth_limit: int = None
     ) -> Generator[Tuple[Program, float], None, None]:
         """
-        Enumerate programs using MEMOIZED SUBPROBLEM SOLVING (like DreamCoder's OCaml backend).
+        Enumerate programs using ITERATIVE COST DEEPENING with memoization.
 
-        This is the key to DreamCoder's efficiency. The insight is that when filling
-        holes, the same subproblem (type, env, budget) appears many times:
-        - `(and ?? ??)` needs two BOOL-producing subexpressions
-        - `(eq ?? ??)` needs two INT-producing subexpressions
-        - etc.
+        This follows DreamCoder's approach: enumerate by COST LEVEL to maintain
+        global cost order, while caching subproblem results for efficiency.
 
-        Instead of re-enumerating from scratch each time, we CACHE the results
-        of "enumerate all programs of type T in env E with cost <= B".
+        For each cost level (0, 1, 2, ...):
+        1. Build all programs of cost <= current_cost using cached subproblems
+        2. Yield any new programs found
+        3. Increment cost and repeat
 
-        Implementation:
-        1. Use discretized cost buckets (e.g., bucket_size=2.0) for cache keys
-        2. When filling a hole, check cache for (type, env, budget_bucket)
-        3. If cached, filter and return; if not, enumerate and cache
-        4. Use DFS within each bucket to avoid queue explosion
+        This ensures programs are yielded in cost order (like priority queue)
+        while still getting memoization benefits.
 
         Args:
             request_type: The type of programs to enumerate
@@ -904,20 +902,179 @@ class TopDownEnumerator:
         self._memo_hits = 0
         self._memo_misses = 0
 
-        # Clear cache for fresh enumeration (can be kept between calls if desired)
+        # Clear cache for fresh enumeration
         self._memo_cache.clear()
+        self._memo_in_progress.clear()
 
-        # Enumerate using memoized recursive descent
-        for prog, cost in self._enumerate_type_memoized(
-            request_type, env, max_cost, depth_limit, start_time, timeout_seconds
-        ):
-            if self.programs_enumerated >= self.max_programs:
-                break
+        # Track programs already yielded to avoid duplicates
+        yielded: Set[str] = set()
+
+        # Iterative cost deepening: enumerate by increasing cost
+        cost_step = 1.0  # Granularity of cost levels
+        current_max_cost = cost_step
+
+        while current_max_cost <= max_cost:
             if time.time() - start_time > timeout_seconds:
                 break
+            if self.programs_enumerated >= self.max_programs:
+                break
 
-            self.programs_enumerated += 1
-            yield (prog, -cost)  # Return log_prob = -cost
+            # Enumerate all programs up to current cost
+            for prog, cost in self._enumerate_type_at_cost(
+                request_type, env, current_max_cost, depth_limit, start_time, timeout_seconds
+            ):
+                prog_str = str(prog)
+                if prog_str not in yielded:
+                    yielded.add(prog_str)
+                    self.programs_enumerated += 1
+                    yield (prog, -cost)  # Return log_prob = -cost
+
+                    if self.programs_enumerated >= self.max_programs:
+                        return
+
+            current_max_cost += cost_step
+
+    def _enumerate_type_at_cost(
+        self,
+        tp: Type,
+        env: List[Type],
+        max_cost: float,
+        depth_remaining: int,
+        start_time: float,
+        timeout: float
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate programs of a given type up to max_cost.
+
+        Uses memoization by caching results per (type, env, cost_bucket).
+        Results are returned sorted by cost.
+        """
+        if depth_remaining <= 0:
+            return
+        if max_cost < 0:
+            return
+        if time.time() - start_time > timeout:
+            return
+
+        # CASE 1: Arrow type - enumerate lambdas
+        if isinstance(tp, Arrow):
+            body_type = tp.ret
+            arg_type = tp.arg
+            new_env = [arg_type] + env
+
+            for body, body_cost in self._enumerate_type_at_cost(
+                body_type, new_env, max_cost, depth_remaining - 1,
+                start_time, timeout
+            ):
+                lambda_prog = Abstraction(body)
+                yield (lambda_prog, body_cost)
+            return
+
+        # CASE 2: Base type - check cache or enumerate
+        env_key = tuple(str(t) for t in env)
+        cost_bucket = int(max_cost)  # Integer cost buckets
+        cache_key = (str(tp), env_key, cost_bucket)
+
+        # Check cache
+        if cache_key in self._memo_cache:
+            self._memo_hits += 1
+            for prog, cost in self._memo_cache[cache_key]:
+                if cost <= max_cost:
+                    yield (prog, cost)
+            return
+
+        # Cache miss - enumerate and store
+        self._memo_misses += 1
+        results: List[Tuple[Program, float]] = []
+        ctx = TypeContext()
+
+        # Variables
+        var_candidates = self.grammar.variable_candidates(tp, ctx, env)
+        for idx, log_prob in var_candidates:
+            cost = -log_prob
+            if cost <= max_cost:
+                var_prog = Index(idx)
+                results.append((var_prog, cost))
+                self.partial_programs_explored += 1
+
+        # Productions
+        candidates = self.grammar.candidates_for_type(tp, ctx, env)
+
+        for prod, inst_type, log_prob in candidates:
+            prod_cost = -log_prob
+
+            if prod_cost > max_cost:
+                continue
+
+            if isinstance(inst_type, Arrow):
+                # Production needs arguments - enumerate them
+                remaining_budget = max_cost - prod_cost
+                for applied, applied_cost in self._apply_args_at_cost(
+                    prod.program, inst_type, env,
+                    remaining_budget, depth_remaining - 1,
+                    start_time, timeout
+                ):
+                    total_cost = prod_cost + applied_cost
+                    if total_cost <= max_cost:
+                        results.append((applied, total_cost))
+            else:
+                # Base case - directly produces the type
+                results.append((prod.program, prod_cost))
+                self.partial_programs_explored += 1
+
+        # Sort by cost and cache
+        results.sort(key=lambda x: x[1])
+        self._memo_cache[cache_key] = results
+
+        # Yield results
+        for prog, cost in results:
+            yield (prog, cost)
+
+    def _apply_args_at_cost(
+        self,
+        func: Program,
+        func_type: Arrow,
+        env: List[Type],
+        max_cost: float,
+        depth_remaining: int,
+        start_time: float,
+        timeout: float
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Apply a function to arguments, enumerating arguments up to max_cost.
+        """
+        if depth_remaining <= 0:
+            return
+        if max_cost < 0:
+            return
+        if time.time() - start_time > timeout:
+            return
+
+        arg_type = func_type.arg
+        ret_type = func_type.ret
+
+        # Enumerate arguments
+        for arg, arg_cost in self._enumerate_type_at_cost(
+            arg_type, env, max_cost, depth_remaining,
+            start_time, timeout
+        ):
+            if arg_cost > max_cost:
+                continue
+
+            new_prog = Application(func, arg)
+            remaining = max_cost - arg_cost
+
+            if isinstance(ret_type, Arrow):
+                # More arguments needed
+                for applied, more_cost in self._apply_args_at_cost(
+                    new_prog, ret_type, env, remaining, depth_remaining,
+                    start_time, timeout
+                ):
+                    yield (applied, arg_cost + more_cost)
+            else:
+                # Fully applied
+                self.partial_programs_explored += 1
+                yield (new_prog, arg_cost)
 
     def _enumerate_type_memoized(
         self,
@@ -970,6 +1127,20 @@ class TopDownEnumerator:
                     yield (prog, cost)
             return
 
+        # REENTRANCY CHECK: If this key is currently being filled by a caller,
+        # enumerate without caching to avoid returning empty results.
+        # This handles cases like: BOOL needs (not X) which needs BOOL arguments.
+        if cache_key in self._memo_in_progress:
+            # Don't cache, just enumerate directly
+            for prog, cost in self._enumerate_without_cache(
+                tp, env, budget, depth_remaining, start_time, timeout
+            ):
+                yield (prog, cost)
+            return
+
+        # Mark as in progress to detect reentrancy
+        self._memo_in_progress.add(cache_key)
+
         # Cache miss - enumerate and store
         self._memo_misses += 1
         results: List[Tuple[Program, float]] = []
@@ -1013,9 +1184,63 @@ class TopDownEnumerator:
                 self.partial_programs_explored += 1
                 yield (prod.program, prod_cost)
 
-        # Store in cache (sorted by cost for efficient lookup)
+        # Done filling - remove from in-progress and store in cache
+        self._memo_in_progress.discard(cache_key)
         results.sort(key=lambda x: x[1])
         self._memo_cache[cache_key] = results
+
+    def _enumerate_without_cache(
+        self,
+        tp: Type,
+        env: List[Type],
+        budget: float,
+        depth_remaining: int,
+        start_time: float,
+        timeout: float
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        Enumerate BASE CASE programs only (for reentrant calls).
+
+        This is called when we detect reentrancy - i.e., we're trying to
+        enumerate type T while we're already in the middle of caching type T.
+
+        To break the recursion, we ONLY yield:
+        1. Variables from the environment
+        2. Primitives that directly produce the type (no arguments)
+
+        We do NOT recurse for productions needing arguments - those would
+        create infinite loops. The caller will get the base cases and can
+        use them to build more complex programs.
+        """
+        if depth_remaining <= 0:
+            return
+        if budget < 0:
+            return
+        if time.time() - start_time > timeout:
+            return
+
+        ctx = TypeContext()
+
+        # Variables
+        var_candidates = self.grammar.variable_candidates(tp, ctx, env)
+        for idx, log_prob in var_candidates:
+            cost = -log_prob
+            if cost <= budget:
+                yield (Index(idx), cost)
+
+        # ONLY base-case productions (no arguments needed)
+        candidates = self.grammar.candidates_for_type(tp, ctx, env)
+
+        for prod, inst_type, log_prob in candidates:
+            prod_cost = -log_prob
+
+            if prod_cost > budget:
+                continue
+
+            if not isinstance(inst_type, Arrow):
+                # Base case - directly produces the type
+                yield (prod.program, prod_cost)
+            # Skip Arrow types to avoid recursion
 
     def _apply_production_memoized(
         self,
@@ -1071,6 +1296,7 @@ class TopDownEnumerator:
     def clear_memo_cache(self):
         """Clear the memoization cache (call between tasks if needed)."""
         self._memo_cache.clear()
+        self._memo_in_progress.clear()
         self._memo_hits = 0
         self._memo_misses = 0
 

@@ -91,8 +91,6 @@ def main():
         # Recognition settings
         recognition_hidden_dim=64,
         recognition_epochs=10,
-        recognition_blend_factor_start=0.0,
-        recognition_blend_factor_end=0.8,
         structural_similarity_weight=0.1,
 
         # Dreaming settings
