@@ -589,8 +589,14 @@ class ContrastiveWakeSleep:
                     self._collect_primitives(entry.program, prims)
                 task_primitives[f.task.name] = prims
 
+        # Compute task embeddings for solved tasks
+        task_embeddings = {}
+        for task in solved_tasks[:10]:  # Limit for efficiency
+            embedding = self.recognition.encode_task(task)
+            task_embeddings[task.name] = embedding
+
         return self.recognition.compute_structural_similarity_loss(
-            solved_tasks[:10],  # Limit for efficiency
+            task_embeddings,
             task_primitives
         ).item()
 
