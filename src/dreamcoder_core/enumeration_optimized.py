@@ -133,16 +133,20 @@ class TaskFrontier:
     total_programs_searched: int = 0
     total_time: float = 0.0
 
+    # Hash-based deduplication for O(1) duplicate checking
+    _seen_hashes: Set[int] = field(default_factory=set)
+
     def add(self, result: EnumerationResult) -> bool:
         """
         Add a result if it improves the frontier.
         Returns True if added.
         """
-        # Check for duplicates
-        for e in self.entries:
-            if str(e.program) == str(result.program):
-                return False
+        # Check for duplicates using hash (O(1) instead of O(n) string comparison)
+        prog_hash = hash(result.program)
+        if prog_hash in self._seen_hashes:
+            return False
 
+        self._seen_hashes.add(prog_hash)
         self.entries.append(result)
 
         # Sort by posterior (higher is better = less negative)

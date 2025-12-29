@@ -1,0 +1,41 @@
+{
+  "status": "in_progress",
+  "elapsed_minutes": 46.912951099872586,
+  "tasks_solved": 9,
+  "tasks_total": 45,
+  "iterations_completed": 3,
+  "solved_tasks": {
+    "Ends_same_suit": "(\u03bb has_suit (first_half (first_half $0)) (get_suit (last $0)))",
+    "Ends_same_color": "(\u03bb has_color (first_half (first_half $0)) (get_color (last $0)))",
+    "Has_pair_ranks": "(\u03bb le (n_unique_ranks $0) 5)",
+    "Uniform_color": "(\u03bb all_same_color $0)",
+    "Exactly_two_suits": "(\u03bb lt (n_unique_suits $0) 3)",
+    "At_most_three_suits": "(\u03bb lt (n_unique_suits $0) 4)",
+    "Halves_uniform_color_equal": "(\u03bb halves_equal_by ((\u03bb at (reverse $1) (n_unique_colors $0))) $0)",
+    "Ranks_palindrome": "(\u03bb le (n_unique_ranks $0) (n_unique_ranks (second_half $0)))",
+    "Halves_copy_ranks": "(\u03bb le (n_unique_ranks $0) (n_unique_ranks (first_half $0)))"
+  },
+  "iteration_history": [
+    {
+      "iteration": 0,
+      "solved": 9,
+      "weight": 0.1,
+      "loss": 0.0,
+      "new_abstractions": []
+    },
+    {
+      "iteration": 1,
+      "solved": 9,
+      "weight": 0.24000000000000002,
+      "loss": 0.0,
+      "new_abstractions": []
+    },
+    {
+      "iteration": 2,
+      "solved": 9,
+      "weight": 0.3400000000000001,
+      "loss": 0.0,
+      "new_abstractions": []
+    }
+  ]
+}

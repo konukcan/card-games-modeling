@@ -1,0 +1,173 @@
+{
+  "run_type": "dreamcoder_yp_primitives_test",
+  "grammar_size": 76,
+  "primitives_added": {
+    "DreamCoder": [
+      "fold",
+      "foldr",
+      "cons",
+      "empty",
+      "tail",
+      "is_empty"
+    ],
+    "Yang_Piantadosi": [
+      "pair",
+      "fst",
+      "snd"
+    ],
+    "type_gap_bridging": [
+      "all_true",
+      "any_true"
+    ]
+  },
+  "classification": {
+    "trivial": 5,
+    "easy": 7,
+    "medium": 6,
+    "hard": 8,
+    "very_hard": 15,
+    "extreme": 16
+  },
+  "phases": [
+    {
+      "name": "Phase 1: Trivial Rules (depth 2-4)",
+      "iterations": 3,
+      "budget": 200000,
+      "max_depth": 8
+    },
+    {
+      "name": "Phase 2: Easy Rules (depth 4-6)",
+      "iterations": 4,
+      "budget": 400000,
+      "max_depth": 10
+    },
+    {
+      "name": "Phase 3: Medium Rules (depth 6-8)",
+      "iterations": 5,
+      "budget": 600000,
+      "max_depth": 12
+    },
+    {
+      "name": "Phase 4: Hard Rules (depth 8-10)",
+      "iterations": 6,
+      "budget": 800000,
+      "max_depth": 14
+    },
+    {
+      "name": "Phase 5: Very Hard Rules (depth 10-14)",
+      "iterations": 6,
+      "budget": 1000000,
+      "max_depth": 16
+    },
+    {
+      "name": "Phase 6: Extreme Rules (depth 14+)",
+      "iterations": 8,
+      "budget": 1500000,
+      "max_depth": 18
+    }
+  ],
+  "start_time": "2025-12-02T18:02:23.404704",
+  "dry_run": false,
+  "end_time": "2025-12-03T07:08:23.583092",
+  "total_time_seconds": 47159.19730210304,
+  "tasks_solved": 7,
+  "breakdown": {
+    "trivial": "0/5",
+    "easy": "0/7",
+    "medium": "0/6",
+    "hard": "0/8",
+    "very_hard": "0/15",
+    "extreme": "0/16"
+  },
+  "unsolved_by_family": {
+    "COUNT": [
+      "Has_pair_ranks",
+      "Exactly_two_suits",
+      "At_most_three_suits",
+      "Uniform_color",
+      "Exactly_one_club",
+      "Half_or_more_same_suit"
+    ],
+    "PARITY": [
+      "Only_one_odd_rank",
+      "Uniform_rank_parity"
+    ],
+    "TOKEN": [
+      "Has_6_of_Diamonds",
+      "Has_Ace_of_Spades"
+    ],
+    "POSITION": [
+      "Pos3_is_JQK",
+      "Pos4_is_2_5_7"
+    ],
+    "LOCAL": [
+      "Ends_same_suit",
+      "Ends_same_color",
+      "Sorted_by_rank",
+      "S_before_H"
+    ],
+    "HIER": [
+      "Halves_hearts_presence_equal",
+      "Halves_uniform_color_equal",
+      "Halves_uniform_parity_equal",
+      "Halves_AP_step1_equal",
+      "Halves_AP_len2_step1_equal",
+      "Halves_AP_len3_any_equal"
+    ],
+    "COPY": [
+      "Halves_same_suit_set",
+      "Halves_copy_suits",
+      "Halves_copy_colors",
+      "Halves_copy_ranks",
+      "Halves_copy_altcolor2",
+      "Halves_copy_altcolor1"
+    ],
+    "PAL": [
+      "Colors_palindrome",
+      "Ranks_palindrome",
+      "Suits_palindrome"
+    ],
+    "ALTCLR": [
+      "AltColor1_palindrome",
+      "Ends_same_altcolor1",
+      "AltColor2_palindrome"
+    ],
+    "SHIFT": [
+      "Shift_half_ge",
+      "Shift_half_plus_two",
+      "Shift2_plus3"
+    ],
+    "SCORE": [
+      "Half_sum_one_side_ge_2x_other",
+      "Half_sum_diff_geN",
+      "Score_threshold_Rstar"
+    ],
+    "ADJ": [
+      "Skip2_same_rank_or_suit",
+      "Adj_rank_gap_le3",
+      "Adj_same_rank_or_suit"
+    ],
+    "AP": [
+      "AP_len3_anywhere_anyk",
+      "AP_len4_step2_anywhere",
+      "AP_len3_step2_anywhere"
+    ],
+    "CENTER": [
+      "Halves_radial_nonincreasing",
+      "Global_radial_no_dominance"
+    ],
+    "MAP": [
+      "Adj_same_or_map_M2",
+      "Half_map_samepos_M1",
+      "Half_map_samepos_M2",
+      "Adj_same_or_map_M1",
+      "Step2_back_map_M2",
+      "Step2_back_map_M1"
+    ],
+    "LANG": [
+      "Odd_opens_next_closes",
+      "Well_formed_brackets_by_suit",
+      "Even_opens_next_closes"
+    ]
+  }
+}

@@ -1,0 +1,3656 @@
+{
+  "metadata": {
+    "n_rules": 20,
+    "n_hands_per_rule": 10,
+    "annotation_status": "pending"
+  },
+  "rules": [
+    {
+      "rule_id": "Sorted_by_rank",
+      "rule_name": "Ranks are in non-decreasing order",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Sorted_by_rank_pos_0",
+          "cards": [
+            "6\u2663",
+            "6\u2665",
+            "6\u2666",
+            "6\u2666",
+            "8\u2666",
+            "9\u2660"
+          ],
+          "description": "Four of a kind",
+          "tokens": [
+            "four",
+            "of",
+            "a",
+            "kind"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_1",
+          "cards": [
+            "4\u2666",
+            "5\u2660",
+            "9\u2665",
+            "J\u2665",
+            "J\u2660",
+            "Q\u2660"
+          ],
+          "description": "Jack high, alternating colors.",
+          "tokens": [
+            "jack",
+            "high,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_2",
+          "cards": [
+            "4\u2660",
+            "8\u2665",
+            "8\u2660",
+            "8\u2665",
+            "Q\u2660",
+            "Q\u2665"
+          ],
+          "description": "Pair of Queens,",
+          "tokens": [
+            "pair",
+            "of",
+            "queens,"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_3",
+          "cards": [
+            "2\u2666",
+            "4\u2663",
+            "9\u2665",
+            "9\u2665",
+            "9\u2666",
+            "10\u2663"
+          ],
+          "description": "Triple nines, one spade",
+          "tokens": [
+            "triple",
+            "nines,",
+            "one",
+            "spade"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_4",
+          "cards": [
+            "3\u2660",
+            "5\u2660",
+            "6\u2666",
+            "J\u2663",
+            "J\u2666",
+            "K\u2663"
+          ],
+          "description": "Black jack, spades lead",
+          "tokens": [
+            "black",
+            "jack,",
+            "spades",
+            "lead"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Sorted_by_rank_neg_0",
+          "cards": [
+            "3\u2665",
+            "7\u2663",
+            "Q\u2665",
+            "5\u2665",
+            "7\u2665",
+            "Q\u2663"
+          ],
+          "description": "Two pairs, alternating colors.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_1",
+          "cards": [
+            "9\u2665",
+            "K\u2665",
+            "2\u2660",
+            "9\u2665",
+            "K\u2660",
+            "K\u2666"
+          ],
+          "description": "High cards, repeated values",
+          "tokens": [
+            "high",
+            "cards,",
+            "repeated",
+            "values"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_2",
+          "cards": [
+            "2\u2665",
+            "Q\u2660",
+            "4\u2666",
+            "K\u2663",
+            "5\u2660",
+            "6\u2665"
+          ],
+          "description": "High card sequence,",
+          "tokens": [
+            "high",
+            "card",
+            "sequence,"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_3",
+          "cards": [
+            "9\u2663",
+            "K\u2665",
+            "7\u2665",
+            "8\u2663",
+            "A\u2663",
+            "Q\u2665"
+          ],
+          "description": "High alternating colors",
+          "tokens": [
+            "high",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_4",
+          "cards": [
+            "Q\u2665",
+            "10\u2666",
+            "9\u2663",
+            "8\u2660",
+            "2\u2663",
+            "A\u2666"
+          ],
+          "description": "High cards",
+          "tokens": [
+            "high",
+            "cards"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Ends_same_suit",
+      "rule_name": "First and last share the suit",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Ends_same_suit_pos_0",
+          "cards": [
+            "A\u2660",
+            "A\u2660",
+            "6\u2660",
+            "J\u2665",
+            "8\u2663",
+            "A\u2660"
+          ],
+          "description": "Ace triple",
+          "tokens": [
+            "ace",
+            "triple"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_1",
+          "cards": [
+            "5\u2666",
+            "6\u2665",
+            "9\u2660",
+            "3\u2663",
+            "Q\u2665",
+            "4\u2666"
+          ],
+          "description": "Alternate colors",
+          "tokens": [
+            "alternate",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_2",
+          "cards": [
+            "8\u2663",
+            "8\u2665",
+            "6\u2663",
+            "9\u2663",
+            "9\u2665",
+            "4\u2663"
+          ],
+          "description": "pairs, alternating colors",
+          "tokens": [
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_3",
+          "cards": [
+            "9\u2660",
+            "5\u2663",
+            "7\u2665",
+            "7\u2665",
+            "10\u2663",
+            "J\u2660"
+          ],
+          "description": "Two sevens, alternating colors.",
+          "tokens": [
+            "two",
+            "sevens,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_4",
+          "cards": [
+            "3\u2666",
+            "J\u2663",
+            "10\u2665",
+            "3\u2666",
+            "9\u2660",
+            "7\u2666"
+          ],
+          "description": "one pair, alternating colors",
+          "tokens": [
+            "one",
+            "pair,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Ends_same_suit_neg_0",
+          "cards": [
+            "6\u2665",
+            "7\u2663",
+            "6\u2666",
+            "6\u2666",
+            "J\u2663",
+            "5\u2666"
+          ],
+          "description": "Two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_1",
+          "cards": [
+            "6\u2666",
+            "Q\u2666",
+            "A\u2665",
+            "A\u2663",
+            "K\u2663",
+            "3\u2663"
+          ],
+          "description": "Ace-high flush",
+          "tokens": [
+            "ace-high",
+            "flush"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_2",
+          "cards": [
+            "Q\u2660",
+            "3\u2660",
+            "7\u2666",
+            "3\u2666",
+            "10\u2660",
+            "9\u2666"
+          ],
+          "description": "pair, sorted",
+          "tokens": [
+            "pair,",
+            "sorted"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_3",
+          "cards": [
+            "9\u2666",
+            "8\u2665",
+            "3\u2666",
+            "Q\u2663",
+            "3\u2663",
+            "7\u2660"
+          ],
+          "description": "two pairs",
+          "tokens": [
+            "two",
+            "pairs"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_4",
+          "cards": [
+            "A\u2665",
+            "A\u2665",
+            "8\u2666",
+            "7\u2663",
+            "J\u2666",
+            "A\u2660"
+          ],
+          "description": "two aces",
+          "tokens": [
+            "two",
+            "aces"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Ends_same_color",
+      "rule_name": "First and last share the color",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Ends_same_color_pos_0",
+          "cards": [
+            "Q\u2665",
+            "J\u2663",
+            "8\u2663",
+            "K\u2666",
+            "A\u2666",
+            "7\u2666"
+          ],
+          "description": "Q high alternating",
+          "tokens": [
+            "q",
+            "high",
+            "alternating"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_1",
+          "cards": [
+            "5\u2665",
+            "10\u2660",
+            "A\u2663",
+            "A\u2666",
+            "4\u2663",
+            "10\u2666"
+          ],
+          "description": "Ace pair, alternating colors",
+          "tokens": [
+            "ace",
+            "pair,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_2",
+          "cards": [
+            "5\u2665",
+            "3\u2663",
+            "5\u2663",
+            "2\u2660",
+            "10\u2663",
+            "Q\u2665"
+          ],
+          "description": "one heart, two",
+          "tokens": [
+            "one",
+            "heart,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_3",
+          "cards": [
+            "8\u2666",
+            "4\u2665",
+            "9\u2666",
+            "A\u2666",
+            "K\u2665",
+            "7\u2665"
+          ],
+          "description": "High diamonds",
+          "tokens": [
+            "high",
+            "diamonds"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_4",
+          "cards": [
+            "Q\u2663",
+            "J\u2660",
+            "8\u2666",
+            "2\u2663",
+            "6\u2666",
+            "6\u2663"
+          ],
+          "description": "Two sixes, alternating colors",
+          "tokens": [
+            "two",
+            "sixes,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Ends_same_color_neg_0",
+          "cards": [
+            "A\u2660",
+            "8\u2666",
+            "6\u2665",
+            "J\u2663",
+            "9\u2665",
+            "8\u2666"
+          ],
+          "description": "Two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_1",
+          "cards": [
+            "K\u2665",
+            "K\u2666",
+            "10\u2665",
+            "10\u2665",
+            "4\u2666",
+            "7\u2663"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_2",
+          "cards": [
+            "10\u2663",
+            "9\u2663",
+            "5\u2660",
+            "10\u2660",
+            "K\u2663",
+            "5\u2666"
+          ],
+          "description": "two pairs, alternating suits",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_3",
+          "cards": [
+            "3\u2666",
+            "9\u2663",
+            "4\u2666",
+            "Q\u2663",
+            "2\u2663",
+            "7\u2660"
+          ],
+          "description": "two diamonds, three",
+          "tokens": [
+            "two",
+            "diamonds,",
+            "three"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_4",
+          "cards": [
+            "5\u2666",
+            "K\u2660",
+            "9\u2663",
+            "6\u2665",
+            "2\u2665",
+            "5\u2663"
+          ],
+          "description": "Two pair",
+          "tokens": [
+            "two",
+            "pair"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Has_pair_ranks",
+      "rule_name": "At least one pair (same rank)",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Has_pair_ranks_pos_0",
+          "cards": [
+            "4\u2666",
+            "7\u2663",
+            "Q\u2660",
+            "7\u2666",
+            "Q\u2663",
+            "10\u2660"
+          ],
+          "description": "Pair of sevens",
+          "tokens": [
+            "pair",
+            "of",
+            "sevens"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_1",
+          "cards": [
+            "4\u2663",
+            "A\u2665",
+            "7\u2666",
+            "Q\u2663",
+            "6\u2666",
+            "A\u2663"
+          ],
+          "description": "Ace and a",
+          "tokens": [
+            "ace",
+            "and",
+            "a"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_2",
+          "cards": [
+            "8\u2665",
+            "6\u2660",
+            "K\u2666",
+            "J\u2663",
+            "A\u2663",
+            "K\u2666"
+          ],
+          "description": "Two Kings, Jack,",
+          "tokens": [
+            "two",
+            "kings,",
+            "jack,"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_3",
+          "cards": [
+            "9\u2663",
+            "K\u2665",
+            "8\u2663",
+            "K\u2666",
+            "6\u2665",
+            "Q\u2666"
+          ],
+          "description": "two kings, alternating colors",
+          "tokens": [
+            "two",
+            "kings,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_4",
+          "cards": [
+            "2\u2666",
+            "10\u2660",
+            "2\u2665",
+            "7\u2660",
+            "J\u2663",
+            "7\u2660"
+          ],
+          "description": "one pair, two high",
+          "tokens": [
+            "one",
+            "pair,",
+            "two",
+            "high"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Has_pair_ranks_neg_0",
+          "cards": [
+            "A\u2666",
+            "J\u2666",
+            "7\u2663",
+            "K\u2660",
+            "10\u2663",
+            "3\u2666"
+          ],
+          "description": "two reds, one",
+          "tokens": [
+            "two",
+            "reds,",
+            "one"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_1",
+          "cards": [
+            "8\u2666",
+            "9\u2666",
+            "J\u2665",
+            "2\u2660",
+            "4\u2665",
+            "Q\u2663"
+          ],
+          "description": "Hearts, mixed values",
+          "tokens": [
+            "hearts,",
+            "mixed",
+            "values"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_2",
+          "cards": [
+            "J\u2660",
+            "5\u2666",
+            "4\u2663",
+            "10\u2666",
+            "7\u2660",
+            "9\u2663"
+          ],
+          "description": "J, 10, Q,",
+          "tokens": [
+            "j,",
+            "10,",
+            "q,"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_3",
+          "cards": [
+            "7\u2660",
+            "J\u2666",
+            "6\u2666",
+            "5\u2665",
+            "A\u2660",
+            "9\u2665"
+          ],
+          "description": "High card flush",
+          "tokens": [
+            "high",
+            "card",
+            "flush"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_4",
+          "cards": [
+            "9\u2666",
+            "3\u2665",
+            "A\u2663",
+            "6\u2666",
+            "5\u2663",
+            "2\u2666"
+          ],
+          "description": "9\u2666, A\u2663, alternating colors",
+          "tokens": [
+            "9\u2666,",
+            "a\u2663,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Uniform_color",
+      "rule_name": "All cards have the same color",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Uniform_color_pos_0",
+          "cards": [
+            "9\u2665",
+            "6\u2666",
+            "10\u2666",
+            "6\u2665",
+            "K\u2665",
+            "J\u2665"
+          ],
+          "description": "High pair, alternating colors.",
+          "tokens": [
+            "high",
+            "pair,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_1",
+          "cards": [
+            "7\u2660",
+            "5\u2660",
+            "A\u2663",
+            "J\u2663",
+            "A\u2660",
+            "3\u2663"
+          ],
+          "description": "Ace high, alternating colors.",
+          "tokens": [
+            "ace",
+            "high,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_2",
+          "cards": [
+            "2\u2665",
+            "Q\u2666",
+            "7\u2665",
+            "Q\u2665",
+            "Q\u2665",
+            "6\u2665"
+          ],
+          "description": "Three queens, alternating",
+          "tokens": [
+            "three",
+            "queens,",
+            "alternating"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_3",
+          "cards": [
+            "A\u2665",
+            "9\u2666",
+            "A\u2665",
+            "2\u2665",
+            "4\u2666",
+            "J\u2666"
+          ],
+          "description": "Two aces, alternating colors",
+          "tokens": [
+            "two",
+            "aces,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_4",
+          "cards": [
+            "2\u2665",
+            "10\u2665",
+            "A\u2665",
+            "7\u2665",
+            "J\u2666",
+            "10\u2665"
+          ],
+          "description": "two pair, spades",
+          "tokens": [
+            "two",
+            "pair,",
+            "spades"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Uniform_color_neg_0",
+          "cards": [
+            "9\u2663",
+            "6\u2660",
+            "3\u2666",
+            "Q\u2665",
+            "4\u2666",
+            "4\u2660"
+          ],
+          "description": "Four of a kind",
+          "tokens": [
+            "four",
+            "of",
+            "a",
+            "kind"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_1",
+          "cards": [
+            "9\u2665",
+            "5\u2663",
+            "Q\u2660",
+            "6\u2660",
+            "10\u2666",
+            "3\u2665"
+          ],
+          "description": "Scattered high cards",
+          "tokens": [
+            "scattered",
+            "high",
+            "cards"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_2",
+          "cards": [
+            "K\u2665",
+            "A\u2665",
+            "6\u2660",
+            "K\u2660",
+            "J\u2660",
+            "A\u2663"
+          ],
+          "description": "Two pairs, high heart",
+          "tokens": [
+            "two",
+            "pairs,",
+            "high",
+            "heart"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_3",
+          "cards": [
+            "3\u2663",
+            "3\u2666",
+            "K\u2663",
+            "2\u2660",
+            "3\u2660",
+            "K\u2660"
+          ],
+          "description": "Triple three, pair spades",
+          "tokens": [
+            "triple",
+            "three,",
+            "pair",
+            "spades"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_4",
+          "cards": [
+            "7\u2660",
+            "3\u2660",
+            "A\u2660",
+            "A\u2665",
+            "8\u2666",
+            "4\u2660"
+          ],
+          "description": "A\u2660 A\u2665 7\u2660",
+          "tokens": [
+            "a\u2660",
+            "a\u2665",
+            "7\u2660"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Exactly_two_suits",
+      "rule_name": "Exactly two suits appear",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Exactly_two_suits_pos_0",
+          "cards": [
+            "5\u2663",
+            "Q\u2665",
+            "6\u2663",
+            "9\u2665",
+            "6\u2663",
+            "9\u2665"
+          ],
+          "description": "Two pairs: one",
+          "tokens": [
+            "two",
+            "pairs:",
+            "one"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_1",
+          "cards": [
+            "7\u2666",
+            "3\u2660",
+            "3\u2660",
+            "10\u2666",
+            "10\u2660",
+            "A\u2660"
+          ],
+          "description": "two pairs",
+          "tokens": [
+            "two",
+            "pairs"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_2",
+          "cards": [
+            "3\u2665",
+            "5\u2663",
+            "10\u2665",
+            "K\u2665",
+            "4\u2663",
+            "5\u2665"
+          ],
+          "description": "High card run,",
+          "tokens": [
+            "high",
+            "card",
+            "run,"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_3",
+          "cards": [
+            "K\u2660",
+            "3\u2660",
+            "3\u2660",
+            "4\u2660",
+            "9\u2665",
+            "2\u2660"
+          ],
+          "description": "3 triplets, red/black split",
+          "tokens": [
+            "3",
+            "triplets,",
+            "red/black",
+            "split"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_4",
+          "cards": [
+            "4\u2665",
+            "K\u2665",
+            "6\u2665",
+            "9\u2665",
+            "5\u2660",
+            "8\u2660"
+          ],
+          "description": "Hearts descending, alternating colors.",
+          "tokens": [
+            "hearts",
+            "descending,",
+            "alternating",
+            "colors."
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Exactly_two_suits_neg_0",
+          "cards": [
+            "2\u2663",
+            "10\u2660",
+            "3\u2665",
+            "5\u2663",
+            "Q\u2660",
+            "K\u2660"
+          ],
+          "description": "High spades with",
+          "tokens": [
+            "high",
+            "spades",
+            "with"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_1",
+          "cards": [
+            "4\u2665",
+            "6\u2665",
+            "2\u2660",
+            "5\u2666",
+            "5\u2660",
+            "4\u2663"
+          ],
+          "description": "Alternate suits, no pairs.",
+          "tokens": [
+            "alternate",
+            "suits,",
+            "no",
+            "pairs."
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_2",
+          "cards": [
+            "3\u2660",
+            "6\u2665",
+            "4\u2660",
+            "J\u2663",
+            "K\u2663",
+            "J\u2666"
+          ],
+          "description": "Black Jacks and Ace",
+          "tokens": [
+            "black",
+            "jacks",
+            "and",
+            "ace"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_3",
+          "cards": [
+            "4\u2666",
+            "8\u2666",
+            "4\u2660",
+            "Q\u2663",
+            "K\u2665",
+            "8\u2665"
+          ],
+          "description": "Two pairs",
+          "tokens": [
+            "two",
+            "pairs"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_4",
+          "cards": [
+            "K\u2663",
+            "A\u2666",
+            "Q\u2666",
+            "J\u2665",
+            "5\u2660",
+            "K\u2665"
+          ],
+          "description": "K\u2665Q\u2666J\u2665A\u26665\u2660",
+          "tokens": [
+            "k\u2665q\u2666j\u2665a\u26665\u2660"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Exactly_one_club",
+      "rule_name": "Exactly one club",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Exactly_one_club_pos_0",
+          "cards": [
+            "9\u2666",
+            "9\u2660",
+            "K\u2663",
+            "Q\u2665",
+            "4\u2660",
+            "6\u2660"
+          ],
+          "description": "Pair of nines,",
+          "tokens": [
+            "pair",
+            "of",
+            "nines,"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_1",
+          "cards": [
+            "Q\u2660",
+            "A\u2666",
+            "Q\u2663",
+            "8\u2660",
+            "9\u2660",
+            "K\u2660"
+          ],
+          "description": "Queen, Ace, Queen,",
+          "tokens": [
+            "queen,",
+            "ace,",
+            "queen,"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_2",
+          "cards": [
+            "9\u2660",
+            "2\u2663",
+            "5\u2660",
+            "5\u2660",
+            "Q\u2666",
+            "A\u2666"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_3",
+          "cards": [
+            "2\u2665",
+            "7\u2666",
+            "K\u2663",
+            "J\u2665",
+            "4\u2666",
+            "Q\u2666"
+          ],
+          "description": "High alternating colors",
+          "tokens": [
+            "high",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_4",
+          "cards": [
+            "6\u2660",
+            "J\u2666",
+            "5\u2660",
+            "A\u2663",
+            "4\u2665",
+            "5\u2660"
+          ],
+          "description": "5s split, high card",
+          "tokens": [
+            "5s",
+            "split,",
+            "high",
+            "card"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Exactly_one_club_neg_0",
+          "cards": [
+            "8\u2666",
+            "8\u2663",
+            "3\u2663",
+            "8\u2663",
+            "2\u2660",
+            "2\u2665"
+          ],
+          "description": "Two pairs, high card",
+          "tokens": [
+            "two",
+            "pairs,",
+            "high",
+            "card"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_1",
+          "cards": [
+            "7\u2665",
+            "8\u2660",
+            "A\u2665",
+            "A\u2660",
+            "5\u2660",
+            "J\u2665"
+          ],
+          "description": "Aces and jacks",
+          "tokens": [
+            "aces",
+            "and",
+            "jacks"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_2",
+          "cards": [
+            "10\u2665",
+            "6\u2663",
+            "5\u2663",
+            "K\u2666",
+            "7\u2666",
+            "A\u2665"
+          ],
+          "description": "High card flush,",
+          "tokens": [
+            "high",
+            "card",
+            "flush,"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_3",
+          "cards": [
+            "5\u2665",
+            "3\u2666",
+            "8\u2660",
+            "J\u2660",
+            "10\u2666",
+            "3\u2665"
+          ],
+          "description": "Two threes, heart",
+          "tokens": [
+            "two",
+            "threes,",
+            "heart"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_4",
+          "cards": [
+            "3\u2665",
+            "5\u2663",
+            "3\u2666",
+            "4\u2665",
+            "10\u2663",
+            "J\u2660"
+          ],
+          "description": "pair of threes,",
+          "tokens": [
+            "pair",
+            "of",
+            "threes,"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "AP_len3_anywhere_anyk",
+      "rule_name": "3-term rank pattern with equal steps",
+      "rule_family": "AP",
+      "positive_hands": [
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_0",
+          "cards": [
+            "5\u2660",
+            "5\u2663",
+            "9\u2663",
+            "9\u2666",
+            "2\u2666",
+            "5\u2660"
+          ],
+          "description": "two pairs, one five",
+          "tokens": [
+            "two",
+            "pairs,",
+            "one",
+            "five"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_1",
+          "cards": [
+            "A\u2665",
+            "9\u2660",
+            "4\u2665",
+            "A\u2660",
+            "8\u2666",
+            "9\u2665"
+          ],
+          "description": "Two aces, one",
+          "tokens": [
+            "two",
+            "aces,",
+            "one"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_2",
+          "cards": [
+            "8\u2665",
+            "J\u2665",
+            "8\u2663",
+            "8\u2665",
+            "K\u2663",
+            "7\u2663"
+          ],
+          "description": "two pair, high heart",
+          "tokens": [
+            "two",
+            "pair,",
+            "high",
+            "heart"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_3",
+          "cards": [
+            "5\u2665",
+            "9\u2663",
+            "7\u2666",
+            "3\u2666",
+            "6\u2663",
+            "K\u2663"
+          ],
+          "description": "King, alternating colors,",
+          "tokens": [
+            "king,",
+            "alternating",
+            "colors,"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_4",
+          "cards": [
+            "Q\u2665",
+            "6\u2663",
+            "A\u2660",
+            "9\u2665",
+            "3\u2665",
+            "9\u2666"
+          ],
+          "description": "High card",
+          "tokens": [
+            "high",
+            "card"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_0",
+          "cards": [
+            "2\u2660",
+            "K\u2665",
+            "10\u2663",
+            "J\u2660",
+            "K\u2666",
+            "J\u2660"
+          ],
+          "description": "Two kings, two",
+          "tokens": [
+            "two",
+            "kings,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_1",
+          "cards": [
+            "4\u2666",
+            "K\u2665",
+            "7\u2666",
+            "2\u2660",
+            "4\u2665",
+            "9\u2663"
+          ],
+          "description": "Two fours, heart high",
+          "tokens": [
+            "two",
+            "fours,",
+            "heart",
+            "high"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_2",
+          "cards": [
+            "K\u2663",
+            "10\u2660",
+            "K\u2666",
+            "5\u2663",
+            "6\u2665",
+            "6\u2665"
+          ],
+          "description": "Two kings, a",
+          "tokens": [
+            "two",
+            "kings,",
+            "a"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_3",
+          "cards": [
+            "4\u2666",
+            "9\u2663",
+            "K\u2666",
+            "10\u2666",
+            "10\u2663",
+            "9\u2665"
+          ],
+          "description": "Two pairs",
+          "tokens": [
+            "two",
+            "pairs"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_4",
+          "cards": [
+            "10\u2663",
+            "2\u2665",
+            "9\u2660",
+            "10\u2666",
+            "5\u2666",
+            "5\u2660"
+          ],
+          "description": "one pair, mixed suits",
+          "tokens": [
+            "one",
+            "pair,",
+            "mixed",
+            "suits"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Half_sum_diff_geN",
+      "rule_name": "Left half beats right by at least N points",
+      "rule_family": "SCORE",
+      "positive_hands": [
+        {
+          "hand_id": "Half_sum_diff_geN_pos_0",
+          "cards": [
+            "3\u2663",
+            "A\u2665",
+            "10\u2663",
+            "4\u2665",
+            "8\u2660",
+            "6\u2666"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_1",
+          "cards": [
+            "6\u2663",
+            "A\u2663",
+            "J\u2665",
+            "5\u2666",
+            "5\u2663",
+            "Q\u2660"
+          ],
+          "description": "High club flush",
+          "tokens": [
+            "high",
+            "club",
+            "flush"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_2",
+          "cards": [
+            "7\u2665",
+            "7\u2665",
+            "10\u2660",
+            "7\u2665",
+            "5\u2666",
+            "4\u2665"
+          ],
+          "description": "pair, triplets, hearts dominate",
+          "tokens": [
+            "pair,",
+            "triplets,",
+            "hearts",
+            "dominate"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_3",
+          "cards": [
+            "8\u2666",
+            "4\u2660",
+            "6\u2666",
+            "2\u2666",
+            "5\u2666",
+            "4\u2663"
+          ],
+          "description": "sorted by rank",
+          "tokens": [
+            "sorted",
+            "by",
+            "rank"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_4",
+          "cards": [
+            "Q\u2665",
+            "K\u2666",
+            "Q\u2666",
+            "10\u2660",
+            "8\u2660",
+            "9\u2666"
+          ],
+          "description": "Two queens, alternating",
+          "tokens": [
+            "two",
+            "queens,",
+            "alternating"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Half_sum_diff_geN_neg_0",
+          "cards": [
+            "A\u2666",
+            "3\u2663",
+            "10\u2663",
+            "J\u2666",
+            "9\u2660",
+            "3\u2663"
+          ],
+          "description": "Pair, alternating colors,",
+          "tokens": [
+            "pair,",
+            "alternating",
+            "colors,"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_1",
+          "cards": [
+            "8\u2663",
+            "5\u2666",
+            "9\u2660",
+            "8\u2665",
+            "7\u2660",
+            "2\u2665"
+          ],
+          "description": "Double pair, mixed suits.",
+          "tokens": [
+            "double",
+            "pair,",
+            "mixed",
+            "suits."
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_2",
+          "cards": [
+            "7\u2663",
+            "A\u2666",
+            "2\u2660",
+            "4\u2666",
+            "9\u2660",
+            "Q\u2666"
+          ],
+          "description": "Ace, Queen, high",
+          "tokens": [
+            "ace,",
+            "queen,",
+            "high"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_3",
+          "cards": [
+            "2\u2660",
+            "4\u2666",
+            "8\u2660",
+            "4\u2660",
+            "J\u2665",
+            "J\u2660"
+          ],
+          "description": "Two pairs, unsorted.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "unsorted."
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_4",
+          "cards": [
+            "5\u2665",
+            "6\u2663",
+            "6\u2660",
+            "A\u2665",
+            "4\u2660",
+            "8\u2663"
+          ],
+          "description": "Six high, alternating",
+          "tokens": [
+            "six",
+            "high,",
+            "alternating"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_uniform_color_equal",
+      "rule_name": "Both halves uniform in color (or both not)",
+      "rule_family": "HIER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_0",
+          "cards": [
+            "8\u2663",
+            "9\u2665",
+            "2\u2663",
+            "J\u2666",
+            "3\u2665",
+            "K\u2663"
+          ],
+          "description": "Oddly colored",
+          "tokens": [
+            "oddly",
+            "colored"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_1",
+          "cards": [
+            "3\u2660",
+            "8\u2663",
+            "9\u2663",
+            "7\u2666",
+            "3\u2665",
+            "9\u2666"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_2",
+          "cards": [
+            "A\u2665",
+            "Q\u2660",
+            "2\u2665",
+            "4\u2663",
+            "A\u2666",
+            "4\u2665"
+          ],
+          "description": "Aces and fours.",
+          "tokens": [
+            "aces",
+            "and",
+            "fours."
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_3",
+          "cards": [
+            "8\u2666",
+            "9\u2666",
+            "3\u2663",
+            "2\u2660",
+            "3\u2665",
+            "A\u2663"
+          ],
+          "description": "Three of a",
+          "tokens": [
+            "three",
+            "of",
+            "a"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_4",
+          "cards": [
+            "8\u2666",
+            "4\u2666",
+            "3\u2660",
+            "A\u2663",
+            "4\u2660",
+            "A\u2666"
+          ],
+          "description": "High pair, two aces",
+          "tokens": [
+            "high",
+            "pair,",
+            "two",
+            "aces"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_0",
+          "cards": [
+            "5\u2660",
+            "6\u2663",
+            "10\u2660",
+            "7\u2666",
+            "8\u2663",
+            "K\u2666"
+          ],
+          "description": "Two spades, two",
+          "tokens": [
+            "two",
+            "spades,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_1",
+          "cards": [
+            "5\u2660",
+            "J\u2663",
+            "Q\u2660",
+            "J\u2666",
+            "9\u2660",
+            "10\u2666"
+          ],
+          "description": "Jacks and Queen",
+          "tokens": [
+            "jacks",
+            "and",
+            "queen"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_2",
+          "cards": [
+            "4\u2666",
+            "Q\u2665",
+            "4\u2666",
+            "10\u2666",
+            "Q\u2666",
+            "Q\u2663"
+          ],
+          "description": "Four of a",
+          "tokens": [
+            "four",
+            "of",
+            "a"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_3",
+          "cards": [
+            "2\u2660",
+            "5\u2660",
+            "Q\u2660",
+            "A\u2663",
+            "3\u2666",
+            "6\u2660"
+          ],
+          "description": "two spades, alternating colors",
+          "tokens": [
+            "two",
+            "spades,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_4",
+          "cards": [
+            "2\u2666",
+            "4\u2660",
+            "J\u2666",
+            "4\u2663",
+            "3\u2660",
+            "8\u2660"
+          ],
+          "description": "4s and Jack,",
+          "tokens": [
+            "4s",
+            "and",
+            "jack,"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_hearts_presence_equal",
+      "rule_name": "Both halves have heart or neither",
+      "rule_family": "HIER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_0",
+          "cards": [
+            "6\u2666",
+            "K\u2665",
+            "3\u2660",
+            "8\u2663",
+            "8\u2660",
+            "A\u2665"
+          ],
+          "description": "one pair, alternating colors",
+          "tokens": [
+            "one",
+            "pair,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_1",
+          "cards": [
+            "2\u2665",
+            "A\u2663",
+            "A\u2666",
+            "K\u2665",
+            "9\u2660",
+            "3\u2665"
+          ],
+          "description": "one ace, king,",
+          "tokens": [
+            "one",
+            "ace,",
+            "king,"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_2",
+          "cards": [
+            "7\u2665",
+            "J\u2660",
+            "8\u2665",
+            "J\u2663",
+            "3\u2665",
+            "8\u2665"
+          ],
+          "description": "two jacks, pair",
+          "tokens": [
+            "two",
+            "jacks,",
+            "pair"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_3",
+          "cards": [
+            "Q\u2666",
+            "Q\u2665",
+            "Q\u2666",
+            "2\u2666",
+            "A\u2663",
+            "10\u2665"
+          ],
+          "description": "Three queens, one ace.",
+          "tokens": [
+            "three",
+            "queens,",
+            "one",
+            "ace."
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_4",
+          "cards": [
+            "8\u2660",
+            "8\u2665",
+            "J\u2663",
+            "J\u2666",
+            "6\u2660",
+            "10\u2665"
+          ],
+          "description": "pairs, alternating colors",
+          "tokens": [
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_0",
+          "cards": [
+            "8\u2665",
+            "J\u2660",
+            "4\u2666",
+            "3\u2666",
+            "A\u2666",
+            "10\u2663"
+          ],
+          "description": "High club flush",
+          "tokens": [
+            "high",
+            "club",
+            "flush"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_1",
+          "cards": [
+            "5\u2660",
+            "A\u2666",
+            "8\u2666",
+            "2\u2665",
+            "2\u2660",
+            "3\u2660"
+          ],
+          "description": "Two pair, spades high",
+          "tokens": [
+            "two",
+            "pair,",
+            "spades",
+            "high"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_2",
+          "cards": [
+            "K\u2663",
+            "2\u2663",
+            "6\u2665",
+            "4\u2663",
+            "2\u2663",
+            "4\u2666"
+          ],
+          "description": "one pair, two",
+          "tokens": [
+            "one",
+            "pair,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_3",
+          "cards": [
+            "10\u2663",
+            "10\u2665",
+            "Q\u2660",
+            "7\u2666",
+            "J\u2660",
+            "K\u2660"
+          ],
+          "description": "10's, high card spades",
+          "tokens": [
+            "10's,",
+            "high",
+            "card",
+            "spades"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_4",
+          "cards": [
+            "7\u2665",
+            "10\u2665",
+            "J\u2660",
+            "10\u2666",
+            "J\u2660",
+            "2\u2666"
+          ],
+          "description": "two jacks, alternate colors",
+          "tokens": [
+            "two",
+            "jacks,",
+            "alternate",
+            "colors"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Well_formed_brackets_by_suit",
+      "rule_name": "Suits form matched brackets",
+      "rule_family": "LANG",
+      "positive_hands": [
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_0",
+          "cards": [
+            "7\u2666",
+            "5\u2666",
+            "2\u2660",
+            "7\u2663",
+            "7\u2666",
+            "8\u2665"
+          ],
+          "description": "Double 7s, mixed",
+          "tokens": [
+            "double",
+            "7s,",
+            "mixed"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_1",
+          "cards": [
+            "5\u2666",
+            "Q\u2663",
+            "9\u2663",
+            "2\u2663",
+            "6\u2666",
+            "A\u2663"
+          ],
+          "description": "Odd-numbered cards, alternating colors.",
+          "tokens": [
+            "odd-numbered",
+            "cards,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_2",
+          "cards": [
+            "2\u2660",
+            "4\u2665",
+            "J\u2660",
+            "3\u2665",
+            "10\u2663",
+            "8\u2663"
+          ],
+          "description": "Unsorted mixed cards.",
+          "tokens": [
+            "unsorted",
+            "mixed",
+            "cards."
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_3",
+          "cards": [
+            "3\u2663",
+            "A\u2660",
+            "J\u2660",
+            "3\u2663",
+            "10\u2665",
+            "4\u2665"
+          ],
+          "description": "Two threes and",
+          "tokens": [
+            "two",
+            "threes",
+            "and"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_4",
+          "cards": [
+            "5\u2660",
+            "4\u2663",
+            "Q\u2666",
+            "3\u2665",
+            "4\u2663",
+            "J\u2666"
+          ],
+          "description": "sorted pairs, alternating suits",
+          "tokens": [
+            "sorted",
+            "pairs,",
+            "alternating",
+            "suits"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_0",
+          "cards": [
+            "J\u2663",
+            "5\u2665",
+            "8\u2663",
+            "4\u2666",
+            "10\u2665",
+            "K\u2666"
+          ],
+          "description": "High hearts, Jack high.",
+          "tokens": [
+            "high",
+            "hearts,",
+            "jack",
+            "high."
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_1",
+          "cards": [
+            "7\u2665",
+            "8\u2663",
+            "8\u2663",
+            "3\u2665",
+            "10\u2665",
+            "J\u2665"
+          ],
+          "description": "two pairs, heart flush",
+          "tokens": [
+            "two",
+            "pairs,",
+            "heart",
+            "flush"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_2",
+          "cards": [
+            "J\u2663",
+            "8\u2665",
+            "10\u2666",
+            "K\u2665",
+            "K\u2665",
+            "4\u2663"
+          ],
+          "description": "two kings, jack,",
+          "tokens": [
+            "two",
+            "kings,",
+            "jack,"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_3",
+          "cards": [
+            "Q\u2660",
+            "6\u2666",
+            "3\u2660",
+            "9\u2665",
+            "8\u2665",
+            "7\u2665"
+          ],
+          "description": "Hearts, descending",
+          "tokens": [
+            "hearts,",
+            "descending"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_4",
+          "cards": [
+            "A\u2660",
+            "A\u2663",
+            "7\u2663",
+            "3\u2665",
+            "K\u2660",
+            "J\u2663"
+          ],
+          "description": "Ace, 7, 3,",
+          "tokens": [
+            "ace,",
+            "7,",
+            "3,"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Suits_palindrome",
+      "rule_name": "Suits read same forward/back",
+      "rule_family": "PAL",
+      "positive_hands": [
+        {
+          "hand_id": "Suits_palindrome_pos_0",
+          "cards": [
+            "Q\u2665",
+            "10\u2660",
+            "6\u2665",
+            "Q\u2665",
+            "K\u2660",
+            "Q\u2665"
+          ],
+          "description": "Three queens, alternating",
+          "tokens": [
+            "three",
+            "queens,",
+            "alternating"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_1",
+          "cards": [
+            "7\u2665",
+            "3\u2663",
+            "8\u2663",
+            "8\u2663",
+            "7\u2663",
+            "6\u2665"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_2",
+          "cards": [
+            "10\u2665",
+            "10\u2663",
+            "10\u2666",
+            "9\u2666",
+            "K\u2663",
+            "9\u2665"
+          ],
+          "description": "Two pairs.",
+          "tokens": [
+            "two",
+            "pairs."
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_3",
+          "cards": [
+            "A\u2666",
+            "Q\u2666",
+            "10\u2663",
+            "9\u2663",
+            "6\u2666",
+            "5\u2666"
+          ],
+          "description": "Hearts pair, clubs low",
+          "tokens": [
+            "hearts",
+            "pair,",
+            "clubs",
+            "low"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_4",
+          "cards": [
+            "10\u2665",
+            "10\u2663",
+            "8\u2660",
+            "7\u2660",
+            "6\u2663",
+            "6\u2665"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Suits_palindrome_neg_0",
+          "cards": [
+            "A\u2665",
+            "Q\u2665",
+            "3\u2660",
+            "6\u2660",
+            "4\u2663",
+            "8\u2663"
+          ],
+          "description": "Hearts, alternating colors",
+          "tokens": [
+            "hearts,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_1",
+          "cards": [
+            "8\u2666",
+            "K\u2665",
+            "7\u2666",
+            "6\u2660",
+            "5\u2663",
+            "9\u2660"
+          ],
+          "description": "High card flush.",
+          "tokens": [
+            "high",
+            "card",
+            "flush."
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_2",
+          "cards": [
+            "A\u2666",
+            "5\u2660",
+            "2\u2663",
+            "A\u2665",
+            "2\u2663",
+            "A\u2665"
+          ],
+          "description": "Three aces, two",
+          "tokens": [
+            "three",
+            "aces,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_3",
+          "cards": [
+            "3\u2660",
+            "8\u2665",
+            "5\u2660",
+            "10\u2660",
+            "5\u2660",
+            "A\u2663"
+          ],
+          "description": "Black spades, red heart",
+          "tokens": [
+            "black",
+            "spades,",
+            "red",
+            "heart"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_4",
+          "cards": [
+            "8\u2663",
+            "6\u2663",
+            "9\u2663",
+            "4\u2660",
+            "8\u2663",
+            "6\u2665"
+          ],
+          "description": "double 8s, alternating colors",
+          "tokens": [
+            "double",
+            "8s,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Colors_palindrome",
+      "rule_name": "Colors read same forward/back",
+      "rule_family": "PAL",
+      "positive_hands": [
+        {
+          "hand_id": "Colors_palindrome_pos_0",
+          "cards": [
+            "10\u2660",
+            "J\u2663",
+            "J\u2663",
+            "J\u2660",
+            "J\u2660",
+            "A\u2660"
+          ],
+          "description": "Jacks plus Ace",
+          "tokens": [
+            "jacks",
+            "plus",
+            "ace"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_1",
+          "cards": [
+            "Q\u2665",
+            "4\u2660",
+            "8\u2665",
+            "10\u2666",
+            "A\u2660",
+            "10\u2666"
+          ],
+          "description": "Double tens, queen,",
+          "tokens": [
+            "double",
+            "tens,",
+            "queen,"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_2",
+          "cards": [
+            "K\u2663",
+            "10\u2663",
+            "8\u2665",
+            "4\u2665",
+            "8\u2663",
+            "J\u2660"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_3",
+          "cards": [
+            "5\u2663",
+            "Q\u2666",
+            "4\u2666",
+            "9\u2665",
+            "6\u2665",
+            "3\u2660"
+          ],
+          "description": "Mixed suits, odd numbers.",
+          "tokens": [
+            "mixed",
+            "suits,",
+            "odd",
+            "numbers."
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_4",
+          "cards": [
+            "5\u2663",
+            "3\u2665",
+            "K\u2665",
+            "K\u2665",
+            "10\u2665",
+            "9\u2663"
+          ],
+          "description": "Three of a kind.",
+          "tokens": [
+            "three",
+            "of",
+            "a",
+            "kind."
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Colors_palindrome_neg_0",
+          "cards": [
+            "5\u2666",
+            "9\u2663",
+            "A\u2663",
+            "6\u2665",
+            "10\u2660",
+            "7\u2663"
+          ],
+          "description": "High cards, alternating suits.",
+          "tokens": [
+            "high",
+            "cards,",
+            "alternating",
+            "suits."
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_1",
+          "cards": [
+            "Q\u2665",
+            "8\u2665",
+            "2\u2666",
+            "10\u2666",
+            "9\u2666",
+            "4\u2663"
+          ],
+          "description": "High spades, alternating colors",
+          "tokens": [
+            "high",
+            "spades,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_2",
+          "cards": [
+            "2\u2665",
+            "6\u2665",
+            "4\u2663",
+            "7\u2663",
+            "5\u2665",
+            "4\u2660"
+          ],
+          "description": "two pair, alternating colors",
+          "tokens": [
+            "two",
+            "pair,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_3",
+          "cards": [
+            "J\u2665",
+            "5\u2666",
+            "2\u2660",
+            "10\u2660",
+            "3\u2663",
+            "J\u2663"
+          ],
+          "description": "Jacks and tens,",
+          "tokens": [
+            "jacks",
+            "and",
+            "tens,"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_4",
+          "cards": [
+            "6\u2665",
+            "6\u2665",
+            "A\u2663",
+            "8\u2665",
+            "8\u2663",
+            "A\u2663"
+          ],
+          "description": "Two pairs, high card.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "high",
+            "card."
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_copy_suits",
+      "rule_name": "Halves have same suit sequence",
+      "rule_family": "COPY",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_copy_suits_pos_0",
+          "cards": [
+            "4\u2660",
+            "7\u2660",
+            "6\u2660",
+            "4\u2660",
+            "10\u2660",
+            "10\u2660"
+          ],
+          "description": "Four of a",
+          "tokens": [
+            "four",
+            "of",
+            "a"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_1",
+          "cards": [
+            "Q\u2660",
+            "A\u2663",
+            "10\u2665",
+            "6\u2660",
+            "2\u2663",
+            "8\u2665"
+          ],
+          "description": "High card run",
+          "tokens": [
+            "high",
+            "card",
+            "run"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_2",
+          "cards": [
+            "8\u2665",
+            "10\u2666",
+            "5\u2663",
+            "10\u2665",
+            "2\u2666",
+            "6\u2663"
+          ],
+          "description": "two pairs, mixed suits",
+          "tokens": [
+            "two",
+            "pairs,",
+            "mixed",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_3",
+          "cards": [
+            "4\u2663",
+            "7\u2666",
+            "K\u2660",
+            "A\u2663",
+            "3\u2666",
+            "5\u2660"
+          ],
+          "description": "High mixed suits",
+          "tokens": [
+            "high",
+            "mixed",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_4",
+          "cards": [
+            "K\u2665",
+            "3\u2666",
+            "8\u2666",
+            "A\u2665",
+            "6\u2666",
+            "3\u2666"
+          ],
+          "description": "two threes, alternating colors",
+          "tokens": [
+            "two",
+            "threes,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_copy_suits_neg_0",
+          "cards": [
+            "10\u2665",
+            "3\u2665",
+            "Q\u2665",
+            "Q\u2665",
+            "9\u2660",
+            "10\u2666"
+          ],
+          "description": "Two queens, jack",
+          "tokens": [
+            "two",
+            "queens,",
+            "jack"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_1",
+          "cards": [
+            "5\u2665",
+            "6\u2666",
+            "Q\u2666",
+            "4\u2666",
+            "8\u2663",
+            "Q\u2663"
+          ],
+          "description": "Two queens, alternating colors",
+          "tokens": [
+            "two",
+            "queens,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_2",
+          "cards": [
+            "A\u2666",
+            "A\u2663",
+            "10\u2665",
+            "4\u2660",
+            "7\u2663",
+            "6\u2666"
+          ],
+          "description": "one ace, one",
+          "tokens": [
+            "one",
+            "ace,",
+            "one"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_3",
+          "cards": [
+            "J\u2666",
+            "K\u2666",
+            "6\u2666",
+            "8\u2666",
+            "2\u2666",
+            "6\u2663"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_4",
+          "cards": [
+            "K\u2663",
+            "9\u2660",
+            "4\u2663",
+            "9\u2665",
+            "6\u2665",
+            "6\u2665"
+          ],
+          "description": "Two pairs, red.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "red."
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Adj_same_rank_or_suit",
+      "rule_name": "Neighbors share rank or suit",
+      "rule_family": "ADJ",
+      "positive_hands": [
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_0",
+          "cards": [
+            "A\u2666",
+            "J\u2666",
+            "J\u2663",
+            "4\u2663",
+            "10\u2663",
+            "8\u2663"
+          ],
+          "description": "Two jacks, alternating colors.",
+          "tokens": [
+            "two",
+            "jacks,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_1",
+          "cards": [
+            "3\u2660",
+            "2\u2660",
+            "7\u2660",
+            "7\u2666",
+            "7\u2660",
+            "7\u2666"
+          ],
+          "description": "Three of a kind.",
+          "tokens": [
+            "three",
+            "of",
+            "a",
+            "kind."
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_2",
+          "cards": [
+            "K\u2660",
+            "K\u2665",
+            "6\u2665",
+            "6\u2660",
+            "2\u2660",
+            "Q\u2660"
+          ],
+          "description": "two kings, two",
+          "tokens": [
+            "two",
+            "kings,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_3",
+          "cards": [
+            "3\u2660",
+            "2\u2660",
+            "8\u2660",
+            "9\u2660",
+            "K\u2660",
+            "6\u2660"
+          ],
+          "description": "All spades; sequential.",
+          "tokens": [
+            "all",
+            "spades;",
+            "sequential."
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_4",
+          "cards": [
+            "8\u2663",
+            "6\u2663",
+            "8\u2663",
+            "3\u2663",
+            "K\u2663",
+            "6\u2663"
+          ],
+          "description": "Two pairs, one club",
+          "tokens": [
+            "two",
+            "pairs,",
+            "one",
+            "club"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_0",
+          "cards": [
+            "5\u2665",
+            "6\u2666",
+            "5\u2663",
+            "9\u2666",
+            "2\u2666",
+            "8\u2665"
+          ],
+          "description": "Two pairs, alternating suits",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_1",
+          "cards": [
+            "4\u2663",
+            "J\u2663",
+            "5\u2666",
+            "10\u2665",
+            "7\u2663",
+            "4\u2663"
+          ],
+          "description": "Clubs high, alternating colors.",
+          "tokens": [
+            "clubs",
+            "high,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_2",
+          "cards": [
+            "4\u2665",
+            "Q\u2666",
+            "Q\u2666",
+            "5\u2663",
+            "J\u2660",
+            "7\u2663"
+          ],
+          "description": "Two Queens.",
+          "tokens": [
+            "two",
+            "queens."
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_3",
+          "cards": [
+            "10\u2665",
+            "5\u2663",
+            "7\u2660",
+            "A\u2666",
+            "A\u2660",
+            "5\u2663"
+          ],
+          "description": "two aces, two",
+          "tokens": [
+            "two",
+            "aces,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_4",
+          "cards": [
+            "A\u2660",
+            "10\u2665",
+            "Q\u2665",
+            "6\u2660",
+            "K\u2660",
+            "6\u2660"
+          ],
+          "description": "Ace, Queen, King,",
+          "tokens": [
+            "ace,",
+            "queen,",
+            "king,"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Adj_rank_gap_le3",
+      "rule_name": "Neighbors differ by \u22643 ranks",
+      "rule_family": "ADJ",
+      "positive_hands": [
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_0",
+          "cards": [
+            "5\u2663",
+            "6\u2660",
+            "7\u2665",
+            "5\u2663",
+            "5\u2665",
+            "2\u2666"
+          ],
+          "description": "double fives, alternate colors",
+          "tokens": [
+            "double",
+            "fives,",
+            "alternate",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_1",
+          "cards": [
+            "10\u2665",
+            "7\u2666",
+            "10\u2660",
+            "10\u2660",
+            "K\u2665",
+            "A\u2666"
+          ],
+          "description": "Four tens, ace",
+          "tokens": [
+            "four",
+            "tens,",
+            "ace"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_2",
+          "cards": [
+            "8\u2660",
+            "J\u2666",
+            "A\u2665",
+            "Q\u2665",
+            "9\u2665",
+            "8\u2663"
+          ],
+          "description": "High flush with",
+          "tokens": [
+            "high",
+            "flush",
+            "with"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_3",
+          "cards": [
+            "10\u2665",
+            "8\u2663",
+            "8\u2660",
+            "J\u2665",
+            "Q\u2663",
+            "Q\u2660"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_4",
+          "cards": [
+            "3\u2665",
+            "2\u2663",
+            "5\u2663",
+            "7\u2663",
+            "8\u2663",
+            "10\u2663"
+          ],
+          "description": "All clubs",
+          "tokens": [
+            "all",
+            "clubs"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_0",
+          "cards": [
+            "3\u2663",
+            "Q\u2660",
+            "2\u2663",
+            "5\u2666",
+            "4\u2660",
+            "5\u2660"
+          ],
+          "description": "one pair, unsorted",
+          "tokens": [
+            "one",
+            "pair,",
+            "unsorted"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_1",
+          "cards": [
+            "K\u2663",
+            "A\u2666",
+            "2\u2663",
+            "3\u2665",
+            "K\u2666",
+            "J\u2660"
+          ],
+          "description": "K\u2666 A\u2666 K\u2663",
+          "tokens": [
+            "k\u2666",
+            "a\u2666",
+            "k\u2663"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_2",
+          "cards": [
+            "8\u2665",
+            "K\u2663",
+            "7\u2660",
+            "9\u2663",
+            "6\u2666",
+            "J\u2660"
+          ],
+          "description": "High hearts, alternating colors",
+          "tokens": [
+            "high",
+            "hearts,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_3",
+          "cards": [
+            "4\u2665",
+            "J\u2665",
+            "10\u2665",
+            "K\u2666",
+            "J\u2666",
+            "9\u2665"
+          ],
+          "description": "two pairs, same suit",
+          "tokens": [
+            "two",
+            "pairs,",
+            "same",
+            "suit"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_4",
+          "cards": [
+            "4\u2663",
+            "9\u2663",
+            "5\u2665",
+            "8\u2666",
+            "6\u2666",
+            "3\u2665"
+          ],
+          "description": "two pairs, alternating colors",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Only_one_odd_rank",
+      "rule_name": "Exactly one odd rank",
+      "rule_family": "PARITY",
+      "positive_hands": [
+        {
+          "hand_id": "Only_one_odd_rank_pos_0",
+          "cards": [
+            "8\u2665",
+            "10\u2663",
+            "10\u2666",
+            "4\u2665",
+            "6\u2660",
+            "5\u2666"
+          ],
+          "description": "Pair of tens,",
+          "tokens": [
+            "pair",
+            "of",
+            "tens,"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_1",
+          "cards": [
+            "A\u2665",
+            "5\u2665",
+            "4\u2660",
+            "8\u2666",
+            "4\u2665",
+            "A\u2660"
+          ],
+          "description": "Two pairs, alternating colors.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_2",
+          "cards": [
+            "A\u2665",
+            "Q\u2666",
+            "10\u2666",
+            "3\u2666",
+            "8\u2663",
+            "4\u2666"
+          ],
+          "description": "Ace high, alternating",
+          "tokens": [
+            "ace",
+            "high,",
+            "alternating"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_3",
+          "cards": [
+            "10\u2666",
+            "7\u2665",
+            "A\u2666",
+            "6\u2665",
+            "Q\u2665",
+            "4\u2666"
+          ],
+          "description": "Black, high cards",
+          "tokens": [
+            "black,",
+            "high",
+            "cards"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_4",
+          "cards": [
+            "4\u2665",
+            "8\u2663",
+            "10\u2666",
+            "6\u2660",
+            "A\u2660",
+            "9\u2660"
+          ],
+          "description": "High spades, alternating colors",
+          "tokens": [
+            "high",
+            "spades,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Only_one_odd_rank_neg_0",
+          "cards": [
+            "9\u2665",
+            "9\u2663",
+            "3\u2660",
+            "A\u2663",
+            "K\u2665",
+            "Q\u2666"
+          ],
+          "description": "two nines, ace,",
+          "tokens": [
+            "two",
+            "nines,",
+            "ace,"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_1",
+          "cards": [
+            "Q\u2663",
+            "K\u2663",
+            "K\u2660",
+            "8\u2666",
+            "7\u2663",
+            "6\u2665"
+          ],
+          "description": "Two kings, one",
+          "tokens": [
+            "two",
+            "kings,",
+            "one"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_2",
+          "cards": [
+            "K\u2663",
+            "K\u2665",
+            "7\u2660",
+            "4\u2660",
+            "8\u2663",
+            "7\u2660"
+          ],
+          "description": "Two Kings, Two",
+          "tokens": [
+            "two",
+            "kings,",
+            "two"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_3",
+          "cards": [
+            "A\u2660",
+            "K\u2666",
+            "10\u2663",
+            "J\u2666",
+            "J\u2660",
+            "Q\u2665"
+          ],
+          "description": "Jacks and queens",
+          "tokens": [
+            "jacks",
+            "and",
+            "queens"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_4",
+          "cards": [
+            "K\u2660",
+            "8\u2660",
+            "8\u2663",
+            "J\u2663",
+            "A\u2660",
+            "7\u2660"
+          ],
+          "description": "Double spades, high",
+          "tokens": [
+            "double",
+            "spades,",
+            "high"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Uniform_rank_parity",
+      "rule_name": "All ranks same parity",
+      "rule_family": "PARITY",
+      "positive_hands": [
+        {
+          "hand_id": "Uniform_rank_parity_pos_0",
+          "cards": [
+            "10\u2665",
+            "8\u2665",
+            "6\u2663",
+            "10\u2663",
+            "6\u2666",
+            "6\u2663"
+          ],
+          "description": "Two pairs, alternating colors.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_1",
+          "cards": [
+            "8\u2663",
+            "10\u2663",
+            "Q\u2663",
+            "6\u2665",
+            "10\u2663",
+            "6\u2663"
+          ],
+          "description": "Clubs dominate; alternating",
+          "tokens": [
+            "clubs",
+            "dominate;",
+            "alternating"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_2",
+          "cards": [
+            "9\u2660",
+            "7\u2666",
+            "9\u2666",
+            "5\u2663",
+            "3\u2663",
+            "7\u2666"
+          ],
+          "description": "two pairs, hearts",
+          "tokens": [
+            "two",
+            "pairs,",
+            "hearts"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_3",
+          "cards": [
+            "8\u2663",
+            "Q\u2660",
+            "Q\u2666",
+            "10\u2660",
+            "8\u2663",
+            "Q\u2660"
+          ],
+          "description": "two queens, three",
+          "tokens": [
+            "two",
+            "queens,",
+            "three"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_4",
+          "cards": [
+            "8\u2663",
+            "Q\u2665",
+            "8\u2666",
+            "8\u2665",
+            "8\u2666",
+            "Q\u2660"
+          ],
+          "description": "Four of a",
+          "tokens": [
+            "four",
+            "of",
+            "a"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Uniform_rank_parity_neg_0",
+          "cards": [
+            "A\u2660",
+            "6\u2663",
+            "2\u2666",
+            "Q\u2660",
+            "6\u2665",
+            "J\u2663"
+          ],
+          "description": "Ace, double sixes",
+          "tokens": [
+            "ace,",
+            "double",
+            "sixes"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_1",
+          "cards": [
+            "K\u2660",
+            "Q\u2660",
+            "3\u2666",
+            "K\u2660",
+            "6\u2663",
+            "4\u2666"
+          ],
+          "description": "two kings, alternating suits",
+          "tokens": [
+            "two",
+            "kings,",
+            "alternating",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_2",
+          "cards": [
+            "5\u2665",
+            "10\u2660",
+            "3\u2660",
+            "3\u2660",
+            "9\u2666",
+            "7\u2665"
+          ],
+          "description": "Two pairs, alternating colors.",
+          "tokens": [
+            "two",
+            "pairs,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_3",
+          "cards": [
+            "6\u2663",
+            "3\u2666",
+            "2\u2666",
+            "J\u2663",
+            "8\u2666",
+            "8\u2666"
+          ],
+          "description": "Two pairs: 8s, Js.",
+          "tokens": [
+            "two",
+            "pairs:",
+            "8s,",
+            "js."
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_4",
+          "cards": [
+            "9\u2663",
+            "Q\u2660",
+            "3\u2665",
+            "6\u2666",
+            "7\u2663",
+            "8\u2666"
+          ],
+          "description": "Random hand",
+          "tokens": [
+            "random",
+            "hand"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_radial_nonincreasing",
+      "rule_name": "Outward from center, ranks don't go up",
+      "rule_family": "CENTER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_0",
+          "cards": [
+            "2\u2660",
+            "K\u2660",
+            "A\u2660",
+            "K\u2665",
+            "9\u2663",
+            "9\u2660"
+          ],
+          "description": "spades, two kings,",
+          "tokens": [
+            "spades,",
+            "two",
+            "kings,"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_1",
+          "cards": [
+            "5\u2666",
+            "6\u2665",
+            "J\u2666",
+            "J\u2663",
+            "J\u2663",
+            "3\u2663"
+          ],
+          "description": "Jack trio, alternating colors.",
+          "tokens": [
+            "jack",
+            "trio,",
+            "alternating",
+            "colors."
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_2",
+          "cards": [
+            "2\u2666",
+            "7\u2663",
+            "K\u2665",
+            "Q\u2666",
+            "Q\u2666",
+            "6\u2663"
+          ],
+          "description": "two queens, alternating colors",
+          "tokens": [
+            "two",
+            "queens,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_3",
+          "cards": [
+            "J\u2660",
+            "J\u2663",
+            "K\u2660",
+            "6\u2666",
+            "3\u2665",
+            "2\u2663"
+          ],
+          "description": "one pair, off",
+          "tokens": [
+            "one",
+            "pair,",
+            "off"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_4",
+          "cards": [
+            "2\u2665",
+            "8\u2660",
+            "K\u2665",
+            "A\u2663",
+            "9\u2665",
+            "8\u2665"
+          ],
+          "description": "High pair, alternate colors.",
+          "tokens": [
+            "high",
+            "pair,",
+            "alternate",
+            "colors."
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_0",
+          "cards": [
+            "3\u2660",
+            "A\u2663",
+            "3\u2666",
+            "K\u2663",
+            "5\u2665",
+            "2\u2660"
+          ],
+          "description": "High card; pair, unsorted.",
+          "tokens": [
+            "high",
+            "card;",
+            "pair,",
+            "unsorted."
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_1",
+          "cards": [
+            "5\u2663",
+            "4\u2665",
+            "K\u2660",
+            "J\u2663",
+            "J\u2660",
+            "3\u2660"
+          ],
+          "description": "two jacks, alternating colors",
+          "tokens": [
+            "two",
+            "jacks,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_2",
+          "cards": [
+            "3\u2663",
+            "10\u2663",
+            "10\u2663",
+            "6\u2663",
+            "J\u2666",
+            "Q\u2666"
+          ],
+          "description": "two tens, alternating colors",
+          "tokens": [
+            "two",
+            "tens,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_3",
+          "cards": [
+            "K\u2663",
+            "5\u2666",
+            "10\u2665",
+            "4\u2660",
+            "3\u2660",
+            "10\u2660"
+          ],
+          "description": "Ten high, mixed suits",
+          "tokens": [
+            "ten",
+            "high,",
+            "mixed",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_4",
+          "cards": [
+            "10\u2666",
+            "K\u2665",
+            "K\u2666",
+            "Q\u2663",
+            "4\u2666",
+            "J\u2665"
+          ],
+          "description": "High cards with",
+          "tokens": [
+            "high",
+            "cards",
+            "with"
+          ]
+        }
+      ]
+    }
+  ]
+}

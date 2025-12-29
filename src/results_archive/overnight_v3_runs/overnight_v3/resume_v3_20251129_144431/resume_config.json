@@ -1,0 +1,9 @@
+{
+  "resume_from": "results/overnight_v3/run_v3_20251128_215044",
+  "model_checkpoint": "results/overnight_v3/run_v3_20251128_215044/checkpoint_phase3_2025-11-28T23-23-59.pt",
+  "grammar_checkpoint": "results/overnight_v3/run_v3_20251128_215044/grammar_phase3_2025-11-28T23-23-59.json",
+  "frontiers_checkpoint": "results/overnight_v3/run_v3_20251128_215044/frontiers_phase3_2025-11-28T23-23-59.json",
+  "previously_solved": 25,
+  "remaining_iterations": 4,
+  "start_time": "2025-11-29T14:44:53.062744"
+}

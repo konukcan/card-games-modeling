@@ -1,0 +1,200 @@
+{
+  "summary": {
+    "total_time_seconds": 7275.782926082611,
+    "total_time_minutes": 121.26304876804352,
+    "total_programs_enumerated": 137576440,
+    "tasks_solved": 11,
+    "tasks_total": 45
+  },
+  "parallel_primitives_added": [
+    "halves_equal_by",
+    "ends_equal_by",
+    "is_palindrome_by",
+    "all_adjacent_satisfy"
+  ],
+  "solved_tasks": [
+    {
+      "name": "Uniform_color",
+      "programs": 6,
+      "depth": 3,
+      "solution": "(\u03bb all_same_color $0)",
+      "time": 0.03813815116882324
+    },
+    {
+      "name": "Exactly_two_suits",
+      "programs": 557,
+      "depth": 5,
+      "solution": "(\u03bb lt (n_unique_suits $0) 3)",
+      "time": 0.1343369483947754
+    },
+    {
+      "name": "At_most_three_suits",
+      "programs": 558,
+      "depth": 5,
+      "solution": "(\u03bb lt (n_unique_suits $0) 4)",
+      "time": 3.94816517829895
+    },
+    {
+      "name": "Has_pair_ranks",
+      "programs": 661,
+      "depth": 5,
+      "solution": "(\u03bb le (n_unique_ranks $0) 5)",
+      "time": 0.15014290809631348
+    },
+    {
+      "name": "Halves_copy_ranks",
+      "programs": 9445,
+      "depth": 6,
+      "solution": "(\u03bb lt (n_unique_ranks (reverse $0)) 4)",
+      "time": 7.499246120452881
+    },
+    {
+      "name": "Ranks_palindrome",
+      "programs": 9949,
+      "depth": 5,
+      "solution": "(\u03bb gt 4 (n_unique_ranks (reverse $0)))",
+      "time": 9.81410837173462
+    },
+    {
+      "name": "Ends_same_color",
+      "programs": 64614,
+      "depth": 6,
+      "solution": "(\u03bb has_color (first_half (first_half $0)) (get_color (last $0)))",
+      "time": 2.1161017417907715
+    },
+    {
+      "name": "Ends_same_suit",
+      "programs": 74658,
+      "depth": 6,
+      "solution": "(\u03bb has_suit (first_half (first_half $0)) (get_suit (last $0)))",
+      "time": 7.914240598678589
+    },
+    {
+      "name": "Halves_uniform_color_equal",
+      "programs": 770753,
+      "depth": 8,
+      "solution": "(\u03bb halves_equal_by ((\u03bb at (second_half $1) (n_unique_colors $0))) $0)",
+      "time": 23.66977310180664
+    },
+    {
+      "name": "Halves_hearts_presence_equal",
+      "programs": 3016861,
+      "depth": 10,
+      "solution": "(\u03bb halves_equal_by ((\u03bb head (take (count_suit $0 HEARTS) $1))) $0)",
+      "time": 104.27302503585815
+    },
+    {
+      "name": "Sorted_by_rank",
+      "programs": 4933378,
+      "depth": 9,
+      "solution": "(\u03bb all_adjacent_satisfy ((\u03bb (\u03bb le (rank_val $1) (rank_val $0)))) $0)",
+      "time": 285.4333219528198
+    }
+  ],
+  "unsolved_tasks": [
+    {
+      "name": "S_before_H",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Half_or_more_same_suit",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Exactly_one_club",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "AP_len3_anywhere_anyk",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "AP_len3_step2_anywhere",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "AP_len4_step2_anywhere",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Half_sum_diff_geN",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Half_sum_one_side_ge_2x_other",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_AP_step1_equal",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_AP_len3_any_equal",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_AP_len2_step1_equal",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Well_formed_brackets_by_suit",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Even_opens_next_closes",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Odd_opens_next_closes",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Suits_palindrome",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Colors_palindrome",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "AltColor1_palindrome",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "AltColor2_palindrome",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Ends_same_altcolor1",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_copy_suits",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_copy_colors",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_copy_altcolor1",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_copy_altcolor2",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Halves_same_suit_set",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Shift_half_plus_two",
+      "programs_tried": 5000000
+    },
+    {
+      "name": "Shift_half_ge",
+      "programs_tried": 3695000
+    }
+  ]
+}

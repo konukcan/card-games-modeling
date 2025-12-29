@@ -1,0 +1,4210 @@
+{
+  "metadata": {
+    "n_rules": 20,
+    "n_hands_per_rule": 10,
+    "annotation_status": "pending"
+  },
+  "rules": [
+    {
+      "rule_id": "Sorted_by_rank",
+      "rule_name": "Ranks are in non-decreasing order",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Sorted_by_rank_pos_0",
+          "cards": [
+            "4\u2660",
+            "4\u2663",
+            "4\u2660",
+            "10\u2660",
+            "J\u2660",
+            "K\u2663"
+          ],
+          "description": "all black, pair of 4s, sorted ascending",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "4s,",
+            "sorted",
+            "ascending"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_1",
+          "cards": [
+            "3\u2666",
+            "7\u2666",
+            "9\u2666",
+            "Q\u2666",
+            "K\u2665",
+            "A\u2665"
+          ],
+          "description": "all red, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_2",
+          "cards": [
+            "4\u2663",
+            "5\u2663",
+            "6\u2666",
+            "6\u2663",
+            "6\u2665",
+            "7\u2660"
+          ],
+          "description": "4 suits, pair of 6s, sorted ascending",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "sorted",
+            "ascending"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_3",
+          "cards": [
+            "2\u2663",
+            "6\u2660",
+            "9\u2666",
+            "Q\u2660",
+            "K\u2663",
+            "A\u2660"
+          ],
+          "description": "3 suits, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_pos_4",
+          "cards": [
+            "Q\u2666",
+            "Q\u2665",
+            "Q\u2665",
+            "K\u2663",
+            "A\u2660",
+            "A\u2663"
+          ],
+          "description": "4 suits, pair of Qs",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Sorted_by_rank_neg_0",
+          "cards": [
+            "9\u2663",
+            "A\u2666",
+            "2\u2665",
+            "K\u2660",
+            "5\u2660",
+            "4\u2660"
+          ],
+          "description": "4 suits, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_1",
+          "cards": [
+            "J\u2665",
+            "10\u2663",
+            "10\u2660",
+            "J\u2666",
+            "6\u2665",
+            "7\u2663"
+          ],
+          "description": "4 suits, pair of Js",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_2",
+          "cards": [
+            "4\u2666",
+            "6\u2660",
+            "8\u2663",
+            "6\u2663",
+            "5\u2666",
+            "7\u2666"
+          ],
+          "description": "3 suits, pair of 6s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_3",
+          "cards": [
+            "A\u2666",
+            "A\u2666",
+            "J\u2663",
+            "2\u2663",
+            "7\u2666",
+            "4\u2666"
+          ],
+          "description": "2 suits, pair of As, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Sorted_by_rank_neg_4",
+          "cards": [
+            "4\u2665",
+            "5\u2665",
+            "K\u2665",
+            "J\u2666",
+            "8\u2666",
+            "9\u2665"
+          ],
+          "description": "all red, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Ends_same_suit",
+      "rule_name": "First and last share the suit",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Ends_same_suit_pos_0",
+          "cards": [
+            "Q\u2663",
+            "A\u2660",
+            "6\u2660",
+            "6\u2660",
+            "J\u2660",
+            "J\u2663"
+          ],
+          "description": "all black, pair of 6s, same suit ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_1",
+          "cards": [
+            "3\u2663",
+            "4\u2660",
+            "2\u2665",
+            "5\u2663",
+            "Q\u2663",
+            "J\u2663"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_2",
+          "cards": [
+            "10\u2660",
+            "9\u2663",
+            "7\u2665",
+            "6\u2660",
+            "2\u2663",
+            "9\u2660"
+          ],
+          "description": "3 suits, pair of 9s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_3",
+          "cards": [
+            "Q\u2666",
+            "5\u2663",
+            "Q\u2660",
+            "2\u2666",
+            "J\u2663",
+            "2\u2666"
+          ],
+          "description": "3 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_pos_4",
+          "cards": [
+            "2\u2660",
+            "6\u2663",
+            "Q\u2665",
+            "3\u2665",
+            "7\u2666",
+            "Q\u2660"
+          ],
+          "description": "4 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Ends_same_suit_neg_0",
+          "cards": [
+            "4\u2666",
+            "8\u2663",
+            "9\u2666",
+            "5\u2665",
+            "10\u2663",
+            "4\u2663"
+          ],
+          "description": "3 suits, pair of 4s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_1",
+          "cards": [
+            "9\u2666",
+            "K\u2666",
+            "K\u2663",
+            "4\u2666",
+            "9\u2665",
+            "6\u2660"
+          ],
+          "description": "4 suits, pair of 9s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_2",
+          "cards": [
+            "K\u2665",
+            "J\u2666",
+            "3\u2665",
+            "3\u2660",
+            "7\u2666",
+            "8\u2660"
+          ],
+          "description": "3 suits, pair of 3s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_3",
+          "cards": [
+            "9\u2660",
+            "2\u2660",
+            "5\u2663",
+            "6\u2663",
+            "3\u2666",
+            "2\u2663"
+          ],
+          "description": "3 suits, pair of 2s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_suit_neg_4",
+          "cards": [
+            "9\u2665",
+            "6\u2666",
+            "8\u2666",
+            "8\u2666",
+            "4\u2666",
+            "Q\u2660"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Ends_same_color",
+      "rule_name": "First and last share the color",
+      "rule_family": "LOCAL",
+      "positive_hands": [
+        {
+          "hand_id": "Ends_same_color_pos_0",
+          "cards": [
+            "10\u2660",
+            "10\u2665",
+            "J\u2663",
+            "8\u2666",
+            "7\u2665",
+            "K\u2663"
+          ],
+          "description": "4 suits, pair of 10s, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "10s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_1",
+          "cards": [
+            "K\u2660",
+            "8\u2665",
+            "7\u2666",
+            "7\u2660",
+            "9\u2663",
+            "Q\u2660"
+          ],
+          "description": "4 suits, pair of 7s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "7s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_2",
+          "cards": [
+            "K\u2663",
+            "Q\u2663",
+            "Q\u2663",
+            "A\u2663",
+            "4\u2663",
+            "10\u2660"
+          ],
+          "description": "all black, pair of Qs, same color ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_3",
+          "cards": [
+            "9\u2665",
+            "2\u2660",
+            "4\u2665",
+            "2\u2663",
+            "Q\u2666",
+            "4\u2665"
+          ],
+          "description": "4 suits, pair of 2s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_pos_4",
+          "cards": [
+            "9\u2666",
+            "3\u2663",
+            "Q\u2666",
+            "J\u2660",
+            "4\u2665",
+            "10\u2666"
+          ],
+          "description": "4 suits, same suit ends, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Ends_same_color_neg_0",
+          "cards": [
+            "Q\u2663",
+            "9\u2665",
+            "J\u2663",
+            "J\u2663",
+            "A\u2665",
+            "Q\u2666"
+          ],
+          "description": "3 suits, pair of Qs",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_1",
+          "cards": [
+            "8\u2660",
+            "K\u2666",
+            "3\u2665",
+            "K\u2665",
+            "3\u2666",
+            "7\u2665"
+          ],
+          "description": "3 suits, pair of Ks",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "ks"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_2",
+          "cards": [
+            "9\u2663",
+            "Q\u2660",
+            "4\u2665",
+            "7\u2660",
+            "J\u2666",
+            "2\u2665"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_3",
+          "cards": [
+            "8\u2665",
+            "4\u2666",
+            "3\u2663",
+            "7\u2665",
+            "3\u2660",
+            "10\u2663"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Ends_same_color_neg_4",
+          "cards": [
+            "K\u2666",
+            "8\u2663",
+            "8\u2666",
+            "5\u2660",
+            "9\u2666",
+            "Q\u2660"
+          ],
+          "description": "3 suits, pair of 8s, alternating colors",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Has_pair_ranks",
+      "rule_name": "At least one pair (same rank)",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Has_pair_ranks_pos_0",
+          "cards": [
+            "4\u2660",
+            "6\u2666",
+            "Q\u2663",
+            "7\u2665",
+            "J\u2660",
+            "7\u2665"
+          ],
+          "description": "4 suits, pair of 7s, alternating colors",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "7s,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_1",
+          "cards": [
+            "K\u2660",
+            "9\u2660",
+            "8\u2660",
+            "Q\u2665",
+            "8\u2660",
+            "9\u2663"
+          ],
+          "description": "3 suits, pair of 9s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_2",
+          "cards": [
+            "K\u2660",
+            "2\u2660",
+            "5\u2665",
+            "8\u2665",
+            "7\u2660",
+            "2\u2665"
+          ],
+          "description": "2 suits, pair of 2s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_3",
+          "cards": [
+            "K\u2665",
+            "5\u2660",
+            "3\u2663",
+            "8\u2666",
+            "4\u2666",
+            "3\u2663"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_pos_4",
+          "cards": [
+            "3\u2660",
+            "10\u2666",
+            "3\u2663",
+            "7\u2666",
+            "Q\u2666",
+            "9\u2666"
+          ],
+          "description": "3 suits, pair of 3s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Has_pair_ranks_neg_0",
+          "cards": [
+            "4\u2663",
+            "8\u2660",
+            "2\u2660",
+            "10\u2666",
+            "3\u2665",
+            "K\u2660"
+          ],
+          "description": "4 suits, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_1",
+          "cards": [
+            "A\u2666",
+            "7\u2665",
+            "2\u2665",
+            "Q\u2665",
+            "5\u2665",
+            "K\u2666"
+          ],
+          "description": "all red, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_2",
+          "cards": [
+            "J\u2660",
+            "K\u2663",
+            "Q\u2660",
+            "A\u2660",
+            "2\u2663",
+            "3\u2665"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_3",
+          "cards": [
+            "J\u2663",
+            "5\u2666",
+            "6\u2660",
+            "8\u2660",
+            "3\u2660",
+            "9\u2663"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Has_pair_ranks_neg_4",
+          "cards": [
+            "A\u2660",
+            "3\u2660",
+            "4\u2660",
+            "J\u2660",
+            "10\u2663",
+            "7\u2666"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Uniform_color",
+      "rule_name": "All cards have the same color",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Uniform_color_pos_0",
+          "cards": [
+            "10\u2663",
+            "2\u2660",
+            "4\u2663",
+            "3\u2663",
+            "5\u2663",
+            "8\u2660"
+          ],
+          "description": "all black, same color ends",
+          "tokens": [
+            "all",
+            "black,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_1",
+          "cards": [
+            "J\u2666",
+            "5\u2665",
+            "8\u2665",
+            "10\u2666",
+            "3\u2666",
+            "8\u2665"
+          ],
+          "description": "all red, pair of 8s, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "pair",
+            "of",
+            "8s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_2",
+          "cards": [
+            "2\u2660",
+            "5\u2660",
+            "K\u2663",
+            "J\u2660",
+            "A\u2663",
+            "2\u2663"
+          ],
+          "description": "all black, pair of 2s, same color ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_3",
+          "cards": [
+            "2\u2663",
+            "7\u2660",
+            "8\u2663",
+            "2\u2663",
+            "8\u2663",
+            "3\u2663"
+          ],
+          "description": "all black, pair of 2s, same suit ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_pos_4",
+          "cards": [
+            "2\u2660",
+            "8\u2663",
+            "K\u2660",
+            "6\u2660",
+            "6\u2660",
+            "2\u2660"
+          ],
+          "description": "all black, pair of 2s, same suit ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Uniform_color_neg_0",
+          "cards": [
+            "2\u2666",
+            "9\u2666",
+            "3\u2663",
+            "8\u2660",
+            "4\u2665",
+            "4\u2666"
+          ],
+          "description": "4 suits, pair of 4s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "4s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_1",
+          "cards": [
+            "2\u2666",
+            "7\u2660",
+            "9\u2660",
+            "J\u2663",
+            "10\u2663",
+            "7\u2663"
+          ],
+          "description": "3 suits, pair of 7s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_2",
+          "cards": [
+            "10\u2666",
+            "6\u2666",
+            "J\u2666",
+            "4\u2663",
+            "7\u2666",
+            "4\u2660"
+          ],
+          "description": "3 suits, pair of 4s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_3",
+          "cards": [
+            "5\u2665",
+            "3\u2663",
+            "4\u2665",
+            "K\u2665",
+            "J\u2666",
+            "Q\u2665"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_color_neg_4",
+          "cards": [
+            "2\u2666",
+            "6\u2660",
+            "Q\u2666",
+            "4\u2665",
+            "Q\u2663",
+            "7\u2665"
+          ],
+          "description": "4 suits, pair of Qs, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Exactly_two_suits",
+      "rule_name": "Exactly two suits appear",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Exactly_two_suits_pos_0",
+          "cards": [
+            "9\u2660",
+            "4\u2660",
+            "K\u2665",
+            "K\u2660",
+            "9\u2665",
+            "2\u2665"
+          ],
+          "description": "2 suits, pair of 9s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_1",
+          "cards": [
+            "J\u2665",
+            "Q\u2665",
+            "9\u2663",
+            "9\u2665",
+            "J\u2663",
+            "A\u2663"
+          ],
+          "description": "2 suits, pair of Js",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_2",
+          "cards": [
+            "4\u2663",
+            "K\u2666",
+            "7\u2666",
+            "J\u2663",
+            "10\u2666",
+            "8\u2666"
+          ],
+          "description": "2 suits",
+          "tokens": [
+            "2",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_3",
+          "cards": [
+            "2\u2663",
+            "6\u2665",
+            "4\u2665",
+            "10\u2665",
+            "9\u2665",
+            "8\u2665"
+          ],
+          "description": "2 suits",
+          "tokens": [
+            "2",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_pos_4",
+          "cards": [
+            "7\u2660",
+            "5\u2665",
+            "7\u2660",
+            "10\u2665",
+            "9\u2660",
+            "2\u2660"
+          ],
+          "description": "2 suits, pair of 7s, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "7s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Exactly_two_suits_neg_0",
+          "cards": [
+            "J\u2666",
+            "10\u2665",
+            "A\u2660",
+            "Q\u2665",
+            "6\u2660",
+            "8\u2660"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_1",
+          "cards": [
+            "6\u2660",
+            "6\u2660",
+            "3\u2663",
+            "5\u2663",
+            "2\u2665",
+            "5\u2666"
+          ],
+          "description": "4 suits, pair of 6s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "6s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_2",
+          "cards": [
+            "K\u2666",
+            "10\u2666",
+            "3\u2663",
+            "K\u2666",
+            "J\u2665",
+            "4\u2660"
+          ],
+          "description": "4 suits, pair of Ks",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "ks"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_3",
+          "cards": [
+            "4\u2663",
+            "6\u2666",
+            "Q\u2660",
+            "J\u2666",
+            "2\u2660",
+            "Q\u2660"
+          ],
+          "description": "3 suits, pair of Qs, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Exactly_two_suits_neg_4",
+          "cards": [
+            "8\u2660",
+            "K\u2665",
+            "7\u2663",
+            "9\u2665",
+            "3\u2665",
+            "9\u2666"
+          ],
+          "description": "4 suits, pair of 9s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Exactly_one_club",
+      "rule_name": "Exactly one club",
+      "rule_family": "COUNT",
+      "positive_hands": [
+        {
+          "hand_id": "Exactly_one_club_pos_0",
+          "cards": [
+            "10\u2666",
+            "6\u2660",
+            "7\u2663",
+            "6\u2660",
+            "A\u2665",
+            "J\u2665"
+          ],
+          "description": "4 suits, pair of 6s, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_1",
+          "cards": [
+            "9\u2663",
+            "2\u2666",
+            "K\u2666",
+            "6\u2660",
+            "5\u2666",
+            "2\u2660"
+          ],
+          "description": "3 suits, pair of 2s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_2",
+          "cards": [
+            "9\u2660",
+            "K\u2663",
+            "3\u2666",
+            "3\u2665",
+            "K\u2660",
+            "6\u2665"
+          ],
+          "description": "4 suits, pair of Ks",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "ks"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_3",
+          "cards": [
+            "A\u2660",
+            "K\u2665",
+            "2\u2665",
+            "10\u2665",
+            "7\u2663",
+            "2\u2665"
+          ],
+          "description": "3 suits, pair of 2s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_pos_4",
+          "cards": [
+            "7\u2663",
+            "8\u2660",
+            "5\u2665",
+            "8\u2666",
+            "4\u2665",
+            "6\u2666"
+          ],
+          "description": "4 suits, pair of 8s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Exactly_one_club_neg_0",
+          "cards": [
+            "8\u2660",
+            "A\u2666",
+            "5\u2665",
+            "6\u2666",
+            "10\u2660",
+            "8\u2665"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_1",
+          "cards": [
+            "Q\u2660",
+            "A\u2660",
+            "10\u2666",
+            "J\u2660",
+            "Q\u2663",
+            "A\u2663"
+          ],
+          "description": "3 suits, pair of Qs, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_2",
+          "cards": [
+            "7\u2666",
+            "3\u2663",
+            "J\u2663",
+            "6\u2663",
+            "8\u2663",
+            "7\u2663"
+          ],
+          "description": "2 suits, pair of 7s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_3",
+          "cards": [
+            "8\u2666",
+            "9\u2666",
+            "4\u2663",
+            "3\u2665",
+            "6\u2666",
+            "3\u2663"
+          ],
+          "description": "3 suits, pair of 3s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Exactly_one_club_neg_4",
+          "cards": [
+            "6\u2666",
+            "7\u2666",
+            "A\u2663",
+            "8\u2663",
+            "A\u2660",
+            "A\u2665"
+          ],
+          "description": "4 suits, pair of As, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "AP_len3_anywhere_anyk",
+      "rule_name": "3-term rank pattern with equal steps",
+      "rule_family": "AP",
+      "positive_hands": [
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_0",
+          "cards": [
+            "K\u2666",
+            "5\u2665",
+            "4\u2660",
+            "2\u2660",
+            "J\u2663",
+            "9\u2663"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_1",
+          "cards": [
+            "6\u2666",
+            "3\u2663",
+            "4\u2660",
+            "10\u2666",
+            "2\u2665",
+            "9\u2663"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_2",
+          "cards": [
+            "10\u2660",
+            "10\u2666",
+            "4\u2663",
+            "K\u2665",
+            "2\u2660",
+            "6\u2663"
+          ],
+          "description": "4 suits, pair of 10s, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "10s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_3",
+          "cards": [
+            "10\u2665",
+            "10\u2663",
+            "Q\u2663",
+            "10\u2660",
+            "Q\u2660",
+            "5\u2663"
+          ],
+          "description": "3 suits, pair of 10s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "10s"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_pos_4",
+          "cards": [
+            "7\u2663",
+            "9\u2666",
+            "10\u2663",
+            "A\u2665",
+            "6\u2663",
+            "2\u2666"
+          ],
+          "description": "3 suits, alternating colors",
+          "tokens": [
+            "3",
+            "suits,",
+            "alternating",
+            "colors"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_0",
+          "cards": [
+            "A\u2665",
+            "J\u2665",
+            "7\u2665",
+            "K\u2660",
+            "4\u2665",
+            "4\u2666"
+          ],
+          "description": "3 suits, pair of 4s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_1",
+          "cards": [
+            "Q\u2665",
+            "9\u2660",
+            "Q\u2666",
+            "K\u2660",
+            "10\u2666",
+            "3\u2665"
+          ],
+          "description": "3 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_2",
+          "cards": [
+            "J\u2665",
+            "Q\u2663",
+            "7\u2660",
+            "6\u2660",
+            "4\u2663",
+            "Q\u2663"
+          ],
+          "description": "3 suits, pair of Qs",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_3",
+          "cards": [
+            "6\u2663",
+            "J\u2665",
+            "A\u2665",
+            "K\u2663",
+            "K\u2663",
+            "A\u2666"
+          ],
+          "description": "3 suits, pair of As",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as"
+          ]
+        },
+        {
+          "hand_id": "AP_len3_anywhere_anyk_neg_4",
+          "cards": [
+            "3\u2663",
+            "6\u2665",
+            "3\u2660",
+            "4\u2666",
+            "A\u2666",
+            "A\u2663"
+          ],
+          "description": "4 suits, pair of 3s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Half_sum_diff_geN",
+      "rule_name": "Left half beats right by at least N points",
+      "rule_family": "SCORE",
+      "positive_hands": [
+        {
+          "hand_id": "Half_sum_diff_geN_pos_0",
+          "cards": [
+            "5\u2663",
+            "K\u2665",
+            "8\u2663",
+            "3\u2665",
+            "J\u2665",
+            "6\u2666"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_1",
+          "cards": [
+            "A\u2663",
+            "9\u2666",
+            "J\u2660",
+            "6\u2660",
+            "8\u2666",
+            "8\u2666"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_2",
+          "cards": [
+            "2\u2663",
+            "6\u2663",
+            "K\u2660",
+            "5\u2660",
+            "3\u2660",
+            "6\u2666"
+          ],
+          "description": "3 suits, pair of 6s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "6s"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_3",
+          "cards": [
+            "3\u2660",
+            "Q\u2666",
+            "K\u2665",
+            "J\u2666",
+            "4\u2665",
+            "4\u2660"
+          ],
+          "description": "3 suits, pair of 4s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_pos_4",
+          "cards": [
+            "Q\u2660",
+            "4\u2665",
+            "9\u2665",
+            "6\u2665",
+            "7\u2666",
+            "3\u2665"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Half_sum_diff_geN_neg_0",
+          "cards": [
+            "10\u2663",
+            "5\u2660",
+            "9\u2663",
+            "Q\u2666",
+            "5\u2663",
+            "Q\u2660"
+          ],
+          "description": "3 suits, pair of 5s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "5s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_1",
+          "cards": [
+            "10\u2663",
+            "2\u2666",
+            "9\u2663",
+            "6\u2663",
+            "Q\u2663",
+            "6\u2663"
+          ],
+          "description": "2 suits, pair of 6s, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_2",
+          "cards": [
+            "7\u2660",
+            "6\u2663",
+            "4\u2660",
+            "3\u2663",
+            "5\u2666",
+            "7\u2665"
+          ],
+          "description": "4 suits, pair of 7s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_3",
+          "cards": [
+            "7\u2663",
+            "3\u2660",
+            "4\u2665",
+            "7\u2666",
+            "J\u2666",
+            "10\u2666"
+          ],
+          "description": "4 suits, pair of 7s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Half_sum_diff_geN_neg_4",
+          "cards": [
+            "3\u2666",
+            "10\u2666",
+            "Q\u2666",
+            "J\u2665",
+            "5\u2666",
+            "10\u2660"
+          ],
+          "description": "3 suits, pair of 10s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "10s"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_uniform_color_equal",
+      "rule_name": "Both halves uniform in color (or both not)",
+      "rule_family": "HIER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_0",
+          "cards": [
+            "J\u2665",
+            "J\u2666",
+            "K\u2660",
+            "J\u2665",
+            "6\u2666",
+            "9\u2663"
+          ],
+          "description": "4 suits, pair of Js",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_1",
+          "cards": [
+            "5\u2666",
+            "7\u2660",
+            "A\u2660",
+            "2\u2660",
+            "10\u2663",
+            "K\u2665"
+          ],
+          "description": "4 suits, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_2",
+          "cards": [
+            "9\u2665",
+            "A\u2660",
+            "5\u2660",
+            "J\u2665",
+            "10\u2663",
+            "9\u2665"
+          ],
+          "description": "3 suits, pair of 9s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_3",
+          "cards": [
+            "7\u2665",
+            "Q\u2663",
+            "7\u2660",
+            "Q\u2663",
+            "A\u2665",
+            "Q\u2665"
+          ],
+          "description": "3 suits, pair of 7s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "7s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_pos_4",
+          "cards": [
+            "J\u2665",
+            "10\u2660",
+            "K\u2663",
+            "4\u2666",
+            "Q\u2665",
+            "2\u2660"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_0",
+          "cards": [
+            "9\u2665",
+            "10\u2665",
+            "3\u2663",
+            "9\u2663",
+            "K\u2660",
+            "Q\u2663"
+          ],
+          "description": "3 suits, pair of 9s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_1",
+          "cards": [
+            "2\u2666",
+            "4\u2660",
+            "3\u2666",
+            "Q\u2663",
+            "J\u2663",
+            "10\u2660"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_2",
+          "cards": [
+            "A\u2663",
+            "8\u2663",
+            "9\u2663",
+            "5\u2666",
+            "Q\u2666",
+            "J\u2663"
+          ],
+          "description": "2 suits, same suit ends, same color ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_3",
+          "cards": [
+            "10\u2660",
+            "9\u2660",
+            "5\u2663",
+            "2\u2660",
+            "J\u2660",
+            "4\u2666"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_uniform_color_equal_neg_4",
+          "cards": [
+            "5\u2660",
+            "10\u2663",
+            "8\u2660",
+            "10\u2666",
+            "2\u2660",
+            "9\u2663"
+          ],
+          "description": "3 suits, pair of 10s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "10s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_hearts_presence_equal",
+      "rule_name": "Both halves have heart or neither",
+      "rule_family": "HIER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_0",
+          "cards": [
+            "K\u2663",
+            "3\u2660",
+            "K\u2663",
+            "2\u2666",
+            "7\u2660",
+            "2\u2660"
+          ],
+          "description": "3 suits, pair of Ks, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "ks,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_1",
+          "cards": [
+            "6\u2665",
+            "Q\u2663",
+            "2\u2663",
+            "4\u2665",
+            "J\u2660",
+            "Q\u2665"
+          ],
+          "description": "3 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_2",
+          "cards": [
+            "9\u2663",
+            "10\u2660",
+            "J\u2660",
+            "9\u2660",
+            "6\u2660",
+            "5\u2663"
+          ],
+          "description": "all black, pair of 9s, same suit ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "9s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_3",
+          "cards": [
+            "J\u2663",
+            "A\u2663",
+            "K\u2665",
+            "A\u2665",
+            "9\u2665",
+            "8\u2660"
+          ],
+          "description": "3 suits, pair of As, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_pos_4",
+          "cards": [
+            "A\u2660",
+            "J\u2666",
+            "10\u2660",
+            "3\u2663",
+            "A\u2660",
+            "A\u2663"
+          ],
+          "description": "3 suits, pair of As, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_0",
+          "cards": [
+            "A\u2665",
+            "9\u2663",
+            "5\u2665",
+            "4\u2666",
+            "Q\u2663",
+            "8\u2666"
+          ],
+          "description": "3 suits, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_1",
+          "cards": [
+            "5\u2665",
+            "8\u2665",
+            "9\u2660",
+            "10\u2666",
+            "7\u2666",
+            "4\u2666"
+          ],
+          "description": "3 suits, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_2",
+          "cards": [
+            "6\u2663",
+            "J\u2665",
+            "5\u2660",
+            "Q\u2660",
+            "5\u2663",
+            "3\u2666"
+          ],
+          "description": "4 suits, pair of 5s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "5s"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_3",
+          "cards": [
+            "10\u2666",
+            "K\u2663",
+            "K\u2660",
+            "J\u2666",
+            "A\u2665",
+            "9\u2666"
+          ],
+          "description": "4 suits, pair of Ks, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "ks,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_hearts_presence_equal_neg_4",
+          "cards": [
+            "J\u2660",
+            "7\u2666",
+            "5\u2666",
+            "J\u2666",
+            "Q\u2660",
+            "4\u2665"
+          ],
+          "description": "3 suits, pair of Js",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Well_formed_brackets_by_suit",
+      "rule_name": "Suits form matched brackets",
+      "rule_family": "LANG",
+      "positive_hands": [
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_0",
+          "cards": [
+            "3\u2660",
+            "8\u2663",
+            "9\u2663",
+            "7\u2666",
+            "3\u2665",
+            "9\u2666"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_1",
+          "cards": [
+            "8\u2666",
+            "9\u2666",
+            "3\u2663",
+            "2\u2660",
+            "3\u2665",
+            "A\u2663"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_2",
+          "cards": [
+            "9\u2663",
+            "10\u2660",
+            "K\u2660",
+            "Q\u2666",
+            "9\u2665",
+            "J\u2665"
+          ],
+          "description": "4 suits, pair of 9s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_3",
+          "cards": [
+            "7\u2666",
+            "4\u2663",
+            "8\u2666",
+            "J\u2663",
+            "Q\u2663",
+            "8\u2663"
+          ],
+          "description": "2 suits, pair of 8s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_pos_4",
+          "cards": [
+            "6\u2663",
+            "7\u2660",
+            "5\u2665",
+            "9\u2666",
+            "K\u2663",
+            "6\u2663"
+          ],
+          "description": "4 suits, pair of 6s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_0",
+          "cards": [
+            "8\u2663",
+            "9\u2665",
+            "2\u2663",
+            "J\u2666",
+            "3\u2665",
+            "K\u2663"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_1",
+          "cards": [
+            "5\u2660",
+            "6\u2663",
+            "10\u2660",
+            "7\u2666",
+            "8\u2663",
+            "K\u2666"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_2",
+          "cards": [
+            "5\u2660",
+            "J\u2663",
+            "Q\u2660",
+            "J\u2666",
+            "9\u2660",
+            "10\u2666"
+          ],
+          "description": "3 suits, pair of Js",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_3",
+          "cards": [
+            "A\u2665",
+            "Q\u2660",
+            "2\u2665",
+            "4\u2663",
+            "A\u2666",
+            "4\u2665"
+          ],
+          "description": "4 suits, pair of As, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Well_formed_brackets_by_suit_neg_4",
+          "cards": [
+            "8\u2666",
+            "4\u2666",
+            "3\u2660",
+            "A\u2663",
+            "4\u2660",
+            "A\u2666"
+          ],
+          "description": "3 suits, pair of 4s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Suits_palindrome",
+      "rule_name": "Suits read same forward/back",
+      "rule_family": "PAL",
+      "positive_hands": [
+        {
+          "hand_id": "Suits_palindrome_pos_0",
+          "cards": [
+            "10\u2660",
+            "3\u2663",
+            "6\u2663",
+            "8\u2663",
+            "Q\u2663",
+            "3\u2660"
+          ],
+          "description": "all black, pair of 3s, same suit ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "3s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_1",
+          "cards": [
+            "10\u2666",
+            "6\u2663",
+            "8\u2663",
+            "3\u2663",
+            "5\u2663",
+            "10\u2666"
+          ],
+          "description": "2 suits, pair of 10s, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "10s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_2",
+          "cards": [
+            "5\u2660",
+            "Q\u2665",
+            "K\u2660",
+            "5\u2660",
+            "6\u2665",
+            "7\u2660"
+          ],
+          "description": "2 suits, pair of 5s, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "5s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_3",
+          "cards": [
+            "J\u2666",
+            "A\u2665",
+            "7\u2666",
+            "3\u2666",
+            "2\u2665",
+            "K\u2666"
+          ],
+          "description": "all red, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_pos_4",
+          "cards": [
+            "K\u2660",
+            "7\u2663",
+            "Q\u2665",
+            "3\u2665",
+            "Q\u2663",
+            "3\u2660"
+          ],
+          "description": "3 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Suits_palindrome_neg_0",
+          "cards": [
+            "8\u2665",
+            "J\u2665",
+            "3\u2665",
+            "10\u2666",
+            "A\u2660",
+            "3\u2663"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_1",
+          "cards": [
+            "9\u2660",
+            "A\u2663",
+            "3\u2660",
+            "J\u2665",
+            "A\u2663",
+            "5\u2660"
+          ],
+          "description": "3 suits, pair of As, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_2",
+          "cards": [
+            "4\u2666",
+            "A\u2660",
+            "6\u2666",
+            "A\u2660",
+            "J\u2663",
+            "Q\u2665"
+          ],
+          "description": "4 suits, pair of As, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_3",
+          "cards": [
+            "Q\u2666",
+            "8\u2663",
+            "Q\u2666",
+            "K\u2663",
+            "10\u2660",
+            "5\u2663"
+          ],
+          "description": "3 suits, pair of Qs",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        },
+        {
+          "hand_id": "Suits_palindrome_neg_4",
+          "cards": [
+            "K\u2663",
+            "5\u2660",
+            "6\u2666",
+            "4\u2663",
+            "Q\u2666",
+            "2\u2665"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Colors_palindrome",
+      "rule_name": "Colors read same forward/back",
+      "rule_family": "PAL",
+      "positive_hands": [
+        {
+          "hand_id": "Colors_palindrome_pos_0",
+          "cards": [
+            "8\u2663",
+            "9\u2666",
+            "3\u2660",
+            "2\u2663",
+            "3\u2666",
+            "5\u2660"
+          ],
+          "description": "3 suits, pair of 3s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "3s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_1",
+          "cards": [
+            "J\u2666",
+            "8\u2666",
+            "5\u2665",
+            "K\u2666",
+            "3\u2665",
+            "Q\u2666"
+          ],
+          "description": "all red, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_2",
+          "cards": [
+            "J\u2660",
+            "K\u2660",
+            "6\u2666",
+            "5\u2665",
+            "Q\u2663",
+            "10\u2663"
+          ],
+          "description": "4 suits, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_3",
+          "cards": [
+            "2\u2663",
+            "Q\u2663",
+            "A\u2665",
+            "K\u2665",
+            "A\u2660",
+            "3\u2663"
+          ],
+          "description": "3 suits, pair of As, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_pos_4",
+          "cards": [
+            "2\u2660",
+            "3\u2660",
+            "K\u2663",
+            "9\u2660",
+            "4\u2663",
+            "Q\u2663"
+          ],
+          "description": "all black, same color ends",
+          "tokens": [
+            "all",
+            "black,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Colors_palindrome_neg_0",
+          "cards": [
+            "A\u2663",
+            "9\u2666",
+            "7\u2663",
+            "5\u2666",
+            "10\u2665",
+            "A\u2660"
+          ],
+          "description": "4 suits, pair of As, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_1",
+          "cards": [
+            "7\u2660",
+            "7\u2666",
+            "10\u2665",
+            "A\u2665",
+            "Q\u2666",
+            "9\u2665"
+          ],
+          "description": "3 suits, pair of 7s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_2",
+          "cards": [
+            "7\u2666",
+            "2\u2660",
+            "3\u2663",
+            "Q\u2666",
+            "Q\u2666",
+            "10\u2660"
+          ],
+          "description": "3 suits, pair of Qs",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_3",
+          "cards": [
+            "J\u2665",
+            "A\u2665",
+            "4\u2665",
+            "A\u2663",
+            "A\u2666",
+            "J\u2663"
+          ],
+          "description": "3 suits, pair of Js",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Colors_palindrome_neg_4",
+          "cards": [
+            "A\u2665",
+            "6\u2666",
+            "3\u2665",
+            "3\u2660",
+            "8\u2666",
+            "10\u2663"
+          ],
+          "description": "4 suits, pair of 3s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_copy_suits",
+      "rule_name": "Halves have same suit sequence",
+      "rule_family": "COPY",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_copy_suits_pos_0",
+          "cards": [
+            "4\u2666",
+            "K\u2666",
+            "Q\u2660",
+            "A\u2666",
+            "J\u2666",
+            "2\u2660"
+          ],
+          "description": "2 suits",
+          "tokens": [
+            "2",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_1",
+          "cards": [
+            "6\u2660",
+            "7\u2665",
+            "3\u2660",
+            "A\u2660",
+            "8\u2665",
+            "10\u2660"
+          ],
+          "description": "2 suits, same suit ends, same color ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_2",
+          "cards": [
+            "8\u2666",
+            "8\u2665",
+            "A\u2660",
+            "K\u2666",
+            "A\u2665",
+            "7\u2660"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_3",
+          "cards": [
+            "3\u2663",
+            "5\u2660",
+            "2\u2666",
+            "9\u2663",
+            "6\u2660",
+            "3\u2666"
+          ],
+          "description": "3 suits, pair of 3s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "3s"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_pos_4",
+          "cards": [
+            "Q\u2660",
+            "K\u2660",
+            "7\u2660",
+            "9\u2660",
+            "5\u2660",
+            "J\u2660"
+          ],
+          "description": "all spades, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "spades,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_copy_suits_neg_0",
+          "cards": [
+            "4\u2660",
+            "3\u2663",
+            "6\u2660",
+            "5\u2666",
+            "2\u2663",
+            "5\u2663"
+          ],
+          "description": "3 suits, pair of 5s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "5s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_1",
+          "cards": [
+            "2\u2665",
+            "8\u2665",
+            "5\u2660",
+            "5\u2660",
+            "7\u2663",
+            "7\u2660"
+          ],
+          "description": "3 suits, pair of 5s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "5s"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_2",
+          "cards": [
+            "6\u2663",
+            "5\u2660",
+            "Q\u2666",
+            "6\u2665",
+            "2\u2660",
+            "Q\u2663"
+          ],
+          "description": "4 suits, pair of 6s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "6s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_3",
+          "cards": [
+            "5\u2663",
+            "9\u2660",
+            "10\u2663",
+            "3\u2666",
+            "6\u2663",
+            "9\u2666"
+          ],
+          "description": "3 suits, pair of 9s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s"
+          ]
+        },
+        {
+          "hand_id": "Halves_copy_suits_neg_4",
+          "cards": [
+            "J\u2665",
+            "Q\u2663",
+            "6\u2660",
+            "4\u2660",
+            "2\u2666",
+            "3\u2665"
+          ],
+          "description": "4 suits, same suit ends, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Adj_same_rank_or_suit",
+      "rule_name": "Neighbors share rank or suit",
+      "rule_family": "ADJ",
+      "positive_hands": [
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_0",
+          "cards": [
+            "A\u2660",
+            "9\u2660",
+            "K\u2660",
+            "Q\u2660",
+            "2\u2660",
+            "2\u2665"
+          ],
+          "description": "2 suits, pair of 2s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_1",
+          "cards": [
+            "8\u2666",
+            "8\u2665",
+            "8\u2666",
+            "8\u2660",
+            "8\u2665",
+            "J\u2665"
+          ],
+          "description": "3 suits, pair of 8s, sorted ascending",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "sorted",
+            "ascending"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_2",
+          "cards": [
+            "J\u2666",
+            "2\u2666",
+            "10\u2666",
+            "3\u2666",
+            "5\u2666",
+            "7\u2666"
+          ],
+          "description": "all diamonds, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "diamonds,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_3",
+          "cards": [
+            "A\u2663",
+            "2\u2663",
+            "2\u2665",
+            "Q\u2665",
+            "8\u2665",
+            "4\u2665"
+          ],
+          "description": "2 suits, pair of 2s",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_pos_4",
+          "cards": [
+            "A\u2660",
+            "A\u2663",
+            "5\u2663",
+            "5\u2663",
+            "8\u2663",
+            "5\u2663"
+          ],
+          "description": "all black, pair of As, same color ends",
+          "tokens": [
+            "all",
+            "black,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_0",
+          "cards": [
+            "9\u2665",
+            "K\u2666",
+            "2\u2666",
+            "J\u2666",
+            "Q\u2666",
+            "4\u2665"
+          ],
+          "description": "all red, same suit ends, same color ends",
+          "tokens": [
+            "all",
+            "red,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_1",
+          "cards": [
+            "J\u2663",
+            "6\u2666",
+            "10\u2666",
+            "J\u2665",
+            "10\u2666",
+            "7\u2666"
+          ],
+          "description": "3 suits, pair of Js",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_2",
+          "cards": [
+            "9\u2666",
+            "4\u2666",
+            "2\u2666",
+            "A\u2660",
+            "Q\u2665",
+            "10\u2663"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_3",
+          "cards": [
+            "5\u2660",
+            "A\u2666",
+            "K\u2665",
+            "K\u2666",
+            "2\u2663",
+            "10\u2663"
+          ],
+          "description": "4 suits, pair of Ks, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "ks,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_same_rank_or_suit_neg_4",
+          "cards": [
+            "Q\u2665",
+            "5\u2660",
+            "Q\u2666",
+            "A\u2666",
+            "A\u2665",
+            "5\u2665"
+          ],
+          "description": "3 suits, pair of Qs, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Adj_rank_gap_le3",
+      "rule_name": "Neighbors differ by \u22643 ranks",
+      "rule_family": "ADJ",
+      "positive_hands": [
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_0",
+          "cards": [
+            "5\u2663",
+            "8\u2665",
+            "8\u2663",
+            "J\u2660",
+            "J\u2663",
+            "Q\u2666"
+          ],
+          "description": "4 suits, pair of 8s, sorted ascending",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "sorted",
+            "ascending"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_1",
+          "cards": [
+            "6\u2660",
+            "7\u2663",
+            "9\u2663",
+            "7\u2663",
+            "10\u2663",
+            "8\u2665"
+          ],
+          "description": "3 suits, pair of 7s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "7s"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_2",
+          "cards": [
+            "J\u2665",
+            "8\u2663",
+            "7\u2665",
+            "8\u2663",
+            "10\u2665",
+            "10\u2660"
+          ],
+          "description": "3 suits, pair of 8s, alternating colors",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_3",
+          "cards": [
+            "K\u2666",
+            "J\u2665",
+            "9\u2666",
+            "10\u2665",
+            "8\u2665",
+            "5\u2663"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_pos_4",
+          "cards": [
+            "9\u2666",
+            "8\u2660",
+            "5\u2665",
+            "7\u2666",
+            "10\u2660",
+            "J\u2663"
+          ],
+          "description": "4 suits",
+          "tokens": [
+            "4",
+            "suits"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_0",
+          "cards": [
+            "3\u2666",
+            "4\u2663",
+            "9\u2666",
+            "10\u2663",
+            "5\u2666",
+            "9\u2660"
+          ],
+          "description": "3 suits, pair of 9s, alternating colors",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_1",
+          "cards": [
+            "8\u2660",
+            "5\u2660",
+            "Q\u2660",
+            "3\u2660",
+            "9\u2666",
+            "2\u2663"
+          ],
+          "description": "3 suits, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_2",
+          "cards": [
+            "Q\u2666",
+            "10\u2666",
+            "2\u2660",
+            "J\u2660",
+            "4\u2666",
+            "2\u2666"
+          ],
+          "description": "2 suits, pair of 2s, same suit ends",
+          "tokens": [
+            "2",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_3",
+          "cards": [
+            "K\u2666",
+            "J\u2660",
+            "Q\u2666",
+            "6\u2660",
+            "4\u2666",
+            "J\u2665"
+          ],
+          "description": "3 suits, pair of Js, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Adj_rank_gap_le3_neg_4",
+          "cards": [
+            "J\u2660",
+            "J\u2663",
+            "4\u2660",
+            "J\u2660",
+            "8\u2666",
+            "5\u2666"
+          ],
+          "description": "3 suits, pair of Js",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Only_one_odd_rank",
+      "rule_name": "Exactly one odd rank",
+      "rule_family": "PARITY",
+      "positive_hands": [
+        {
+          "hand_id": "Only_one_odd_rank_pos_0",
+          "cards": [
+            "4\u2660",
+            "2\u2665",
+            "10\u2660",
+            "K\u2660",
+            "8\u2663",
+            "10\u2666"
+          ],
+          "description": "4 suits, pair of 10s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "10s"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_1",
+          "cards": [
+            "7\u2665",
+            "8\u2660",
+            "6\u2665",
+            "4\u2663",
+            "6\u2663",
+            "8\u2660"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_2",
+          "cards": [
+            "K\u2663",
+            "A\u2665",
+            "Q\u2660",
+            "A\u2666",
+            "2\u2660",
+            "A\u2666"
+          ],
+          "description": "4 suits, pair of As, alternating colors",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "alternating",
+            "colors"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_3",
+          "cards": [
+            "Q\u2663",
+            "2\u2663",
+            "9\u2665",
+            "A\u2663",
+            "2\u2665",
+            "10\u2660"
+          ],
+          "description": "3 suits, pair of 2s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_pos_4",
+          "cards": [
+            "2\u2660",
+            "2\u2665",
+            "Q\u2663",
+            "8\u2666",
+            "7\u2660",
+            "4\u2660"
+          ],
+          "description": "4 suits, pair of 2s, same suit ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "2s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Only_one_odd_rank_neg_0",
+          "cards": [
+            "6\u2665",
+            "Q\u2665",
+            "7\u2665",
+            "K\u2663",
+            "K\u2660",
+            "K\u2663"
+          ],
+          "description": "3 suits, pair of Ks",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "ks"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_1",
+          "cards": [
+            "Q\u2660",
+            "8\u2665",
+            "J\u2665",
+            "8\u2665",
+            "10\u2666",
+            "3\u2665"
+          ],
+          "description": "3 suits, pair of 8s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_2",
+          "cards": [
+            "9\u2665",
+            "8\u2660",
+            "8\u2660",
+            "5\u2666",
+            "6\u2660",
+            "10\u2665"
+          ],
+          "description": "3 suits, pair of 8s, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_3",
+          "cards": [
+            "2\u2666",
+            "5\u2663",
+            "7\u2663",
+            "K\u2660",
+            "2\u2663",
+            "2\u2660"
+          ],
+          "description": "3 suits, pair of 2s",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Only_one_odd_rank_neg_4",
+          "cards": [
+            "5\u2663",
+            "8\u2665",
+            "10\u2663",
+            "Q\u2666",
+            "Q\u2666",
+            "J\u2666"
+          ],
+          "description": "3 suits, pair of Qs",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Uniform_rank_parity",
+      "rule_name": "All ranks same parity",
+      "rule_family": "PARITY",
+      "positive_hands": [
+        {
+          "hand_id": "Uniform_rank_parity_pos_0",
+          "cards": [
+            "2\u2665",
+            "Q\u2660",
+            "8\u2660",
+            "2\u2663",
+            "6\u2666",
+            "10\u2660"
+          ],
+          "description": "4 suits, pair of 2s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "2s"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_1",
+          "cards": [
+            "4\u2660",
+            "4\u2663",
+            "Q\u2665",
+            "8\u2660",
+            "6\u2663",
+            "4\u2663"
+          ],
+          "description": "3 suits, pair of 4s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "4s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_2",
+          "cards": [
+            "10\u2660",
+            "A\u2666",
+            "2\u2660",
+            "2\u2665",
+            "A\u2665",
+            "8\u2663"
+          ],
+          "description": "4 suits, pair of As, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_3",
+          "cards": [
+            "8\u2660",
+            "A\u2666",
+            "8\u2666",
+            "4\u2660",
+            "2\u2665",
+            "10\u2663"
+          ],
+          "description": "4 suits, pair of 8s, same color ends",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "8s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_pos_4",
+          "cards": [
+            "Q\u2666",
+            "A\u2665",
+            "4\u2663",
+            "10\u2665",
+            "8\u2660",
+            "A\u2663"
+          ],
+          "description": "4 suits, pair of As",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "as"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Uniform_rank_parity_neg_0",
+          "cards": [
+            "K\u2666",
+            "Q\u2666",
+            "Q\u2666",
+            "10\u2666",
+            "J\u2660",
+            "3\u2665"
+          ],
+          "description": "3 suits, pair of Qs, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "qs,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_1",
+          "cards": [
+            "10\u2665",
+            "K\u2665",
+            "9\u2660",
+            "J\u2663",
+            "5\u2660",
+            "8\u2665"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_2",
+          "cards": [
+            "5\u2665",
+            "3\u2663",
+            "J\u2663",
+            "J\u2665",
+            "4\u2665",
+            "J\u2666"
+          ],
+          "description": "3 suits, pair of Js, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_3",
+          "cards": [
+            "6\u2666",
+            "3\u2666",
+            "J\u2660",
+            "K\u2665",
+            "Q\u2660",
+            "J\u2663"
+          ],
+          "description": "4 suits, pair of Js",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "js"
+          ]
+        },
+        {
+          "hand_id": "Uniform_rank_parity_neg_4",
+          "cards": [
+            "7\u2660",
+            "K\u2663",
+            "Q\u2663",
+            "4\u2665",
+            "4\u2663",
+            "2\u2666"
+          ],
+          "description": "4 suits, pair of 4s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "4s"
+          ]
+        }
+      ]
+    },
+    {
+      "rule_id": "Halves_radial_nonincreasing",
+      "rule_name": "Outward from center, ranks don't go up",
+      "rule_family": "CENTER",
+      "positive_hands": [
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_0",
+          "cards": [
+            "3\u2663",
+            "6\u2660",
+            "9\u2666",
+            "9\u2663",
+            "9\u2663",
+            "5\u2660"
+          ],
+          "description": "3 suits, pair of 9s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "9s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_1",
+          "cards": [
+            "2\u2660",
+            "A\u2660",
+            "A\u2666",
+            "7\u2660",
+            "5\u2663",
+            "5\u2660"
+          ],
+          "description": "3 suits, pair of As, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "as,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_2",
+          "cards": [
+            "6\u2666",
+            "8\u2666",
+            "8\u2665",
+            "Q\u2666",
+            "8\u2663",
+            "7\u2660"
+          ],
+          "description": "4 suits, pair of 8s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "8s"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_3",
+          "cards": [
+            "2\u2663",
+            "7\u2665",
+            "A\u2660",
+            "10\u2660",
+            "7\u2665",
+            "5\u2660"
+          ],
+          "description": "3 suits, pair of 7s, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "7s,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_pos_4",
+          "cards": [
+            "4\u2665",
+            "Q\u2663",
+            "A\u2665",
+            "9\u2663",
+            "8\u2660",
+            "5\u2660"
+          ],
+          "description": "3 suits",
+          "tokens": [
+            "3",
+            "suits"
+          ]
+        }
+      ],
+      "negative_hands": [
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_0",
+          "cards": [
+            "3\u2660",
+            "5\u2665",
+            "A\u2660",
+            "8\u2663",
+            "6\u2665",
+            "10\u2660"
+          ],
+          "description": "3 suits, same suit ends, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "same",
+            "suit",
+            "ends,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_1",
+          "cards": [
+            "J\u2660",
+            "J\u2663",
+            "A\u2660",
+            "5\u2666",
+            "J\u2663",
+            "9\u2663"
+          ],
+          "description": "3 suits, pair of Js, same color ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "js,",
+            "same",
+            "color",
+            "ends"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_2",
+          "cards": [
+            "10\u2660",
+            "7\u2660",
+            "K\u2660",
+            "6\u2660",
+            "2\u2660",
+            "8\u2665"
+          ],
+          "description": "2 suits",
+          "tokens": [
+            "2",
+            "suits"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_3",
+          "cards": [
+            "Q\u2663",
+            "7\u2663",
+            "5\u2663",
+            "5\u2665",
+            "10\u2660",
+            "5\u2666"
+          ],
+          "description": "4 suits, pair of 5s",
+          "tokens": [
+            "4",
+            "suits,",
+            "pair",
+            "of",
+            "5s"
+          ]
+        },
+        {
+          "hand_id": "Halves_radial_nonincreasing_neg_4",
+          "cards": [
+            "6\u2665",
+            "7\u2660",
+            "3\u2660",
+            "K\u2665",
+            "K\u2666",
+            "9\u2665"
+          ],
+          "description": "3 suits, pair of Ks, same suit ends",
+          "tokens": [
+            "3",
+            "suits,",
+            "pair",
+            "of",
+            "ks,",
+            "same",
+            "suit",
+            "ends"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -269,7 +269,8 @@ def anti_unify(
         substitution_map = {}
 
     # Base case: if programs are identical, return as-is
-    if str(prog1) == str(prog2):
+    # Use direct equality (uses __eq__ and __hash__) instead of string comparison
+    if prog1 == prog2:
         return prog1, [], substitution_map
 
     # Create a key for this substitution pair

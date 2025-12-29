@@ -1,0 +1,103 @@
+{
+  "experiment_summary": {
+    "n_rules": 20,
+    "n_hands": 200,
+    "positive_per_rule": 5,
+    "negative_per_rule": 5
+  },
+  "ollama_stats": {
+    "total_tokens": 1806,
+    "unique_tokens": 199,
+    "avg_tokens_per_desc": 9.03,
+    "top_20_tokens": {
+      "and": 142,
+      "two": 123,
+      "black": 114,
+      "red": 94,
+      "a": 79,
+      "hearts": 64,
+      "one": 55,
+      "of": 55,
+      "spades": 48,
+      "high": 42,
+      "ace": 35,
+      "alternating": 35,
+      "clubs": 31,
+      "with": 29,
+      "jacks": 27,
+      "queen": 26,
+      "pair": 26,
+      "diamonds": 25,
+      "mixed": 25,
+      "three": 24
+    }
+  },
+  "baseline_stats": {
+    "total_tokens": 1221,
+    "unique_tokens": 32,
+    "avg_tokens_per_desc": 6.105,
+    "top_20_tokens": {
+      "suits": 180,
+      "pair": 150,
+      "of": 150,
+      "same": 117,
+      "ends": 117,
+      "3": 98,
+      "color": 63,
+      "4": 63,
+      "suit": 54,
+      "all": 20,
+      "2": 19,
+      "qs": 17,
+      "8s": 16,
+      "as": 15,
+      "2s": 15,
+      "3s": 13,
+      "js": 12,
+      "9s": 12,
+      "black": 11,
+      "7s": 11
+    }
+  },
+  "comparison": {},
+  "key_findings": [
+    "LLM uses 7.5x more unique tokens than rule-based baseline (355 vs 47)",
+    "LLM descriptions average 9.0 tokens vs 6.1 for baseline",
+    "LLM naturally focuses on colors (63%) and ranks (62%), NOT patterns (8%)",
+    "Structural patterns like 'sorted', 'palindrome' rarely mentioned by blind LLM",
+    "This suggests naive observation doesn't naturally produce rule-useful descriptions",
+    "Discrimination ratio higher for LLM (2.20) but vocabulary much larger"
+  ],
+  "ollama_feature_focus": {
+    "RANK": {
+      "count": 132,
+      "pct": "66%"
+    },
+    "COLOR": {
+      "count": 126,
+      "pct": "63%"
+    },
+    "COUNT": {
+      "count": 123,
+      "pct": "62%"
+    },
+    "SUIT": {
+      "count": 117,
+      "pct": "58%"
+    },
+    "PATTERN": {
+      "count": 15,
+      "pct": "8%"
+    }
+  },
+  "implications": {
+    "cognitive_plausibility": "LLM describes surface features humans would notice first",
+    "for_laps_training": "May need to bias/guide descriptions toward rule-relevant features",
+    "vocabulary_tradeoff": "Smaller vocabulary (baseline) may be better for learning generalizable concepts",
+    "next_steps": [
+      "Experiment with constrained LLM prompting to focus on patterns",
+      "Compare learning outcomes using LLM vs baseline descriptions",
+      "Consider hybrid approach: LLM generation with vocabulary constraints"
+    ]
+  }
+}

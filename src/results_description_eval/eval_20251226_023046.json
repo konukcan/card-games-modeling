@@ -1,0 +1,713 @@
+{
+  "config": {
+    "seed": 42,
+    "n_baseline_samples": 2000,
+    "dev_fraction": 0.2,
+    "test_in_dist_fraction": 0.4,
+    "test_ood_fraction": 0.2,
+    "holdout_fraction": 0.2,
+    "n_positive_examples": 10,
+    "n_negative_examples": 10,
+    "top_k_descriptions": 5,
+    "n_consistency_trials": 2,
+    "primitive_match_threshold": 0.3,
+    "description_score_threshold": 2.0
+  },
+  "timestamp": "2025-12-26T02:30:46.307123",
+  "overall_metrics": {
+    "accuracy": 0.0,
+    "primitive_jaccard": 0.0,
+    "consistency": 0.9411764705882353,
+    "discrimination": 0.9894736842105263
+  },
+  "baselines": {
+    "random": 0.0,
+    "frequent": 0.5
+  },
+  "by_level": {
+    "accuracy": {
+      "4": 0.0,
+      "2": 0.0,
+      "3": 0.0,
+      "1": 0.0,
+      "5": 0.0
+    },
+    "jaccard": {
+      "4": 0.0,
+      "2": 0.0,
+      "3": 0.0,
+      "1": 0.0,
+      "5": 0.0
+    }
+  },
+  "by_category": {
+    "adjacent_constraint": 0.0,
+    "halves_set": 0.0,
+    "unique_count": 0.0,
+    "count_specific": 0.0,
+    "position_pair": 0.0,
+    "halves_property": 0.0,
+    "position_first": 0.0,
+    "position_middle": 0.0,
+    "duplicates": 0.0,
+    "spread": 0.0,
+    "range": 0.0,
+    "position_second": 0.0,
+    "uniform": 0.0,
+    "count_compare": 0.0,
+    "sum": 0.0,
+    "position_last": 0.0,
+    "sum_divisibility": 0.0,
+    "shape": 0.0,
+    "or_combination": 0.0,
+    "complex": 0.0,
+    "conditional": 0.0,
+    "and_combination": 0.0
+  },
+  "dev_results": [
+    {
+      "rule_id": "pattern_139",
+      "rule_name": "Adjacent Same Rank or Suit",
+      "level": 4,
+      "category": "adjacent_constraint",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.2,
+      "descriptions": [
+        "losing hands often: has 3 different suits"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 0.5,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "compare_062",
+      "rule_name": "Halves Same Color Set",
+      "level": 2,
+      "category": "halves_set",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.9,
+      "descriptions": [
+        "winning hands often: both halves have matching color uniformity"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "pattern_121",
+      "rule_name": "Sorted by Rank (Strictly Increasing)",
+      "level": 4,
+      "category": "sorted",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 0.0,
+      "n_positive_sampled": 3,
+      "n_negative_sampled": 10,
+      "sampling_success": false
+    },
+    {
+      "rule_id": "count_078",
+      "rule_name": "Exactly 2 Unique Colors",
+      "level": 3,
+      "category": "unique_count",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.1,
+      "descriptions": [
+        "winning hands often: has 3 different suits",
+        "losing hands often: color pattern is symmetric (palindrome)"
+      ],
+      "description_primitives": [
+        [],
+        []
+      ],
+      "consistency_score": 0.6666666666666666,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "count_096",
+      "rule_name": "Exactly 2 Heartss",
+      "level": 3,
+      "category": "count_specific",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "compare_067",
+      "rule_name": "Position 0 and 1 Same Suit",
+      "level": 2,
+      "category": "position_pair",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "compare_060",
+      "rule_name": "Halves Uniform Suit Equal",
+      "level": 2,
+      "category": "halves_property",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0333333333333334,
+      "descriptions": [
+        "losing hands often: all cards are the same color",
+        "losing hands often: has 1 different suits",
+        "winning hands often: both halves have matching color uniformity"
+      ],
+      "description_primitives": [
+        [],
+        [],
+        []
+      ],
+      "consistency_score": 0.3333333333333333,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_007",
+      "rule_name": "First Card is Diamonds",
+      "level": 1,
+      "category": "position_first",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: starts with a DIAMONDS"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_033",
+      "rule_name": "Middle Card is Black",
+      "level": 1,
+      "category": "position_middle",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "pattern_126",
+      "rule_name": "Has Triple (Three of a Kind)",
+      "level": 4,
+      "category": "duplicates",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: contains three of a kind"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 0.5,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    }
+  ],
+  "test_in_dist_results": [
+    {
+      "rule_id": "pattern_147",
+      "rule_name": "Rank Spread <= 5",
+      "level": 4,
+      "category": "spread",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_049",
+      "rule_name": "Has Low Card",
+      "level": 1,
+      "category": "range",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_039",
+      "rule_name": "Second Card is Diamonds",
+      "level": 1,
+      "category": "position_second",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.8,
+      "descriptions": [
+        "winning hands often: all cards are the same color"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "count_107",
+      "rule_name": "Exactly 3 Black Cards",
+      "level": 3,
+      "category": "count_specific",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.8500000000000001,
+      "descriptions": [
+        "winning hands often: 3 RED cards",
+        "winning hands often: 3 BLACK cards",
+        "winning hands often: both halves have matching color uniformity",
+        "losing hands often: all cards are the same color"
+      ],
+      "description_primitives": [
+        [],
+        [],
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_009",
+      "rule_name": "First Card is Spades",
+      "level": 1,
+      "category": "position_first",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: starts with a SPADES"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_005",
+      "rule_name": "All Same SH/DC",
+      "level": 1,
+      "category": "uniform",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.4,
+      "descriptions": [
+        "losing hands often: has 3 different suits"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "count_110",
+      "rule_name": "More Black Than Red",
+      "level": 3,
+      "category": "count_compare",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.8,
+      "descriptions": [
+        "winning hands often: 2 RED cards",
+        "winning hands often: 4 BLACK cards"
+      ],
+      "description_primitives": [
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_035",
+      "rule_name": "Middle Card is Diamonds",
+      "level": 1,
+      "category": "position_middle",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_021",
+      "rule_name": "Sum of Ranks is Odd",
+      "level": 1,
+      "category": "sum",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.6000000000000001,
+      "descriptions": [
+        "losing hands often: has 4 different suits"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_016",
+      "rule_name": "Last Card is Hearts",
+      "level": 1,
+      "category": "position_last",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: ends with a HEARTS"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "pattern_137",
+      "rule_name": "Adjacent Rank Gap <= 2",
+      "level": 4,
+      "category": "adjacent_constraint",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "count_095",
+      "rule_name": "Exactly 1 Hearts",
+      "level": 3,
+      "category": "count_specific",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: has exactly one HEARTS"
+      ],
+      "description_primitives": [
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "count_094",
+      "rule_name": "Exactly 3 Diamondss",
+      "level": 3,
+      "category": "count_specific",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.7333333333333334,
+      "descriptions": [
+        "winning hands often: has 3 DIAMONDS",
+        "winning hands often: ends with a DIAMONDS",
+        "winning hands often: starts with a DIAMONDS"
+      ],
+      "description_primitives": [
+        [],
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "atomic_045",
+      "rule_name": "Sum of Ranks Divisible by 4",
+      "level": 1,
+      "category": "sum_divisibility",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "pattern_141",
+      "rule_name": "Inverted V-Shape Ranks",
+      "level": 4,
+      "category": "shape",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    }
+  ],
+  "test_ood_results": [
+    {
+      "rule_id": "comp_179",
+      "rule_name": "More Suit Variety OR Has Pair",
+      "level": 5,
+      "category": "or_combination",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "winning hands often: has 3 different suits",
+        "winning hands often: contains a pair (same rank)",
+        "losing hands often: has 6 different ranks",
+        "losing hands often: no repeated ranks"
+      ],
+      "description_primitives": [
+        [],
+        [],
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_201",
+      "rule_name": "Halves Copy Colors AND First Black",
+      "level": 5,
+      "category": "complex",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_181",
+      "rule_name": "If Has Pair Then Not Palindrome Suits",
+      "level": 5,
+      "category": "conditional",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.8666666666666667,
+      "descriptions": [
+        "losing hands often: suit pattern is symmetric (palindrome)",
+        "losing hands often: first and last cards share the same suit",
+        "losing hands often: color pattern is symmetric (palindrome)"
+      ],
+      "description_primitives": [
+        [],
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_165",
+      "rule_name": "Opposite Terminal Colors",
+      "level": 5,
+      "category": "complex",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.9,
+      "descriptions": [
+        "losing hands often: first and last cards are the same color",
+        "losing hands often: first and last cards share the same suit"
+      ],
+      "description_primitives": [
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_161",
+      "rule_name": "If First Red Then Last Black",
+      "level": 5,
+      "category": "conditional",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_158",
+      "rule_name": "First Red OR Last Red",
+      "level": 5,
+      "category": "or_combination",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_166",
+      "rule_name": "Same Color AND (Sorted OR Pair)",
+      "level": 5,
+      "category": "complex",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.0,
+      "descriptions": [
+        "losing hands often: has 3 different suits",
+        "winning hands often: color pattern is symmetric (palindrome)"
+      ],
+      "description_primitives": [
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_154",
+      "rule_name": "Sum Even AND First Red",
+      "level": 5,
+      "category": "and_combination",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_180",
+      "rule_name": "If Uniform Color Then Sum Even",
+      "level": 5,
+      "category": "conditional",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 1.15,
+      "descriptions": [
+        "winning hands often: has 3 different suits",
+        "losing hands often: color pattern is symmetric (palindrome)"
+      ],
+      "description_primitives": [
+        [],
+        []
+      ],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    },
+    {
+      "rule_id": "comp_152",
+      "rule_name": "First Black AND Last Red",
+      "level": 5,
+      "category": "and_combination",
+      "primitive_jaccard": 0.0,
+      "feature_capture_rate": 0.0,
+      "description_score": 0.0,
+      "descriptions": [],
+      "description_primitives": [],
+      "consistency_score": 1.0,
+      "n_positive_sampled": 10,
+      "n_negative_sampled": 10,
+      "sampling_success": true
+    }
+  ],
+  "holdout_results": []
+}

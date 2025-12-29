@@ -1,0 +1,368 @@
+[
+  {
+    "config": {
+      "card_encoder": "standard",
+      "hand_encoder": "mean",
+      "task_encoder": "standard",
+      "prediction_head": "embedding",
+      "loss": "bce",
+      "name": "embedding_head"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.03508771929824561,
+        "recall@10": 0.13815789473684212,
+        "recall@20": 0.23552631578947367,
+        "mrr": 0.057625757636344754,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.36666666666666664,
+        "recall@10": 0.531140350877193,
+        "recall@20": 0.7109649122807017,
+        "mrr": 0.23479573975249526,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.07456140350877193,
+        "recall@10": 0.14254385964912278,
+        "recall@20": 0.3671052631578947,
+        "mrr": 0.0672854795689645,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.13464912280701755,
+        "recall@10": 0.2157894736842105,
+        "recall@20": 0.4271929824561404,
+        "mrr": 0.12197652964321894,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.024122807017543855,
+        "recall@10": 0.11271929824561404,
+        "recall@20": 0.2442982456140351,
+        "mrr": 0.05343419434261258,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.1270175438596491,
+      "recall@10": 0.22807017543859648,
+      "recall@20": 0.39701754385964916,
+      "mrr": 0.1070235401887272,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.12592061724245981,
+      "recall@10": 0.15537512069740395,
+      "recall@20": 0.17307273186150468,
+      "mrr": 0.06846955417719089,
+      "convergence_epoch": 0.0
+    }
+  },
+  {
+    "config": {
+      "card_encoder": "enhanced",
+      "hand_encoder": "attention",
+      "task_encoder": "standard",
+      "prediction_head": "embedding",
+      "loss": "bce",
+      "name": "enhanced+attention+embed"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.02631578947368421,
+        "recall@10": 0.08991228070175437,
+        "recall@20": 0.3416666666666666,
+        "mrr": 0.050096933458464415,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.04035087719298245,
+        "recall@10": 0.09956140350877192,
+        "recall@20": 0.3495614035087719,
+        "mrr": 0.05683041693863408,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.06228070175438596,
+        "recall@10": 0.07982456140350877,
+        "recall@20": 0.2333333333333333,
+        "mrr": 0.060099529635890346,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.0043859649122807015,
+        "recall@10": 0.046052631578947366,
+        "recall@20": 0.25614035087719295,
+        "mrr": 0.042289982002667405,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.15789473684210525,
+        "recall@10": 0.2881578947368421,
+        "recall@20": 0.443859649122807,
+        "mrr": 0.11735500756904776,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.05824561403508771,
+      "recall@10": 0.1207017543859649,
+      "recall@20": 0.3249122807017544,
+      "mrr": 0.0653343739209408,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.05326692541514403,
+      "recall@10": 0.08565033742858968,
+      "recall@20": 0.07503738680339654,
+      "mrr": 0.026717375600633773,
+      "convergence_epoch": 0.0
+    }
+  },
+  {
+    "config": {
+      "card_encoder": "enhanced",
+      "hand_encoder": "attention",
+      "task_encoder": "standard",
+      "prediction_head": "embedding",
+      "loss": "focal",
+      "name": "enhanced+attention+embed+focal"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.08333333333333333,
+        "recall@10": 0.12061403508771928,
+        "recall@20": 0.4407894736842105,
+        "mrr": 0.06897433313349986,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.11842105263157894,
+        "recall@10": 0.16973684210526313,
+        "recall@20": 0.29342105263157897,
+        "mrr": 0.08651260267364812,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.08991228070175439,
+        "recall@10": 0.18728070175438596,
+        "recall@20": 0.4008771929824561,
+        "mrr": 0.0781241380278835,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.11403508771929827,
+        "recall@10": 0.1324561403508772,
+        "recall@20": 0.23771929824561402,
+        "mrr": 0.09296094472084152,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.07543859649122808,
+        "recall@10": 0.13903508771929823,
+        "recall@20": 0.28903508771929826,
+        "mrr": 0.06455762266930769,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.0962280701754386,
+      "recall@10": 0.14982456140350875,
+      "recall@20": 0.33236842105263154,
+      "mrr": 0.07822592824503614,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.017017543859649122,
+      "recall@10": 0.024782215448257518,
+      "recall@20": 0.07589691458539431,
+      "mrr": 0.010566121656460963,
+      "convergence_epoch": 0.0
+    }
+  },
+  {
+    "config": {
+      "card_encoder": "enhanced",
+      "hand_encoder": "deepsets",
+      "task_encoder": "standard",
+      "prediction_head": "embedding",
+      "loss": "bce",
+      "name": "enhanced+deepsets+embed"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.16885964912280702,
+        "recall@10": 0.18201754385964913,
+        "recall@20": 0.3035087719298245,
+        "mrr": 0.12383767734672227,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.013157894736842105,
+        "recall@10": 0.11403508771929824,
+        "recall@20": 0.2596491228070175,
+        "mrr": 0.047416769236973376,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.11271929824561404,
+        "recall@10": 0.1837719298245614,
+        "recall@20": 0.3043859649122807,
+        "mrr": 0.07712379844552211,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.1135964912280702,
+        "recall@10": 0.1969298245614035,
+        "recall@20": 0.41403508771929826,
+        "mrr": 0.08565298283761544,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.03508771929824561,
+        "recall@10": 0.09429824561403508,
+        "recall@20": 0.13552631578947366,
+        "mrr": 0.042151609925713575,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.0886842105263158,
+      "recall@10": 0.15421052631578946,
+      "recall@20": 0.2834210526315789,
+      "mrr": 0.07523656755850935,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.056926648196198956,
+      "recall@10": 0.04165475360627386,
+      "recall@20": 0.08982319077901658,
+      "mrr": 0.029470957977468064,
+      "convergence_epoch": 0.0
+    }
+  },
+  {
+    "config": {
+      "card_encoder": "enhanced",
+      "hand_encoder": "multiscale",
+      "task_encoder": "multihead",
+      "prediction_head": "embedding",
+      "loss": "focal",
+      "name": "full_enhanced"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.11403508771929824,
+        "recall@10": 0.20833333333333334,
+        "recall@20": 0.3714912280701754,
+        "mrr": 0.07867134453024434,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.08640350877192982,
+        "recall@10": 0.15219298245614035,
+        "recall@20": 0.3824561403508772,
+        "mrr": 0.07805539903456668,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.061403508771929814,
+        "recall@10": 0.10526315789473684,
+        "recall@20": 0.33114035087719296,
+        "mrr": 0.07930717644072277,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.05701754385964912,
+        "recall@10": 0.10526315789473684,
+        "recall@20": 0.237719298245614,
+        "mrr": 0.07178775979520426,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.12149122807017546,
+        "recall@10": 0.19605263157894734,
+        "recall@20": 0.31666666666666665,
+        "mrr": 0.09423639178630756,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.08807017543859649,
+      "recall@10": 0.15342105263157896,
+      "recall@20": 0.32789473684210524,
+      "mrr": 0.08041161431740912,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.026341215786724943,
+      "recall@10": 0.04352627689738534,
+      "recall@20": 0.05127536269329576,
+      "mrr": 0.007420180743073494,
+      "convergence_epoch": 0.0
+    }
+  },
+  {
+    "config": {
+      "card_encoder": "standard",
+      "hand_encoder": "attention",
+      "task_encoder": "multihead",
+      "prediction_head": "embedding",
+      "loss": "focal",
+      "name": "attention+multi+embed+focal"
+    },
+    "fold_results": [
+      {
+        "recall@5": 0.062280701754385964,
+        "recall@10": 0.10833333333333335,
+        "recall@20": 0.17192982456140352,
+        "mrr": 0.0610325459972668,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.060087719298245613,
+        "recall@10": 0.09956140350877192,
+        "recall@20": 0.2934210526315789,
+        "mrr": 0.05446042772563691,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.06447368421052632,
+        "recall@10": 0.1543859649122807,
+        "recall@20": 0.31666666666666665,
+        "mrr": 0.06753326107135552,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.06447368421052632,
+        "recall@10": 0.2385964912280701,
+        "recall@20": 0.46754385964912276,
+        "mrr": 0.07607427485442045,
+        "convergence_epoch": 99
+      },
+      {
+        "recall@5": 0.041666666666666664,
+        "recall@10": 0.07894736842105261,
+        "recall@20": 0.3013157894736842,
+        "mrr": 0.0571565347794015,
+        "convergence_epoch": 99
+      }
+    ],
+    "mean_metrics": {
+      "recall@5": 0.05859649122807018,
+      "recall@10": 0.13596491228070176,
+      "recall@20": 0.3101754385964912,
+      "mrr": 0.06325140888561624,
+      "convergence_epoch": 99.0
+    },
+    "std_metrics": {
+      "recall@5": 0.008619732278272455,
+      "recall@10": 0.056942595815619335,
+      "recall@20": 0.09410420672641187,
+      "mrr": 0.007773189080904313,
+      "convergence_epoch": 0.0
+    }
+  }
+]

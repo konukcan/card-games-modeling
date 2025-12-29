@@ -121,7 +121,24 @@ class Grammar:
     3. Recursively fill in argument types
 
     Description length = -log P(program | grammar)
+
+    OPTIMIZATION: Type Compatibility Index
+    --------------------------------------
+    Instead of checking every primitive against the target type (O(P) unifications),
+    we maintain an index by "type skeleton" (the outermost type constructor).
+    This reduces candidates to only those that could possibly match.
+
+    Index structure:
+        'bool'    → [true, false, all, any, >, <, ==, ...]
+        'int'     → [+, -, length, 0, 1, ...]
+        'list'    → [map, filter, cons, ...]
+        'TYPEVAR' → [id, const, ...]  (polymorphic returns - always checked)
+
+    Lookup is O(1) + O(candidates) unifications instead of O(P) unifications.
     """
+
+    # Special key for primitives whose return type is a bare type variable
+    _TYPEVAR_KEY = '__TYPEVAR__'
 
     def __init__(
         self,
@@ -151,6 +168,72 @@ class Grammar:
         for p in self.productions:
             key = str(p.program)
             self._by_name[key] = p
+
+        # Build type compatibility index for fast candidate lookup
+        self._type_index: Dict[str, List[Production]] = self._build_type_index()
+
+    @staticmethod
+    def _get_type_skeleton(tp: Type) -> str:
+        """
+        Extract the "skeleton" (outermost type constructor) from a type.
+
+        This is used to index primitives by their return type structure.
+
+        Examples:
+            bool          → 'bool'
+            int           → 'int'
+            list(card)    → 'list'
+            list('a)      → 'list'
+            int -> bool   → 'arrow'
+            'a            → '__TYPEVAR__'  (special: can match anything)
+
+        The skeleton determines which bucket in the type index a primitive
+        goes into. Primitives with TypeVariable return types go into a
+        special bucket that is ALWAYS checked (they can unify with anything).
+        """
+        if isinstance(tp, BaseType):
+            return tp.name
+        elif isinstance(tp, ListType):
+            return 'list'
+        elif isinstance(tp, Arrow):
+            return 'arrow'
+        elif isinstance(tp, TypeVariable):
+            return Grammar._TYPEVAR_KEY
+        else:
+            # Unknown type - use string repr as fallback
+            return str(tp)
+
+    def _build_type_index(self) -> Dict[str, List[Production]]:
+        """
+        Build an index mapping type skeletons to productions.
+
+        For each production, we extract the skeleton of its RETURN TYPE
+        and add it to the corresponding bucket.
+
+        Returns:
+            Dictionary: skeleton_key → list of productions with that return skeleton
+        """
+        index: Dict[str, List[Production]] = defaultdict(list)
+
+        for prod in self.productions:
+            # Get the return type (unwrap arrows to find what it ultimately produces)
+            return_type = prod.tp.returns
+            skeleton = self._get_type_skeleton(return_type)
+            index[skeleton].append(prod)
+
+        return dict(index)  # Convert defaultdict to regular dict
+
+    def type_index_summary(self) -> str:
+        """
+        Return a human-readable summary of the type compatibility index.
+
+        Useful for debugging and understanding how primitives are indexed.
+        """
+        lines = ["Type Index:"]
+        for skeleton, prods in sorted(self._type_index.items()):
+            prod_names = [str(p.program) for p in prods]
+            lines.append(f"  {skeleton}: {prod_names}")
+        return "\n".join(lines)
 
     def __str__(self) -> str:
         lines = ["Grammar:"]
@@ -212,10 +295,27 @@ class Grammar:
             When filling a hole of type T, only T-returning primitives compete.
             Their probabilities are normalized within this subset.
             Primitives returning other types don't affect the distribution.
+
+        OPTIMIZATION:
+            Uses type compatibility index for O(1) lookup instead of O(P) scan.
+            We look up by the target type's skeleton and always include the
+            TYPEVAR bucket (polymorphic primitives that can return any type).
         """
         candidates = []
 
-        for prod in self.productions:
+        # Get candidate productions from the type index
+        # This is O(1) lookup instead of O(P) iteration
+        target_skeleton = self._get_type_skeleton(target_type)
+        potential_productions = list(self._type_index.get(target_skeleton, []))
+
+        # CRITICAL: Always include primitives with polymorphic return types
+        # They can potentially unify with ANY target type
+        if target_skeleton != self._TYPEVAR_KEY:
+            typevar_prods = self._type_index.get(self._TYPEVAR_KEY, [])
+            potential_productions.extend(typevar_prods)
+
+        # Now do full unification only on the reduced candidate set
+        for prod in potential_productions:
             # Try to unify the production's return type with target
             try:
                 # Create fresh type variables for this production
@@ -781,7 +881,12 @@ class Grammar:
     # ========================================================================
 
     def with_production(self, production: Production) -> 'Grammar':
-        """Return a new grammar with an added production."""
+        """
+        Return a new grammar with an added production.
+
+        Note: The new grammar will have its type index rebuilt automatically
+        during construction.
+        """
         new_productions = self.productions + [production]
         return Grammar(new_productions, self.log_variable, self.continuation_type)
 

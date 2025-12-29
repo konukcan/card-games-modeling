@@ -1,0 +1,136 @@
+================================================================================
+DREAMCODER V2 - CYTHON-OPTIMIZED OVERNIGHT PRETRAINING REPORT
+================================================================================
+
+Date: 2025-12-03 07:08:23
+Duration: 13:05:58
+
+OPTIMIZATIONS
+----------------------------------------
+Cython modules: False
+Early pruning: YES
+Parallel workers: 4
+PyPy workers: True
+
+SUMMARY
+----------------------------------------
+Tasks solved: 7/57
+Success rate: 12.3%
+Total iterations: 32
+Final grammar size: 145
+Total abstractions: 69
+Total dreams: 3968
+
+SOLVED TASKS
+----------------------------------------
+
+Has_pair_ranks (iter 1, 1,989 programs)
+  Program: (λ le (n_unique_ranks $0) 5)
+
+Exactly_two_suits (iter 1, 1,203 programs)
+  Program: (λ eq 2 (n_unique_suits $0))
+
+At_most_three_suits (iter 1, 1,443 programs)
+  Program: (λ neq 4 (n_unique_suits $0))
+
+Uniform_color (iter 1, 4 programs)
+  Program: (λ all_same_color $0)
+
+Exactly_one_club (iter 1, 4,851 programs)
+  Program: (λ eq 1 (count_suit $0 CLUBS))
+
+Ends_same_suit (iter 13, 655,980 programs)
+  Program: (λ has_suit (take 1 $0) (get_suit (last $0)))
+
+Ends_same_color (iter 13, 671,953 programs)
+  Program: (λ has_color (take 1 $0) (get_color (last $0)))
+
+
+UNSOLVED TASKS
+----------------------------------------
+  - Only_one_odd_rank
+  - Has_6_of_Diamonds
+  - Pos3_is_JQK
+  - Pos4_is_2_5_7
+  - Has_Ace_of_Spades
+  - Halves_hearts_presence_equal
+  - Half_or_more_same_suit
+  - Uniform_rank_parity
+  - Halves_uniform_color_equal
+  - Halves_same_suit_set
+  - Sorted_by_rank
+  - Colors_palindrome
+  - Halves_copy_suits
+  - Halves_uniform_parity_equal
+  - Ranks_palindrome
+  - Suits_palindrome
+  - S_before_H
+  - Halves_copy_colors
+  - Halves_copy_ranks
+  - AltColor1_palindrome
+  - Shift_half_ge
+  - Ends_same_altcolor1
+  - Half_sum_one_side_ge_2x_other
+  - AltColor2_palindrome
+  - Halves_AP_step1_equal
+  - Skip2_same_rank_or_suit
+  - Adj_rank_gap_le3
+  - Shift_half_plus_two
+  - Halves_copy_altcolor2
+  - Halves_AP_len2_step1_equal
+  - Half_sum_diff_geN
+  - Adj_same_rank_or_suit
+  - Shift2_plus3
+  - Halves_copy_altcolor1
+  - AP_len3_anywhere_anyk
+  - Halves_radial_nonincreasing
+  - Adj_same_or_map_M2
+  - Odd_opens_next_closes
+  - AP_len4_step2_anywhere
+  - AP_len3_step2_anywhere
+  - Half_map_samepos_M1
+  - Well_formed_brackets_by_suit
+  - Half_map_samepos_M2
+  - Global_radial_no_dominance
+  - Halves_AP_len3_any_equal
+  - Adj_same_or_map_M1
+  - Step2_back_map_M2
+  - Even_opens_next_closes
+  - Score_threshold_Rstar
+  - Step2_back_map_M1
+
+
+LEARNING CURVE
+----------------------------------------
+Iter  1:  5/ 5 solved, loss=4.2162, grammar=81, abstractions=5, wake=33s
+Iter  2:  5/ 5 solved, loss=3.1493, grammar=86, abstractions=5, wake=7s
+Iter  3:  5/ 5 solved, loss=3.5742, grammar=91, abstractions=5, wake=0s
+Iter  4:  5/12 solved, loss=3.6512, grammar=96, abstractions=5, wake=170s
+Iter  5:  5/12 solved, loss=3.6848, grammar=101, abstractions=5, wake=162s
+Iter  6:  5/12 solved, loss=3.7904, grammar=106, abstractions=5, wake=151s
+Iter  7:  5/12 solved, loss=3.7227, grammar=111, abstractions=5, wake=153s
+Iter  8:  5/18 solved, loss=3.7384, grammar=116, abstractions=5, wake=365s
+Iter  9:  5/18 solved, loss=3.8611, grammar=121, abstractions=5, wake=350s
+Iter 10:  5/18 solved, loss=3.8407, grammar=126, abstractions=5, wake=350s
+Iter 11:  5/18 solved, loss=3.8710, grammar=131, abstractions=5, wake=353s
+Iter 12:  5/18 solved, loss=3.9429, grammar=131, abstractions=0, wake=348s
+Iter 13:  7/26 solved, loss=4.3696, grammar=136, abstractions=5, wake=1036s
+Iter 14:  7/26 solved, loss=4.0446, grammar=141, abstractions=5, wake=1035s
+Iter 15:  7/26 solved, loss=4.0566, grammar=145, abstractions=4, wake=1037s
+Iter 16:  7/26 solved, loss=3.9766, grammar=145, abstractions=0, wake=1037s
+Iter 17:  7/26 solved, loss=3.8981, grammar=145, abstractions=0, wake=1036s
+Iter 18:  7/26 solved, loss=3.9532, grammar=145, abstractions=0, wake=1034s
+Iter 19:  7/41 solved, loss=4.0974, grammar=145, abstractions=0, wake=1625s
+Iter 20:  7/41 solved, loss=3.9226, grammar=145, abstractions=0, wake=1625s
+Iter 21:  7/41 solved, loss=4.1302, grammar=145, abstractions=0, wake=1625s
+Iter 22:  7/41 solved, loss=4.0302, grammar=145, abstractions=0, wake=1625s
+Iter 23:  7/41 solved, loss=3.9934, grammar=145, abstractions=0, wake=1625s
+Iter 24:  7/41 solved, loss=4.1019, grammar=145, abstractions=0, wake=1625s
+Iter 25:  7/57 solved, loss=3.9829, grammar=145, abstractions=0, wake=2346s
+Iter 26:  7/57 solved, loss=4.0941, grammar=145, abstractions=0, wake=2347s
+Iter 27:  7/57 solved, loss=3.9911, grammar=145, abstractions=0, wake=2347s
+Iter 28:  7/57 solved, loss=3.6206, grammar=145, abstractions=0, wake=2347s
+Iter 29:  7/57 solved, loss=4.0328, grammar=145, abstractions=0, wake=2346s
+Iter 30:  7/57 solved, loss=4.0710, grammar=145, abstractions=0, wake=2346s
+Iter 31:  7/57 solved, loss=4.0635, grammar=145, abstractions=0, wake=2347s
+Iter 32:  7/57 solved, loss=4.0750, grammar=145, abstractions=0, wake=2346s

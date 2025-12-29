@@ -1,0 +1,287 @@
+{
+  "Exactly_two_suits": {
+    "solved": true,
+    "best_program": "(\u03bb eq 2 (n_unique_suits $0))",
+    "n_entries": 5
+  },
+  "Has_pair_ranks": {
+    "solved": true,
+    "best_program": "(\u03bb le (n_unique_ranks $0) 5)",
+    "n_entries": 5
+  },
+  "Uniform_rank_parity": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "At_most_three_suits": {
+    "solved": true,
+    "best_program": "(\u03bb neq 4 (n_unique_suits $0))",
+    "n_entries": 5
+  },
+  "Exactly_one_club": {
+    "solved": true,
+    "best_program": "(\u03bb eq 1 (count_suit $0 CLUBS))",
+    "n_entries": 4
+  },
+  "Uniform_color": {
+    "solved": true,
+    "best_program": "(\u03bb all_same_color $0)",
+    "n_entries": 5
+  },
+  "Sorted_by_rank": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Has_Ace_of_Spades": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Ends_same_altcolor1": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Only_one_odd_rank": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Pos3_is_JQK": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Has_6_of_Diamonds": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Ends_same_suit": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Pos4_is_2_5_7": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Ends_same_color": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Half_or_more_same_suit": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Suits_palindrome": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Ranks_palindrome": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Colors_palindrome": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_uniform_color_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "AltColor2_palindrome": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "AltColor1_palindrome": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_same_suit_set": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_hearts_presence_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "S_before_H": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Half_map_samepos_M1": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_AP_step1_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_copy_ranks": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_copy_suits": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_AP_len2_step1_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_uniform_parity_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_copy_altcolor1": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Half_map_samepos_M2": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_copy_altcolor2": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_copy_colors": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Adj_same_or_map_M2": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Step2_back_map_M1": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Adj_rank_gap_le3": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Adj_same_rank_or_suit": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Skip2_same_rank_or_suit": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Shift_half_ge": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Shift2_plus3": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Shift_half_plus_two": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Step2_back_map_M2": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Half_sum_diff_geN": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Half_sum_one_side_ge_2x_other": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Adj_same_or_map_M1": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Well_formed_brackets_by_suit": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "AP_len4_step2_anywhere": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_radial_nonincreasing": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Score_threshold_Rstar": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Even_opens_next_closes": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "AP_len3_anywhere_anyk": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Halves_AP_len3_any_equal": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Global_radial_no_dominance": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "Odd_opens_next_closes": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  },
+  "AP_len3_step2_anywhere": {
+    "solved": false,
+    "best_program": null,
+    "n_entries": 0
+  }
+}

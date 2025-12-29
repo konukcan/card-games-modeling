@@ -1,0 +1,32 @@
+{
+  "run_type": "two_phase",
+  "dry_run": false,
+  "phase5_only": false,
+  "phase6_only": false,
+  "total_time": 12131.865183115005,
+  "n_pretraining_tasks": 43,
+  "n_catalogue_tasks": 57,
+  "phases": [
+    {
+      "name": "Phase 5: Pretraining Consolidation",
+      "iterations": 10,
+      "enumeration_budget": 1000000,
+      "max_depth": 12
+    },
+    {
+      "name": "Phase 6: Transfer to Catalogue",
+      "iterations": 8,
+      "enumeration_budget": 800000,
+      "max_depth": 12
+    }
+  ],
+  "results_summary": {
+    "total_time": 12104.019840717316,
+    "total_iterations": 18,
+    "tasks_solved": 28,
+    "tasks_total": 43,
+    "final_grammar_size": 150,
+    "total_abstractions": 90,
+    "total_dreams": 3449
+  }
+}

@@ -25,15 +25,35 @@ This document captures the findings from a 6-agent parallel code review of the c
   - All bare except blocks replaced with specific exception types
   - Pattern used: `except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):`
 
+- [x] **Unify Task definition** - Fixed 2024-12-23
+  - Created canonical `dreamcoder_core/task.py` with unified Task class
+  - All 5 duplicate definitions now import from single source
+  - Backward compatible (existing imports still work)
+
+- [x] **Add structural hashing for deduplication** - Fixed 2024-12-23
+  - Replaced string-based deduplication with hash-based O(1) lookups
+  - Updated enumeration.py (30+ locations), all TaskFrontier classes, compression.py
+  - Expected 2-3x speedup in deduplication-heavy code paths
+
+- [x] **Rename dreamcoder_v2.py → dreamcoder_original.py** - Fixed 2024-12-23
+  - Clarified purpose as reference implementation
+  - Updated all 17 files that imported from it
+
+- [x] **Reorganize runner scripts** - Fixed 2024-12-23
+  - Reviewed all 19 runner scripts for status (active/outdated/rotten)
+  - Created `docs/runner_scripts_history.md` with detailed documentation
+  - Moved 11 archived scripts to `legacy_runners/` directory
+  - Deleted 3 broken/obsolete scripts (full_cython, pretraining, experiments)
+  - Kept 4 active scripts: run_overnight_v3.py, resume_overnight_v3.py, run_experimental_rules.py, run_overnight_set_transformer.py
+  - Added legacy_runners/README.md explaining each archived script
+
 ### Pending
 
-- [ ] **Consolidate 14 runner scripts → 1** (DEFERRED - keeping as reference)
-- [ ] **Add structural hashing for deduplication** (enumeration.py, 3h, 2-3x speedup)
+- [ ] **Consolidate 4 active runner scripts → 1** (DEFERRED - now only 4 active)
 - [ ] **Decompose compression.py** (3,351 lines → 6 modules, 1 day)
 - [ ] **Cache program size/depth** (program.py, 2h, 2-3x hot path speedup)
 - [ ] **Fingerprint-based anti-unification filtering** (compression.py:357-399, 1-2 days, 5-20x speedup)
 - [ ] **Extract domain encoder interface** (neural_recognition.py, 4h)
-- [ ] **Unify Task definition** (2 duplicate definitions, 1h)
 - [ ] **Remove PreFlightValidator** (run_overnight_v3.py:85-442, 30m, -357 LOC)
 - [ ] **Type compatibility index** (grammar.py, 4-6h, 5-10x candidate lookup speedup)
 
@@ -46,8 +66,8 @@ This document captures the findings from a 6-agent parallel code review of the c
 | #   | Issue                                    | Location                     | Effort | Impact                               | Status |
 |-----|------------------------------------------|------------------------------|--------|--------------------------------------|--------|
 | 1   | Replace bare except: blocks              | 26 locations across codebase | 4h     | Prevents silent failures             | DONE   |
-| 2   | Consolidate 14 runner scripts → 1        | src/run_*.py                 | 2 days | -8,000 LOC, single maintenance point | DEFERRED |
-| 3   | Add structural hashing for deduplication | enumeration.py               | 3h     | 2-3x enumeration speedup             | PENDING |
+| 2   | Reorganize runner scripts                | src/run_*.py                 | 2h     | Cleanup, 11→legacy, 3 deleted        | DONE     |
+| 3   | Add structural hashing for deduplication | enumeration.py               | 3h     | 2-3x enumeration speedup             | DONE   |
 
 ### High Priority
 
@@ -147,27 +167,27 @@ compression/
 └── core.py               # compress_frontiers
 ```
 
-### 5. Simplification Opportunities
+### 5. Simplification Opportunities - REORGANIZED
 
-Current state: 14+ separate runner scripts
+**Previous state**: 14+ separate runner scripts
+**Current state**: 4 active scripts + 11 archived in `legacy_runners/`
 
-Proposed (when ready): Single `run_dreamcoder.py`:
-```bash
-python run_dreamcoder.py \
-    --recognition gru \
-    --rules catalogue \
-    --phases "easy:5,all:10" \
-    --budget 200000 \
-    --resume checkpoint_dir
-```
+Active scripts kept:
+- `run_overnight_v3.py` - Primary production overnight runner
+- `resume_overnight_v3.py` - Resume crashed v3 runs
+- `run_experimental_rules.py` - Set Transformer on catalogue rules
+- `run_overnight_set_transformer.py` - Set Transformer experiments
 
-Files to delete after consolidation (WHEN READY):
-- run_overnight_v3.py (wrapper)
-- run_overnight_cython.py (merge into main)
-- run_overnight_set_transformer.py (config flag)
-- run_experimental_rules.py (config flag)
-- resume_overnight_v3.py (--resume flag)
-- run_overnight_pretraining.py, run_overnight_optimized.py, etc.
+Archived to `legacy_runners/`:
+- run_overnight_v4.py, run_overnight_cython.py, run_overnight_optimized.py
+- run_overnight_pretraining.py, run_overnight_listprims.py, run_overnight_smallhands.py
+- run_twophase_overnight.py, run_phase6_transfer.py, run_topdown_test.py
+- run_medium_mdl_test.py, run_5iter_memoized.py
+
+Deleted (broken/obsolete):
+- run_overnight_full_cython.py, run_pretraining.py, run_overnight_experiments.py
+
+See `docs/runner_scripts_history.md` for full documentation of each script's purpose and lessons learned.
 
 ---
 
@@ -211,6 +231,13 @@ If you want to dive deeper into any specific review, these agent IDs can be resu
 
 ## Notes
 
-- **Runner consolidation is intentionally deferred** to preserve reference implementations of different approaches
-- Each runner script represents a different experimental configuration that may be useful for comparison
-- When consolidation happens, archive the original scripts in a `legacy/` folder rather than deleting
+- **Runner scripts reorganized 2024-12-23**: 11 scripts archived to `legacy_runners/`, 3 deleted, 4 kept active
+- Historical scripts preserved in `legacy_runners/` with full documentation in `docs/runner_scripts_history.md`
+- Key lessons from archived scripts documented (Cython failure, PyPy success, list primitives importance)
+- **Results directories reorganized 2024-12-23**: All scattered `results_*` folders consolidated into `results_archive/`:
+  - `results_archive/overnight_v3_runs/` - Main production runs
+  - `results_archive/factorial_experiments/` - 2×3×3 factorial comparisons
+  - `results_archive/contrastive_experiments/` - Contrastive learning, memoization, Set Transformer
+  - `results_archive/specialized_experiments/` - List prims, MDL, transfer learning, Cython attempts
+  - `results_archive/test_runs/` - Quick tests, smoke tests, debugging
+  - Each directory has README.md explaining contents and lessons learned

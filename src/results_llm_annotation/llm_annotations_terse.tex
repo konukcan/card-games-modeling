@@ -1,0 +1,527 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+
+\geometry{margin=1.5cm, top=2cm, bottom=2cm}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{LLM Hand Annotation -- Terse (3-word) Descriptions}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\definecolor{posgreen}{RGB}{220,255,220}
+\definecolor{negred}{RGB}{255,220,220}
+\definecolor{ruleblue}{RGB}{230,240,255}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+\title{\textbf{LLM Hand Annotation Dataset}\\[0.3em]\large Terse (2-3 word) Blind Descriptions}
+\author{Generated with Ollama qwen2.5-coder:7b}
+\date{December 2024}
+
+\begin{document}
+\maketitle
+
+\section*{Overview}
+Blind LLM annotations of card hands with \textbf{2-3 word} descriptions.
+\begin{itemize}
+    \item \colorbox{posgreen}{Green rows}: Positive examples (satisfy the rule)
+    \item \colorbox{negred}{Red rows}: Negative examples (violate the rule)
+\end{itemize}
+
+\vspace{0.5em}
+\noindent\textbf{Statistics:} 20 rules, 200 hands, avg 3.3 tokens/description, 146 unique tokens.
+
+\vspace{1em}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Sorted\_by\_rank} (LOCAL)}
+\textbf{Rule:} Ranks are in non-decreasing order
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 6$\clubsuit$ 6$\heartsuit$ 6$\diamondsuit$ 6$\diamondsuit$ 8$\diamondsuit$ 9$\spadesuit$ & Four of a kind \\
+\rowcolor{posgreen} + & 4$\diamondsuit$ 5$\spadesuit$ 9$\heartsuit$ J$\heartsuit$ J$\spadesuit$ Q$\spadesuit$ & Jack high, alternating colors. \\
+\rowcolor{posgreen} + & 4$\spadesuit$ 8$\heartsuit$ 8$\spadesuit$ 8$\heartsuit$ Q$\spadesuit$ Q$\heartsuit$ & Pair of Queens, \\
+\rowcolor{posgreen} + & 2$\diamondsuit$ 4$\clubsuit$ 9$\heartsuit$ 9$\heartsuit$ 9$\diamondsuit$ 10$\clubsuit$ & Triple nines, one spade \\
+\rowcolor{posgreen} + & 3$\spadesuit$ 5$\spadesuit$ 6$\diamondsuit$ J$\clubsuit$ J$\diamondsuit$ K$\clubsuit$ & Black jack, spades lead \\
+\rowcolor{negred} -- & 3$\heartsuit$ 7$\clubsuit$ Q$\heartsuit$ 5$\heartsuit$ 7$\heartsuit$ Q$\clubsuit$ & Two pairs, alternating colors. \\
+\rowcolor{negred} -- & 9$\heartsuit$ K$\heartsuit$ 2$\spadesuit$ 9$\heartsuit$ K$\spadesuit$ K$\diamondsuit$ & High cards, repeated values \\
+\rowcolor{negred} -- & 2$\heartsuit$ Q$\spadesuit$ 4$\diamondsuit$ K$\clubsuit$ 5$\spadesuit$ 6$\heartsuit$ & High card sequence, \\
+\rowcolor{negred} -- & 9$\clubsuit$ K$\heartsuit$ 7$\heartsuit$ 8$\clubsuit$ A$\clubsuit$ Q$\heartsuit$ & High alternating colors \\
+\rowcolor{negred} -- & Q$\heartsuit$ 10$\diamondsuit$ 9$\clubsuit$ 8$\spadesuit$ 2$\clubsuit$ A$\diamondsuit$ & High cards \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Ends\_same\_suit} (LOCAL)}
+\textbf{Rule:} First and last share the suit
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & A$\spadesuit$ A$\spadesuit$ 6$\spadesuit$ J$\heartsuit$ 8$\clubsuit$ A$\spadesuit$ & Ace triple \\
+\rowcolor{posgreen} + & 5$\diamondsuit$ 6$\heartsuit$ 9$\spadesuit$ 3$\clubsuit$ Q$\heartsuit$ 4$\diamondsuit$ & Alternate colors \\
+\rowcolor{posgreen} + & 8$\clubsuit$ 8$\heartsuit$ 6$\clubsuit$ 9$\clubsuit$ 9$\heartsuit$ 4$\clubsuit$ & pairs, alternating colors \\
+\rowcolor{posgreen} + & 9$\spadesuit$ 5$\clubsuit$ 7$\heartsuit$ 7$\heartsuit$ 10$\clubsuit$ J$\spadesuit$ & Two sevens, alternating colors. \\
+\rowcolor{posgreen} + & 3$\diamondsuit$ J$\clubsuit$ 10$\heartsuit$ 3$\diamondsuit$ 9$\spadesuit$ 7$\diamondsuit$ & one pair, alternating colors \\
+\rowcolor{negred} -- & 6$\heartsuit$ 7$\clubsuit$ 6$\diamondsuit$ 6$\diamondsuit$ J$\clubsuit$ 5$\diamondsuit$ & Two pairs, alternating colors \\
+\rowcolor{negred} -- & 6$\diamondsuit$ Q$\diamondsuit$ A$\heartsuit$ A$\clubsuit$ K$\clubsuit$ 3$\clubsuit$ & Ace-high flush \\
+\rowcolor{negred} -- & Q$\spadesuit$ 3$\spadesuit$ 7$\diamondsuit$ 3$\diamondsuit$ 10$\spadesuit$ 9$\diamondsuit$ & pair, sorted \\
+\rowcolor{negred} -- & 9$\diamondsuit$ 8$\heartsuit$ 3$\diamondsuit$ Q$\clubsuit$ 3$\clubsuit$ 7$\spadesuit$ & two pairs \\
+\rowcolor{negred} -- & A$\heartsuit$ A$\heartsuit$ 8$\diamondsuit$ 7$\clubsuit$ J$\diamondsuit$ A$\spadesuit$ & two aces \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Ends\_same\_color} (LOCAL)}
+\textbf{Rule:} First and last share the color
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & Q$\heartsuit$ J$\clubsuit$ 8$\clubsuit$ K$\diamondsuit$ A$\diamondsuit$ 7$\diamondsuit$ & Q high alternating \\
+\rowcolor{posgreen} + & 5$\heartsuit$ 10$\spadesuit$ A$\clubsuit$ A$\diamondsuit$ 4$\clubsuit$ 10$\diamondsuit$ & Ace pair, alternating colors \\
+\rowcolor{posgreen} + & 5$\heartsuit$ 3$\clubsuit$ 5$\clubsuit$ 2$\spadesuit$ 10$\clubsuit$ Q$\heartsuit$ & one heart, two \\
+\rowcolor{posgreen} + & 8$\diamondsuit$ 4$\heartsuit$ 9$\diamondsuit$ A$\diamondsuit$ K$\heartsuit$ 7$\heartsuit$ & High diamonds \\
+\rowcolor{posgreen} + & Q$\clubsuit$ J$\spadesuit$ 8$\diamondsuit$ 2$\clubsuit$ 6$\diamondsuit$ 6$\clubsuit$ & Two sixes, alternating colors \\
+\rowcolor{negred} -- & A$\spadesuit$ 8$\diamondsuit$ 6$\heartsuit$ J$\clubsuit$ 9$\heartsuit$ 8$\diamondsuit$ & Two pairs, alternating colors \\
+\rowcolor{negred} -- & K$\heartsuit$ K$\diamondsuit$ 10$\heartsuit$ 10$\heartsuit$ 4$\diamondsuit$ 7$\clubsuit$ & two pairs, alternating colors \\
+\rowcolor{negred} -- & 10$\clubsuit$ 9$\clubsuit$ 5$\spadesuit$ 10$\spadesuit$ K$\clubsuit$ 5$\diamondsuit$ & two pairs, alternating suits \\
+\rowcolor{negred} -- & 3$\diamondsuit$ 9$\clubsuit$ 4$\diamondsuit$ Q$\clubsuit$ 2$\clubsuit$ 7$\spadesuit$ & two diamonds, three \\
+\rowcolor{negred} -- & 5$\diamondsuit$ K$\spadesuit$ 9$\clubsuit$ 6$\heartsuit$ 2$\heartsuit$ 5$\clubsuit$ & Two pair \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Has\_pair\_ranks} (COUNT)}
+\textbf{Rule:} At least one pair (same rank)
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 4$\diamondsuit$ 7$\clubsuit$ Q$\spadesuit$ 7$\diamondsuit$ Q$\clubsuit$ 10$\spadesuit$ & Pair of sevens \\
+\rowcolor{posgreen} + & 4$\clubsuit$ A$\heartsuit$ 7$\diamondsuit$ Q$\clubsuit$ 6$\diamondsuit$ A$\clubsuit$ & Ace and a \\
+\rowcolor{posgreen} + & 8$\heartsuit$ 6$\spadesuit$ K$\diamondsuit$ J$\clubsuit$ A$\clubsuit$ K$\diamondsuit$ & Two Kings, Jack, \\
+\rowcolor{posgreen} + & 9$\clubsuit$ K$\heartsuit$ 8$\clubsuit$ K$\diamondsuit$ 6$\heartsuit$ Q$\diamondsuit$ & two kings, alternating colors \\
+\rowcolor{posgreen} + & 2$\diamondsuit$ 10$\spadesuit$ 2$\heartsuit$ 7$\spadesuit$ J$\clubsuit$ 7$\spadesuit$ & one pair, two high \\
+\rowcolor{negred} -- & A$\diamondsuit$ J$\diamondsuit$ 7$\clubsuit$ K$\spadesuit$ 10$\clubsuit$ 3$\diamondsuit$ & two reds, one \\
+\rowcolor{negred} -- & 8$\diamondsuit$ 9$\diamondsuit$ J$\heartsuit$ 2$\spadesuit$ 4$\heartsuit$ Q$\clubsuit$ & Hearts, mixed values \\
+\rowcolor{negred} -- & J$\spadesuit$ 5$\diamondsuit$ 4$\clubsuit$ 10$\diamondsuit$ 7$\spadesuit$ 9$\clubsuit$ & J, 10, Q, \\
+\rowcolor{negred} -- & 7$\spadesuit$ J$\diamondsuit$ 6$\diamondsuit$ 5$\heartsuit$ A$\spadesuit$ 9$\heartsuit$ & High card flush \\
+\rowcolor{negred} -- & 9$\diamondsuit$ 3$\heartsuit$ A$\clubsuit$ 6$\diamondsuit$ 5$\clubsuit$ 2$\diamondsuit$ & 9♦, A♣, alternating colors \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Uniform\_color} (COUNT)}
+\textbf{Rule:} All cards have the same color
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 9$\heartsuit$ 6$\diamondsuit$ 10$\diamondsuit$ 6$\heartsuit$ K$\heartsuit$ J$\heartsuit$ & High pair, alternating colors. \\
+\rowcolor{posgreen} + & 7$\spadesuit$ 5$\spadesuit$ A$\clubsuit$ J$\clubsuit$ A$\spadesuit$ 3$\clubsuit$ & Ace high, alternating colors. \\
+\rowcolor{posgreen} + & 2$\heartsuit$ Q$\diamondsuit$ 7$\heartsuit$ Q$\heartsuit$ Q$\heartsuit$ 6$\heartsuit$ & Three queens, alternating \\
+\rowcolor{posgreen} + & A$\heartsuit$ 9$\diamondsuit$ A$\heartsuit$ 2$\heartsuit$ 4$\diamondsuit$ J$\diamondsuit$ & Two aces, alternating colors \\
+\rowcolor{posgreen} + & 2$\heartsuit$ 10$\heartsuit$ A$\heartsuit$ 7$\heartsuit$ J$\diamondsuit$ 10$\heartsuit$ & two pair, spades \\
+\rowcolor{negred} -- & 9$\clubsuit$ 6$\spadesuit$ 3$\diamondsuit$ Q$\heartsuit$ 4$\diamondsuit$ 4$\spadesuit$ & Four of a kind \\
+\rowcolor{negred} -- & 9$\heartsuit$ 5$\clubsuit$ Q$\spadesuit$ 6$\spadesuit$ 10$\diamondsuit$ 3$\heartsuit$ & Scattered high cards \\
+\rowcolor{negred} -- & K$\heartsuit$ A$\heartsuit$ 6$\spadesuit$ K$\spadesuit$ J$\spadesuit$ A$\clubsuit$ & Two pairs, high heart \\
+\rowcolor{negred} -- & 3$\clubsuit$ 3$\diamondsuit$ K$\clubsuit$ 2$\spadesuit$ 3$\spadesuit$ K$\spadesuit$ & Triple three, pair spades \\
+\rowcolor{negred} -- & 7$\spadesuit$ 3$\spadesuit$ A$\spadesuit$ A$\heartsuit$ 8$\diamondsuit$ 4$\spadesuit$ & A♠ A♥ 7♠ \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Exactly\_two\_suits} (COUNT)}
+\textbf{Rule:} Exactly two suits appear
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 5$\clubsuit$ Q$\heartsuit$ 6$\clubsuit$ 9$\heartsuit$ 6$\clubsuit$ 9$\heartsuit$ & Two pairs: one \\
+\rowcolor{posgreen} + & 7$\diamondsuit$ 3$\spadesuit$ 3$\spadesuit$ 10$\diamondsuit$ 10$\spadesuit$ A$\spadesuit$ & two pairs \\
+\rowcolor{posgreen} + & 3$\heartsuit$ 5$\clubsuit$ 10$\heartsuit$ K$\heartsuit$ 4$\clubsuit$ 5$\heartsuit$ & High card run, \\
+\rowcolor{posgreen} + & K$\spadesuit$ 3$\spadesuit$ 3$\spadesuit$ 4$\spadesuit$ 9$\heartsuit$ 2$\spadesuit$ & 3 triplets, red/black split \\
+\rowcolor{posgreen} + & 4$\heartsuit$ K$\heartsuit$ 6$\heartsuit$ 9$\heartsuit$ 5$\spadesuit$ 8$\spadesuit$ & Hearts descending, alternating colors. \\
+\rowcolor{negred} -- & 2$\clubsuit$ 10$\spadesuit$ 3$\heartsuit$ 5$\clubsuit$ Q$\spadesuit$ K$\spadesuit$ & High spades with \\
+\rowcolor{negred} -- & 4$\heartsuit$ 6$\heartsuit$ 2$\spadesuit$ 5$\diamondsuit$ 5$\spadesuit$ 4$\clubsuit$ & Alternate suits, no pairs. \\
+\rowcolor{negred} -- & 3$\spadesuit$ 6$\heartsuit$ 4$\spadesuit$ J$\clubsuit$ K$\clubsuit$ J$\diamondsuit$ & Black Jacks and Ace \\
+\rowcolor{negred} -- & 4$\diamondsuit$ 8$\diamondsuit$ 4$\spadesuit$ Q$\clubsuit$ K$\heartsuit$ 8$\heartsuit$ & Two pairs \\
+\rowcolor{negred} -- & K$\clubsuit$ A$\diamondsuit$ Q$\diamondsuit$ J$\heartsuit$ 5$\spadesuit$ K$\heartsuit$ & K♥Q♦J♥A♦5♠ \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Exactly\_one\_club} (COUNT)}
+\textbf{Rule:} Exactly one club
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 9$\diamondsuit$ 9$\spadesuit$ K$\clubsuit$ Q$\heartsuit$ 4$\spadesuit$ 6$\spadesuit$ & Pair of nines, \\
+\rowcolor{posgreen} + & Q$\spadesuit$ A$\diamondsuit$ Q$\clubsuit$ 8$\spadesuit$ 9$\spadesuit$ K$\spadesuit$ & Queen, Ace, Queen, \\
+\rowcolor{posgreen} + & 9$\spadesuit$ 2$\clubsuit$ 5$\spadesuit$ 5$\spadesuit$ Q$\diamondsuit$ A$\diamondsuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & 2$\heartsuit$ 7$\diamondsuit$ K$\clubsuit$ J$\heartsuit$ 4$\diamondsuit$ Q$\diamondsuit$ & High alternating colors \\
+\rowcolor{posgreen} + & 6$\spadesuit$ J$\diamondsuit$ 5$\spadesuit$ A$\clubsuit$ 4$\heartsuit$ 5$\spadesuit$ & 5s split, high card \\
+\rowcolor{negred} -- & 8$\diamondsuit$ 8$\clubsuit$ 3$\clubsuit$ 8$\clubsuit$ 2$\spadesuit$ 2$\heartsuit$ & Two pairs, high card \\
+\rowcolor{negred} -- & 7$\heartsuit$ 8$\spadesuit$ A$\heartsuit$ A$\spadesuit$ 5$\spadesuit$ J$\heartsuit$ & Aces and jacks \\
+\rowcolor{negred} -- & 10$\heartsuit$ 6$\clubsuit$ 5$\clubsuit$ K$\diamondsuit$ 7$\diamondsuit$ A$\heartsuit$ & High card flush, \\
+\rowcolor{negred} -- & 5$\heartsuit$ 3$\diamondsuit$ 8$\spadesuit$ J$\spadesuit$ 10$\diamondsuit$ 3$\heartsuit$ & Two threes, heart \\
+\rowcolor{negred} -- & 3$\heartsuit$ 5$\clubsuit$ 3$\diamondsuit$ 4$\heartsuit$ 10$\clubsuit$ J$\spadesuit$ & pair of threes, \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut AP\_len3\_anywhere\_anyk} (AP)}
+\textbf{Rule:} 3-term rank pattern with equal steps
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 5$\spadesuit$ 5$\clubsuit$ 9$\clubsuit$ 9$\diamondsuit$ 2$\diamondsuit$ 5$\spadesuit$ & two pairs, one five \\
+\rowcolor{posgreen} + & A$\heartsuit$ 9$\spadesuit$ 4$\heartsuit$ A$\spadesuit$ 8$\diamondsuit$ 9$\heartsuit$ & Two aces, one \\
+\rowcolor{posgreen} + & 8$\heartsuit$ J$\heartsuit$ 8$\clubsuit$ 8$\heartsuit$ K$\clubsuit$ 7$\clubsuit$ & two pair, high heart \\
+\rowcolor{posgreen} + & 5$\heartsuit$ 9$\clubsuit$ 7$\diamondsuit$ 3$\diamondsuit$ 6$\clubsuit$ K$\clubsuit$ & King, alternating colors, \\
+\rowcolor{posgreen} + & Q$\heartsuit$ 6$\clubsuit$ A$\spadesuit$ 9$\heartsuit$ 3$\heartsuit$ 9$\diamondsuit$ & High card \\
+\rowcolor{negred} -- & 2$\spadesuit$ K$\heartsuit$ 10$\clubsuit$ J$\spadesuit$ K$\diamondsuit$ J$\spadesuit$ & Two kings, two \\
+\rowcolor{negred} -- & 4$\diamondsuit$ K$\heartsuit$ 7$\diamondsuit$ 2$\spadesuit$ 4$\heartsuit$ 9$\clubsuit$ & Two fours, heart high \\
+\rowcolor{negred} -- & K$\clubsuit$ 10$\spadesuit$ K$\diamondsuit$ 5$\clubsuit$ 6$\heartsuit$ 6$\heartsuit$ & Two kings, a \\
+\rowcolor{negred} -- & 4$\diamondsuit$ 9$\clubsuit$ K$\diamondsuit$ 10$\diamondsuit$ 10$\clubsuit$ 9$\heartsuit$ & Two pairs \\
+\rowcolor{negred} -- & 10$\clubsuit$ 2$\heartsuit$ 9$\spadesuit$ 10$\diamondsuit$ 5$\diamondsuit$ 5$\spadesuit$ & one pair, mixed suits \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Half\_sum\_diff\_geN} (SCORE)}
+\textbf{Rule:} Left half beats right by at least N points
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 3$\clubsuit$ A$\heartsuit$ 10$\clubsuit$ 4$\heartsuit$ 8$\spadesuit$ 6$\diamondsuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & 6$\clubsuit$ A$\clubsuit$ J$\heartsuit$ 5$\diamondsuit$ 5$\clubsuit$ Q$\spadesuit$ & High club flush \\
+\rowcolor{posgreen} + & 7$\heartsuit$ 7$\heartsuit$ 10$\spadesuit$ 7$\heartsuit$ 5$\diamondsuit$ 4$\heartsuit$ & pair, triplets, hearts dominate \\
+\rowcolor{posgreen} + & 8$\diamondsuit$ 4$\spadesuit$ 6$\diamondsuit$ 2$\diamondsuit$ 5$\diamondsuit$ 4$\clubsuit$ & sorted by rank \\
+\rowcolor{posgreen} + & Q$\heartsuit$ K$\diamondsuit$ Q$\diamondsuit$ 10$\spadesuit$ 8$\spadesuit$ 9$\diamondsuit$ & Two queens, alternating \\
+\rowcolor{negred} -- & A$\diamondsuit$ 3$\clubsuit$ 10$\clubsuit$ J$\diamondsuit$ 9$\spadesuit$ 3$\clubsuit$ & Pair, alternating colors, \\
+\rowcolor{negred} -- & 8$\clubsuit$ 5$\diamondsuit$ 9$\spadesuit$ 8$\heartsuit$ 7$\spadesuit$ 2$\heartsuit$ & Double pair, mixed suits. \\
+\rowcolor{negred} -- & 7$\clubsuit$ A$\diamondsuit$ 2$\spadesuit$ 4$\diamondsuit$ 9$\spadesuit$ Q$\diamondsuit$ & Ace, Queen, high \\
+\rowcolor{negred} -- & 2$\spadesuit$ 4$\diamondsuit$ 8$\spadesuit$ 4$\spadesuit$ J$\heartsuit$ J$\spadesuit$ & Two pairs, unsorted. \\
+\rowcolor{negred} -- & 5$\heartsuit$ 6$\clubsuit$ 6$\spadesuit$ A$\heartsuit$ 4$\spadesuit$ 8$\clubsuit$ & Six high, alternating \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Halves\_uniform\_color\_equal} (HIER)}
+\textbf{Rule:} Both halves uniform in color (or both not)
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 8$\clubsuit$ 9$\heartsuit$ 2$\clubsuit$ J$\diamondsuit$ 3$\heartsuit$ K$\clubsuit$ & Oddly colored \\
+\rowcolor{posgreen} + & 3$\spadesuit$ 8$\clubsuit$ 9$\clubsuit$ 7$\diamondsuit$ 3$\heartsuit$ 9$\diamondsuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & A$\heartsuit$ Q$\spadesuit$ 2$\heartsuit$ 4$\clubsuit$ A$\diamondsuit$ 4$\heartsuit$ & Aces and fours. \\
+\rowcolor{posgreen} + & 8$\diamondsuit$ 9$\diamondsuit$ 3$\clubsuit$ 2$\spadesuit$ 3$\heartsuit$ A$\clubsuit$ & Three of a \\
+\rowcolor{posgreen} + & 8$\diamondsuit$ 4$\diamondsuit$ 3$\spadesuit$ A$\clubsuit$ 4$\spadesuit$ A$\diamondsuit$ & High pair, two aces \\
+\rowcolor{negred} -- & 5$\spadesuit$ 6$\clubsuit$ 10$\spadesuit$ 7$\diamondsuit$ 8$\clubsuit$ K$\diamondsuit$ & Two spades, two \\
+\rowcolor{negred} -- & 5$\spadesuit$ J$\clubsuit$ Q$\spadesuit$ J$\diamondsuit$ 9$\spadesuit$ 10$\diamondsuit$ & Jacks and Queen \\
+\rowcolor{negred} -- & 4$\diamondsuit$ Q$\heartsuit$ 4$\diamondsuit$ 10$\diamondsuit$ Q$\diamondsuit$ Q$\clubsuit$ & Four of a \\
+\rowcolor{negred} -- & 2$\spadesuit$ 5$\spadesuit$ Q$\spadesuit$ A$\clubsuit$ 3$\diamondsuit$ 6$\spadesuit$ & two spades, alternating colors \\
+\rowcolor{negred} -- & 2$\diamondsuit$ 4$\spadesuit$ J$\diamondsuit$ 4$\clubsuit$ 3$\spadesuit$ 8$\spadesuit$ & 4s and Jack, \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Halves\_hearts\_presence\_equal} (HIER)}
+\textbf{Rule:} Both halves have heart or neither
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 6$\diamondsuit$ K$\heartsuit$ 3$\spadesuit$ 8$\clubsuit$ 8$\spadesuit$ A$\heartsuit$ & one pair, alternating colors \\
+\rowcolor{posgreen} + & 2$\heartsuit$ A$\clubsuit$ A$\diamondsuit$ K$\heartsuit$ 9$\spadesuit$ 3$\heartsuit$ & one ace, king, \\
+\rowcolor{posgreen} + & 7$\heartsuit$ J$\spadesuit$ 8$\heartsuit$ J$\clubsuit$ 3$\heartsuit$ 8$\heartsuit$ & two jacks, pair \\
+\rowcolor{posgreen} + & Q$\diamondsuit$ Q$\heartsuit$ Q$\diamondsuit$ 2$\diamondsuit$ A$\clubsuit$ 10$\heartsuit$ & Three queens, one ace. \\
+\rowcolor{posgreen} + & 8$\spadesuit$ 8$\heartsuit$ J$\clubsuit$ J$\diamondsuit$ 6$\spadesuit$ 10$\heartsuit$ & pairs, alternating colors \\
+\rowcolor{negred} -- & 8$\heartsuit$ J$\spadesuit$ 4$\diamondsuit$ 3$\diamondsuit$ A$\diamondsuit$ 10$\clubsuit$ & High club flush \\
+\rowcolor{negred} -- & 5$\spadesuit$ A$\diamondsuit$ 8$\diamondsuit$ 2$\heartsuit$ 2$\spadesuit$ 3$\spadesuit$ & Two pair, spades high \\
+\rowcolor{negred} -- & K$\clubsuit$ 2$\clubsuit$ 6$\heartsuit$ 4$\clubsuit$ 2$\clubsuit$ 4$\diamondsuit$ & one pair, two \\
+\rowcolor{negred} -- & 10$\clubsuit$ 10$\heartsuit$ Q$\spadesuit$ 7$\diamondsuit$ J$\spadesuit$ K$\spadesuit$ & 10's, high card spades \\
+\rowcolor{negred} -- & 7$\heartsuit$ 10$\heartsuit$ J$\spadesuit$ 10$\diamondsuit$ J$\spadesuit$ 2$\diamondsuit$ & two jacks, alternate colors \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Well\_formed\_brackets\_by\_suit} (LANG)}
+\textbf{Rule:} Suits form matched brackets
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 7$\diamondsuit$ 5$\diamondsuit$ 2$\spadesuit$ 7$\clubsuit$ 7$\diamondsuit$ 8$\heartsuit$ & Double 7s, mixed \\
+\rowcolor{posgreen} + & 5$\diamondsuit$ Q$\clubsuit$ 9$\clubsuit$ 2$\clubsuit$ 6$\diamondsuit$ A$\clubsuit$ & Odd-numbered cards, alternating colors. \\
+\rowcolor{posgreen} + & 2$\spadesuit$ 4$\heartsuit$ J$\spadesuit$ 3$\heartsuit$ 10$\clubsuit$ 8$\clubsuit$ & Unsorted mixed cards. \\
+\rowcolor{posgreen} + & 3$\clubsuit$ A$\spadesuit$ J$\spadesuit$ 3$\clubsuit$ 10$\heartsuit$ 4$\heartsuit$ & Two threes and \\
+\rowcolor{posgreen} + & 5$\spadesuit$ 4$\clubsuit$ Q$\diamondsuit$ 3$\heartsuit$ 4$\clubsuit$ J$\diamondsuit$ & sorted pairs, alternating suits \\
+\rowcolor{negred} -- & J$\clubsuit$ 5$\heartsuit$ 8$\clubsuit$ 4$\diamondsuit$ 10$\heartsuit$ K$\diamondsuit$ & High hearts, Jack high. \\
+\rowcolor{negred} -- & 7$\heartsuit$ 8$\clubsuit$ 8$\clubsuit$ 3$\heartsuit$ 10$\heartsuit$ J$\heartsuit$ & two pairs, heart flush \\
+\rowcolor{negred} -- & J$\clubsuit$ 8$\heartsuit$ 10$\diamondsuit$ K$\heartsuit$ K$\heartsuit$ 4$\clubsuit$ & two kings, jack, \\
+\rowcolor{negred} -- & Q$\spadesuit$ 6$\diamondsuit$ 3$\spadesuit$ 9$\heartsuit$ 8$\heartsuit$ 7$\heartsuit$ & Hearts, descending \\
+\rowcolor{negred} -- & A$\spadesuit$ A$\clubsuit$ 7$\clubsuit$ 3$\heartsuit$ K$\spadesuit$ J$\clubsuit$ & Ace, 7, 3, \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Suits\_palindrome} (PAL)}
+\textbf{Rule:} Suits read same forward/back
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & Q$\heartsuit$ 10$\spadesuit$ 6$\heartsuit$ Q$\heartsuit$ K$\spadesuit$ Q$\heartsuit$ & Three queens, alternating \\
+\rowcolor{posgreen} + & 7$\heartsuit$ 3$\clubsuit$ 8$\clubsuit$ 8$\clubsuit$ 7$\clubsuit$ 6$\heartsuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & 10$\heartsuit$ 10$\clubsuit$ 10$\diamondsuit$ 9$\diamondsuit$ K$\clubsuit$ 9$\heartsuit$ & Two pairs. \\
+\rowcolor{posgreen} + & A$\diamondsuit$ Q$\diamondsuit$ 10$\clubsuit$ 9$\clubsuit$ 6$\diamondsuit$ 5$\diamondsuit$ & Hearts pair, clubs low \\
+\rowcolor{posgreen} + & 10$\heartsuit$ 10$\clubsuit$ 8$\spadesuit$ 7$\spadesuit$ 6$\clubsuit$ 6$\heartsuit$ & two pairs, alternating colors \\
+\rowcolor{negred} -- & A$\heartsuit$ Q$\heartsuit$ 3$\spadesuit$ 6$\spadesuit$ 4$\clubsuit$ 8$\clubsuit$ & Hearts, alternating colors \\
+\rowcolor{negred} -- & 8$\diamondsuit$ K$\heartsuit$ 7$\diamondsuit$ 6$\spadesuit$ 5$\clubsuit$ 9$\spadesuit$ & High card flush. \\
+\rowcolor{negred} -- & A$\diamondsuit$ 5$\spadesuit$ 2$\clubsuit$ A$\heartsuit$ 2$\clubsuit$ A$\heartsuit$ & Three aces, two \\
+\rowcolor{negred} -- & 3$\spadesuit$ 8$\heartsuit$ 5$\spadesuit$ 10$\spadesuit$ 5$\spadesuit$ A$\clubsuit$ & Black spades, red heart \\
+\rowcolor{negred} -- & 8$\clubsuit$ 6$\clubsuit$ 9$\clubsuit$ 4$\spadesuit$ 8$\clubsuit$ 6$\heartsuit$ & double 8s, alternating colors \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Colors\_palindrome} (PAL)}
+\textbf{Rule:} Colors read same forward/back
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 10$\spadesuit$ J$\clubsuit$ J$\clubsuit$ J$\spadesuit$ J$\spadesuit$ A$\spadesuit$ & Jacks plus Ace \\
+\rowcolor{posgreen} + & Q$\heartsuit$ 4$\spadesuit$ 8$\heartsuit$ 10$\diamondsuit$ A$\spadesuit$ 10$\diamondsuit$ & Double tens, queen, \\
+\rowcolor{posgreen} + & K$\clubsuit$ 10$\clubsuit$ 8$\heartsuit$ 4$\heartsuit$ 8$\clubsuit$ J$\spadesuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & 5$\clubsuit$ Q$\diamondsuit$ 4$\diamondsuit$ 9$\heartsuit$ 6$\heartsuit$ 3$\spadesuit$ & Mixed suits, odd numbers. \\
+\rowcolor{posgreen} + & 5$\clubsuit$ 3$\heartsuit$ K$\heartsuit$ K$\heartsuit$ 10$\heartsuit$ 9$\clubsuit$ & Three of a kind. \\
+\rowcolor{negred} -- & 5$\diamondsuit$ 9$\clubsuit$ A$\clubsuit$ 6$\heartsuit$ 10$\spadesuit$ 7$\clubsuit$ & High cards, alternating suits. \\
+\rowcolor{negred} -- & Q$\heartsuit$ 8$\heartsuit$ 2$\diamondsuit$ 10$\diamondsuit$ 9$\diamondsuit$ 4$\clubsuit$ & High spades, alternating colors \\
+\rowcolor{negred} -- & 2$\heartsuit$ 6$\heartsuit$ 4$\clubsuit$ 7$\clubsuit$ 5$\heartsuit$ 4$\spadesuit$ & two pair, alternating colors \\
+\rowcolor{negred} -- & J$\heartsuit$ 5$\diamondsuit$ 2$\spadesuit$ 10$\spadesuit$ 3$\clubsuit$ J$\clubsuit$ & Jacks and tens, \\
+\rowcolor{negred} -- & 6$\heartsuit$ 6$\heartsuit$ A$\clubsuit$ 8$\heartsuit$ 8$\clubsuit$ A$\clubsuit$ & Two pairs, high card. \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Halves\_copy\_suits} (COPY)}
+\textbf{Rule:} Halves have same suit sequence
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 4$\spadesuit$ 7$\spadesuit$ 6$\spadesuit$ 4$\spadesuit$ 10$\spadesuit$ 10$\spadesuit$ & Four of a \\
+\rowcolor{posgreen} + & Q$\spadesuit$ A$\clubsuit$ 10$\heartsuit$ 6$\spadesuit$ 2$\clubsuit$ 8$\heartsuit$ & High card run \\
+\rowcolor{posgreen} + & 8$\heartsuit$ 10$\diamondsuit$ 5$\clubsuit$ 10$\heartsuit$ 2$\diamondsuit$ 6$\clubsuit$ & two pairs, mixed suits \\
+\rowcolor{posgreen} + & 4$\clubsuit$ 7$\diamondsuit$ K$\spadesuit$ A$\clubsuit$ 3$\diamondsuit$ 5$\spadesuit$ & High mixed suits \\
+\rowcolor{posgreen} + & K$\heartsuit$ 3$\diamondsuit$ 8$\diamondsuit$ A$\heartsuit$ 6$\diamondsuit$ 3$\diamondsuit$ & two threes, alternating colors \\
+\rowcolor{negred} -- & 10$\heartsuit$ 3$\heartsuit$ Q$\heartsuit$ Q$\heartsuit$ 9$\spadesuit$ 10$\diamondsuit$ & Two queens, jack \\
+\rowcolor{negred} -- & 5$\heartsuit$ 6$\diamondsuit$ Q$\diamondsuit$ 4$\diamondsuit$ 8$\clubsuit$ Q$\clubsuit$ & Two queens, alternating colors \\
+\rowcolor{negred} -- & A$\diamondsuit$ A$\clubsuit$ 10$\heartsuit$ 4$\spadesuit$ 7$\clubsuit$ 6$\diamondsuit$ & one ace, one \\
+\rowcolor{negred} -- & J$\diamondsuit$ K$\diamondsuit$ 6$\diamondsuit$ 8$\diamondsuit$ 2$\diamondsuit$ 6$\clubsuit$ & two pairs, alternating colors \\
+\rowcolor{negred} -- & K$\clubsuit$ 9$\spadesuit$ 4$\clubsuit$ 9$\heartsuit$ 6$\heartsuit$ 6$\heartsuit$ & Two pairs, red. \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Adj\_same\_rank\_or\_suit} (ADJ)}
+\textbf{Rule:} Neighbors share rank or suit
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & A$\diamondsuit$ J$\diamondsuit$ J$\clubsuit$ 4$\clubsuit$ 10$\clubsuit$ 8$\clubsuit$ & Two jacks, alternating colors. \\
+\rowcolor{posgreen} + & 3$\spadesuit$ 2$\spadesuit$ 7$\spadesuit$ 7$\diamondsuit$ 7$\spadesuit$ 7$\diamondsuit$ & Three of a kind. \\
+\rowcolor{posgreen} + & K$\spadesuit$ K$\heartsuit$ 6$\heartsuit$ 6$\spadesuit$ 2$\spadesuit$ Q$\spadesuit$ & two kings, two \\
+\rowcolor{posgreen} + & 3$\spadesuit$ 2$\spadesuit$ 8$\spadesuit$ 9$\spadesuit$ K$\spadesuit$ 6$\spadesuit$ & All spades; sequential. \\
+\rowcolor{posgreen} + & 8$\clubsuit$ 6$\clubsuit$ 8$\clubsuit$ 3$\clubsuit$ K$\clubsuit$ 6$\clubsuit$ & Two pairs, one club \\
+\rowcolor{negred} -- & 5$\heartsuit$ 6$\diamondsuit$ 5$\clubsuit$ 9$\diamondsuit$ 2$\diamondsuit$ 8$\heartsuit$ & Two pairs, alternating suits \\
+\rowcolor{negred} -- & 4$\clubsuit$ J$\clubsuit$ 5$\diamondsuit$ 10$\heartsuit$ 7$\clubsuit$ 4$\clubsuit$ & Clubs high, alternating colors. \\
+\rowcolor{negred} -- & 4$\heartsuit$ Q$\diamondsuit$ Q$\diamondsuit$ 5$\clubsuit$ J$\spadesuit$ 7$\clubsuit$ & Two Queens. \\
+\rowcolor{negred} -- & 10$\heartsuit$ 5$\clubsuit$ 7$\spadesuit$ A$\diamondsuit$ A$\spadesuit$ 5$\clubsuit$ & two aces, two \\
+\rowcolor{negred} -- & A$\spadesuit$ 10$\heartsuit$ Q$\heartsuit$ 6$\spadesuit$ K$\spadesuit$ 6$\spadesuit$ & Ace, Queen, King, \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Adj\_rank\_gap\_le3} (ADJ)}
+\textbf{Rule:} Neighbors differ by ≤3 ranks
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 5$\clubsuit$ 6$\spadesuit$ 7$\heartsuit$ 5$\clubsuit$ 5$\heartsuit$ 2$\diamondsuit$ & double fives, alternate colors \\
+\rowcolor{posgreen} + & 10$\heartsuit$ 7$\diamondsuit$ 10$\spadesuit$ 10$\spadesuit$ K$\heartsuit$ A$\diamondsuit$ & Four tens, ace \\
+\rowcolor{posgreen} + & 8$\spadesuit$ J$\diamondsuit$ A$\heartsuit$ Q$\heartsuit$ 9$\heartsuit$ 8$\clubsuit$ & High flush with \\
+\rowcolor{posgreen} + & 10$\heartsuit$ 8$\clubsuit$ 8$\spadesuit$ J$\heartsuit$ Q$\clubsuit$ Q$\spadesuit$ & two pairs, alternating colors \\
+\rowcolor{posgreen} + & 3$\heartsuit$ 2$\clubsuit$ 5$\clubsuit$ 7$\clubsuit$ 8$\clubsuit$ 10$\clubsuit$ & All clubs \\
+\rowcolor{negred} -- & 3$\clubsuit$ Q$\spadesuit$ 2$\clubsuit$ 5$\diamondsuit$ 4$\spadesuit$ 5$\spadesuit$ & one pair, unsorted \\
+\rowcolor{negred} -- & K$\clubsuit$ A$\diamondsuit$ 2$\clubsuit$ 3$\heartsuit$ K$\diamondsuit$ J$\spadesuit$ & K♦ A♦ K♣ \\
+\rowcolor{negred} -- & 8$\heartsuit$ K$\clubsuit$ 7$\spadesuit$ 9$\clubsuit$ 6$\diamondsuit$ J$\spadesuit$ & High hearts, alternating colors \\
+\rowcolor{negred} -- & 4$\heartsuit$ J$\heartsuit$ 10$\heartsuit$ K$\diamondsuit$ J$\diamondsuit$ 9$\heartsuit$ & two pairs, same suit \\
+\rowcolor{negred} -- & 4$\clubsuit$ 9$\clubsuit$ 5$\heartsuit$ 8$\diamondsuit$ 6$\diamondsuit$ 3$\heartsuit$ & two pairs, alternating colors \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Only\_one\_odd\_rank} (PARITY)}
+\textbf{Rule:} Exactly one odd rank
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 8$\heartsuit$ 10$\clubsuit$ 10$\diamondsuit$ 4$\heartsuit$ 6$\spadesuit$ 5$\diamondsuit$ & Pair of tens, \\
+\rowcolor{posgreen} + & A$\heartsuit$ 5$\heartsuit$ 4$\spadesuit$ 8$\diamondsuit$ 4$\heartsuit$ A$\spadesuit$ & Two pairs, alternating colors. \\
+\rowcolor{posgreen} + & A$\heartsuit$ Q$\diamondsuit$ 10$\diamondsuit$ 3$\diamondsuit$ 8$\clubsuit$ 4$\diamondsuit$ & Ace high, alternating \\
+\rowcolor{posgreen} + & 10$\diamondsuit$ 7$\heartsuit$ A$\diamondsuit$ 6$\heartsuit$ Q$\heartsuit$ 4$\diamondsuit$ & Black, high cards \\
+\rowcolor{posgreen} + & 4$\heartsuit$ 8$\clubsuit$ 10$\diamondsuit$ 6$\spadesuit$ A$\spadesuit$ 9$\spadesuit$ & High spades, alternating colors \\
+\rowcolor{negred} -- & 9$\heartsuit$ 9$\clubsuit$ 3$\spadesuit$ A$\clubsuit$ K$\heartsuit$ Q$\diamondsuit$ & two nines, ace, \\
+\rowcolor{negred} -- & Q$\clubsuit$ K$\clubsuit$ K$\spadesuit$ 8$\diamondsuit$ 7$\clubsuit$ 6$\heartsuit$ & Two kings, one \\
+\rowcolor{negred} -- & K$\clubsuit$ K$\heartsuit$ 7$\spadesuit$ 4$\spadesuit$ 8$\clubsuit$ 7$\spadesuit$ & Two Kings, Two \\
+\rowcolor{negred} -- & A$\spadesuit$ K$\diamondsuit$ 10$\clubsuit$ J$\diamondsuit$ J$\spadesuit$ Q$\heartsuit$ & Jacks and queens \\
+\rowcolor{negred} -- & K$\spadesuit$ 8$\spadesuit$ 8$\clubsuit$ J$\clubsuit$ A$\spadesuit$ 7$\spadesuit$ & Double spades, high \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Uniform\_rank\_parity} (PARITY)}
+\textbf{Rule:} All ranks same parity
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 10$\heartsuit$ 8$\heartsuit$ 6$\clubsuit$ 10$\clubsuit$ 6$\diamondsuit$ 6$\clubsuit$ & Two pairs, alternating colors. \\
+\rowcolor{posgreen} + & 8$\clubsuit$ 10$\clubsuit$ Q$\clubsuit$ 6$\heartsuit$ 10$\clubsuit$ 6$\clubsuit$ & Clubs dominate; alternating \\
+\rowcolor{posgreen} + & 9$\spadesuit$ 7$\diamondsuit$ 9$\diamondsuit$ 5$\clubsuit$ 3$\clubsuit$ 7$\diamondsuit$ & two pairs, hearts \\
+\rowcolor{posgreen} + & 8$\clubsuit$ Q$\spadesuit$ Q$\diamondsuit$ 10$\spadesuit$ 8$\clubsuit$ Q$\spadesuit$ & two queens, three \\
+\rowcolor{posgreen} + & 8$\clubsuit$ Q$\heartsuit$ 8$\diamondsuit$ 8$\heartsuit$ 8$\diamondsuit$ Q$\spadesuit$ & Four of a \\
+\rowcolor{negred} -- & A$\spadesuit$ 6$\clubsuit$ 2$\diamondsuit$ Q$\spadesuit$ 6$\heartsuit$ J$\clubsuit$ & Ace, double sixes \\
+\rowcolor{negred} -- & K$\spadesuit$ Q$\spadesuit$ 3$\diamondsuit$ K$\spadesuit$ 6$\clubsuit$ 4$\diamondsuit$ & two kings, alternating suits \\
+\rowcolor{negred} -- & 5$\heartsuit$ 10$\spadesuit$ 3$\spadesuit$ 3$\spadesuit$ 9$\diamondsuit$ 7$\heartsuit$ & Two pairs, alternating colors. \\
+\rowcolor{negred} -- & 6$\clubsuit$ 3$\diamondsuit$ 2$\diamondsuit$ J$\clubsuit$ 8$\diamondsuit$ 8$\diamondsuit$ & Two pairs: 8s, Js. \\
+\rowcolor{negred} -- & 9$\clubsuit$ Q$\spadesuit$ 3$\heartsuit$ 6$\diamondsuit$ 7$\clubsuit$ 8$\diamondsuit$ & Random hand \\
+\bottomrule
+\end{longtable}
+
+
+\subsection*{\colorbox{ruleblue}{\strut Halves\_radial\_nonincreasing} (CENTER)}
+\textbf{Rule:} Outward from center, ranks don't go up
+
+\begin{longtable}{C{0.5cm} L{5cm} L{8cm}}
+\toprule
+& \textbf{Hand} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\midrule
+\endhead
+\rowcolor{posgreen} + & 2$\spadesuit$ K$\spadesuit$ A$\spadesuit$ K$\heartsuit$ 9$\clubsuit$ 9$\spadesuit$ & spades, two kings, \\
+\rowcolor{posgreen} + & 5$\diamondsuit$ 6$\heartsuit$ J$\diamondsuit$ J$\clubsuit$ J$\clubsuit$ 3$\clubsuit$ & Jack trio, alternating colors. \\
+\rowcolor{posgreen} + & 2$\diamondsuit$ 7$\clubsuit$ K$\heartsuit$ Q$\diamondsuit$ Q$\diamondsuit$ 6$\clubsuit$ & two queens, alternating colors \\
+\rowcolor{posgreen} + & J$\spadesuit$ J$\clubsuit$ K$\spadesuit$ 6$\diamondsuit$ 3$\heartsuit$ 2$\clubsuit$ & one pair, off \\
+\rowcolor{posgreen} + & 2$\heartsuit$ 8$\spadesuit$ K$\heartsuit$ A$\clubsuit$ 9$\heartsuit$ 8$\heartsuit$ & High pair, alternate colors. \\
+\rowcolor{negred} -- & 3$\spadesuit$ A$\clubsuit$ 3$\diamondsuit$ K$\clubsuit$ 5$\heartsuit$ 2$\spadesuit$ & High card; pair, unsorted. \\
+\rowcolor{negred} -- & 5$\clubsuit$ 4$\heartsuit$ K$\spadesuit$ J$\clubsuit$ J$\spadesuit$ 3$\spadesuit$ & two jacks, alternating colors \\
+\rowcolor{negred} -- & 3$\clubsuit$ 10$\clubsuit$ 10$\clubsuit$ 6$\clubsuit$ J$\diamondsuit$ Q$\diamondsuit$ & two tens, alternating colors \\
+\rowcolor{negred} -- & K$\clubsuit$ 5$\diamondsuit$ 10$\heartsuit$ 4$\spadesuit$ 3$\spadesuit$ 10$\spadesuit$ & Ten high, mixed suits \\
+\rowcolor{negred} -- & 10$\diamondsuit$ K$\heartsuit$ K$\diamondsuit$ Q$\clubsuit$ 4$\diamondsuit$ J$\heartsuit$ & High cards with \\
+\bottomrule
+\end{longtable}
+
+\end{document}

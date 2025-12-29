@@ -494,9 +494,25 @@ class Application(Program):
     COMPARISON WITH ORIGINAL DREAMCODER:
     - Same structure
     - Both have f and x (or f and arg) fields
+
+    OPTIMIZATION:
+    - size(), depth(), and free_indices(0) are cached at construction time
+    - Avoids repeated O(n) tree traversal for each call
     """
     f: Program  # The function
     x: Program  # The argument
+    # Cached values - computed once at construction
+    _cached_size: int = field(init=False, compare=False, hash=False, repr=False)
+    _cached_depth: int = field(init=False, compare=False, hash=False, repr=False)
+    _cached_free_indices_0: frozenset = field(init=False, compare=False, hash=False, repr=False)
+
+    def __post_init__(self):
+        # Use object.__setattr__ to bypass frozen dataclass restrictions
+        object.__setattr__(self, '_cached_size', 1 + self.f.size() + self.x.size())
+        object.__setattr__(self, '_cached_depth', 1 + max(self.f.depth(), self.x.depth()))
+        # For Application at depth=0: union of children's free_indices(0)
+        object.__setattr__(self, '_cached_free_indices_0',
+                          frozenset(self.f.free_indices(0) | self.x.free_indices(0)))
 
     def __str__(self) -> str:
         f_str = str(self.f)
@@ -559,12 +575,15 @@ class Application(Program):
         return ctx.apply(ret_type)
 
     def size(self) -> int:
-        return 1 + self.f.size() + self.x.size()
+        return self._cached_size
 
     def depth(self) -> int:
-        return 1 + max(self.f.depth(), self.x.depth())
+        return self._cached_depth
 
     def free_indices(self, depth: int = 0) -> Set[int]:
+        if depth == 0:
+            # Return cached value (converted to set for API compatibility)
+            return set(self._cached_free_indices_0)
         return self.f.free_indices(depth) | self.x.free_indices(depth)
 
     def shift(self, amount: int, cutoff: int = 0) -> Program:
@@ -667,8 +686,24 @@ class Abstraction(Program):
     COMPARISON WITH ORIGINAL DREAMCODER:
     - Same structure (body field)
     - Both use de Bruijn indices
+
+    OPTIMIZATION:
+    - size(), depth(), and free_indices(0) are cached at construction time
+    - Avoids repeated O(n) tree traversal for each call
     """
     body: Program  # The lambda body
+    # Cached values - computed once at construction
+    _cached_size: int = field(init=False, compare=False, hash=False, repr=False)
+    _cached_depth: int = field(init=False, compare=False, hash=False, repr=False)
+    _cached_free_indices_0: frozenset = field(init=False, compare=False, hash=False, repr=False)
+
+    def __post_init__(self):
+        # Use object.__setattr__ to bypass frozen dataclass restrictions
+        object.__setattr__(self, '_cached_size', 1 + self.body.size())
+        object.__setattr__(self, '_cached_depth', 1 + self.body.depth())
+        # For Abstraction at depth=0: body.free_indices(depth+1) = body.free_indices(1)
+        object.__setattr__(self, '_cached_free_indices_0',
+                          frozenset(self.body.free_indices(1)))
 
     def __str__(self) -> str:
         return f"(λ {self.body})"
@@ -705,12 +740,15 @@ class Abstraction(Program):
         return Arrow(ctx.apply(arg_type), ctx.apply(ret_type))
 
     def size(self) -> int:
-        return 1 + self.body.size()
+        return self._cached_size
 
     def depth(self) -> int:
-        return 1 + self.body.depth()
+        return self._cached_depth
 
     def free_indices(self, depth: int = 0) -> Set[int]:
+        if depth == 0:
+            # Return cached value (converted to set for API compatibility)
+            return set(self._cached_free_indices_0)
         # Inside lambda, depth increases (one more binding)
         return self.body.free_indices(depth + 1)
 
@@ -766,9 +804,20 @@ class Invented(Program):
     - Same concept
     - Original: Can have a type field
     - Ours: Type is inferred from body
+
+    OPTIMIZATION:
+    - free_indices(0) is cached at construction time
     """
     body: Program                 # The abstracted expression
     name: Optional[str] = None    # Optional human-readable name
+    # Cached free_indices(0) - computed once at construction
+    _cached_free_indices_0: frozenset = field(init=False, compare=False, hash=False, repr=False)
+
+    def __post_init__(self):
+        # Use object.__setattr__ to bypass frozen dataclass restrictions
+        # For Invented at depth=0: same as body.free_indices(0)
+        object.__setattr__(self, '_cached_free_indices_0',
+                          frozenset(self.body.free_indices(0)))
 
     def __str__(self) -> str:
         if self.name:
@@ -797,6 +846,9 @@ class Invented(Program):
         return 1
 
     def free_indices(self, depth: int = 0) -> Set[int]:
+        if depth == 0:
+            # Return cached value (converted to set for API compatibility)
+            return set(self._cached_free_indices_0)
         return self.body.free_indices(depth)
 
     def shift(self, amount: int, cutoff: int = 0) -> Program:

@@ -1,0 +1,434 @@
+{
+  "config": {
+    "n_examples": 50,
+    "n_holdout": 20,
+    "hand_size": 6,
+    "enumeration_budget": 50000,
+    "enumeration_timeout": 60.0,
+    "max_depth": 7,
+    "max_cost": 30.0,
+    "keep_top_k": 5,
+    "use_compression": true,
+    "use_recognition": true,
+    "use_dreaming": true,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "recognition_hidden_dim": 128,
+    "recognition_epochs": 10,
+    "recognition_lr": 0.001,
+    "dreams_per_iteration": 30,
+    "dream_temperature": 1.0,
+    "max_iterations": 4,
+    "seed": 42,
+    "device": "cpu"
+  },
+  "summary": {
+    "total_time": 2145.5301728248596,
+    "iterations_run": 4,
+    "tasks_solved": 14,
+    "tasks_total": 22,
+    "final_grammar_size": 79,
+    "total_abstractions": 12,
+    "total_dreams": 90
+  },
+  "learning_curve": [
+    {
+      "iteration": 0,
+      "tasks_solved": 14,
+      "tasks_total": 22,
+      "programs_enumerated": 119749,
+      "partial_programs_explored": 1700578,
+      "wake_time": 658.0519962310791,
+      "new_abstractions": [
+        "#((\u03bb n_unique_ranks $0))",
+        "#((\u03bb all_same_color $0))",
+        "#((\u03bb max_rank $0))"
+      ],
+      "compression_time": 0.002160787582397461,
+      "recognition_loss": 7.667411184310913,
+      "recognition_time": 6.454539060592651,
+      "dreams_generated": 0,
+      "dream_time": 0.0,
+      "grammar_size": 70
+    },
+    {
+      "iteration": 1,
+      "tasks_solved": 14,
+      "tasks_total": 22,
+      "programs_enumerated": 62089,
+      "partial_programs_explored": 1168789,
+      "wake_time": 484.1919369697571,
+      "new_abstractions": [
+        "#((\u03bb has_suit $0))",
+        "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+        "#((\u03bb (\u03bb (\u03bb $1 $2))))"
+      ],
+      "compression_time": 0.0021560192108154297,
+      "recognition_loss": 6.26991753578186,
+      "recognition_time": 6.33787989616394,
+      "dreams_generated": 30,
+      "dream_time": 2.537397861480713,
+      "grammar_size": 73
+    },
+    {
+      "iteration": 2,
+      "tasks_solved": 14,
+      "tasks_total": 22,
+      "programs_enumerated": 48888,
+      "partial_programs_explored": 870325,
+      "wake_time": 484.6749119758606,
+      "new_abstractions": [
+        "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 ($3 $0))))))",
+        "#((\u03bb (\u03bb (\u03bb $1 ($2 $0)))))",
+        "#((\u03bb (\u03bb (\u03bb $1 $2 (n_unique_ranks $0)))))"
+      ],
+      "compression_time": 0.0026760101318359375,
+      "recognition_loss": 6.596684265136719,
+      "recognition_time": 6.402462005615234,
+      "dreams_generated": 30,
+      "dream_time": 3.1875200271606445,
+      "grammar_size": 76
+    },
+    {
+      "iteration": 3,
+      "tasks_solved": 14,
+      "tasks_total": 22,
+      "programs_enumerated": 55219,
+      "partial_programs_explored": 753375,
+      "wake_time": 484.70520877838135,
+      "new_abstractions": [
+        "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+        "#((\u03bb (\u03bb (\u03bb gt $1 $2))))",
+        "#((\u03bb (\u03bb (\u03bb lt $1 ($2 $0)))))"
+      ],
+      "compression_time": 0.002274036407470703,
+      "recognition_loss": 6.7603514909744264,
+      "recognition_time": 6.212502956390381,
+      "dreams_generated": 30,
+      "dream_time": 2.7630670070648193,
+      "grammar_size": 79
+    }
+  ],
+  "task_metrics": {
+    "poker_has_pair": {
+      "task_name": "poker_has_pair",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 3387,
+      "best_program": "(\u03bb le (n_unique_ranks $0) 5)",
+      "description_length": 24.34985136500136
+    },
+    "poker_flush": {
+      "task_name": "poker_flush",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 4,
+      "best_program": "(\u03bb all_same_suit $0)",
+      "description_length": 12.17492568250068
+    },
+    "poker_same_color": {
+      "task_name": "poker_same_color",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 3,
+      "best_program": "(\u03bb all_same_color $0)",
+      "description_length": 12.17492568250068
+    },
+    "poker_two_suits": {
+      "task_name": "poker_two_suits",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 1100,
+      "best_program": "(\u03bb not (all_same_color $0))",
+      "description_length": 18.26238852375102
+    },
+    "poker_high_card": {
+      "task_name": "poker_high_card",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 3401,
+      "best_program": "(\u03bb ge (max_rank $0) 11)",
+      "description_length": 24.34985136500136
+    },
+    "poker_has_ace": {
+      "task_name": "poker_has_ace",
+      "task_family": "poker",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 2134,
+      "best_program": "(\u03bb eq 14 (max_rank $0))",
+      "description_length": 24.34985136500136
+    },
+    "bj_under_21": {
+      "task_name": "bj_under_21",
+      "task_family": "blackjack",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "bj_stand_17": {
+      "task_name": "bj_stand_17",
+      "task_family": "blackjack",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 1867,
+      "best_program": "(\u03bb lt 21 (sum_ranks $0))",
+      "description_length": 24.34985136500136
+    },
+    "bj_sum_even": {
+      "task_name": "bj_sum_even",
+      "task_family": "blackjack",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "rummy_all_different": {
+      "task_name": "rummy_all_different",
+      "task_family": "rummy",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 3626,
+      "best_program": "(\u03bb lt 5 (n_unique_ranks $0))",
+      "description_length": 24.34985136500136
+    },
+    "rummy_three_ranks": {
+      "task_name": "rummy_three_ranks",
+      "task_family": "rummy",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 2839,
+      "best_program": "(\u03bb gt 4 (n_unique_ranks $0))",
+      "description_length": 24.34985136500136
+    },
+    "simple_first_red": {
+      "task_name": "simple_first_red",
+      "task_family": "simple",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "simple_last_black": {
+      "task_name": "simple_last_black",
+      "task_family": "simple",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "simple_ends_suit": {
+      "task_name": "simple_ends_suit",
+      "task_family": "simple",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "simple_ends_color": {
+      "task_name": "simple_ends_color",
+      "task_family": "simple",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "simple_ends_rank": {
+      "task_name": "simple_ends_rank",
+      "task_family": "simple",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "simple_has_spade": {
+      "task_name": "simple_has_spade",
+      "task_family": "simple",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 680,
+      "best_program": "(\u03bb has_suit $0 SPADES)",
+      "description_length": 18.26238852375102
+    },
+    "simple_has_heart": {
+      "task_name": "simple_has_heart",
+      "task_family": "simple",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 681,
+      "best_program": "(\u03bb has_suit $0 HEARTS)",
+      "description_length": 18.26238852375102
+    },
+    "simple_diverse_ranks": {
+      "task_name": "simple_diverse_ranks",
+      "task_family": "simple",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 2905,
+      "best_program": "(\u03bb neq 3 (n_unique_ranks $0))",
+      "description_length": 24.34985136500136
+    },
+    "simple_two_suits": {
+      "task_name": "simple_two_suits",
+      "task_family": "simple",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 2799,
+      "best_program": "(\u03bb gt 3 (n_unique_suits $0))",
+      "description_length": 24.34985136500136
+    },
+    "count_two_red": {
+      "task_name": "count_two_red",
+      "task_family": "counting",
+      "solved": false,
+      "iteration_solved": null,
+      "programs_to_solve": 0,
+      "best_program": null,
+      "description_length": Infinity
+    },
+    "count_more_red": {
+      "task_name": "count_more_red",
+      "task_family": "counting",
+      "solved": true,
+      "iteration_solved": 0,
+      "programs_to_solve": 7620,
+      "best_program": "(\u03bb gt (count_color $0 RED) 3)",
+      "description_length": 30.4373142062517
+    }
+  },
+  "enumeration_stats": {
+    "poker_has_pair": {
+      "programs_complete": 3387,
+      "programs_partial": 64753,
+      "time_seconds": 23.685892820358276,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "poker_flush": {
+      "programs_complete": 4,
+      "programs_partial": 290,
+      "time_seconds": 0.09459137916564941,
+      "iteration": 0,
+      "description_length": 12.17492568250068
+    },
+    "poker_same_color": {
+      "programs_complete": 3,
+      "programs_partial": 31,
+      "time_seconds": 0.010200977325439453,
+      "iteration": 0,
+      "description_length": 12.17492568250068
+    },
+    "poker_two_suits": {
+      "programs_complete": 1100,
+      "programs_partial": 6563,
+      "time_seconds": 2.2567977905273438,
+      "iteration": 0,
+      "description_length": 18.26238852375102
+    },
+    "poker_high_card": {
+      "programs_complete": 3401,
+      "programs_partial": 64853,
+      "time_seconds": 24.031476974487305,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "poker_has_ace": {
+      "programs_complete": 2134,
+      "programs_partial": 14651,
+      "time_seconds": 5.447624921798706,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "bj_stand_17": {
+      "programs_complete": 1867,
+      "programs_partial": 10534,
+      "time_seconds": 3.704016923904419,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "rummy_all_different": {
+      "programs_complete": 3626,
+      "programs_partial": 76731,
+      "time_seconds": 28.92942214012146,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "rummy_three_ranks": {
+      "programs_complete": 2839,
+      "programs_partial": 29810,
+      "time_seconds": 11.248390913009644,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "simple_has_spade": {
+      "programs_complete": 680,
+      "programs_partial": 3685,
+      "time_seconds": 1.2916076183319092,
+      "iteration": 0,
+      "description_length": 18.26238852375102
+    },
+    "simple_has_heart": {
+      "programs_complete": 681,
+      "programs_partial": 3686,
+      "time_seconds": 1.3945190906524658,
+      "iteration": 0,
+      "description_length": 18.26238852375102
+    },
+    "simple_diverse_ranks": {
+      "programs_complete": 2905,
+      "programs_partial": 32173,
+      "time_seconds": 12.24572205543518,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "simple_two_suits": {
+      "programs_complete": 2799,
+      "programs_partial": 27763,
+      "time_seconds": 10.786947965621948,
+      "iteration": 0,
+      "description_length": 24.34985136500136
+    },
+    "count_more_red": {
+      "programs_complete": 7620,
+      "programs_partial": 129591,
+      "time_seconds": 48.27566885948181,
+      "iteration": 0,
+      "description_length": 30.4373142062517
+    }
+  },
+  "library_evolution": [
+    [
+      "#((\u03bb n_unique_ranks $0))",
+      "#((\u03bb all_same_color $0))",
+      "#((\u03bb max_rank $0))"
+    ],
+    [
+      "#((\u03bb has_suit $0))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+      "#((\u03bb (\u03bb (\u03bb $1 $2))))"
+    ],
+    [
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 ($3 $0))))))",
+      "#((\u03bb (\u03bb (\u03bb $1 ($2 $0)))))",
+      "#((\u03bb (\u03bb (\u03bb $1 $2 (n_unique_ranks $0)))))"
+    ],
+    [
+      "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+      "#((\u03bb (\u03bb (\u03bb gt $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb lt $1 ($2 $0)))))"
+    ]
+  ]
+}

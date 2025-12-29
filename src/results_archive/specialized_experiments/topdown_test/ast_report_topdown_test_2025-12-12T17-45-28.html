@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AST-Enriched DreamCoder Report</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --primary: #0f3460;
+            --accent: #e94560;
+            --text: #eaeaea;
+            --muted: #888;
+            --success: #4ade80;
+            --warning: #fbbf24;
+        }
+        body {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 { color: var(--accent); margin-top: 2rem; }
+        h1 { border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .metric {
+            display: inline-block;
+            background: var(--primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .metric .value { font-size: 1.5em; color: var(--accent); }
+        .metric .label { font-size: 0.8em; color: var(--muted); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--primary);
+        }
+        th { background: var(--primary); color: var(--accent); }
+        tr:hover { background: var(--primary); }
+        .solved { color: var(--success); }
+        .unsolved { color: var(--muted); }
+        pre {
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        .pretty-tree {
+            font-family: 'Fira Code', monospace;
+            white-space: pre;
+            background: #0d1117;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            line-height: 1.4;
+        }
+        .prim-chip {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--text);
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin: 2px;
+            font-size: 0.85em;
+        }
+        .bar {
+            height: 20px;
+            background: linear-gradient(90deg, var(--accent), var(--primary));
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+        .stat-row { display: flex; align-items: center; margin: 5px 0; }
+        .stat-label { width: 150px; }
+        .stat-bar { flex: 1; background: var(--surface); border-radius: 4px; }
+        .collapsible {
+            cursor: pointer;
+            padding: 10px;
+            background: var(--primary);
+            border-radius: 4px;
+            margin: 5px 0;
+            user-select: none;
+        }
+        .collapsible:hover { background: #1a4a7e; }
+        .collapsible::before {
+            content: '▶ ';
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .collapsible.active::before {
+            transform: rotate(90deg);
+        }
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0 0 4px 4px;
+            margin-top: -5px;
+            margin-bottom: 10px;
+        }
+        .collapsible.active + .collapsible-content { display: block; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .json-tree {
+            font-size: 0.8em;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .highlight { background: var(--accent); color: white; padding: 2px 4px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <h1>🔬 AST-Enriched DreamCoder Report</h1>
+    <p style="color: var(--muted);">Generated: 2025-12-13 18:11:36</p>
+
+    <div class="card">
+        <h2>📊 Summary</h2>
+        <div>
+            <div class="metric">
+                <div class="value">14/22</div>
+                <div class="label">Tasks Solved</div>
+            </div>
+            <div class="metric">
+                <div class="value">4</div>
+                <div class="label">Iterations</div>
+            </div>
+            <div class="metric">
+                <div class="value">79</div>
+                <div class="label">Grammar Size</div>
+            </div>
+            <div class="metric">
+                <div class="value">12</div>
+                <div class="label">New Abstractions</div>
+            </div>
+            <div class="metric">
+                <div class="value">2145s</div>
+                <div class="label">Total Time</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🧬 Primitive Usage Analysis</h2>
+        <p>How primitives are used across all solved tasks:</p>
+<div style='max-height: 400px; overflow-y: auto;'>
+            <div class="stat-row">
+                <div class="stat-label"><code>n_unique_ranks</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 100.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    4 tasks (29%) · 4 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>gt</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 75.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    3 tasks (21%) · 3 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>3</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 75.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    3 tasks (21%) · 3 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>5</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 50.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    2 tasks (14%) · 2 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>all_same_color</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 50.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    2 tasks (14%) · 2 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>max_rank</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 50.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    2 tasks (14%) · 2 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>lt</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 50.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    2 tasks (14%) · 2 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>has_suit</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 50.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    2 tasks (14%) · 2 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>le</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>all_same_suit</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>not</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>ge</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>11</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>eq</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>14</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>sum_ranks</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>21</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>4</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>SPADES</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>HEARTS</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>neq</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>n_unique_suits</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>count_color</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <div class="stat-label"><code>RED</code></div>
+                <div class="stat-bar">
+                    <div class="bar" style="width: 25.0%"></div>
+                </div>
+                <div style="width: 150px; text-align: right;">
+                    1 tasks (7%) · 1 uses
+                </div>
+            </div>
+</div></div>
+    <div class="card">
+        <h2>🏗️ Program Structure Analysis</h2>
+        <div class="grid">
+
+            <div class="card">
+                <h3>Size Distribution</h3>
+                <div class="metric">
+                    <div class="value">7.1</div>
+                    <div class="label">Average AST Size</div>
+                </div>
+                <div class="metric">
+                    <div class="value">4-10</div>
+                    <div class="label">Range</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Depth Analysis</h3>
+                <div class="metric">
+                    <div class="value">4.1</div>
+                    <div class="label">Avg AST Depth</div>
+                </div>
+                <div class="metric">
+                    <div class="value">1.0</div>
+                    <div class="label">Avg Lambda Depth</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Complexity</h3>
+                <div class="metric">
+                    <div class="value">2.6</div>
+                    <div class="label">Avg Applications</div>
+                </div>
+                <div class="metric">
+                    <div class="value">100%</div>
+                    <div class="label">Use $0 (arg)</div>
+                </div>
+            </div>
+</div></div>
+    <div class="card">
+        <h2>🔍 Individual Solution Analysis</h2>
+        <p>Click on each task to expand detailed AST analysis:</p>
+
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_same_color</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                3 programs ·
+                12.2 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(all_same_color $0)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    Prim:all_same_color
+    Var:$0))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>4</td></tr>
+                <tr><td>AST Depth</td><td>3</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>1</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (1)</h4>
+            <div>
+<span class="prim-chip">all_same_color ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Primitive",
+          "value": "all_same_color"
+        },
+        {
+          "type": "Index",
+          "value": 0
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_flush</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                4 programs ·
+                12.2 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(all_same_suit $0)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    Prim:all_same_suit
+    Var:$0))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>4</td></tr>
+                <tr><td>AST Depth</td><td>3</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>1</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (1)</h4>
+            <div>
+<span class="prim-chip">all_same_suit ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Primitive",
+          "value": "all_same_suit"
+        },
+        {
+          "type": "Index",
+          "value": 0
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>simple_has_spade</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                680 programs ·
+                18.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(has_suit $0 SPADES)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:has_suit
+      Var:$0)
+    Prim:SPADES))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>6</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>2</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (2)</h4>
+            <div>
+<span class="prim-chip">SPADES ×1</span><span class="prim-chip">has_suit ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "has_suit"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "type": "Primitive",
+          "value": "SPADES"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>simple_has_heart</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                681 programs ·
+                18.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(has_suit $0 HEARTS)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:has_suit
+      Var:$0)
+    Prim:HEARTS))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>6</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>2</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (2)</h4>
+            <div>
+<span class="prim-chip">HEARTS ×1</span><span class="prim-chip">has_suit ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "has_suit"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        },
+        {
+          "type": "Primitive",
+          "value": "HEARTS"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_two_suits</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                1100 programs ·
+                18.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(not (all_same_color $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    Prim:not
+    (App
+      Prim:all_same_color
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>6</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>2</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (2)</h4>
+            <div>
+<span class="prim-chip">all_same_color ×1</span><span class="prim-chip">not ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Primitive",
+          "value": "not"
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "all_same_color"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>bj_stand_17</strong>
+            <span style="float: right; color: var(--muted);">
+                blackjack ·
+                1867 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(lt 21 (sum_ranks $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:lt
+      Prim:21)
+    (App
+      Prim:sum_ranks
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">21 ×1</span><span class="prim-chip">lt ×1</span><span class="prim-chip">sum_ranks ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "lt"
+            },
+            {
+              "type": "Primitive",
+              "value": "21"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "sum_ranks"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_has_ace</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                2134 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(eq 14 (max_rank $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:eq
+      Prim:14)
+    (App
+      Prim:max_rank
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">14 ×1</span><span class="prim-chip">eq ×1</span><span class="prim-chip">max_rank ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "eq"
+            },
+            {
+              "type": "Primitive",
+              "value": "14"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "max_rank"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>simple_two_suits</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                2799 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(gt 3 (n_unique_suits $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:gt
+      Prim:3)
+    (App
+      Prim:n_unique_suits
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">3 ×1</span><span class="prim-chip">gt ×1</span><span class="prim-chip">n_unique_suits ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "gt"
+            },
+            {
+              "type": "Primitive",
+              "value": "3"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "n_unique_suits"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>rummy_three_ranks</strong>
+            <span style="float: right; color: var(--muted);">
+                rummy ·
+                2839 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(gt 4 (n_unique_ranks $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:gt
+      Prim:4)
+    (App
+      Prim:n_unique_ranks
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">4 ×1</span><span class="prim-chip">gt ×1</span><span class="prim-chip">n_unique_ranks ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "gt"
+            },
+            {
+              "type": "Primitive",
+              "value": "4"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "n_unique_ranks"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>simple_diverse_ranks</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                2905 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(neq 3 (n_unique_ranks $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:neq
+      Prim:3)
+    (App
+      Prim:n_unique_ranks
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">3 ×1</span><span class="prim-chip">n_unique_ranks ×1</span><span class="prim-chip">neq ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "neq"
+            },
+            {
+              "type": "Primitive",
+              "value": "3"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "n_unique_ranks"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_has_pair</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                3387 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(le (n_unique_ranks $0) 5)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:le
+      (App
+        Prim:n_unique_ranks
+        Var:$0))
+    Prim:5))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>5</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">5 ×1</span><span class="prim-chip">le ×1</span><span class="prim-chip">n_unique_ranks ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "le"
+            },
+            {
+              "type": "Application",
+              "children": [
+                {
+                  "type": "Primitive",
+                  "value": "n_unique_ranks"
+                },
+                {
+                  "type": "Index",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Primitive",
+          "value": "5"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>poker_high_card</strong>
+            <span style="float: right; color: var(--muted);">
+                poker ·
+                3401 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(ge (max_rank $0) 11)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:ge
+      (App
+        Prim:max_rank
+        Var:$0))
+    Prim:11))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>5</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">11 ×1</span><span class="prim-chip">ge ×1</span><span class="prim-chip">max_rank ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "ge"
+            },
+            {
+              "type": "Application",
+              "children": [
+                {
+                  "type": "Primitive",
+                  "value": "max_rank"
+                },
+                {
+                  "type": "Index",
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Primitive",
+          "value": "11"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>rummy_all_different</strong>
+            <span style="float: right; color: var(--muted);">
+                rummy ·
+                3626 programs ·
+                24.3 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(lt 5 (n_unique_ranks $0))</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:lt
+      Prim:5)
+    (App
+      Prim:n_unique_ranks
+      Var:$0)))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>8</td></tr>
+                <tr><td>AST Depth</td><td>4</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>3</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (3)</h4>
+            <div>
+<span class="prim-chip">5 ×1</span><span class="prim-chip">lt ×1</span><span class="prim-chip">n_unique_ranks ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "lt"
+            },
+            {
+              "type": "Primitive",
+              "value": "5"
+            }
+          ]
+        },
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "n_unique_ranks"
+            },
+            {
+              "type": "Index",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="solved">✅</span> <strong>count_more_red</strong>
+            <span style="float: right; color: var(--muted);">
+                counting ·
+                7620 programs ·
+                30.4 bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+
+            <h4>Compact Form</h4>
+            <pre>λ.(gt (count_color $0 RED) 3)</pre>
+
+            <h4>AST Pretty Print</h4>
+            <div class="pretty-tree">(λ
+  (App
+    (App
+      Prim:gt
+      (App
+        (App
+          Prim:count_color
+          Var:$0)
+        Prim:RED))
+    Prim:3))</div>
+
+            <h4>Metrics</h4>
+            <table>
+                <tr><th>Metric</th><th>Value</th></tr>
+                <tr><td>AST Size</td><td>10</td></tr>
+                <tr><td>AST Depth</td><td>6</td></tr>
+                <tr><td>Lambda Depth</td><td>1</td></tr>
+                <tr><td>Application Count</td><td>4</td></tr>
+                <tr><td>Uses Argument ($0)</td><td>Yes</td></tr>
+            </table>
+
+            <h4>Primitives Used (4)</h4>
+            <div>
+<span class="prim-chip">3 ×1</span><span class="prim-chip">RED ×1</span><span class="prim-chip">count_color ×1</span><span class="prim-chip">gt ×1</span>
+            </div>
+
+            <h4>Tree Structure (JSON)</h4>
+            <div class="json-tree">
+                <pre>{
+  "type": "Abstraction",
+  "children": [
+    {
+      "type": "Application",
+      "children": [
+        {
+          "type": "Application",
+          "children": [
+            {
+              "type": "Primitive",
+              "value": "gt"
+            },
+            {
+              "type": "Application",
+              "children": [
+                {
+                  "type": "Application",
+                  "children": [
+                    {
+                      "type": "Primitive",
+                      "value": "count_color"
+                    },
+                    {
+                      "type": "Index",
+                      "value": 0
+                    }
+                  ]
+                },
+                {
+                  "type": "Primitive",
+                  "value": "RED"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Primitive",
+          "value": "3"
+        }
+      ]
+    }
+  ]
+}</pre>
+            </div>
+</div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>bj_under_21</strong>
+            <span style="float: right; color: var(--muted);">
+                blackjack ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>bj_sum_even</strong>
+            <span style="float: right; color: var(--muted);">
+                blackjack ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>simple_first_red</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>simple_last_black</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>simple_ends_suit</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>simple_ends_color</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>simple_ends_rank</strong>
+            <span style="float: right; color: var(--muted);">
+                simple ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div>
+        <div class="collapsible">
+            <span class="unsolved">❌</span> <strong>count_two_red</strong>
+            <span style="float: right; color: var(--muted);">
+                counting ·
+                0 programs ·
+                inf bits
+            </span>
+        </div>
+        <div class="collapsible-content">
+<p style='color: var(--muted);'>Task not solved - no program to analyze.</p></div></div>
+    <div class="card">
+        <h2>📈 Learning Curve</h2>
+        <table>
+            <tr><th>Iteration</th><th>Solved</th><th>Complete Progs</th><th>Partial Progs</th><th>Ratio</th><th>Loss</th></tr>
+
+            <tr>
+                <td>1</td>
+                <td>14/22</td>
+                <td>119,749</td>
+                <td>1,700,578</td>
+                <td>14.2:1</td>
+                <td>7.6674</td>
+            </tr>
+
+            <tr>
+                <td>2</td>
+                <td>14/22</td>
+                <td>62,089</td>
+                <td>1,168,789</td>
+                <td>18.8:1</td>
+                <td>6.2699</td>
+            </tr>
+
+            <tr>
+                <td>3</td>
+                <td>14/22</td>
+                <td>48,888</td>
+                <td>870,325</td>
+                <td>17.8:1</td>
+                <td>6.5967</td>
+            </tr>
+
+            <tr>
+                <td>4</td>
+                <td>14/22</td>
+                <td>55,219</td>
+                <td>753,375</td>
+                <td>13.6:1</td>
+                <td>6.7604</td>
+            </tr>
+</table></div>
+    <div class="card">
+        <h2>📚 Library Evolution</h2>
+        <p>Abstractions learned at each iteration:</p>
+<h4>Iteration 1</h4><ul><li><code>#((λ n_unique_ranks $0))</code></li><li><code>#((λ all_same_color $0))</code></li><li><code>#((λ max_rank $0))</code></li></ul><h4>Iteration 2</h4><ul><li><code>#((λ has_suit $0))</code></li><li><code>#((λ (λ (λ (λ $1 $2 $3)))))</code></li><li><code>#((λ (λ (λ $1 $2))))</code></li></ul><h4>Iteration 3</h4><ul><li><code>#((λ (λ (λ (λ $1 $2 ($3 $0))))))</code></li><li><code>#((λ (λ (λ $1 ($2 $0)))))</code></li><li><code>#((λ (λ (λ $1 $2 (n_unique_ranks $0)))))</code></li></ul><h4>Iteration 4</h4><ul><li><code>#((λ (λ (λ (λ (λ $1 ($2 $3) $4))))))</code></li><li><code>#((λ (λ (λ gt $1 $2))))</code></li><li><code>#((λ (λ (λ lt $1 ($2 $0)))))</code></li></ul></div>
+    <script>
+    // Collapsible functionality using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('collapsible')) {
+            e.target.classList.toggle('active');
+        }
+    });
+    </script>
+</body>
+</html>

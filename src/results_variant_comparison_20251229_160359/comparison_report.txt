@@ -1,0 +1,93 @@
+====================================================================================================
+COMPREHENSIVE RECOGNITION MODEL VARIANT COMPARISON
+====================================================================================================
+
+Generated: 2025-12-29 16:04:03
+Total variants tested: 14
+
+Successful: 14, Failed: 0
+
+====================================================================================================
+MAIN RESULTS TABLE (sorted by Test R@5)
+====================================================================================================
+
+Variant                                  R@5          R@10         MRR          Diversity    Conv.Epoch  
+----------------------------------------------------------------------------------------------------
+enhanced+attention                       0.143±0.02   0.153±0.02   0.297±0.10   0.25         100         
+baseline                                 0.133±0.00   0.133±0.00   0.266±0.09   0.25         100         
+enhanced_card                            0.133±0.00   0.133±0.00   0.305±0.09   0.25         100         
+attention_hand                           0.133±0.00   0.133±0.00   0.304±0.09   0.25         100         
+deepsets_hand                            0.133±0.00   0.133±0.00   0.266±0.14   0.25         100         
+multiscale_hand                          0.133±0.00   0.133±0.00   0.284±0.13   0.25         100         
+multihead_task                           0.133±0.00   0.133±0.00   0.284±0.12   0.25         100         
+focal_loss                               0.133±0.00   0.133±0.00   0.179±0.03   0.25         100         
+embedding_head                           0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+enhanced+attention+embed                 0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+enhanced+attention+embed+focal           0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+enhanced+deepsets+embed                  0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+full_enhanced                            0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+attention+multi+embed+focal              0.000±0.00   0.000±0.00   0.000±0.00   0.00         100         
+
+====================================================================================================
+BEST VARIANTS BY METRIC
+====================================================================================================
+
+Best recall@5: enhanced+attention
+  Value: 0.1433
+
+Best recall@10: enhanced+attention
+  Value: 0.1533
+
+Best mrr: enhanced_card
+  Value: 0.3051
+
+Best prob_ratio: multihead_task
+  Value: 2.7834
+
+Best diversity_ratio: enhanced+attention
+  Value: 0.2500
+
+Best mean_rank (lowest): enhanced+attention
+  Value: 0.0000
+
+Best train_loss (lowest): embedding_head
+  Value: 0.0000
+
+Best convergence_epoch (lowest): enhanced+attention
+  Value: 100.0000
+
+====================================================================================================
+COMPONENT-WISE ANALYSIS
+====================================================================================================
+
+CARD_ENCODER comparison:
+  standard       : R@5=0.100, MRR=0.198 (n=8)
+  enhanced       : R@5=0.046, MRR=0.100 (n=6)
+
+HAND_ENCODER comparison:
+  mean           : R@5=0.107, MRR=0.207 (n=5)
+  attention      : R@5=0.055, MRR=0.120 (n=5)
+  deepsets       : R@5=0.067, MRR=0.133 (n=2)
+  multiscale     : R@5=0.067, MRR=0.142 (n=2)
+
+TASK_ENCODER comparison:
+  standard       : R@5=0.086, MRR=0.173 (n=11)
+  multihead      : R@5=0.044, MRR=0.095 (n=3)
+
+PREDICTION_HEAD comparison:
+  sigmoid        : R@5=0.135, MRR=0.273 (n=8)
+  embedding      : R@5=0.000, MRR=0.000 (n=6)
+
+LOSS comparison:
+  bce            : R@5=0.094, MRR=0.201 (n=10)
+  focal          : R@5=0.033, MRR=0.045 (n=4)
+
+====================================================================================================
+NOTES
+====================================================================================================
+
+1. Results are from 5-fold cross-validation on pre-training rules
+2. Test set is the 45 catalogue rules
+3. ± values indicate standard deviation across folds
+4. Diversity ratio = unique top-5 prediction sets / total tasks
+5. Convergence epoch = epoch where loss stopped improving

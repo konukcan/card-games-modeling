@@ -272,7 +272,7 @@ class TopDownEnumerator:
         pq: List[PriorityItem] = []
 
         # Track seen programs to avoid duplicates
-        seen: Set[str] = set()
+        seen: Set[int] = set()
 
         # Start with a single hole of the request type
         initial_hole = Hole(request_type)
@@ -299,9 +299,9 @@ class TopDownEnumerator:
 
             # Check if complete (no holes)
             if not has_holes(program):
-                prog_str = str(program)
-                if prog_str not in seen:
-                    seen.add(prog_str)
+                prog_hash = hash(program)
+                if prog_hash not in seen:
+                    seen.add(prog_hash)
                     self.programs_enumerated += 1
                     yield (program, -cost)
                 continue
@@ -316,7 +316,7 @@ class TopDownEnumerator:
         program: Program,
         base_cost: float,
         env: List[Type],
-        seen: Set[str]
+        seen: Set[int]
     ) -> None:
         """
         Expand the first hole in a partial program with all valid productions.
@@ -388,8 +388,8 @@ class TopDownEnumerator:
 
             # PREDICTIVE PRUNING: Can this complete within depth?
             if can_complete(new_program):
-                prog_str = str(new_program)
-                if prog_str not in seen:
+                prog_hash = hash(new_program)
+                if prog_hash not in seen:
                     heapq.heappush(pq, PriorityItem(
                         base_cost,
                         new_program,
@@ -425,8 +425,8 @@ class TopDownEnumerator:
             if not can_complete(new_program):
                 continue
 
-            prog_str = str(new_program)
-            if prog_str not in seen:
+            prog_hash = hash(new_program)
+            if prog_hash not in seen:
                 heapq.heappush(pq, PriorityItem(
                     new_cost,
                     new_program,
@@ -444,8 +444,8 @@ class TopDownEnumerator:
             new_program = substitute_hole(program, hole.id, Index(idx))
 
             # Variables are leaves (no holes added), always can complete if depth OK
-            prog_str = str(new_program)
-            if prog_str not in seen:
+            prog_hash = hash(new_program)
+            if prog_hash not in seen:
                 heapq.heappush(pq, PriorityItem(
                     new_cost,
                     new_program,
@@ -525,8 +525,8 @@ class TopDownEnumerator:
         # TWO SEPARATE SEEN SETS (critical for correctness!):
         # - partial_seen: prevents duplicate partials from entering queue
         # - yielded: tracks which complete programs have been returned
-        partial_seen: Set[str] = set()
-        yielded: Set[str] = set()
+        partial_seen: Set[int] = set()
+        yielded: Set[int] = set()
 
         # Start with a single hole of the request type
         initial_hole = Hole(request_type)
@@ -573,9 +573,9 @@ class TopDownEnumerator:
 
             # Check if complete (no holes)
             if not has_holes(program):
-                prog_str = str(program)
-                if prog_str not in yielded:
-                    yielded.add(prog_str)
+                prog_hash = hash(program)
+                if prog_hash not in yielded:
+                    yielded.add(prog_hash)
                     self.programs_enumerated += 1
                     yield (program, -cost)
                 continue
@@ -592,7 +592,7 @@ class TopDownEnumerator:
         program: Program,
         base_cost: float,
         env: List[Type],
-        seen: Set[str],
+        seen: Set[int],
         budget: float
     ) -> None:
         """
@@ -620,9 +620,9 @@ class TopDownEnumerator:
             new_env = [arg_type] + hole_env
 
             # Always push lambdas (they don't add cost)
-            prog_str = str(new_program)
-            if prog_str not in seen:
-                seen.add(prog_str)
+            prog_hash = hash(new_program)
+            if prog_hash not in seen:
+                seen.add(prog_hash)
                 heapq.heappush(pq, PriorityItem(
                     base_cost, new_program, hole_type, new_env
                 ))
@@ -656,9 +656,9 @@ class TopDownEnumerator:
                 if new_program.depth() + min_additional > self.max_depth:
                     continue
 
-            prog_str = str(new_program)
-            if prog_str not in seen:
-                seen.add(prog_str)
+            prog_hash = hash(new_program)
+            if prog_hash not in seen:
+                seen.add(prog_hash)
                 heapq.heappush(pq, PriorityItem(
                     new_cost, new_program, hole_type, hole_env
                 ))
@@ -675,9 +675,9 @@ class TopDownEnumerator:
 
             new_program = substitute_hole(program, hole.id, Index(idx))
 
-            prog_str = str(new_program)
-            if prog_str not in seen:
-                seen.add(prog_str)
+            prog_hash = hash(new_program)
+            if prog_hash not in seen:
+                seen.add(prog_hash)
                 heapq.heappush(pq, PriorityItem(
                     new_cost, new_program, hole_type, hole_env
                 ))
@@ -689,7 +689,7 @@ class TopDownEnumerator:
         upper_bound: float,
         timeout_seconds: float,
         env: List[Type],
-        global_seen: Set[str]
+        global_seen: Set[int]
     ) -> Generator[Tuple[Program, float], None, None]:
         """
         Enumerate programs within a specific cost band.
@@ -706,7 +706,7 @@ class TopDownEnumerator:
         pq: List[PriorityItem] = []
 
         # Local seen set for this band (merged with global at end)
-        band_seen: Set[str] = set()
+        band_seen: Set[int] = set()
 
         # Start with a single hole of the request type
         initial_hole = Hole(request_type)
@@ -734,13 +734,13 @@ class TopDownEnumerator:
 
             # Check if complete (no holes)
             if not has_holes(program):
-                prog_str = str(program)
+                prog_hash = hash(program)
 
                 # Only yield if in THIS band (cost > lower_bound)
                 # AND not seen globally before
-                if cost > lower_bound and prog_str not in global_seen:
-                    global_seen.add(prog_str)
-                    band_seen.add(prog_str)
+                if cost > lower_bound and prog_hash not in global_seen:
+                    global_seen.add(prog_hash)
+                    band_seen.add(prog_hash)
                     self.programs_enumerated += 1
                     yield (program, -cost)
                 continue
@@ -758,8 +758,8 @@ class TopDownEnumerator:
         program: Program,
         base_cost: float,
         env: List[Type],
-        band_seen: Set[str],
-        global_seen: Set[str],
+        band_seen: Set[int],
+        global_seen: Set[int],
         upper_bound: float
     ) -> None:
         """
@@ -790,9 +790,9 @@ class TopDownEnumerator:
             # Only push if we can possibly complete within bounds
             if base_cost <= upper_bound:  # Lambda doesn't add cost
                 new_env = [arg_type] + hole_env
-                prog_str = str(new_program)
-                if prog_str not in band_seen and prog_str not in global_seen:
-                    band_seen.add(prog_str)
+                prog_hash = hash(new_program)
+                if prog_hash not in band_seen and prog_hash not in global_seen:
+                    band_seen.add(prog_hash)
                     heapq.heappush(pq, PriorityItem(
                         base_cost,
                         new_program,
@@ -822,9 +822,9 @@ class TopDownEnumerator:
             if new_program.depth() > self.max_depth:
                 continue
 
-            prog_str = str(new_program)
-            if prog_str not in band_seen and prog_str not in global_seen:
-                band_seen.add(prog_str)
+            prog_hash = hash(new_program)
+            if prog_hash not in band_seen and prog_hash not in global_seen:
+                band_seen.add(prog_hash)
                 heapq.heappush(pq, PriorityItem(
                     new_cost,
                     new_program,
@@ -845,9 +845,9 @@ class TopDownEnumerator:
 
             new_program = substitute_hole(program, hole.id, Index(idx))
 
-            prog_str = str(new_program)
-            if prog_str not in band_seen and prog_str not in global_seen:
-                band_seen.add(prog_str)
+            prog_hash = hash(new_program)
+            if prog_hash not in band_seen and prog_hash not in global_seen:
+                band_seen.add(prog_hash)
                 heapq.heappush(pq, PriorityItem(
                     new_cost,
                     new_program,
@@ -907,7 +907,7 @@ class TopDownEnumerator:
         self._memo_in_progress.clear()
 
         # Track programs already yielded to avoid duplicates
-        yielded: Set[str] = set()
+        yielded: Set[int] = set()
 
         # Iterative cost deepening: enumerate by increasing cost
         cost_step = 1.0  # Granularity of cost levels
@@ -923,9 +923,9 @@ class TopDownEnumerator:
             for prog, cost in self._enumerate_type_at_cost(
                 request_type, env, current_max_cost, depth_limit, start_time, timeout_seconds
             ):
-                prog_str = str(prog)
-                if prog_str not in yielded:
-                    yielded.add(prog_str)
+                prog_hash = hash(prog)
+                if prog_hash not in yielded:
+                    yielded.add(prog_hash)
                     self.programs_enumerated += 1
                     yield (prog, -cost)  # Return log_prob = -cost
 
@@ -1354,7 +1354,7 @@ class Enumerator:
         pq: List[PriorityItem] = []
         self._initialize_queue(pq, request_type, env)
 
-        seen: Set[str] = set()
+        seen: Set[int] = set()
 
         while pq and self.programs_enumerated < self.max_programs:
             if time.time() - start_time > timeout_seconds:
@@ -1371,10 +1371,10 @@ class Enumerator:
             if program.depth() > self.max_depth:
                 continue
 
-            prog_str = str(program)
-            if prog_str in seen:
+            prog_hash = hash(program)
+            if prog_hash in seen:
                 continue
-            seen.add(prog_str)
+            seen.add(prog_hash)
 
             if not has_holes(program):
                 self.programs_enumerated += 1
@@ -1678,7 +1678,7 @@ def enumerate_simple(
     request_type: Type,
     max_depth: int = 4,
     env: List[Type] = None,
-    seen: Set[str] = None
+    seen: Set[int] = None
 ) -> Generator[Tuple[Program, float], None, None]:
     """
     DEPRECATED: Use TopDownEnumerator for new code.
@@ -1709,7 +1709,7 @@ def _enumerate_at_depth(
     request_type: Type,
     depth: int,
     env: List[Type],
-    seen: Set[str]
+    seen: Set[int]
 ) -> Generator[Tuple[Program, float], None, None]:
     """Enumerate programs at exactly the given depth."""
     ctx = TypeContext()
@@ -1723,9 +1723,9 @@ def _enumerate_at_depth(
             seen
         ):
             prog = Abstraction(body)
-            prog_str = str(prog)
-            if prog_str not in seen:
-                seen.add(prog_str)
+            prog_hash = hash(prog)
+            if prog_hash not in seen:
+                seen.add(prog_hash)
                 yield (prog, log_prob)
         return
 
@@ -1736,17 +1736,17 @@ def _enumerate_at_depth(
         var_candidates = grammar.variable_candidates(request_type, ctx, env)
         for idx, log_prob in var_candidates:
             prog = Index(idx)
-            prog_str = str(prog)
-            if prog_str not in seen:
-                seen.add(prog_str)
+            prog_hash = hash(prog)
+            if prog_hash not in seen:
+                seen.add(prog_hash)
                 yield (prog, log_prob)
 
         candidates = grammar.candidates_for_type(request_type, ctx, env)
         for prod, inst_type, log_prob in candidates:
             if not isinstance(inst_type, Arrow):
-                prog_str = str(prod.program)
-                if prog_str not in seen:
-                    seen.add(prog_str)
+                prog_hash = hash(prod.program)
+                if prog_hash not in seen:
+                    seen.add(prog_hash)
                     yield (prod.program, log_prob)
         return
 
@@ -1757,9 +1757,9 @@ def _enumerate_at_depth(
             for filled, arg_log_prob in _fill_arguments_depth(
                 grammar, prod.program, inst_type, depth - 1, env, seen
             ):
-                prog_str = str(filled)
-                if prog_str not in seen:
-                    seen.add(prog_str)
+                prog_hash = hash(filled)
+                if prog_hash not in seen:
+                    seen.add(prog_hash)
                     yield (filled, log_prob + arg_log_prob)
 
 
@@ -1769,7 +1769,7 @@ def _fill_arguments_depth(
     func_type: Arrow,
     remaining_depth: int,
     env: List[Type],
-    seen: Set[str]
+    seen: Set[int]
 ) -> Generator[Tuple[Program, float], None, None]:
     """Fill arguments with depth budget."""
     if remaining_depth < 1:

@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rule Dependency & Search Tree - Interactive</title>
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: #252540;
+            --bg-hover: #2d2d50;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-blue: #7aa2f7;
+            --accent-green: #9ece6a;
+            --accent-yellow: #e0af68;
+            --accent-red: #f7768e;
+            --accent-purple: #bb9af7;
+            --accent-cyan: #7dcfff;
+            --accent-orange: #ff9e64;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        h1 {
+            color: var(--accent-purple);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: var(--bg-card);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+
+        .stat .label {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--accent-blue);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+
+        .controls button:hover {
+            background: var(--accent-blue);
+            color: var(--bg-dark);
+        }
+
+        .controls input {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--accent-purple);
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 250px;
+            font-family: inherit;
+        }
+
+        .tree-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 70vh;
+        }
+
+        .tree-view {
+            padding-left: 0;
+        }
+
+        .tree-node {
+            list-style: none;
+            margin: 2px 0;
+        }
+
+        .node-content {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .node-content:hover {
+            background: var(--bg-hover);
+        }
+
+        .node-content.selected {
+            background: var(--bg-hover);
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .toggle-icon {
+            width: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            flex-shrink: 0;
+        }
+
+        .node-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .node-name {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        .node-badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .node-depth {
+            color: var(--accent-yellow);
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        /* Node type colors */
+        .node-primitive .node-name { color: var(--accent-green); }
+        .node-abstraction .node-name { color: var(--accent-cyan); }
+        .node-rule .node-name { color: var(--accent-purple); }
+
+        .node-primitive .node-icon { color: var(--accent-green); }
+        .node-abstraction .node-icon { color: var(--accent-cyan); }
+        .node-rule .node-icon { color: var(--accent-purple); }
+
+        /* Family badges */
+        .badge-LOCAL { background: #3d5a80; }
+        .badge-COUNT { background: #2a9d8f; }
+        .badge-POSITION { background: #e76f51; }
+        .badge-TOKEN { background: #f4a261; }
+        .badge-PARITY { background: #264653; }
+        .badge-PAL { background: #e9c46a; color: #1a1a2e; }
+        .badge-ALTCLR { background: #2d6a4f; }
+        .badge-HIER { background: #9b2226; }
+        .badge-COPY { background: #005f73; }
+        .badge-SHIFT { background: #ae2012; }
+        .badge-MAP { background: #0a9396; }
+        .badge-ADJ { background: #94d2bd; color: #1a1a2e; }
+        .badge-SCORE { background: #ee9b00; color: #1a1a2e; }
+        .badge-AP { background: #bb3e03; }
+        .badge-LANG { background: #ca6702; }
+        .badge-CENTER { background: #001219; }
+
+        .children {
+            padding-left: 24px;
+            border-left: 1px dashed var(--text-secondary);
+            margin-left: 10px;
+            display: none;
+        }
+
+        .children.expanded {
+            display: block;
+        }
+
+        /* Detail panel */
+        .detail-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 400px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .detail-panel.visible {
+            display: block;
+        }
+
+        .detail-panel h3 {
+            color: var(--accent-cyan);
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-panel .close-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .detail-panel .close-btn:hover {
+            color: var(--accent-red);
+        }
+
+        .detail-section {
+            margin: 15px 0;
+        }
+
+        .detail-section .label {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .detail-section .value {
+            background: #1a1a2e;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .detail-section .value.lambda {
+            color: var(--accent-yellow);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .dep-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .dep-tag {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .dep-tag.primitive {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+        }
+
+        .dep-tag.abstraction {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+        }
+
+        .dep-tag.rule {
+            background: var(--accent-purple);
+            color: var(--bg-dark);
+        }
+
+        .dep-tag:hover {
+            opacity: 0.8;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85em;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.primitive { background: var(--accent-green); }
+        .legend-dot.abstraction { background: var(--accent-cyan); }
+        .legend-dot.rule { background: var(--accent-purple); }
+
+        /* Root selector */
+        .root-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .root-btn {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid transparent;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .root-btn:hover {
+            border-color: var(--accent-purple);
+        }
+
+        .root-btn.active {
+            background: var(--accent-purple);
+            color: var(--bg-dark);
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-card);
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 12px 30px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Search Tree Specific Styles */
+        .search-tree-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 70vh;
+        }
+
+        .search-node {
+            list-style: none;
+            margin: 4px 0;
+        }
+
+        .search-node-content {
+            display: flex;
+            align-items: flex-start;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            gap: 10px;
+        }
+
+        .search-node-content:hover {
+            background: var(--bg-hover);
+        }
+
+        .search-toggle {
+            width: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .search-node-label {
+            flex-grow: 1;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.95em;
+        }
+
+        .search-node-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .search-node-desc {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            font-style: italic;
+        }
+
+        /* Search node types */
+        .search-node-hole .search-node-label {
+            color: var(--accent-yellow);
+        }
+
+        .search-node-abstraction .search-node-label {
+            color: var(--accent-cyan);
+        }
+
+        .search-node-rule .search-node-label {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .search-node-rule .search-node-content {
+            background: rgba(158, 206, 106, 0.1);
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .search-node-dead_end .search-node-label {
+            color: var(--accent-red);
+            opacity: 0.7;
+        }
+
+        .search-node-dead_end .search-node-content {
+            background: rgba(247, 118, 142, 0.08);
+            border-left: 2px dashed var(--accent-red);
+        }
+
+        .search-rule-name {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .search-depth-badge {
+            background: var(--accent-orange);
+            color: var(--bg-dark);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            margin-left: 8px;
+        }
+
+        .search-requires {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .search-requires-tag {
+            background: var(--accent-purple);
+            color: var(--bg-dark);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7em;
+        }
+
+        .search-children {
+            padding-left: 28px;
+            border-left: 2px dashed var(--text-secondary);
+            margin-left: 10px;
+            display: none;
+        }
+
+        .search-children.expanded {
+            display: block;
+        }
+
+        /* Hole placeholder styling */
+        .hole-placeholder {
+            background: rgba(224, 175, 104, 0.2);
+            border: 1px dashed var(--accent-yellow);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .search-legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+
+        .search-legend-sample {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85em;
+        }
+
+        .search-legend-sample.hole {
+            color: var(--accent-yellow);
+            background: rgba(224, 175, 104, 0.15);
+            border: 1px dashed var(--accent-yellow);
+        }
+
+        .search-legend-sample.abstraction {
+            color: var(--accent-cyan);
+            background: rgba(125, 207, 255, 0.15);
+        }
+
+        .search-legend-sample.rule {
+            color: var(--accent-green);
+            background: rgba(158, 206, 106, 0.15);
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .search-intro {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .search-intro code {
+            background: var(--bg-hover);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-yellow);
+        }
+    </style>
+</head>
+<body>
+    <h1>🌳 Rule Dependency & Search Tree</h1>
+    <p class="subtitle">Interactive visualization of program synthesis structure</p>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('dependency')">Dependency Tree</button>
+        <button class="tab-btn" onclick="switchTab('search')">Search Tree</button>
+    </div>
+
+    <!-- Tab 1: Dependency Tree -->
+    <div id="dependency-tab" class="tab-content active">
+        <div class="stats">
+            <div class="stat">
+                <div class="value">76</div>
+                <div class="label">Primitives</div>
+            </div>
+            <div class="stat">
+                <div class="value">19</div>
+                <div class="label">Abstractions</div>
+            </div>
+            <div class="stat">
+                <div class="value">57</div>
+                <div class="label">Rules</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot primitive"></div> Primitive (depth 0)</div>
+            <div class="legend-item"><div class="legend-dot abstraction"></div> Abstraction (depth 2-12)</div>
+            <div class="legend-item"><div class="legend-dot rule"></div> Rule (target)</div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="search" placeholder="Search nodes..." onkeyup="searchNodes()">
+            <button onclick="expandAll()">Expand All</button>
+            <button onclick="collapseAll()">Collapse All</button>
+            <button onclick="showRulesOnly()">Show Rules</button>
+            <button onclick="showAbstractionsOnly()">Show Abstractions</button>
+            <button onclick="showAll()">Show All</button>
+        </div>
+
+        <div class="root-selector" id="rootSelector">
+            <span style="color: var(--text-secondary); margin-right: 10px;">View from:</span>
+            <button class="root-btn active" onclick="setView('rules')">Rules (top-down)</button>
+            <button class="root-btn" onclick="setView('families')">By Family</button>
+            <button class="root-btn" onclick="setView('abstractions')">Key Abstractions</button>
+        </div>
+
+        <div class="tree-container">
+            <ul class="tree-view" id="treeView"></ul>
+        </div>
+    </div>
+
+    <!-- Tab 2: Search Tree -->
+    <div id="search-tab" class="tab-content">
+        <p class="search-intro">
+            This tree shows program synthesis as <strong>hole-filling</strong>. Starting from the root
+            <code>λh. [?:bool]</code> (a function from Hand to Bool), each branch represents a way to
+            fill a typed hole <code>[?:type]</code> with a primitive, abstraction, or further holes.
+            Click on nodes to expand and explore paths to complete rule programs at the leaves.
+        </p>
+
+        <div class="search-legend">
+            <div class="search-legend-item">
+                <span class="search-legend-sample hole">[?:type]</span>
+                <span>Unfilled hole</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample abstraction">abstraction</span>
+                <span>Requires learned abstraction</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample rule">Complete rule</span>
+                <span>Leaf = solved task (57 total)</span>
+            </div>
+            <div class="search-legend-item">
+                <span class="search-legend-sample" style="color: var(--accent-red); opacity: 0.7; border-left: 2px dashed var(--accent-red);">dead end</span>
+                <span>No rule at this path</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="expandSearchAll()">Expand All</button>
+            <button onclick="collapseSearchAll()">Collapse All</button>
+            <button onclick="expandSearchToDepth(2)">Expand 2 Levels</button>
+            <button onclick="expandSearchToDepth(3)">Expand 3 Levels</button>
+        </div>
+
+        <div class="search-tree-container">
+            <ul class="search-tree-view" id="searchTreeView"></ul>
+        </div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+        <button class="close-btn" onclick="closeDetail()">×</button>
+        <h3 id="detailTitle"></h3>
+        <div class="detail-section">
+            <div class="label">Type</div>
+            <div class="value" id="detailType"></div>
+        </div>
+        <div class="detail-section">
+            <div class="label">Description</div>
+            <div class="value" id="detailDesc"></div>
+        </div>
+        <div class="detail-section">
+            <div class="label">Lambda Expression</div>
+            <div class="value lambda" id="detailLambda"></div>
+        </div>
+        <div class="detail-section">
+            <div class="label">Depth</div>
+            <div class="value" id="detailDepth"></div>
+        </div>
+        <div class="detail-section" id="childrenSection">
+            <div class="label">Dependencies (children)</div>
+            <div class="dep-list" id="detailChildren"></div>
+        </div>
+        <div class="detail-section" id="parentsSection">
+            <div class="label">Used by (parents)</div>
+            <div class="dep-list" id="detailParents"></div>
+        </div>
+    </div>
+
+    <script>
+        const treeData = {"CLUBS": {"id": "CLUBS", "name": "CLUBS", "type": "primitive", "depth": 0, "definition": "Suit.CLUBS", "description": "constant primitive", "family": "", "children": [], "parents": ["suit_cycle_m1", "suit_cycle_m2", "Half_or_more_same_suit", "Exactly_one_club", "Well_formed_brackets_by_suit"]}, "DIAMONDS": {"id": "DIAMONDS", "name": "DIAMONDS", "type": "primitive", "depth": 0, "definition": "Suit.DIAMONDS", "description": "constant primitive", "family": "", "children": [], "parents": ["get_altcolor1", "suit_cycle_m1", "suit_cycle_m2", "Half_or_more_same_suit", "Has_6_of_Diamonds", "Well_formed_brackets_by_suit"]}, "HEARTS": {"id": "HEARTS", "name": "HEARTS", "type": "primitive", "depth": 0, "definition": "Suit.HEARTS", "description": "constant primitive", "family": "", "children": [], "parents": ["get_altcolor2", "suit_cycle_m1", "suit_cycle_m2", "S_before_H", "Half_or_more_same_suit", "Halves_hearts_presence_equal", "Score_threshold_Rstar", "Well_formed_brackets_by_suit"]}, "SPADES": {"id": "SPADES", "name": "SPADES", "type": "primitive", "depth": 0, "definition": "Suit.SPADES", "description": "constant primitive", "family": "", "children": [], "parents": ["get_altcolor1", "get_altcolor2", "suit_cycle_m1", "suit_cycle_m2", "S_before_H", "Half_or_more_same_suit", "Has_Ace_of_Spades", "Well_formed_brackets_by_suit"]}, "RED": {"id": "RED", "name": "RED", "type": "primitive", "depth": 0, "definition": "Color.RED", "description": "constant primitive", "family": "", "children": [], "parents": []}, "BLACK": {"id": "BLACK", "name": "BLACK", "type": "primitive", "depth": 0, "definition": "Color.BLACK", "description": "constant primitive", "family": "", "children": [], "parents": []}, "true": {"id": "true", "name": "true", "type": "primitive", "depth": 0, "definition": "True", "description": "constant primitive", "family": "", "children": [], "parents": []}, "false": {"id": "false", "name": "false", "type": "primitive", "depth": 0, "definition": "False", "description": "constant primitive", "family": "", "children": [], "parents": []}, "0": {"id": "0", "name": "0", "type": "primitive", "depth": 0, "definition": "0", "description": "constant primitive", "family": "", "children": [], "parents": ["abs", "get_altcolor1", "get_altcolor2", "bracket_match"]}, "1": {"id": "1", "name": "1", "type": "primitive", "depth": 0, "definition": "1", "description": "constant primitive", "family": "", "children": [], "parents": ["get_altcolor1", "get_altcolor2", "uniform_by", "is_sorted_by", "bracket_match", "Exactly_one_club", "Only_one_odd_rank", "Halves_AP_step1_equal", "Halves_AP_len2_step1_equal"]}, "2": {"id": "2", "name": "2", "type": "primitive", "depth": 0, "definition": "2", "description": "constant primitive", "family": "", "children": [], "parents": ["get_parity", "Exactly_two_suits", "Pos3_is_JQK", "Pos4_is_2_5_7", "Shift_half_plus_two", "Shift2_plus3", "Step2_back_map_M1", "Step2_back_map_M2", "Skip2_same_rank_or_suit", "AP_len3_step2_anywhere", "AP_len4_step2_anywhere", "Even_opens_next_closes", "Odd_opens_next_closes", "Global_radial_no_dominance"]}, "3": {"id": "3", "name": "3", "type": "primitive", "depth": 0, "definition": "3", "description": "constant primitive", "family": "", "children": [], "parents": ["At_most_three_suits", "Pos4_is_2_5_7", "Shift2_plus3", "Adj_rank_gap_le3", "Score_threshold_Rstar"]}, "4": {"id": "4", "name": "4", "type": "primitive", "depth": 0, "definition": "4", "description": "constant primitive", "family": "", "children": [], "parents": ["AP_len4_step2_anywhere"]}, "5": {"id": "5", "name": "5", "type": "primitive", "depth": 0, "definition": "5", "description": "constant primitive", "family": "", "children": [], "parents": ["Pos4_is_2_5_7"]}, "10": {"id": "10", "name": "10", "type": "primitive", "depth": 0, "definition": "10", "description": "constant primitive", "family": "", "children": [], "parents": ["Score_threshold_Rstar"]}, "11": {"id": "11", "name": "11", "type": "primitive", "depth": 0, "definition": "11", "description": "constant primitive", "family": "", "children": [], "parents": ["Pos3_is_JQK"]}, "12": {"id": "12", "name": "12", "type": "primitive", "depth": 0, "definition": "12", "description": "constant primitive", "family": "", "children": [], "parents": ["Pos3_is_JQK"]}, "13": {"id": "13", "name": "13", "type": "primitive", "depth": 0, "definition": "13", "description": "constant primitive", "family": "", "children": [], "parents": ["Pos3_is_JQK"]}, "14": {"id": "14", "name": "14", "type": "primitive", "depth": 0, "definition": "14", "description": "constant primitive", "family": "", "children": [], "parents": ["Has_Ace_of_Spades"]}, "17": {"id": "17", "name": "17", "type": "primitive", "depth": 0, "definition": "17", "description": "constant primitive", "family": "", "children": [], "parents": []}, "21": {"id": "21", "name": "21", "type": "primitive", "depth": 0, "definition": "21", "description": "constant primitive", "family": "", "children": [], "parents": []}, "get_suit": {"id": "get_suit", "name": "get_suit", "type": "primitive", "depth": 0, "definition": "\u03bbc. c.suit", "description": "accessor primitive", "family": "", "children": [], "parents": ["get_altcolor1", "get_altcolor2", "S_before_H", "Ends_same_suit", "Has_Ace_of_Spades", "Has_6_of_Diamonds", "Suits_palindrome", "Halves_copy_suits", "Halves_same_suit_set", "Half_map_samepos_M1", "Half_map_samepos_M2", "Step2_back_map_M1", "Step2_back_map_M2", "Adj_same_or_map_M1", "Adj_same_or_map_M2", "Adj_same_rank_or_suit", "Skip2_same_rank_or_suit", "Well_formed_brackets_by_suit"]}, "get_rank": {"id": "get_rank", "name": "get_rank", "type": "primitive", "depth": 0, "definition": "\u03bbc. c.rank", "description": "accessor primitive", "family": "", "children": [], "parents": ["Has_pair_ranks", "Ranks_palindrome", "Halves_copy_ranks", "Adj_same_rank_or_suit", "Skip2_same_rank_or_suit"]}, "rank_val": {"id": "rank_val", "name": "rank_val", "type": "primitive", "depth": 0, "definition": "\u03bbc. RANK_VALUES[c.rank]", "description": "accessor primitive", "family": "", "children": [], "parents": ["get_parity", "has_AP", "Sorted_by_rank", "Pos3_is_JQK", "Pos4_is_2_5_7", "Has_Ace_of_Spades", "Has_6_of_Diamonds", "Halves_AP_step1_equal", "Shift_half_plus_two", "Shift2_plus3", "Shift_half_ge", "Adj_rank_gap_le3", "Even_opens_next_closes", "Odd_opens_next_closes", "Halves_radial_nonincreasing", "Global_radial_no_dominance"]}, "get_color": {"id": "get_color", "name": "get_color", "type": "primitive", "depth": 0, "definition": "\u03bbc. card_color(c)", "description": "accessor primitive", "family": "", "children": [], "parents": ["Ends_same_color", "Colors_palindrome", "Halves_uniform_color_equal", "Halves_copy_colors"]}, "head": {"id": "head", "name": "head", "type": "primitive", "depth": 0, "definition": "\u03bbxs. xs[0]", "description": "position primitive", "family": "", "children": [], "parents": ["terminals_equal_by"]}, "last": {"id": "last", "name": "last", "type": "primitive", "depth": 0, "definition": "\u03bbxs. xs[-1]", "description": "position primitive", "family": "", "children": [], "parents": ["terminals_equal_by"]}, "at": {"id": "at", "name": "at", "type": "primitive", "depth": 0, "definition": "\u03bbxs.\u03bbi. xs[i]", "description": "position primitive", "family": "", "children": [], "parents": ["Pos3_is_JQK", "Pos4_is_2_5_7"]}, "length": {"id": "length", "name": "length", "type": "primitive", "depth": 0, "definition": "\u03bbxs. len(xs)", "description": "position primitive", "family": "", "children": [], "parents": ["uniform_by", "shifted_pairs", "Has_pair_ranks", "Only_one_odd_rank", "Half_sum_diff_geN", "Global_radial_no_dominance"]}, "reverse": {"id": "reverse", "name": "reverse", "type": "primitive", "depth": 0, "definition": "\u03bbxs. reversed(xs)", "description": "position primitive", "family": "", "children": [], "parents": ["is_palindrome_by", "Halves_radial_nonincreasing"]}, "take": {"id": "take", "name": "take", "type": "primitive", "depth": 0, "definition": "\u03bbn.\u03bbxs. xs[:n]", "description": "list primitive", "family": "", "children": [], "parents": ["first_half", "shifted_pairs"]}, "drop": {"id": "drop", "name": "drop", "type": "primitive", "depth": 0, "definition": "\u03bbn.\u03bbxs. xs[n:]", "description": "list primitive", "family": "", "children": [], "parents": ["second_half", "is_sorted_by", "shifted_pairs"]}, "zip_with": {"id": "zip_with", "name": "zip_with", "type": "primitive", "depth": 0, "definition": "\u03bbf.\u03bbxs.\u03bbys. [f(x)(y) for x,y in zip(xs,ys)]", "description": "list primitive", "family": "", "children": [], "parents": ["lists_equal", "is_palindrome_by", "is_sorted_by", "shifted_pairs"]}, "adjacent_pairs": {"id": "adjacent_pairs", "name": "adjacent_pairs", "type": "primitive", "depth": 0, "definition": "\u03bbxs. [[xs[i],xs[i+1]] for i in range(len(xs)-1)]", "description": "list primitive", "family": "", "children": [], "parents": ["Adj_same_or_map_M1", "Adj_same_or_map_M2", "Adj_same_rank_or_suit", "Adj_rank_gap_le3"]}, "half_len": {"id": "half_len", "name": "half_len", "type": "primitive", "depth": 0, "definition": "\u03bbxs. len(xs)//2", "description": "list primitive", "family": "", "children": [], "parents": ["first_half", "second_half", "Half_or_more_same_suit", "Shift_half_plus_two", "Shift_half_ge", "Half_map_samepos_M1", "Half_map_samepos_M2"]}, "cons": {"id": "cons", "name": "cons", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bbxs. [x] + xs", "description": "list primitive", "family": "", "children": [], "parents": []}, "empty": {"id": "empty", "name": "empty", "type": "primitive", "depth": 0, "definition": "[]", "description": "list primitive", "family": "", "children": [], "parents": []}, "tail": {"id": "tail", "name": "tail", "type": "primitive", "depth": 0, "definition": "\u03bbxs. xs[1:]", "description": "list primitive", "family": "", "children": [], "parents": []}, "is_empty": {"id": "is_empty", "name": "is_empty", "type": "primitive", "depth": 0, "definition": "\u03bbxs. len(xs) == 0", "description": "list primitive", "family": "", "children": [], "parents": []}, "has_suit": {"id": "has_suit", "name": "has_suit", "type": "primitive", "depth": 0, "definition": "\u03bbh.\u03bbs. any(c.suit == s for c in h)", "description": "query primitive", "family": "", "children": [], "parents": ["Halves_hearts_presence_equal"]}, "has_color": {"id": "has_color", "name": "has_color", "type": "primitive", "depth": 0, "definition": "\u03bbh.\u03bbc. any(card_color(x) == c for x in h)", "description": "query primitive", "family": "", "children": [], "parents": []}, "count_suit": {"id": "count_suit", "name": "count_suit", "type": "primitive", "depth": 0, "definition": "\u03bbh.\u03bbs. sum(1 for c in h if c.suit == s)", "description": "query primitive", "family": "", "children": [], "parents": ["Half_or_more_same_suit", "Exactly_one_club", "Score_threshold_Rstar"]}, "count_color": {"id": "count_color", "name": "count_color", "type": "primitive", "depth": 0, "definition": "\u03bbh.\u03bbc. sum(1 for x in h if card_color(x) == c)", "description": "query primitive", "family": "", "children": [], "parents": []}, "all_same_suit": {"id": "all_same_suit", "name": "all_same_suit", "type": "primitive", "depth": 0, "definition": "\u03bbh. len(set(c.suit for c in h)) == 1", "description": "query primitive", "family": "", "children": [], "parents": []}, "all_same_color": {"id": "all_same_color", "name": "all_same_color", "type": "primitive", "depth": 0, "definition": "\u03bbh. len(set(card_color(c) for c in h)) == 1", "description": "query primitive", "family": "", "children": [], "parents": ["Uniform_color"]}, "n_unique_suits": {"id": "n_unique_suits", "name": "n_unique_suits", "type": "primitive", "depth": 0, "definition": "\u03bbh. len(set(c.suit for c in h))", "description": "query primitive", "family": "", "children": [], "parents": ["Exactly_two_suits", "At_most_three_suits"]}, "n_unique_ranks": {"id": "n_unique_ranks", "name": "n_unique_ranks", "type": "primitive", "depth": 0, "definition": "\u03bbh. len(set(c.rank for c in h))", "description": "query primitive", "family": "", "children": [], "parents": []}, "n_unique_colors": {"id": "n_unique_colors", "name": "n_unique_colors", "type": "primitive", "depth": 0, "definition": "\u03bbh. len(set(card_color(c) for c in h))", "description": "query primitive", "family": "", "children": [], "parents": []}, "sum_ranks": {"id": "sum_ranks", "name": "sum_ranks", "type": "primitive", "depth": 0, "definition": "\u03bbh. sum(RANK_VALUES[c.rank] for c in h)", "description": "aggregate primitive", "family": "", "children": [], "parents": ["Score_threshold_Rstar", "Half_sum_diff_geN", "Half_sum_one_side_ge_2x_other"]}, "max_rank": {"id": "max_rank", "name": "max_rank", "type": "primitive", "depth": 0, "definition": "\u03bbh. max(RANK_VALUES[c.rank] for c in h)", "description": "aggregate primitive", "family": "", "children": [], "parents": []}, "min_rank": {"id": "min_rank", "name": "min_rank", "type": "primitive", "depth": 0, "definition": "\u03bbh. min(RANK_VALUES[c.rank] for c in h)", "description": "aggregate primitive", "family": "", "children": [], "parents": []}, "eq": {"id": "eq", "name": "eq", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x == y", "description": "comparison primitive", "family": "", "children": [], "parents": ["get_altcolor1", "get_altcolor2", "terminals_equal_by", "uniform_by", "lists_equal", "is_palindrome_by", "halves_property_equal", "halves_set_equal_by", "suit_cycle_m1", "suit_cycle_m2", "has_AP", "S_before_H", "Exactly_two_suits", "Exactly_one_club", "Pos3_is_JQK", "Pos4_is_2_5_7", "Has_Ace_of_Spades", "Has_6_of_Diamonds", "Only_one_odd_rank", "Halves_hearts_presence_equal", "Shift_half_plus_two", "Shift2_plus3", "Half_map_samepos_M1", "Half_map_samepos_M2", "Step2_back_map_M1", "Step2_back_map_M2", "Adj_same_or_map_M1", "Adj_same_or_map_M2", "Adj_same_rank_or_suit", "Skip2_same_rank_or_suit"]}, "neq": {"id": "neq", "name": "neq", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x != y", "description": "comparison primitive", "family": "", "children": [], "parents": []}, "lt": {"id": "lt", "name": "lt", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x < y", "description": "comparison primitive", "family": "", "children": [], "parents": ["abs", "Has_pair_ranks"]}, "le": {"id": "le", "name": "le", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x <= y", "description": "comparison primitive", "family": "", "children": [], "parents": ["is_sorted_by", "At_most_three_suits", "Adj_rank_gap_le3", "Global_radial_no_dominance"]}, "gt": {"id": "gt", "name": "gt", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x > y", "description": "comparison primitive", "family": "", "children": [], "parents": ["Global_radial_no_dominance"]}, "ge": {"id": "ge", "name": "ge", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x >= y", "description": "comparison primitive", "family": "", "children": [], "parents": ["bracket_match", "Half_or_more_same_suit", "Shift_half_ge", "Score_threshold_Rstar", "Half_sum_diff_geN", "Half_sum_one_side_ge_2x_other"]}, "and": {"id": "and", "name": "and", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x and y", "description": "boolean primitive", "family": "", "children": [], "parents": ["bracket_match", "S_before_H", "Has_Ace_of_Spades", "Has_6_of_Diamonds", "Halves_radial_nonincreasing", "Global_radial_no_dominance"]}, "or": {"id": "or", "name": "or", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x or y", "description": "boolean primitive", "family": "", "children": [], "parents": ["get_altcolor1", "get_altcolor2", "S_before_H", "Pos3_is_JQK", "Pos4_is_2_5_7", "Adj_same_or_map_M1", "Adj_same_or_map_M2", "Adj_same_rank_or_suit", "Skip2_same_rank_or_suit", "Half_sum_one_side_ge_2x_other"]}, "not": {"id": "not", "name": "not", "type": "primitive", "depth": 0, "definition": "\u03bbx. not x", "description": "boolean primitive", "family": "", "children": [], "parents": []}, "if": {"id": "if", "name": "if", "type": "primitive", "depth": 0, "definition": "\u03bbc.\u03bbt.\u03bbe. t if c else e", "description": "boolean primitive", "family": "", "children": [], "parents": ["abs", "get_altcolor1", "get_altcolor2", "suit_cycle_m1", "suit_cycle_m2", "bracket_match", "Score_threshold_Rstar", "Global_radial_no_dominance"]}, "map": {"id": "map", "name": "map", "type": "primitive", "depth": 0, "definition": "\u03bbf.\u03bbxs. [f(x) for x in xs]", "description": "higher primitive", "family": "", "children": [], "parents": ["uniform_by", "is_palindrome_by", "is_sorted_by", "halves_equal_by", "halves_set_equal_by", "has_AP", "Has_pair_ranks"]}, "filter": {"id": "filter", "name": "filter", "type": "primitive", "depth": 0, "definition": "\u03bbp.\u03bbxs. [x for x in xs if p(x)]", "description": "higher primitive", "family": "", "children": [], "parents": ["has_AP", "Only_one_odd_rank"]}, "all": {"id": "all", "name": "all", "type": "primitive", "depth": 0, "definition": "\u03bbp.\u03bbxs. all(p(x) for x in xs)", "description": "higher primitive", "family": "", "children": [], "parents": ["Shift_half_plus_two", "Shift2_plus3", "Shift_half_ge", "Half_map_samepos_M1", "Half_map_samepos_M2", "Step2_back_map_M1", "Step2_back_map_M2", "Adj_same_or_map_M1", "Adj_same_or_map_M2", "Adj_same_rank_or_suit", "Skip2_same_rank_or_suit", "Adj_rank_gap_le3", "Global_radial_no_dominance"]}, "any": {"id": "any", "name": "any", "type": "primitive", "depth": 0, "definition": "\u03bbp.\u03bbxs. any(p(x) for x in xs)", "description": "higher primitive", "family": "", "children": [], "parents": ["Half_or_more_same_suit", "Has_Ace_of_Spades", "Has_6_of_Diamonds", "Halves_AP_len2_step1_equal"]}, "unique": {"id": "unique", "name": "unique", "type": "primitive", "depth": 0, "definition": "\u03bbxs. list(dict.fromkeys(xs))", "description": "higher primitive", "family": "", "children": [], "parents": ["uniform_by", "halves_set_equal_by", "has_AP", "Has_pair_ranks"]}, "fold": {"id": "fold", "name": "fold", "type": "primitive", "depth": 0, "definition": "\u03bbf.\u03bbz.\u03bbxs. reduce(f, xs, z)", "description": "higher primitive", "family": "", "children": [], "parents": ["bracket_match", "has_AP", "S_before_H", "Global_radial_no_dominance"]}, "foldr": {"id": "foldr", "name": "foldr", "type": "primitive", "depth": 0, "definition": "\u03bbf.\u03bbz.\u03bbxs. reduce(f, reversed(xs), z)", "description": "higher primitive", "family": "", "children": [], "parents": []}, "pair": {"id": "pair", "name": "pair", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. [x, y]", "description": "state primitive", "family": "", "children": [], "parents": ["shifted_pairs", "bracket_match", "S_before_H"]}, "fst": {"id": "fst", "name": "fst", "type": "primitive", "depth": 0, "definition": "\u03bbp. p[0]", "description": "state primitive", "family": "", "children": [], "parents": ["bracket_match", "Shift_half_plus_two", "Shift_half_ge", "Half_map_samepos_M1", "Half_map_samepos_M2", "Adj_same_rank_or_suit"]}, "snd": {"id": "snd", "name": "snd", "type": "primitive", "depth": 0, "definition": "\u03bbp. p[1]", "description": "state primitive", "family": "", "children": [], "parents": ["bracket_match", "Shift_half_plus_two", "Shift_half_ge", "Half_map_samepos_M1", "Half_map_samepos_M2", "Adj_same_rank_or_suit"]}, "all_true": {"id": "all_true", "name": "all_true", "type": "primitive", "depth": 0, "definition": "\u03bbxs. all(xs)", "description": "bridge primitive", "family": "", "children": [], "parents": ["lists_equal", "is_palindrome_by", "is_sorted_by"]}, "any_true": {"id": "any_true", "name": "any_true", "type": "primitive", "depth": 0, "definition": "\u03bbxs. any(xs)", "description": "bridge primitive", "family": "", "children": [], "parents": []}, "+": {"id": "+", "name": "+", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x + y", "description": "arithmetic primitive", "family": "", "children": [], "parents": ["bracket_match", "Score_threshold_Rstar", "Half_sum_one_side_ge_2x_other"]}, "-": {"id": "-", "name": "-", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x - y", "description": "arithmetic primitive", "family": "", "children": [], "parents": ["abs", "shifted_pairs", "bracket_match", "has_AP", "Halves_AP_step1_equal", "Halves_AP_len2_step1_equal", "Shift_half_plus_two", "Shift2_plus3", "Adj_rank_gap_le3", "Half_sum_diff_geN", "Global_radial_no_dominance"]}, "mod": {"id": "mod", "name": "mod", "type": "primitive", "depth": 0, "definition": "\u03bbx.\u03bby. x % y", "description": "arithmetic primitive", "family": "", "children": [], "parents": ["get_parity", "Even_opens_next_closes", "Odd_opens_next_closes"]}, "get_parity": {"id": "get_parity", "name": "get_parity", "type": "abstraction", "depth": 3, "definition": "\u03bbc. mod (rank_val c) 2", "description": "Parity of card rank (0=even, 1=odd)", "family": "", "children": ["rank_val", "mod", "2"], "parents": ["Only_one_odd_rank", "Uniform_rank_parity", "Halves_uniform_parity_equal", "Even_opens_next_closes", "Odd_opens_next_closes"]}, "first_half": {"id": "first_half", "name": "first_half", "type": "abstraction", "depth": 4, "definition": "\u03bbh. take (half_len h) h", "description": "First half of a hand", "family": "", "children": ["take", "half_len"], "parents": ["halves_equal_by", "halves_property_equal", "halves_set_equal_by", "Halves_hearts_presence_equal", "Halves_AP_len3_any_equal", "Halves_AP_len2_step1_equal", "Half_sum_diff_geN", "Half_sum_one_side_ge_2x_other", "Halves_radial_nonincreasing"]}, "second_half": {"id": "second_half", "name": "second_half", "type": "abstraction", "depth": 4, "definition": "\u03bbh. drop (half_len h) h", "description": "Second half of a hand", "family": "", "children": ["drop", "half_len"], "parents": ["halves_equal_by", "halves_property_equal", "halves_set_equal_by", "Halves_hearts_presence_equal", "Halves_AP_len3_any_equal", "Halves_AP_len2_step1_equal", "Half_sum_diff_geN", "Half_sum_one_side_ge_2x_other", "Halves_radial_nonincreasing"]}, "abs": {"id": "abs", "name": "abs", "type": "abstraction", "depth": 5, "definition": "\u03bbx. if (lt x 0) (- 0 x) x", "description": "Absolute value", "family": "", "children": ["if", "lt", "-", "0"], "parents": ["Halves_AP_len2_step1_equal", "Adj_rank_gap_le3", "Global_radial_no_dominance"]}, "get_altcolor1": {"id": "get_altcolor1", "name": "get_altcolor1", "type": "abstraction", "depth": 6, "definition": "\u03bbc. if (or (eq (get_suit c) SPADES) (eq (get_suit c) DIAMONDS)) 0 1", "description": "Pointy (\u2660\u2666) vs Round (\u2665\u2663)", "family": "", "children": ["if", "or", "eq", "get_suit", "SPADES", "DIAMONDS", "0", "1"], "parents": ["AltColor1_palindrome", "Ends_same_altcolor1", "Halves_copy_altcolor1"]}, "get_altcolor2": {"id": "get_altcolor2", "name": "get_altcolor2", "type": "abstraction", "depth": 6, "definition": "\u03bbc. if (or (eq (get_suit c) SPADES) (eq (get_suit c) HEARTS)) 0 1", "description": "SH vs DC grouping", "family": "", "children": ["if", "or", "eq", "get_suit", "SPADES", "HEARTS", "0", "1"], "parents": ["AltColor2_palindrome", "Halves_copy_altcolor2"]}, "terminals_equal_by": {"id": "terminals_equal_by", "name": "terminals_equal_by", "type": "abstraction", "depth": 5, "definition": "\u03bbf.\u03bbh. eq (f (head h)) (f (last h))", "description": "First and last share property f", "family": "", "children": ["eq", "head", "last"], "parents": ["Ends_same_suit", "Ends_same_color", "Ends_same_altcolor1"]}, "uniform_by": {"id": "uniform_by", "name": "uniform_by", "type": "abstraction", "depth": 6, "definition": "\u03bbf.\u03bbh. eq 1 (length (unique (map f h)))", "description": "All elements have same value under f", "family": "", "children": ["eq", "1", "length", "unique", "map"], "parents": ["Uniform_rank_parity", "Halves_uniform_color_equal", "Halves_uniform_parity_equal"]}, "lists_equal": {"id": "lists_equal", "name": "lists_equal", "type": "abstraction", "depth": 5, "definition": "\u03bbxs.\u03bbys. all_true (zip_with eq xs ys)", "description": "Element-wise list equality", "family": "", "children": ["all_true", "zip_with", "eq"], "parents": ["halves_equal_by"]}, "is_palindrome_by": {"id": "is_palindrome_by", "name": "is_palindrome_by", "type": "abstraction", "depth": 7, "definition": "\u03bbf.\u03bbh. all_true (zip_with eq (map f h) (reverse (map f h)))", "description": "Sequence of f(card) is palindrome", "family": "", "children": ["all_true", "zip_with", "eq", "map", "reverse"], "parents": ["Suits_palindrome", "Colors_palindrome", "Ranks_palindrome", "AltColor1_palindrome", "AltColor2_palindrome"]}, "is_sorted_by": {"id": "is_sorted_by", "name": "is_sorted_by", "type": "abstraction", "depth": 8, "definition": "\u03bbf.\u03bbh. all_true (zip_with le (map f h) (drop 1 (map f h)))", "description": "Sequence sorted by property f", "family": "", "children": ["all_true", "zip_with", "le", "map", "drop", "1"], "parents": ["Sorted_by_rank", "Halves_AP_step1_equal", "Score_threshold_Rstar", "Halves_radial_nonincreasing"]}, "shifted_pairs": {"id": "shifted_pairs", "name": "shifted_pairs", "type": "abstraction", "depth": 8, "definition": "\u03bbk.\u03bbh. zip_with pair (take (- (length h) k) h) (drop k h)", "description": "Pairs of elements offset by k", "family": "", "children": ["zip_with", "pair", "take", "drop", "length", "-"], "parents": ["Shift_half_plus_two", "Shift2_plus3", "Shift_half_ge", "Half_map_samepos_M1", "Half_map_samepos_M2", "Step2_back_map_M1", "Step2_back_map_M2", "Skip2_same_rank_or_suit"]}, "halves_equal_by": {"id": "halves_equal_by", "name": "halves_equal_by", "type": "abstraction", "depth": 9, "definition": "\u03bbf.\u03bbh. lists_equal (map f (first_half h)) (map f (second_half h))", "description": "Halves have same sequence under f", "family": "", "children": ["lists_equal", "map", "first_half", "second_half"], "parents": ["Halves_copy_suits", "Halves_copy_colors", "Halves_copy_ranks", "Halves_copy_altcolor1", "Halves_copy_altcolor2"]}, "halves_property_equal": {"id": "halves_property_equal", "name": "halves_property_equal", "type": "abstraction", "depth": 7, "definition": "\u03bbP.\u03bbh. eq (P (first_half h)) (P (second_half h))", "description": "Boolean property P same for both halves", "family": "", "children": ["eq", "first_half", "second_half"], "parents": ["Halves_uniform_color_equal", "Halves_uniform_parity_equal", "Halves_AP_step1_equal", "Halves_AP_len3_any_equal", "Halves_AP_len2_step1_equal"]}, "halves_set_equal_by": {"id": "halves_set_equal_by", "name": "halves_set_equal_by", "type": "abstraction", "depth": 10, "definition": "\u03bbf.\u03bbh. eq (unique (map f (first_half h))) (unique (map f (second_half h)))", "description": "Halves have same set under f", "family": "", "children": ["eq", "unique", "map", "first_half", "second_half"], "parents": ["Halves_same_suit_set"]}, "suit_cycle_m1": {"id": "suit_cycle_m1", "name": "suit_cycle_m1", "type": "abstraction", "depth": 8, "definition": "\u03bbs. case s: \u2663\u2192\u2660, \u2660\u2192\u2665, \u2665\u2192\u2666, \u2666\u2192\u2663", "description": "Suit cycle M1: \u2663\u2192\u2660\u2192\u2665\u2192\u2666\u2192\u2663", "family": "", "children": ["if", "eq", "CLUBS", "SPADES", "HEARTS", "DIAMONDS"], "parents": ["Half_map_samepos_M1", "Step2_back_map_M1", "Adj_same_or_map_M1"]}, "suit_cycle_m2": {"id": "suit_cycle_m2", "name": "suit_cycle_m2", "type": "abstraction", "depth": 8, "definition": "\u03bbs. case s: \u2663\u2192\u2665, \u2665\u2192\u2660, \u2660\u2192\u2666, \u2666\u2192\u2663", "description": "Suit cycle M2: \u2663\u2192\u2665\u2192\u2660\u2192\u2666\u2192\u2663", "family": "", "children": ["if", "eq", "CLUBS", "SPADES", "HEARTS", "DIAMONDS"], "parents": ["Half_map_samepos_M2", "Step2_back_map_M2", "Adj_same_or_map_M2"]}, "bracket_match": {"id": "bracket_match", "name": "bracket_match", "type": "abstraction", "depth": 12, "definition": "\u03bbopen.\u03bbclose.\u03bbh. snd (fold (\u03bbst.\u03bbc. pair (adjust_count st c) (check_valid st c)) (pair 0 true) h)", "description": "Bracket matching via fold+state", "family": "", "children": ["fold", "pair", "fst", "snd", "if", "and", "ge", "0", "1", "-", "+"], "parents": ["Well_formed_brackets_by_suit", "Even_opens_next_closes", "Odd_opens_next_closes"]}, "has_AP": {"id": "has_AP", "name": "has_AP", "type": "abstraction", "depth": 12, "definition": "\u03bblen.\u03bbstep.\u03bbh. exists subset of ranks forming arithmetic progression", "description": "Has arithmetic progression of given length", "family": "", "children": ["fold", "map", "rank_val", "unique", "filter", "-", "eq"], "parents": ["Halves_AP_len3_any_equal", "AP_len3_anywhere_anyk", "AP_len3_step2_anywhere", "AP_len4_step2_anywhere"]}, "Sorted_by_rank": {"id": "Sorted_by_rank", "name": "Sorted_by_rank", "type": "rule", "depth": 9, "definition": "\u03bbh. is_sorted_by rank_val h", "description": "Ranks in non-decreasing order", "family": "LOCAL", "children": ["is_sorted_by", "rank_val"], "parents": []}, "S_before_H": {"id": "S_before_H", "name": "S_before_H", "type": "rule", "depth": 10, "definition": "\u03bbh. fold (track_spade_then_heart) (pair false false) h", "description": "Some \u2660 appears before some \u2665", "family": "LOCAL", "children": ["fold", "pair", "get_suit", "eq", "SPADES", "HEARTS", "or", "and"], "parents": []}, "Ends_same_suit": {"id": "Ends_same_suit", "name": "Ends_same_suit", "type": "rule", "depth": 6, "definition": "\u03bbh. terminals_equal_by get_suit h", "description": "First and last share suit", "family": "LOCAL", "children": ["terminals_equal_by", "get_suit"], "parents": []}, "Ends_same_color": {"id": "Ends_same_color", "name": "Ends_same_color", "type": "rule", "depth": 6, "definition": "\u03bbh. terminals_equal_by get_color h", "description": "First and last share color", "family": "LOCAL", "children": ["terminals_equal_by", "get_color"], "parents": []}, "Has_pair_ranks": {"id": "Has_pair_ranks", "name": "Has_pair_ranks", "type": "rule", "depth": 6, "definition": "\u03bbh. lt (length (unique (map get_rank h))) (length h)", "description": "At least one pair (same rank)", "family": "COUNT", "children": ["lt", "length", "unique", "map", "get_rank"], "parents": []}, "Uniform_color": {"id": "Uniform_color", "name": "Uniform_color", "type": "rule", "depth": 2, "definition": "\u03bbh. all_same_color h", "description": "All cards same color", "family": "COUNT", "children": ["all_same_color"], "parents": []}, "Exactly_two_suits": {"id": "Exactly_two_suits", "name": "Exactly_two_suits", "type": "rule", "depth": 3, "definition": "\u03bbh. eq 2 (n_unique_suits h)", "description": "Exactly two suits appear", "family": "COUNT", "children": ["eq", "2", "n_unique_suits"], "parents": []}, "Half_or_more_same_suit": {"id": "Half_or_more_same_suit", "name": "Half_or_more_same_suit", "type": "rule", "depth": 7, "definition": "\u03bbh. any (\u03bbs. ge (count_suit h s) (half_len h)) [\u2663,\u2666,\u2665,\u2660]", "description": "\u2265 half cards share a suit", "family": "COUNT", "children": ["any", "ge", "count_suit", "half_len", "CLUBS", "DIAMONDS", "HEARTS", "SPADES"], "parents": []}, "At_most_three_suits": {"id": "At_most_three_suits", "name": "At_most_three_suits", "type": "rule", "depth": 3, "definition": "\u03bbh. le (n_unique_suits h) 3", "description": "At most 3 suits", "family": "COUNT", "children": ["le", "n_unique_suits", "3"], "parents": []}, "Exactly_one_club": {"id": "Exactly_one_club", "name": "Exactly_one_club", "type": "rule", "depth": 4, "definition": "\u03bbh. eq 1 (count_suit h CLUBS)", "description": "Exactly one \u2663", "family": "COUNT", "children": ["eq", "1", "count_suit", "CLUBS"], "parents": []}, "Pos3_is_JQK": {"id": "Pos3_is_JQK", "name": "Pos3_is_JQK", "type": "rule", "depth": 7, "definition": "\u03bbh. or (eq (rank_val (at h 2)) 11) (or (eq ... 12) (eq ... 13))", "description": "Card #3 is J/Q/K", "family": "POSITION", "children": ["or", "eq", "rank_val", "at", "2", "11", "12", "13"], "parents": []}, "Pos4_is_2_5_7": {"id": "Pos4_is_2_5_7", "name": "Pos4_is_2_5_7", "type": "rule", "depth": 7, "definition": "\u03bbh. or (eq (rank_val (at h 3)) 2) (or ... 5) (or ... 7))", "description": "Card #4 is 2/5/7", "family": "POSITION", "children": ["or", "eq", "rank_val", "at", "3", "2", "5"], "parents": []}, "Has_Ace_of_Spades": {"id": "Has_Ace_of_Spades", "name": "Has_Ace_of_Spades", "type": "rule", "depth": 7, "definition": "\u03bbh. any (\u03bbc. and (eq (get_suit c) SPADES) (eq (rank_val c) 14)) h", "description": "Contains A\u2660", "family": "TOKEN", "children": ["any", "and", "eq", "get_suit", "rank_val", "SPADES", "14"], "parents": []}, "Has_6_of_Diamonds": {"id": "Has_6_of_Diamonds", "name": "Has_6_of_Diamonds", "type": "rule", "depth": 7, "definition": "\u03bbh. any (\u03bbc. and (eq (get_suit c) DIAMONDS) (eq (rank_val c) 6)) h", "description": "Contains 6\u2666", "family": "TOKEN", "children": ["any", "and", "eq", "get_suit", "rank_val", "DIAMONDS"], "parents": []}, "Only_one_odd_rank": {"id": "Only_one_odd_rank", "name": "Only_one_odd_rank", "type": "rule", "depth": 7, "definition": "\u03bbh. eq 1 (length (filter (\u03bbc. eq 1 (get_parity c)) h))", "description": "Exactly one odd rank", "family": "PARITY", "children": ["eq", "1", "length", "filter", "get_parity"], "parents": []}, "Uniform_rank_parity": {"id": "Uniform_rank_parity", "name": "Uniform_rank_parity", "type": "rule", "depth": 8, "definition": "\u03bbh. uniform_by get_parity h", "description": "All ranks same parity", "family": "PARITY", "children": ["uniform_by", "get_parity"], "parents": []}, "Suits_palindrome": {"id": "Suits_palindrome", "name": "Suits_palindrome", "type": "rule", "depth": 8, "definition": "\u03bbh. is_palindrome_by get_suit h", "description": "Suits form palindrome", "family": "PAL", "children": ["is_palindrome_by", "get_suit"], "parents": []}, "Colors_palindrome": {"id": "Colors_palindrome", "name": "Colors_palindrome", "type": "rule", "depth": 8, "definition": "\u03bbh. is_palindrome_by get_color h", "description": "Colors form palindrome", "family": "PAL", "children": ["is_palindrome_by", "get_color"], "parents": []}, "Ranks_palindrome": {"id": "Ranks_palindrome", "name": "Ranks_palindrome", "type": "rule", "depth": 8, "definition": "\u03bbh. is_palindrome_by get_rank h", "description": "Ranks form palindrome", "family": "PAL", "children": ["is_palindrome_by", "get_rank"], "parents": []}, "AltColor1_palindrome": {"id": "AltColor1_palindrome", "name": "AltColor1_palindrome", "type": "rule", "depth": 12, "definition": "\u03bbh. is_palindrome_by get_altcolor1 h", "description": "Pointy/Round palindrome", "family": "ALTCLR", "children": ["is_palindrome_by", "get_altcolor1"], "parents": []}, "AltColor2_palindrome": {"id": "AltColor2_palindrome", "name": "AltColor2_palindrome", "type": "rule", "depth": 12, "definition": "\u03bbh. is_palindrome_by get_altcolor2 h", "description": "SH/DC palindrome", "family": "ALTCLR", "children": ["is_palindrome_by", "get_altcolor2"], "parents": []}, "Ends_same_altcolor1": {"id": "Ends_same_altcolor1", "name": "Ends_same_altcolor1", "type": "rule", "depth": 10, "definition": "\u03bbh. terminals_equal_by get_altcolor1 h", "description": "First/last same Pointy/Round", "family": "ALTCLR", "children": ["terminals_equal_by", "get_altcolor1"], "parents": []}, "Halves_uniform_color_equal": {"id": "Halves_uniform_color_equal", "name": "Halves_uniform_color_equal", "type": "rule", "depth": 12, "definition": "\u03bbh. halves_property_equal (uniform_by get_color) h", "description": "Both halves uniform color (or both not)", "family": "HIER", "children": ["halves_property_equal", "uniform_by", "get_color"], "parents": []}, "Halves_uniform_parity_equal": {"id": "Halves_uniform_parity_equal", "name": "Halves_uniform_parity_equal", "type": "rule", "depth": 13, "definition": "\u03bbh. halves_property_equal (uniform_by get_parity) h", "description": "Both halves uniform parity (or both not)", "family": "HIER", "children": ["halves_property_equal", "uniform_by", "get_parity"], "parents": []}, "Halves_AP_step1_equal": {"id": "Halves_AP_step1_equal", "name": "Halves_AP_step1_equal", "type": "rule", "depth": 15, "definition": "\u03bbh. halves_property_equal is_run h", "description": "Both halves are runs (or both not)", "family": "HIER", "children": ["halves_property_equal", "is_sorted_by", "rank_val", "-", "1"], "parents": []}, "Halves_hearts_presence_equal": {"id": "Halves_hearts_presence_equal", "name": "Halves_hearts_presence_equal", "type": "rule", "depth": 10, "definition": "\u03bbh. eq (has_suit (first_half h) HEARTS) (has_suit (second_half h) HEARTS)", "description": "Both halves have \u2665 (or neither)", "family": "HIER", "children": ["eq", "has_suit", "first_half", "second_half", "HEARTS"], "parents": []}, "Halves_AP_len3_any_equal": {"id": "Halves_AP_len3_any_equal", "name": "Halves_AP_len3_any_equal", "type": "rule", "depth": 16, "definition": "\u03bbh. halves_property_equal (has_AP 3 any) h", "description": "Both halves have 3-AP (or both not)", "family": "HIER", "children": ["halves_property_equal", "has_AP", "first_half", "second_half"], "parents": []}, "Halves_AP_len2_step1_equal": {"id": "Halves_AP_len2_step1_equal", "name": "Halves_AP_len2_step1_equal", "type": "rule", "depth": 14, "definition": "\u03bbh. halves_property_equal has_adjacent_pair h", "description": "Both halves have \u00b11 pair (or both not)", "family": "HIER", "children": ["halves_property_equal", "first_half", "second_half", "any", "abs", "-", "1"], "parents": []}, "Halves_copy_suits": {"id": "Halves_copy_suits", "name": "Halves_copy_suits", "type": "rule", "depth": 10, "definition": "\u03bbh. halves_equal_by get_suit h", "description": "Halves have same suit sequence", "family": "COPY", "children": ["halves_equal_by", "get_suit"], "parents": []}, "Halves_copy_colors": {"id": "Halves_copy_colors", "name": "Halves_copy_colors", "type": "rule", "depth": 10, "definition": "\u03bbh. halves_equal_by get_color h", "description": "Halves have same color sequence", "family": "COPY", "children": ["halves_equal_by", "get_color"], "parents": []}, "Halves_copy_ranks": {"id": "Halves_copy_ranks", "name": "Halves_copy_ranks", "type": "rule", "depth": 10, "definition": "\u03bbh. halves_equal_by get_rank h", "description": "Halves have same rank sequence", "family": "COPY", "children": ["halves_equal_by", "get_rank"], "parents": []}, "Halves_copy_altcolor1": {"id": "Halves_copy_altcolor1", "name": "Halves_copy_altcolor1", "type": "rule", "depth": 14, "definition": "\u03bbh. halves_equal_by get_altcolor1 h", "description": "Halves copy Pointy/Round", "family": "COPY", "children": ["halves_equal_by", "get_altcolor1"], "parents": []}, "Halves_copy_altcolor2": {"id": "Halves_copy_altcolor2", "name": "Halves_copy_altcolor2", "type": "rule", "depth": 14, "definition": "\u03bbh. halves_equal_by get_altcolor2 h", "description": "Halves copy SH/DC", "family": "COPY", "children": ["halves_equal_by", "get_altcolor2"], "parents": []}, "Halves_same_suit_set": {"id": "Halves_same_suit_set", "name": "Halves_same_suit_set", "type": "rule", "depth": 11, "definition": "\u03bbh. halves_set_equal_by get_suit h", "description": "Halves have same suit set", "family": "COPY", "children": ["halves_set_equal_by", "get_suit"], "parents": []}, "Shift_half_plus_two": {"id": "Shift_half_plus_two", "name": "Shift_half_plus_two", "type": "rule", "depth": 12, "definition": "\u03bbh. all (\u03bbp. eq (- (rank_val (snd p)) (rank_val (fst p))) 2) (shifted_pairs (half_len h) h)", "description": "Half-shift positions +2 rank", "family": "SHIFT", "children": ["all", "shifted_pairs", "half_len", "rank_val", "-", "eq", "2", "fst", "snd"], "parents": []}, "Shift2_plus3": {"id": "Shift2_plus3", "name": "Shift2_plus3", "type": "rule", "depth": 10, "definition": "\u03bbh. all (\u03bbp. eq diff 3) (shifted_pairs 2 h)", "description": "Skip-2 positions +3 rank", "family": "SHIFT", "children": ["all", "shifted_pairs", "rank_val", "-", "eq", "2", "3"], "parents": []}, "Shift_half_ge": {"id": "Shift_half_ge", "name": "Shift_half_ge", "type": "rule", "depth": 11, "definition": "\u03bbh. all (\u03bbp. ge (rank_val (snd p)) (rank_val (fst p))) (shifted_pairs (half_len h) h)", "description": "Right half \u2265 left half", "family": "SHIFT", "children": ["all", "shifted_pairs", "half_len", "rank_val", "ge", "fst", "snd"], "parents": []}, "Half_map_samepos_M1": {"id": "Half_map_samepos_M1", "name": "Half_map_samepos_M1", "type": "rule", "depth": 14, "definition": "\u03bbh. all (\u03bbp. eq (suit_cycle_m1 (get_suit (fst p))) (get_suit (snd p))) (shifted_pairs k h)", "description": "Right = M1(left) suits", "family": "MAP", "children": ["all", "shifted_pairs", "suit_cycle_m1", "get_suit", "eq", "fst", "snd", "half_len"], "parents": []}, "Half_map_samepos_M2": {"id": "Half_map_samepos_M2", "name": "Half_map_samepos_M2", "type": "rule", "depth": 14, "definition": "\u03bbh. all (\u03bbp. eq (suit_cycle_m2 (get_suit (fst p))) (get_suit (snd p))) (shifted_pairs k h)", "description": "Right = M2(left) suits", "family": "MAP", "children": ["all", "shifted_pairs", "suit_cycle_m2", "get_suit", "eq", "fst", "snd", "half_len"], "parents": []}, "Step2_back_map_M1": {"id": "Step2_back_map_M1", "name": "Step2_back_map_M1", "type": "rule", "depth": 12, "definition": "\u03bbh. all (\u03bbp. eq (suit_cycle_m1 ...) ...) (shifted_pairs 2 h)", "description": "suit[j] = M1(suit[j-2])", "family": "MAP", "children": ["all", "shifted_pairs", "suit_cycle_m1", "get_suit", "eq", "2"], "parents": []}, "Step2_back_map_M2": {"id": "Step2_back_map_M2", "name": "Step2_back_map_M2", "type": "rule", "depth": 12, "definition": "\u03bbh. all (\u03bbp. eq (suit_cycle_m2 ...) ...) (shifted_pairs 2 h)", "description": "suit[j] = M2(suit[j-2])", "family": "MAP", "children": ["all", "shifted_pairs", "suit_cycle_m2", "get_suit", "eq", "2"], "parents": []}, "Adj_same_or_map_M1": {"id": "Adj_same_or_map_M1", "name": "Adj_same_or_map_M1", "type": "rule", "depth": 12, "definition": "\u03bbh. all (\u03bbp. or (eq suits) (eq (suit_cycle_m1 ...) ...)) (adjacent_pairs h)", "description": "Adjacent: same or M1", "family": "MAP", "children": ["all", "adjacent_pairs", "suit_cycle_m1", "get_suit", "eq", "or"], "parents": []}, "Adj_same_or_map_M2": {"id": "Adj_same_or_map_M2", "name": "Adj_same_or_map_M2", "type": "rule", "depth": 12, "definition": "\u03bbh. all (\u03bbp. or (eq suits) (eq (suit_cycle_m2 ...) ...)) (adjacent_pairs h)", "description": "Adjacent: same or M2", "family": "MAP", "children": ["all", "adjacent_pairs", "suit_cycle_m2", "get_suit", "eq", "or"], "parents": []}, "Adj_same_rank_or_suit": {"id": "Adj_same_rank_or_suit", "name": "Adj_same_rank_or_suit", "type": "rule", "depth": 8, "definition": "\u03bbh. all (\u03bbp. or (eq ranks) (eq suits)) (adjacent_pairs h)", "description": "Neighbors share rank or suit", "family": "ADJ", "children": ["all", "adjacent_pairs", "get_rank", "get_suit", "eq", "or", "fst", "snd"], "parents": []}, "Skip2_same_rank_or_suit": {"id": "Skip2_same_rank_or_suit", "name": "Skip2_same_rank_or_suit", "type": "rule", "depth": 10, "definition": "\u03bbh. all (\u03bbp. or ...) (shifted_pairs 2 h)", "description": "i and i+2 share rank or suit", "family": "ADJ", "children": ["all", "shifted_pairs", "get_rank", "get_suit", "eq", "or", "2"], "parents": []}, "Adj_rank_gap_le3": {"id": "Adj_rank_gap_le3", "name": "Adj_rank_gap_le3", "type": "rule", "depth": 10, "definition": "\u03bbh. all (\u03bbp. le (abs (- r1 r2)) 3) (adjacent_pairs h)", "description": "Neighbors differ by \u22643", "family": "ADJ", "children": ["all", "adjacent_pairs", "abs", "-", "rank_val", "le", "3"], "parents": []}, "Score_threshold_Rstar": {"id": "Score_threshold_Rstar", "name": "Score_threshold_Rstar", "type": "rule", "depth": 15, "definition": "\u03bbh. ge (+ (sum_ranks h) (+ sorted_bonus hearts_bonus)) 50", "description": "Score \u2265 50 (ranks+bonuses)", "family": "SCORE", "children": ["ge", "+", "sum_ranks", "if", "is_sorted_by", "count_suit", "HEARTS", "10", "3"], "parents": []}, "Half_sum_diff_geN": {"id": "Half_sum_diff_geN", "name": "Half_sum_diff_geN", "type": "rule", "depth": 11, "definition": "\u03bbh. ge (- (sum_ranks (first_half h)) (sum_ranks (second_half h))) (length h)", "description": "Left - Right \u2265 N", "family": "SCORE", "children": ["ge", "-", "sum_ranks", "first_half", "second_half", "length"], "parents": []}, "Half_sum_one_side_ge_2x_other": {"id": "Half_sum_one_side_ge_2x_other", "name": "Half_sum_one_side_ge_2x_other", "type": "rule", "depth": 13, "definition": "\u03bbh. or (ge L (* 2 R)) (ge R (* 2 L))", "description": "One half \u2265 2\u00d7 other", "family": "SCORE", "children": ["or", "ge", "+", "sum_ranks", "first_half", "second_half"], "parents": []}, "AP_len3_anywhere_anyk": {"id": "AP_len3_anywhere_anyk", "name": "AP_len3_anywhere_anyk", "type": "rule", "depth": 13, "definition": "\u03bbh. has_AP 3 any_step h", "description": "3-term AP anywhere", "family": "AP", "children": ["has_AP"], "parents": []}, "AP_len3_step2_anywhere": {"id": "AP_len3_step2_anywhere", "name": "AP_len3_step2_anywhere", "type": "rule", "depth": 13, "definition": "\u03bbh. has_AP 3 step_2 h", "description": "3-term AP step 2", "family": "AP", "children": ["has_AP", "2"], "parents": []}, "AP_len4_step2_anywhere": {"id": "AP_len4_step2_anywhere", "name": "AP_len4_step2_anywhere", "type": "rule", "depth": 14, "definition": "\u03bbh. has_AP 4 step_2 h", "description": "4-term AP step 2", "family": "AP", "children": ["has_AP", "4", "2"], "parents": []}, "Well_formed_brackets_by_suit": {"id": "Well_formed_brackets_by_suit", "name": "Well_formed_brackets_by_suit", "type": "rule", "depth": 14, "definition": "\u03bbh. bracket_match {\u2660:\"(\", \u2665:\"[\"} {\u2663:\")\", \u2666:\"]\"} h", "description": "Suits form matched brackets", "family": "LANG", "children": ["bracket_match", "get_suit", "SPADES", "HEARTS", "CLUBS", "DIAMONDS"], "parents": []}, "Even_opens_next_closes": {"id": "Even_opens_next_closes", "name": "Even_opens_next_closes", "type": "rule", "depth": 16, "definition": "\u03bbh. bracket_match_parity even_opens h", "description": "Even opens, next odd closes", "family": "LANG", "children": ["bracket_match", "get_parity", "rank_val", "mod", "2"], "parents": []}, "Odd_opens_next_closes": {"id": "Odd_opens_next_closes", "name": "Odd_opens_next_closes", "type": "rule", "depth": 16, "definition": "\u03bbh. bracket_match_parity odd_opens h", "description": "Odd opens, next even closes", "family": "LANG", "children": ["bracket_match", "get_parity", "rank_val", "mod", "2"], "parents": []}, "Halves_radial_nonincreasing": {"id": "Halves_radial_nonincreasing", "name": "Halves_radial_nonincreasing", "type": "rule", "depth": 14, "definition": "\u03bbh. and (sorted_desc (reverse (first_half h))) (sorted_desc (second_half h))", "description": "Ranks decrease outward from center", "family": "CENTER", "children": ["and", "is_sorted_by", "reverse", "first_half", "second_half", "rank_val"], "parents": []}, "Global_radial_no_dominance": {"id": "Global_radial_no_dominance", "name": "Global_radial_no_dominance", "type": "rule", "depth": 18, "definition": "\u03bbh. forall i j. dist(j)>dist(i) \u2192 rank(j)\u2264rank(i)", "description": "Farther cards never outrank nearer", "family": "CENTER", "children": ["all", "fold", "if", "and", "gt", "le", "abs", "-", "rank_val", "length", "2"], "parents": []}};
+
+        let currentView = 'rules';
+
+        function getIcon(type) {
+            switch(type) {
+                case 'primitive': return '◆';
+                case 'abstraction': return '◇';
+                case 'rule': return '▣';
+                default: return '•';
+            }
+        }
+
+        function createNodeElement(nodeId, expanded = false) {
+            const node = treeData[nodeId];
+            if (!node) return null;
+
+            const li = document.createElement('li');
+            li.className = 'tree-node';
+            li.dataset.nodeId = nodeId;
+            li.dataset.type = node.type;
+
+            const content = document.createElement('div');
+            content.className = `node-content node-${node.type}`;
+
+            // Toggle icon
+            const toggle = document.createElement('span');
+            toggle.className = 'toggle-icon';
+            if (node.children && node.children.length > 0) {
+                toggle.textContent = expanded ? '▼' : '▶';
+                toggle.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleNode(li);
+                };
+            }
+            content.appendChild(toggle);
+
+            // Node icon
+            const icon = document.createElement('span');
+            icon.className = 'node-icon';
+            icon.textContent = getIcon(node.type);
+            content.appendChild(icon);
+
+            // Node name
+            const name = document.createElement('span');
+            name.className = 'node-name';
+            name.textContent = node.name;
+            content.appendChild(name);
+
+            // Family badge for rules
+            if (node.family) {
+                const badge = document.createElement('span');
+                badge.className = `node-badge badge-${node.family}`;
+                badge.textContent = node.family;
+                content.appendChild(badge);
+            }
+
+            // Depth indicator
+            if (node.depth > 0) {
+                const depth = document.createElement('span');
+                depth.className = 'node-depth';
+                depth.textContent = `d=${node.depth}`;
+                content.appendChild(depth);
+            }
+
+            content.onclick = () => showDetail(nodeId);
+            li.appendChild(content);
+
+            // Children container
+            if (node.children && node.children.length > 0) {
+                const childrenUl = document.createElement('ul');
+                childrenUl.className = 'children' + (expanded ? ' expanded' : '');
+
+                // Sort children: rules first, then abstractions, then primitives
+                const sortedChildren = [...node.children].sort((a, b) => {
+                    const typeOrder = { 'rule': 0, 'abstraction': 1, 'primitive': 2 };
+                    const aType = treeData[a]?.type || 'primitive';
+                    const bType = treeData[b]?.type || 'primitive';
+                    return typeOrder[aType] - typeOrder[bType];
+                });
+
+                for (const childId of sortedChildren) {
+                    if (treeData[childId]) {
+                        const childEl = createNodeElement(childId, false);
+                        if (childEl) childrenUl.appendChild(childEl);
+                    }
+                }
+                li.appendChild(childrenUl);
+            }
+
+            return li;
+        }
+
+        function toggleNode(li) {
+            const children = li.querySelector('.children');
+            const toggle = li.querySelector('.toggle-icon');
+            if (children) {
+                children.classList.toggle('expanded');
+                toggle.textContent = children.classList.contains('expanded') ? '▼' : '▶';
+            }
+        }
+
+        function showDetail(nodeId) {
+            const node = treeData[nodeId];
+            if (!node) return;
+
+            // Highlight selected node
+            document.querySelectorAll('.node-content').forEach(el => el.classList.remove('selected'));
+            const nodeEl = document.querySelector(`[data-node-id="${nodeId}"] > .node-content`);
+            if (nodeEl) nodeEl.classList.add('selected');
+
+            document.getElementById('detailTitle').textContent = node.name;
+            document.getElementById('detailType').textContent = node.type.charAt(0).toUpperCase() + node.type.slice(1) + (node.family ? ` (${node.family})` : '');
+            document.getElementById('detailDesc').textContent = node.description || '-';
+            document.getElementById('detailLambda').textContent = node.definition || '-';
+            document.getElementById('detailDepth').textContent = node.depth;
+
+            // Children
+            const childrenEl = document.getElementById('detailChildren');
+            childrenEl.innerHTML = '';
+            if (node.children && node.children.length > 0) {
+                document.getElementById('childrenSection').style.display = 'block';
+                for (const childId of node.children) {
+                    const child = treeData[childId];
+                    if (child) {
+                        const tag = document.createElement('span');
+                        tag.className = `dep-tag ${child.type}`;
+                        tag.textContent = childId;
+                        tag.onclick = () => {
+                            showDetail(childId);
+                            expandToNode(childId);
+                        };
+                        childrenEl.appendChild(tag);
+                    }
+                }
+            } else {
+                document.getElementById('childrenSection').style.display = 'none';
+            }
+
+            // Parents
+            const parentsEl = document.getElementById('detailParents');
+            parentsEl.innerHTML = '';
+            if (node.parents && node.parents.length > 0) {
+                document.getElementById('parentsSection').style.display = 'block';
+                for (const parentId of node.parents) {
+                    const parent = treeData[parentId];
+                    if (parent) {
+                        const tag = document.createElement('span');
+                        tag.className = `dep-tag ${parent.type}`;
+                        tag.textContent = parentId;
+                        tag.onclick = () => {
+                            showDetail(parentId);
+                            expandToNode(parentId);
+                        };
+                        parentsEl.appendChild(tag);
+                    }
+                }
+            } else {
+                document.getElementById('parentsSection').style.display = 'none';
+            }
+
+            document.getElementById('detailPanel').classList.add('visible');
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('visible');
+            document.querySelectorAll('.node-content').forEach(el => el.classList.remove('selected'));
+        }
+
+        function expandToNode(nodeId) {
+            const nodeEl = document.querySelector(`[data-node-id="${nodeId}"]`);
+            if (nodeEl) {
+                // Expand all parents
+                let parent = nodeEl.parentElement;
+                while (parent) {
+                    if (parent.classList.contains('children')) {
+                        parent.classList.add('expanded');
+                        const toggle = parent.previousElementSibling?.querySelector('.toggle-icon');
+                        if (toggle) toggle.textContent = '▼';
+                    }
+                    parent = parent.parentElement;
+                }
+                nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.children').forEach(el => el.classList.add('expanded'));
+            document.querySelectorAll('.toggle-icon').forEach(el => {
+                if (el.textContent === '▶') el.textContent = '▼';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.children').forEach(el => el.classList.remove('expanded'));
+            document.querySelectorAll('.toggle-icon').forEach(el => {
+                if (el.textContent === '▼') el.textContent = '▶';
+            });
+        }
+
+        function showRulesOnly() {
+            document.querySelectorAll('.tree-node').forEach(el => {
+                el.style.display = el.dataset.type === 'rule' ? '' : 'none';
+            });
+        }
+
+        function showAbstractionsOnly() {
+            document.querySelectorAll('.tree-node').forEach(el => {
+                el.style.display = (el.dataset.type === 'rule' || el.dataset.type === 'abstraction') ? '' : 'none';
+            });
+        }
+
+        function showAll() {
+            document.querySelectorAll('.tree-node').forEach(el => {
+                el.style.display = '';
+            });
+        }
+
+        function searchNodes() {
+            const query = document.getElementById('search').value.toLowerCase();
+            document.querySelectorAll('.tree-node').forEach(el => {
+                const nodeId = el.dataset.nodeId;
+                const node = treeData[nodeId];
+                const match = nodeId.toLowerCase().includes(query) ||
+                              (node.description && node.description.toLowerCase().includes(query)) ||
+                              (node.family && node.family.toLowerCase().includes(query));
+                el.style.display = match || query === '' ? '' : 'none';
+                if (match && query !== '') {
+                    expandToNode(nodeId);
+                }
+            });
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.root-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTree();
+        }
+
+        function renderTree() {
+            const treeView = document.getElementById('treeView');
+            treeView.innerHTML = '';
+
+            if (currentView === 'rules') {
+                // Group rules by depth
+                const rulesByDepth = {};
+                for (const [id, node] of Object.entries(treeData)) {
+                    if (node.type === 'rule') {
+                        const bucket = node.depth <= 6 ? 'trivial' : node.depth <= 8 ? 'easy' : node.depth <= 10 ? 'medium' : node.depth <= 14 ? 'hard' : 'extreme';
+                        if (!rulesByDepth[bucket]) rulesByDepth[bucket] = [];
+                        rulesByDepth[bucket].push(id);
+                    }
+                }
+
+                const buckets = [
+                    { key: 'trivial', name: 'Trivial (depth ≤6)', color: '#9ece6a' },
+                    { key: 'easy', name: 'Easy (depth 7-8)', color: '#7dcfff' },
+                    { key: 'medium', name: 'Medium (depth 9-10)', color: '#e0af68' },
+                    { key: 'hard', name: 'Hard (depth 11-14)', color: '#f7768e' },
+                    { key: 'extreme', name: 'Extreme (depth 15+)', color: '#bb9af7' }
+                ];
+
+                for (const bucket of buckets) {
+                    if (rulesByDepth[bucket.key]?.length > 0) {
+                        const li = document.createElement('li');
+                        li.className = 'tree-node';
+
+                        const content = document.createElement('div');
+                        content.className = 'node-content';
+                        content.innerHTML = `
+                            <span class="toggle-icon">▶</span>
+                            <span class="node-icon" style="color: ${bucket.color}">📁</span>
+                            <span class="node-name" style="color: ${bucket.color}">${bucket.name}</span>
+                            <span class="node-badge" style="background: ${bucket.color}; color: #1a1a2e">${rulesByDepth[bucket.key].length}</span>
+                        `;
+                        content.onclick = () => toggleNode(li);
+                        li.appendChild(content);
+
+                        const childrenUl = document.createElement('ul');
+                        childrenUl.className = 'children';
+
+                        for (const ruleId of rulesByDepth[bucket.key].sort()) {
+                            const ruleEl = createNodeElement(ruleId, false);
+                            if (ruleEl) childrenUl.appendChild(ruleEl);
+                        }
+                        li.appendChild(childrenUl);
+                        treeView.appendChild(li);
+                    }
+                }
+            } else if (currentView === 'families') {
+                // Group rules by family
+                const families = {};
+                for (const [id, node] of Object.entries(treeData)) {
+                    if (node.type === 'rule' && node.family) {
+                        if (!families[node.family]) families[node.family] = [];
+                        families[node.family].push(id);
+                    }
+                }
+
+                for (const family of Object.keys(families).sort()) {
+                    const li = document.createElement('li');
+                    li.className = 'tree-node';
+
+                    const content = document.createElement('div');
+                    content.className = 'node-content';
+                    content.innerHTML = `
+                        <span class="toggle-icon">▶</span>
+                        <span class="node-icon" style="color: var(--accent-purple)">📂</span>
+                        <span class="node-name" style="color: var(--accent-purple)">${family}</span>
+                        <span class="node-badge badge-${family}">${families[family].length}</span>
+                    `;
+                    content.onclick = () => toggleNode(li);
+                    li.appendChild(content);
+
+                    const childrenUl = document.createElement('ul');
+                    childrenUl.className = 'children';
+
+                    for (const ruleId of families[family].sort()) {
+                        const ruleEl = createNodeElement(ruleId, false);
+                        if (ruleEl) childrenUl.appendChild(ruleEl);
+                    }
+                    li.appendChild(childrenUl);
+                    treeView.appendChild(li);
+                }
+            } else if (currentView === 'abstractions') {
+                // Show key abstractions with their dependents
+                const keyAbstractions = ['first_half', 'second_half', 'is_palindrome_by', 'halves_equal_by', 'halves_property_equal', 'shifted_pairs', 'suit_cycle_m1', 'suit_cycle_m2', 'bracket_match', 'has_AP'];
+
+                for (const absId of keyAbstractions) {
+                    const node = treeData[absId];
+                    if (node) {
+                        const li = document.createElement('li');
+                        li.className = 'tree-node';
+                        li.dataset.nodeId = absId;
+                        li.dataset.type = 'abstraction';
+
+                        const content = document.createElement('div');
+                        content.className = 'node-content node-abstraction';
+                        content.innerHTML = `
+                            <span class="toggle-icon">${node.parents.length > 0 ? '▶' : ''}</span>
+                            <span class="node-icon">◇</span>
+                            <span class="node-name">${absId}</span>
+                            <span class="node-depth">d=${node.depth}</span>
+                            <span class="node-badge" style="background: var(--accent-cyan); color: var(--bg-dark)">${node.parents.length} rules</span>
+                        `;
+                        content.onclick = () => {
+                            showDetail(absId);
+                            if (node.parents.length > 0) toggleNode(li);
+                        };
+                        li.appendChild(content);
+
+                        if (node.parents.length > 0) {
+                            const childrenUl = document.createElement('ul');
+                            childrenUl.className = 'children';
+
+                            for (const parentId of node.parents.sort()) {
+                                const parentNode = treeData[parentId];
+                                if (parentNode && parentNode.type === 'rule') {
+                                    const parentLi = document.createElement('li');
+                                    parentLi.className = 'tree-node';
+                                    parentLi.dataset.nodeId = parentId;
+                                    parentLi.dataset.type = 'rule';
+
+                                    const parentContent = document.createElement('div');
+                                    parentContent.className = 'node-content node-rule';
+                                    parentContent.innerHTML = `
+                                        <span class="toggle-icon"></span>
+                                        <span class="node-icon">▣</span>
+                                        <span class="node-name">${parentId}</span>
+                                        <span class="node-badge badge-${parentNode.family}">${parentNode.family}</span>
+                                    `;
+                                    parentContent.onclick = () => showDetail(parentId);
+                                    parentLi.appendChild(parentContent);
+                                    childrenUl.appendChild(parentLi);
+                                }
+                            }
+                            li.appendChild(childrenUl);
+                        }
+                        treeView.appendChild(li);
+                    }
+                }
+            }
+        }
+
+        // Initial render
+        renderTree();
+
+        // =====================================================================
+        // TAB SWITCHING
+        // =====================================================================
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            // Close detail panel when switching tabs
+            closeDetail();
+
+            // Render search tree on first view
+            if (tabName === 'search' && !searchTreeRendered) {
+                renderSearchTree();
+                searchTreeRendered = true;
+            }
+        }
+
+        // =====================================================================
+        // SEARCH TREE RENDERING
+        // =====================================================================
+
+        const searchTreeData = {"id": "root", "label": "\u03bbh. [?:bool]", "type": "hole", "description": "Root: A function from Hand to Bool (57 rules to discover)", "children": [{"id": "direct_pred", "label": "[?:Hand\u2192bool] h", "type": "hole", "description": "Apply a direct hand predicate", "children": [{"id": "r_uniform_color", "label": "all_same_color h", "type": "rule", "rule": "Uniform_color", "depth": 2, "family": "COUNT"}, {"id": "dead_all_same_suit", "label": "all_same_suit h", "type": "dead_end", "description": "Not in our rule set (would be depth 2)", "depth": 2}]}, {"id": "comparison", "label": "[?:cmp] [?:int] [?:int]", "type": "hole", "description": "Compare two values", "children": [{"id": "eq_branch", "label": "eq [?:int] [?:int]", "type": "hole", "description": "Equality comparison", "children": [{"id": "eq_const_query", "label": "eq [N] ([?:Hand\u2192int] h)", "type": "hole", "description": "Compare constant to hand query result", "children": [{"id": "r_exactly_two_suits", "label": "eq 2 (n_unique_suits h)", "type": "rule", "rule": "Exactly_two_suits", "depth": 3, "family": "COUNT"}, {"id": "r_exactly_one_club", "label": "eq 1 (count_suit h \u2663)", "type": "rule", "rule": "Exactly_one_club", "depth": 4, "family": "COUNT"}, {"id": "eq_1_filter_len", "label": "eq 1 (length (filter [?:pred] h))", "type": "hole", "description": "Exactly one card satisfies predicate", "children": [{"id": "r_only_one_odd", "label": "eq 1 (length (filter (\u03bbc. eq 1 (mod (rank_val c) 2)) h))", "type": "rule", "rule": "Only_one_odd_rank", "depth": 7, "family": "PARITY"}]}, {"id": "eq_1_unique_len", "label": "eq 1 (length (unique (map [?:f] h)))", "type": "hole", "description": "All cards have same value under f (uniform pattern)", "children": [{"id": "r_uniform_parity", "label": "eq 1 (length (unique (map get_parity h)))", "type": "rule", "rule": "Uniform_rank_parity", "depth": 8, "family": "PARITY"}]}]}, {"id": "eq_terminals", "label": "eq ([?:f] (head h)) ([?:f] (last h))", "type": "hole", "description": "Compare first and last card properties", "children": [{"id": "r_ends_same_suit", "label": "eq (get_suit (head h)) (get_suit (last h))", "type": "rule", "rule": "Ends_same_suit", "depth": 5, "family": "LOCAL"}, {"id": "r_ends_same_color", "label": "eq (get_color (head h)) (get_color (last h))", "type": "rule", "rule": "Ends_same_color", "depth": 5, "family": "LOCAL"}, {"id": "r_ends_same_altcolor1", "label": "eq (get_altcolor1 (head h)) (get_altcolor1 (last h))", "type": "rule", "rule": "Ends_same_altcolor1", "depth": 10, "family": "ALTCLR", "requires": ["get_altcolor1"]}]}, {"id": "eq_halves_prop", "label": "eq ([?:P] (first_half h)) ([?:P] (second_half h))", "type": "abstraction", "description": "Compare halves by some property P", "requires": ["first_half", "second_half"], "children": [{"id": "r_halves_hearts", "label": "eq (has_suit (first_half h) \u2665) (has_suit (second_half h) \u2665)", "type": "rule", "rule": "Halves_hearts_presence_equal", "depth": 10, "family": "HIER"}, {"id": "r_halves_uniform_color", "label": "eq (uniform get_color (first_half h)) (uniform get_color (second_half h))", "type": "rule", "rule": "Halves_uniform_color_equal", "depth": 12, "family": "HIER", "requires": ["uniform_by"]}, {"id": "r_halves_uniform_parity", "label": "eq (uniform get_parity (first_half h)) (uniform get_parity (second_half h))", "type": "rule", "rule": "Halves_uniform_parity_equal", "depth": 13, "family": "HIER", "requires": ["uniform_by", "get_parity"]}, {"id": "r_halves_ap_step1", "label": "eq (is_run (first_half h)) (is_run (second_half h))", "type": "rule", "rule": "Halves_AP_step1_equal", "depth": 15, "family": "HIER", "requires": ["is_sorted_by"]}, {"id": "r_halves_ap_len3", "label": "eq (has_AP 3 (first_half h)) (has_AP 3 (second_half h))", "type": "rule", "rule": "Halves_AP_len3_any_equal", "depth": 16, "family": "HIER", "requires": ["has_AP"]}, {"id": "r_halves_ap_len2", "label": "eq (has_adj_pair (first_half h)) (has_adj_pair (second_half h))", "type": "rule", "rule": "Halves_AP_len2_step1_equal", "depth": 14, "family": "HIER"}]}, {"id": "eq_halves_set", "label": "eq (unique (map [?:f] (first_half h))) (unique (map [?:f] (second_half h)))", "type": "abstraction", "description": "Compare halves by set of values", "requires": ["first_half", "second_half", "halves_set_equal_by"], "children": [{"id": "r_halves_same_suit_set", "label": "eq (unique (map get_suit (first_half h))) (unique (map get_suit (second_half h)))", "type": "rule", "rule": "Halves_same_suit_set", "depth": 11, "family": "COPY"}]}]}, {"id": "ordering_branch", "label": "[le|lt|ge|gt] [?:int] [?:int]", "type": "hole", "description": "Ordering comparisons", "children": [{"id": "r_at_most_three", "label": "le (n_unique_suits h) 3", "type": "rule", "rule": "At_most_three_suits", "depth": 3, "family": "COUNT"}, {"id": "r_has_pair", "label": "lt (length (unique (map get_rank h))) (length h)", "type": "rule", "rule": "Has_pair_ranks", "depth": 6, "family": "COUNT"}, {"id": "ge_count_half", "label": "ge (count_suit h [?:s]) (half_len h)", "type": "hole", "description": "At least half the cards have suit s", "children": [{"id": "r_half_same_suit", "label": "any (\u03bbs. ge (count_suit h s) (half_len h)) [\u2663,\u2666,\u2665,\u2660]", "type": "rule", "rule": "Half_or_more_same_suit", "depth": 7, "family": "COUNT"}]}, {"id": "ge_score", "label": "ge [?:score_expr] [?:threshold]", "type": "hole", "description": "Score threshold comparisons", "children": [{"id": "r_score_rstar", "label": "ge (sum_ranks h + bonuses) 50", "type": "rule", "rule": "Score_threshold_Rstar", "depth": 15, "family": "SCORE"}, {"id": "r_half_sum_diff", "label": "ge (sum_ranks (first_half h) - sum_ranks (second_half h)) (length h)", "type": "rule", "rule": "Half_sum_diff_geN", "depth": 11, "family": "SCORE", "requires": ["first_half", "second_half"]}, {"id": "r_half_2x", "label": "or (ge L (* 2 R)) (ge R (* 2 L))", "type": "rule", "rule": "Half_sum_one_side_ge_2x_other", "depth": 13, "family": "SCORE", "requires": ["first_half", "second_half"]}]}]}]}, {"id": "all_true_branch", "label": "all_true [?:list(bool)]", "type": "hole", "description": "All elements of boolean list are true (type bridge)", "children": [{"id": "all_true_zipwith", "label": "all_true (zip_with [?:cmp] [?:list] [?:list])", "type": "hole", "description": "Element-wise list comparison", "children": [{"id": "palindrome_pattern", "label": "all_true (zip_with eq (map [?:f] h) (reverse (map [?:f] h)))", "type": "abstraction", "description": "Palindrome check: sequence equals its reverse", "requires": ["is_palindrome_by"], "children": [{"id": "r_suits_pal", "label": "... eq (map get_suit h) (reverse (map get_suit h))", "type": "rule", "rule": "Suits_palindrome", "depth": 8, "family": "PAL"}, {"id": "r_colors_pal", "label": "... eq (map get_color h) (reverse (map get_color h))", "type": "rule", "rule": "Colors_palindrome", "depth": 8, "family": "PAL"}, {"id": "r_ranks_pal", "label": "... eq (map get_rank h) (reverse (map get_rank h))", "type": "rule", "rule": "Ranks_palindrome", "depth": 8, "family": "PAL"}, {"id": "r_altcolor1_pal", "label": "... eq (map get_altcolor1 h) (reverse ...)", "type": "rule", "rule": "AltColor1_palindrome", "depth": 12, "family": "ALTCLR", "requires": ["get_altcolor1"]}, {"id": "r_altcolor2_pal", "label": "... eq (map get_altcolor2 h) (reverse ...)", "type": "rule", "rule": "AltColor2_palindrome", "depth": 12, "family": "ALTCLR", "requires": ["get_altcolor2"]}]}, {"id": "sorted_pattern", "label": "all_true (zip_with le (map [?:f] h) (drop 1 (map [?:f] h)))", "type": "abstraction", "description": "Sorted check: each element <= next", "requires": ["is_sorted_by"], "children": [{"id": "r_sorted_rank", "label": "... le (map rank_val h) (drop 1 (map rank_val h))", "type": "rule", "rule": "Sorted_by_rank", "depth": 9, "family": "LOCAL"}]}, {"id": "halves_copy_pattern", "label": "all_true (zip_with eq (map [?:f] (first_half h)) (map [?:f] (second_half h)))", "type": "abstraction", "description": "Halves have identical sequence under f", "requires": ["first_half", "second_half", "lists_equal", "halves_equal_by"], "children": [{"id": "r_halves_copy_suits", "label": "... eq (map get_suit (first_half h)) (map get_suit (second_half h))", "type": "rule", "rule": "Halves_copy_suits", "depth": 10, "family": "COPY"}, {"id": "r_halves_copy_colors", "label": "... eq (map get_color (first_half h)) (map get_color (second_half h))", "type": "rule", "rule": "Halves_copy_colors", "depth": 10, "family": "COPY"}, {"id": "r_halves_copy_ranks", "label": "... eq (map get_rank (first_half h)) (map get_rank (second_half h))", "type": "rule", "rule": "Halves_copy_ranks", "depth": 10, "family": "COPY"}, {"id": "r_halves_copy_altcolor1", "label": "... eq (map get_altcolor1 (first_half h)) ...", "type": "rule", "rule": "Halves_copy_altcolor1", "depth": 14, "family": "COPY", "requires": ["get_altcolor1"]}, {"id": "r_halves_copy_altcolor2", "label": "... eq (map get_altcolor2 (first_half h)) ...", "type": "rule", "rule": "Halves_copy_altcolor2", "depth": 14, "family": "COPY", "requires": ["get_altcolor2"]}]}]}]}, {"id": "all_branch", "label": "all [?:a\u2192bool] [?:list(a)]", "type": "hole", "description": "All elements satisfy predicate", "children": [{"id": "all_adjacent", "label": "all [?:pair\u2192bool] (adjacent_pairs h)", "type": "hole", "description": "All adjacent pairs satisfy predicate", "children": [{"id": "r_adj_rank_suit", "label": "all (\u03bbp. or (eq ranks) (eq suits)) (adjacent_pairs h)", "type": "rule", "rule": "Adj_same_rank_or_suit", "depth": 8, "family": "ADJ"}, {"id": "r_adj_gap_le3", "label": "all (\u03bbp. le (abs (- r1 r2)) 3) (adjacent_pairs h)", "type": "rule", "rule": "Adj_rank_gap_le3", "depth": 10, "family": "ADJ"}, {"id": "adj_map_pattern", "label": "all (\u03bbp. or (eq suits) (eq (cycle (suit left)) (suit right))) (adjacent_pairs h)", "type": "abstraction", "description": "Adjacent cards: same suit or mapped by cycle", "requires": ["suit_cycle_m1", "suit_cycle_m2"], "children": [{"id": "r_adj_same_or_m1", "label": "... or eq (suit_cycle_m1 ...) ...", "type": "rule", "rule": "Adj_same_or_map_M1", "depth": 12, "family": "MAP"}, {"id": "r_adj_same_or_m2", "label": "... or eq (suit_cycle_m2 ...) ...", "type": "rule", "rule": "Adj_same_or_map_M2", "depth": 12, "family": "MAP"}]}]}, {"id": "all_shifted", "label": "all [?:pair\u2192bool] (shifted_pairs [?:k] h)", "type": "abstraction", "description": "All k-offset pairs satisfy predicate", "requires": ["shifted_pairs"], "children": [{"id": "shift_k2", "label": "all [?:pred] (shifted_pairs 2 h)", "type": "hole", "description": "Skip-2 pairs", "children": [{"id": "r_skip2_rank_suit", "label": "all (\u03bbp. or (eq ranks) (eq suits)) (shifted_pairs 2 h)", "type": "rule", "rule": "Skip2_same_rank_or_suit", "depth": 10, "family": "ADJ"}, {"id": "r_shift2_plus3", "label": "all (\u03bbp. eq (diff ranks) 3) (shifted_pairs 2 h)", "type": "rule", "rule": "Shift2_plus3", "depth": 10, "family": "SHIFT"}, {"id": "r_step2_map_m1", "label": "all (\u03bbp. eq (suit_cycle_m1 ...) ...) (shifted_pairs 2 h)", "type": "rule", "rule": "Step2_back_map_M1", "depth": 12, "family": "MAP", "requires": ["suit_cycle_m1"]}, {"id": "r_step2_map_m2", "label": "all (\u03bbp. eq (suit_cycle_m2 ...) ...) (shifted_pairs 2 h)", "type": "rule", "rule": "Step2_back_map_M2", "depth": 12, "family": "MAP", "requires": ["suit_cycle_m2"]}]}, {"id": "shift_half", "label": "all [?:pred] (shifted_pairs (half_len h) h)", "type": "abstraction", "description": "Half-offset pairs (position i vs i+n/2)", "requires": ["half_len"], "children": [{"id": "r_shift_half_ge", "label": "all (\u03bbp. ge (rank right) (rank left)) (shifted_pairs (half_len h) h)", "type": "rule", "rule": "Shift_half_ge", "depth": 11, "family": "SHIFT"}, {"id": "r_shift_half_plus2", "label": "all (\u03bbp. eq (diff ranks) 2) (shifted_pairs (half_len h) h)", "type": "rule", "rule": "Shift_half_plus_two", "depth": 12, "family": "SHIFT"}, {"id": "r_half_map_m1", "label": "all (\u03bbp. eq (suit_cycle_m1 (suit left)) (suit right)) ...", "type": "rule", "rule": "Half_map_samepos_M1", "depth": 14, "family": "MAP", "requires": ["suit_cycle_m1"]}, {"id": "r_half_map_m2", "label": "all (\u03bbp. eq (suit_cycle_m2 (suit left)) (suit right)) ...", "type": "rule", "rule": "Half_map_samepos_M2", "depth": 14, "family": "MAP", "requires": ["suit_cycle_m2"]}]}]}]}, {"id": "any_branch", "label": "any [?:Card\u2192bool] h", "type": "hole", "description": "Some card satisfies predicate", "children": [{"id": "any_specific", "label": "any (\u03bbc. and (eq (get_suit c) [?:s]) (eq (rank_val c) [?:r])) h", "type": "hole", "description": "Contains specific card (suit + rank)", "children": [{"id": "r_ace_spades", "label": "any (\u03bbc. and (eq (get_suit c) \u2660) (eq (rank_val c) 14)) h", "type": "rule", "rule": "Has_Ace_of_Spades", "depth": 7, "family": "TOKEN"}, {"id": "r_6_diamonds", "label": "any (\u03bbc. and (eq (get_suit c) \u2666) (eq (rank_val c) 6)) h", "type": "rule", "rule": "Has_6_of_Diamonds", "depth": 7, "family": "TOKEN"}]}, {"id": "any_suit_count", "label": "any (\u03bbs. ge (count_suit h s) [?:n]) [suits]", "type": "hole", "description": "Some suit has at least n cards", "children": [{"id": "r_half_same_suit_alt", "label": "any (\u03bbs. ge (count_suit h s) (half_len h)) [\u2663,\u2666,\u2665,\u2660]", "type": "rule", "rule": "Half_or_more_same_suit", "depth": 7, "family": "COUNT", "note": "Alternative path to same rule"}]}]}, {"id": "fold_branch", "label": "snd (fold [?:state\u2192Card\u2192state] (pair [?:init] [?:init]) h)", "type": "abstraction", "description": "Stateful fold with pair state", "requires": ["fold", "pair", "fst", "snd"], "children": [{"id": "bracket_pattern", "label": "snd (fold (\u03bbst.\u03bbc. pair (adjust) (check)) (pair 0 true) h)", "type": "abstraction", "description": "Bracket matching via counter + validity flag", "requires": ["bracket_match"], "children": [{"id": "r_brackets_suit", "label": "bracket_match {\u2660,\u2665:open} {\u2663,\u2666:close} h", "type": "rule", "rule": "Well_formed_brackets_by_suit", "depth": 14, "family": "LANG"}, {"id": "r_even_opens", "label": "bracket_match even_rank_opens h", "type": "rule", "rule": "Even_opens_next_closes", "depth": 16, "family": "LANG"}, {"id": "r_odd_opens", "label": "bracket_match odd_rank_opens h", "type": "rule", "rule": "Odd_opens_next_closes", "depth": 16, "family": "LANG"}]}, {"id": "order_track", "label": "snd (fold (\u03bbst.\u03bbc. track_order) (pair false false) h)", "type": "hole", "description": "Track ordering between card types", "children": [{"id": "r_s_before_h", "label": "snd (fold track_spade_heart (pair false false) h)", "type": "rule", "rule": "S_before_H", "depth": 10, "family": "LOCAL"}]}]}, {"id": "or_branch", "label": "or [?:bool] [?:bool]", "type": "hole", "description": "Disjunction of conditions", "children": [{"id": "pos_check_or", "label": "or (eq (rank_val (at h [?:i])) [?:r]) (or ...)", "type": "hole", "description": "Card at position has one of several ranks", "children": [{"id": "r_pos3_jqk", "label": "or (eq (rank (at h 2)) 11) (or (eq ... 12) (eq ... 13))", "type": "rule", "rule": "Pos3_is_JQK", "depth": 7, "family": "POSITION"}, {"id": "r_pos4_257", "label": "or (eq (rank (at h 3)) 2) (or (eq ... 5) (eq ... 7))", "type": "rule", "rule": "Pos4_is_2_5_7", "depth": 7, "family": "POSITION"}]}, {"id": "or_halves", "label": "or (ge L (* 2 R)) (ge R (* 2 L))", "type": "abstraction", "description": "One half dominates the other", "requires": ["first_half", "second_half"], "children": [{"id": "r_half_2x_alt", "label": "or (ge (sum left) (* 2 (sum right))) ...", "type": "rule", "rule": "Half_sum_one_side_ge_2x_other", "depth": 13, "family": "SCORE", "note": "Alternative path"}]}]}, {"id": "and_branch", "label": "and [?:bool] [?:bool]", "type": "hole", "description": "Conjunction of conditions", "children": [{"id": "radial_pattern", "label": "and (sorted_desc (reverse (first_half h))) (sorted_desc (second_half h))", "type": "abstraction", "description": "Radial pattern: center is highest", "requires": ["first_half", "second_half", "is_sorted_by"], "children": [{"id": "r_radial_nonincr", "label": "and (sorted_desc (reverse (first_half h))) (sorted_desc (second_half h))", "type": "rule", "rule": "Halves_radial_nonincreasing", "depth": 14, "family": "CENTER"}, {"id": "r_radial_no_dom", "label": "forall i j. dist(j)>dist(i) \u2192 rank(j)\u2264rank(i)", "type": "rule", "rule": "Global_radial_no_dominance", "depth": 18, "family": "CENTER"}]}]}, {"id": "ap_branch", "label": "has_AP [?:len] [?:step] h", "type": "abstraction", "description": "Contains arithmetic progression in ranks", "requires": ["has_AP"], "children": [{"id": "r_ap_len3_any", "label": "has_AP 3 any h", "type": "rule", "rule": "AP_len3_anywhere_anyk", "depth": 13, "family": "AP"}, {"id": "r_ap_len3_step2", "label": "has_AP 3 2 h", "type": "rule", "rule": "AP_len3_step2_anywhere", "depth": 13, "family": "AP"}, {"id": "r_ap_len4_step2", "label": "has_AP 4 2 h", "type": "rule", "rule": "AP_len4_step2_anywhere", "depth": 14, "family": "AP"}]}, {"id": "dead_ends", "label": "Other intermediate compositions (no rules)", "type": "dead_end", "description": "Compositions explored during search that don't yield rules", "children": [{"id": "dead_not", "label": "not [?:bool]", "type": "dead_end", "description": "Negation - no rules use top-level negation", "depth": "varies"}, {"id": "dead_if", "label": "if [?:bool] [?:bool] [?:bool]", "type": "dead_end", "description": "Conditional - used internally but not at top level", "depth": "varies"}, {"id": "dead_length_direct", "label": "eq (length h) [?:n]", "type": "dead_end", "description": "Direct length check - not a rule (hand size is fixed)", "depth": 2}, {"id": "dead_head_rank", "label": "eq (rank_val (head h)) [?:n]", "type": "dead_end", "description": "First card rank equals n - not in rule set", "depth": 4}, {"id": "dead_sum_eq", "label": "eq (sum_ranks h) [?:n]", "type": "dead_end", "description": "Exact sum - only threshold comparisons are rules", "depth": 3}, {"id": "dead_mod_0", "label": "eq 0 (mod (sum_ranks h) [?:n])", "type": "dead_end", "description": "Sum divisible by n - not in current rule set", "depth": 5}, {"id": "dead_filter_len_gt", "label": "gt (length (filter [?:pred] h)) [?:n]", "type": "dead_end", "description": "More than n cards satisfy pred", "depth": "varies"}, {"id": "dead_reverse_eq", "label": "eq h (reverse h)", "type": "dead_end", "description": "Hand equals its reverse - too strong (palindrome by all properties)", "depth": 3}]}]};
+        let searchTreeRendered = false;
+
+        function createSearchNodeElement(node, depth = 0) {
+            const li = document.createElement('li');
+            li.className = `search-node search-node-${node.type}`;
+            li.dataset.depth = depth;
+
+            const content = document.createElement('div');
+            content.className = 'search-node-content';
+
+            // Toggle icon
+            const toggle = document.createElement('span');
+            toggle.className = 'search-toggle';
+            if (node.children && node.children.length > 0) {
+                toggle.textContent = '▶';
+                toggle.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSearchNode(li);
+                };
+            }
+            content.appendChild(toggle);
+
+            // Node info container
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'search-node-info';
+
+            // Label (the program expression)
+            const label = document.createElement('div');
+            label.className = 'search-node-label';
+
+            // Highlight holes in the label
+            let labelText = node.label;
+            labelText = labelText.replace(/\[\?:[^\]]+\]/g, '<span class="hole-placeholder">$&</span>');
+            label.innerHTML = labelText;
+
+            // Add rule badge if it's a rule
+            if (node.type === 'rule' && node.rule) {
+                const ruleBadge = document.createElement('span');
+                ruleBadge.className = 'search-rule-name';
+                ruleBadge.textContent = node.rule;
+                label.appendChild(document.createTextNode(' '));
+                label.appendChild(ruleBadge);
+
+                // Add family badge for rules
+                if (node.family) {
+                    const familyBadge = document.createElement('span');
+                    familyBadge.className = 'node-badge badge-' + node.family;
+                    familyBadge.textContent = node.family;
+                    familyBadge.style.marginLeft = '5px';
+                    label.appendChild(familyBadge);
+                }
+            }
+
+            // Add depth badge if available
+            if (node.depth !== undefined && node.depth !== 'varies') {
+                const depthBadge = document.createElement('span');
+                depthBadge.className = 'search-depth-badge';
+                depthBadge.textContent = 'd=' + node.depth;
+                label.appendChild(depthBadge);
+            }
+
+            infoDiv.appendChild(label);
+
+            // Description
+            if (node.description) {
+                const desc = document.createElement('div');
+                desc.className = 'search-node-desc';
+                desc.textContent = node.description;
+                infoDiv.appendChild(desc);
+            }
+
+            // Required abstractions
+            if (node.requires && node.requires.length > 0) {
+                const reqDiv = document.createElement('div');
+                reqDiv.className = 'search-requires';
+                for (const req of node.requires) {
+                    const tag = document.createElement('span');
+                    tag.className = 'search-requires-tag';
+                    tag.textContent = req;
+                    reqDiv.appendChild(tag);
+                }
+                infoDiv.appendChild(reqDiv);
+            }
+
+            content.appendChild(infoDiv);
+            li.appendChild(content);
+
+            // Children
+            if (node.children && node.children.length > 0) {
+                const childrenUl = document.createElement('ul');
+                childrenUl.className = 'search-children';
+
+                for (const child of node.children) {
+                    const childEl = createSearchNodeElement(child, depth + 1);
+                    childrenUl.appendChild(childEl);
+                }
+                li.appendChild(childrenUl);
+            }
+
+            return li;
+        }
+
+        function toggleSearchNode(li) {
+            const children = li.querySelector('.search-children');
+            const toggle = li.querySelector('.search-toggle');
+            if (children) {
+                children.classList.toggle('expanded');
+                toggle.textContent = children.classList.contains('expanded') ? '▼' : '▶';
+            }
+        }
+
+        function renderSearchTree() {
+            const container = document.getElementById('searchTreeView');
+            container.innerHTML = '';
+
+            const rootEl = createSearchNodeElement(searchTreeData, 0);
+            container.appendChild(rootEl);
+
+            // Expand root by default
+            const rootChildren = rootEl.querySelector('.search-children');
+            const rootToggle = rootEl.querySelector('.search-toggle');
+            if (rootChildren) {
+                rootChildren.classList.add('expanded');
+                rootToggle.textContent = '▼';
+            }
+        }
+
+        function expandSearchAll() {
+            document.querySelectorAll('.search-children').forEach(el => el.classList.add('expanded'));
+            document.querySelectorAll('.search-toggle').forEach(el => {
+                if (el.textContent === '▶') el.textContent = '▼';
+            });
+        }
+
+        function collapseSearchAll() {
+            document.querySelectorAll('.search-children').forEach(el => el.classList.remove('expanded'));
+            document.querySelectorAll('.search-toggle').forEach(el => {
+                if (el.textContent === '▼') el.textContent = '▶';
+            });
+        }
+
+        function expandSearchToDepth(maxDepth) {
+            // First collapse all
+            collapseSearchAll();
+
+            // Then expand up to maxDepth
+            document.querySelectorAll('.search-node').forEach(node => {
+                const depth = parseInt(node.dataset.depth);
+                if (depth < maxDepth) {
+                    const children = node.querySelector(':scope > .search-children');
+                    const toggle = node.querySelector(':scope > .search-node-content > .search-toggle');
+                    if (children) {
+                        children.classList.add('expanded');
+                        if (toggle) toggle.textContent = '▼';
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
