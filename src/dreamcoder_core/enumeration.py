@@ -185,6 +185,9 @@ class PriorityItem:
     program: Program = field(compare=False)
     tp: Type = field(compare=False)
     env: List[Type] = field(compare=False, default_factory=list)
+    # [CGN-INTEGRATION] Context tracking for ContextualGrammarNetwork
+    # Maps hole_id -> (parent_name, arg_position)
+    hole_contexts: Dict[int, Tuple[Optional[str], int]] = field(compare=False, default_factory=dict)
 
 
 # ============================================================================
@@ -222,13 +225,33 @@ class TopDownEnumerator:
         self,
         grammar: Grammar,
         max_depth: int = 8,
-        max_programs: int = 100000
+        max_programs: int = 100000,
+        # [CGN-INTEGRATION] Optional contextual grammar parameters
+        contextual_grammar: Optional[Any] = None,
+        task_embedding: Optional[Any] = None,
+        contextual_weight: float = 0.5
     ):
+        """
+        Initialize TopDownEnumerator.
+
+        Args:
+            grammar: The probabilistic grammar
+            max_depth: Maximum AST depth
+            max_programs: Maximum complete programs to yield
+            contextual_grammar: Optional ContextualGrammarNetwork for context-aware guidance [CGN-INTEGRATION]
+            task_embedding: Task embedding tensor (required if contextual_grammar is provided) [CGN-INTEGRATION]
+            contextual_weight: Blend weight for contextual predictions (0=grammar only, 1=contextual only) [CGN-INTEGRATION]
+        """
         self.grammar = grammar
         self.max_depth = max_depth
         self.max_programs = max_programs
         self.programs_enumerated = 0
         self.partial_programs_explored = 0
+
+        # [CGN-INTEGRATION] Contextual grammar support
+        self.contextual_grammar = contextual_grammar
+        self.task_embedding = task_embedding
+        self.contextual_weight = contextual_weight
 
         # Memoization cache: (type_str, env_tuple, budget_bucket) -> List[(Program, cost)]
         self._memo_cache: Dict[Tuple[str, Tuple[str, ...], int], List[Tuple[Program, float]]] = {}
@@ -236,6 +259,55 @@ class TopDownEnumerator:
         self._memo_in_progress: Set[Tuple[str, Tuple[str, ...], int]] = set()
         self._memo_hits = 0
         self._memo_misses = 0
+
+    # [CGN-INTEGRATION] New method for contextual log probability blending
+    def get_contextual_log_prob(
+        self,
+        prim_name: str,
+        parent_name: Optional[str],
+        position: int,
+        base_log_prob: float
+    ) -> float:
+        """
+        Get log probability for a primitive, optionally blended with contextual prediction.
+        [CGN-INTEGRATION] Added Dec 31, 2024
+
+        Args:
+            prim_name: Name of the primitive to score
+            parent_name: Name of parent primitive (None for root)
+            position: Argument position
+            base_log_prob: Base grammar log probability
+
+        Returns:
+            Blended log probability: (1-w)*base + w*contextual
+        """
+        if self.contextual_grammar is None or self.task_embedding is None:
+            return base_log_prob
+
+        try:
+            import torch
+            # Get contextual log probabilities
+            log_probs = self.contextual_grammar.predict_for_context(
+                self.task_embedding,
+                parent_name,
+                position
+            )
+
+            # Get index of this primitive
+            prim_idx = self.contextual_grammar.primitive_to_idx.get(prim_name)
+            if prim_idx is None:
+                return base_log_prob
+
+            contextual_log_prob = float(log_probs[prim_idx].detach())
+
+            # Blend: (1-w)*base + w*contextual
+            w = self.contextual_weight
+            blended = (1 - w) * base_log_prob + w * contextual_log_prob
+
+            return blended
+
+        except Exception:
+            return base_log_prob
 
     def enumerate(
         self,
@@ -245,7 +317,10 @@ class TopDownEnumerator:
         env: List[Type] = None
     ) -> Generator[Tuple[Program, float], None, None]:
         """
-        Enumerate programs of the given type using top-down hole-filling.
+        Enumerate programs of the given type.
+
+        DEFAULT: Uses memoized enumeration for ~1000-8000x faster performance.
+        For the legacy priority-queue implementation, use enumerate_priority_queue().
 
         Yields (program, log_probability) pairs in order of increasing cost.
 
@@ -257,6 +332,30 @@ class TopDownEnumerator:
 
         Yields:
             (complete_program, log_probability) tuples
+        """
+        # Delegate to memoized version (1000-8000x faster at depth 7-8)
+        yield from self.enumerate_memoized(
+            request_type,
+            max_cost=max_cost if max_cost != float('inf') else 50.0,
+            timeout_seconds=timeout_seconds,
+            env=env,
+            depth_limit=self.max_depth
+        )
+
+    def enumerate_priority_queue(
+        self,
+        request_type: Type,
+        max_cost: float = float('inf'),
+        timeout_seconds: float = float('inf'),
+        env: List[Type] = None
+    ) -> Generator[Tuple[Program, float], None, None]:
+        """
+        LEGACY: Enumerate using priority-queue hole-filling (slower).
+
+        Use enumerate() instead for the fast memoized version.
+        This method is kept for backwards compatibility and edge cases.
+
+        Yields (program, log_probability) pairs in order of increasing cost.
         """
         if env is None:
             env = []
@@ -308,7 +407,7 @@ class TopDownEnumerator:
 
             # Expand the first hole
             self.partial_programs_explored += 1
-            self._expand_first_hole(pq, program, cost, current_env, seen)
+            self._expand_first_hole(pq, program, cost, current_env, seen, item.hole_contexts)
 
     def _expand_first_hole(
         self,
@@ -316,7 +415,8 @@ class TopDownEnumerator:
         program: Program,
         base_cost: float,
         env: List[Type],
-        seen: Set[int]
+        seen: Set[int],
+        hole_contexts: Optional[Dict[int, Tuple[Optional[str], int]]] = None
     ) -> None:
         """
         Expand the first hole in a partial program with all valid productions.
@@ -336,7 +436,14 @@ class TopDownEnumerator:
         PREDICTIVE DEPTH PRUNING (Option B fix for partial program explosion):
         Before pushing any partial to the queue, we estimate if it CAN be
         completed within max_depth. If not, we skip it entirely.
+
+        [CGN-INTEGRATION] CONTEXTUAL GRAMMAR SUPPORT:
+        If contextual_grammar is set, log probabilities are blended with
+        context-aware predictions based on (parent, position).
         """
+        if hole_contexts is None:
+            hole_contexts = {}
+
         # Find the first hole
         hole = find_first_hole(program)
         if hole is None:
@@ -347,6 +454,9 @@ class TopDownEnumerator:
 
         # Use the env directly - it's correct for the first hole by construction
         hole_env = env
+
+        # [CGN-INTEGRATION] Get context for this hole (parent_name, position)
+        parent_name, position = hole_contexts.get(hole.id, (None, 0))
 
         # Helper for predictive depth pruning
         def can_complete(new_prog: Program) -> bool:
@@ -401,7 +511,14 @@ class TopDownEnumerator:
         candidates = self.grammar.candidates_for_type(hole_type, ctx, hole_env)
 
         for prod, inst_type, log_prob in candidates:
-            prod_cost = -log_prob
+            # [CGN-INTEGRATION] Get primitive name for contextual scoring
+            prim_name = str(prod.program)
+
+            # [CGN-INTEGRATION] Blend with contextual grammar if available
+            contextual_log_prob = self.get_contextual_log_prob(
+                prim_name, parent_name, position, log_prob
+            )
+            prod_cost = -contextual_log_prob
             new_cost = base_cost + prod_cost
 
             # Skip if already too expensive
@@ -409,13 +526,20 @@ class TopDownEnumerator:
                 continue
 
             if isinstance(inst_type, Arrow):
-                # Production needs arguments - create holes for them
-                filled = self._apply_with_holes(prod.program, inst_type)
+                # [CGN-INTEGRATION] Production needs arguments - create holes with context tracking
+                filled, new_hole_contexts = self._apply_with_holes_contextual(
+                    prod.program, inst_type, prim_name
+                )
             else:
                 # Production directly produces the type
                 filled = prod.program
+                new_hole_contexts = {}
 
             new_program = substitute_hole(program, hole.id, filled)
+
+            # [CGN-INTEGRATION] Merge hole contexts: keep existing contexts, add new ones
+            merged_contexts = dict(hole_contexts)
+            merged_contexts.update(new_hole_contexts)
 
             # Check depth (current)
             if new_program.depth() > self.max_depth:
@@ -431,7 +555,8 @@ class TopDownEnumerator:
                     new_cost,
                     new_program,
                     hole_type,
-                    hole_env
+                    hole_env,
+                    merged_contexts
                 ))
 
         # CASE 3: Try variables from the environment
@@ -472,6 +597,47 @@ class TopDownEnumerator:
             current_type = current_type.ret
 
         return result
+
+    # [CGN-INTEGRATION] New method for context-aware hole creation
+    def _apply_with_holes_contextual(
+        self,
+        func: Program,
+        func_type: Arrow,
+        parent_name: str
+    ) -> Tuple[Program, Dict[int, Tuple[Optional[str], int]]]:
+        """
+        Apply a function to holes, tracking context for each hole.
+        [CGN-INTEGRATION] Added Dec 31, 2024
+
+        Given func : A → B → C with name 'foo', creates:
+        - Program: ((foo ?0:A) ?1:B)
+        - Contexts: {hole0.id: ('foo', 0), hole1.id: ('foo', 1)}
+
+        This enables context-aware enumeration where each hole knows
+        its parent primitive and argument position.
+
+        Args:
+            func: The function program (primitive)
+            func_type: The function's type
+            parent_name: Name of the parent primitive
+
+        Returns:
+            Tuple of (program with holes, hole context mapping)
+        """
+        result = func
+        current_type = func_type
+        hole_contexts = {}
+        position = 0
+
+        while isinstance(current_type, Arrow):
+            arg_type = current_type.arg
+            arg_hole = Hole(arg_type)
+            hole_contexts[arg_hole.id] = (parent_name, position)
+            result = Application(result, arg_hole)
+            current_type = current_type.ret
+            position += 1
+
+        return result, hole_contexts
 
     # Note: Environment tracking is done by storing the correct env in PriorityItem
     # when we push new partial programs. The env is updated when we introduce

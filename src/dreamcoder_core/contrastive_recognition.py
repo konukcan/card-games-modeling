@@ -69,6 +69,11 @@ except ImportError:
 # CARD ENCODING: FACTORED EMBEDDINGS
 # ============================================================================
 
+# TODO: Consider removing FactoredCardEncoder in favor of EnhancedCardEncoder
+# (from recognition_variants.py) which adds color embedding and continuous rank value.
+# EnhancedCardEncoder achieves R@5=0.657 vs FactoredCardEncoder's R@5=0.635 (~3.5% improvement).
+# Decision pending after full code review. - Can Konuk, Dec 2024
+
 class FactoredCardEncoder(nn.Module):
     """
     Encode cards using learned factored embeddings.
@@ -811,7 +816,7 @@ class ContrastiveRecognitionModel(nn.Module):
 
             random_hands_data = []
             # Determine hand size from existing examples
-            hand_size = 5  # Default
+            hand_size = 6  # Default (standardized to 6)
             if pos_hands_data:
                 hand_size = pos_hands_data[0][3].sum().item()  # Count True in mask
             elif neg_hands_data:
@@ -1010,7 +1015,9 @@ class ContrastiveRecognitionModel(nn.Module):
         batch_size: int = 8,
         lambda_struct: float = 0.3,
         lambda_count: float = 0.1,
-        lambda_pred: float = 1.0
+        lambda_pred: float = 1.0,
+        lambda_bigram: float = 0.1,
+        use_bigram_loss: bool = False
     ) -> float:
         """
         Train the recognition model on solved tasks.
@@ -1023,23 +1030,28 @@ class ContrastiveRecognitionModel(nn.Module):
             lambda_struct: Weight for structural similarity loss
             lambda_count: Weight for count prediction loss
             lambda_pred: Weight for primitive prediction loss
+            lambda_bigram: Weight for bigram prediction loss
+            use_bigram_loss: Whether to include bigram loss (requires bigram_vocab)
 
         Returns:
             Final training loss
         """
-        # Collect training data
+        # Collect training data (now includes programs for bigram extraction)
         training_data = []
 
         for task in tasks:
             frontier = frontiers.get(task.name)
             if frontier and frontier.solved:
                 target_primitives = set()
+                best_program = None
                 for entry in frontier.entries:
                     if entry.log_likelihood == 0.0:  # Perfect solution
                         self._collect_primitives(entry.program, target_primitives)
+                        if best_program is None:
+                            best_program = entry.program
 
                 if target_primitives:
-                    training_data.append((task, target_primitives))
+                    training_data.append((task, target_primitives, best_program))
 
         if not training_data:
             return 0.0
@@ -1063,8 +1075,10 @@ class ContrastiveRecognitionModel(nn.Module):
                 batch_τ = []
                 batch_targets = []
                 batch_counts = []
+                batch_programs = []  # For bigram extraction
 
-                for task, target_prims in batch:
+                for task, target_prims, program in batch:
+                    batch_programs.append(program)
                     τ = self.encode_task_batched(task)
                     task_embeddings[task.name] = τ
                     primitive_sets[task.name] = target_prims
@@ -1102,8 +1116,26 @@ class ContrastiveRecognitionModel(nn.Module):
                 loss_count = F.mse_loss(pred_counts, count_batch)
                 loss_struct = self.compute_structural_similarity_loss(task_embeddings, primitive_sets)
 
+                # Bigram loss (if enabled and vocabulary exists)
+                loss_bigram = torch.tensor(0.0, device=self.device)
+                if use_bigram_loss and self.bigram_vocab:
+                    pred_bigrams = self.bigram_head(τ_batch)  # (batch, num_bigrams)
+                    # Build bigram targets from programs
+                    batch_bigram_targets = []
+                    for prog in batch_programs:
+                        bigram_target = torch.zeros(len(self.bigram_vocab), device=self.device)
+                        if prog is not None:
+                            prog_bigrams = extract_bigrams(prog)
+                            for bg in prog_bigrams:
+                                if bg in self.bigram_to_idx:
+                                    bigram_target[self.bigram_to_idx[bg]] = 1.0
+                        batch_bigram_targets.append(bigram_target)
+                    batch_bigram_targets = torch.stack(batch_bigram_targets)
+                    loss_bigram = F.binary_cross_entropy(pred_bigrams, batch_bigram_targets)
+
                 # Combined loss
-                loss = lambda_pred * loss_pred + lambda_count * loss_count + lambda_struct * loss_struct
+                loss = (lambda_pred * loss_pred + lambda_count * loss_count +
+                        lambda_struct * loss_struct + lambda_bigram * loss_bigram)
 
                 loss.backward()
                 self.optimizer.step()
@@ -1119,13 +1151,197 @@ class ContrastiveRecognitionModel(nn.Module):
         self.epoch_history.append({
             'num_tasks': len(training_data),
             'final_loss': final_loss,
-            'epochs': epochs
+            'epochs': epochs,
+            'bigram_training_enabled': use_bigram_loss and bool(self.bigram_vocab)
         })
 
         # Clear embedding cache
         self._task_embeddings.clear()
 
         return final_loss
+
+    # ========================================================================
+    # EVALUATION METHODS
+    # ========================================================================
+
+    def evaluate_count_head(
+        self,
+        tasks: List,
+        frontiers: Dict
+    ) -> Dict[str, float]:
+        """
+        Evaluate CountHead predictions against ground truth.
+
+        Args:
+            tasks: List of Task objects
+            frontiers: Dict mapping task names to TaskFrontier objects
+
+        Returns:
+            Dictionary with evaluation metrics:
+            - 'mse': Mean squared error
+            - 'mae': Mean absolute error
+            - 'correlation': Pearson correlation
+            - 'within_1': Fraction of predictions within ±1 of ground truth
+            - 'within_2': Fraction within ±2
+        """
+        import numpy as np
+        from scipy.stats import pearsonr
+
+        self.eval()
+
+        predictions = []
+        actuals = []
+
+        with torch.no_grad():
+            for task in tasks:
+                frontier = frontiers.get(task.name)
+                if not frontier or not frontier.solved:
+                    continue
+
+                # Get actual count from solution
+                actual_prims = set()
+                for entry in frontier.entries:
+                    if entry.log_likelihood == 0.0:
+                        self._collect_primitives(entry.program, actual_prims)
+                        break
+
+                if not actual_prims:
+                    continue
+
+                actual_count = len(actual_prims)
+
+                # Get predicted count
+                τ = self.encode_task_batched(task).unsqueeze(0)
+                pred_count = self.count_head(τ).squeeze().item()
+
+                predictions.append(pred_count)
+                actuals.append(actual_count)
+
+        if not predictions:
+            return {
+                'mse': float('inf'), 'mae': float('inf'),
+                'correlation': 0.0, 'p_value': 1.0,
+                'within_1': 0.0, 'within_2': 0.0,
+                'n_tasks': 0
+            }
+
+        preds = np.array(predictions)
+        acts = np.array(actuals)
+
+        mse = float(np.mean((preds - acts) ** 2))
+        mae = float(np.mean(np.abs(preds - acts)))
+
+        if len(preds) > 2:
+            try:
+                correlation, p_value = pearsonr(preds, acts)
+                correlation = float(correlation)
+                p_value = float(p_value)
+            except Exception:
+                correlation, p_value = 0.0, 1.0
+        else:
+            correlation, p_value = 0.0, 1.0
+
+        within_1 = float(np.mean(np.abs(preds - acts) <= 1))
+        within_2 = float(np.mean(np.abs(preds - acts) <= 2))
+
+        return {
+            'mse': mse,
+            'mae': mae,
+            'correlation': correlation,
+            'p_value': p_value,
+            'within_1': within_1,
+            'within_2': within_2,
+            'n_tasks': len(predictions),
+            'mean_actual': float(np.mean(acts)),
+            'mean_predicted': float(np.mean(preds))
+        }
+
+    def evaluate_bigram_head(
+        self,
+        tasks: List,
+        frontiers: Dict,
+        k: int = 5
+    ) -> Dict[str, float]:
+        """
+        Evaluate BigramHead predictions against ground truth.
+
+        Args:
+            tasks: List of Task objects
+            frontiers: Dict mapping task names to TaskFrontier objects
+            k: Number of top predictions to consider
+
+        Returns:
+            Dictionary with evaluation metrics:
+            - 'precision@k': Fraction of top-k predictions that are correct
+            - 'recall@k': Fraction of true bigrams in top-k predictions
+            - 'f1@k': Harmonic mean of precision and recall
+        """
+        import numpy as np
+
+        if not self.bigram_vocab:
+            return {
+                'precision@k': 0.0, 'recall@k': 0.0, 'f1@k': 0.0,
+                'n_tasks': 0, 'note': 'No bigram vocabulary'
+            }
+
+        self.eval()
+
+        precisions = []
+        recalls = []
+
+        with torch.no_grad():
+            for task in tasks:
+                frontier = frontiers.get(task.name)
+                if not frontier or not frontier.solved:
+                    continue
+
+                # Get ground truth bigrams from solution
+                gt_bigrams = set()
+                for entry in frontier.entries:
+                    if entry.log_likelihood == 0.0:
+                        gt_bigrams = extract_bigrams(entry.program)
+                        break
+
+                gt_indices = {self.bigram_to_idx[bg] for bg in gt_bigrams
+                              if bg in self.bigram_to_idx}
+
+                if not gt_indices:
+                    continue
+
+                # Get predictions
+                τ = self.encode_task_batched(task).unsqueeze(0)
+                pred_probs = self.bigram_head(τ).squeeze(0)
+
+                # Top-k predictions
+                _, top_k_indices = torch.topk(pred_probs, min(k, len(pred_probs)))
+                pred_indices = set(top_k_indices.cpu().numpy().tolist())
+
+                # Compute metrics
+                correct = len(pred_indices & gt_indices)
+                precision = correct / k if k > 0 else 0
+                recall = correct / len(gt_indices) if gt_indices else 0
+
+                precisions.append(precision)
+                recalls.append(recall)
+
+        if not precisions:
+            return {
+                'precision@k': 0.0, 'recall@k': 0.0, 'f1@k': 0.0,
+                'n_tasks': 0
+            }
+
+        mean_precision = float(np.mean(precisions))
+        mean_recall = float(np.mean(recalls))
+        f1 = (2 * mean_precision * mean_recall / (mean_precision + mean_recall)
+              if (mean_precision + mean_recall) > 0 else 0.0)
+
+        return {
+            'precision@k': mean_precision,
+            'recall@k': mean_recall,
+            'f1@k': f1,
+            'n_tasks': len(precisions),
+            'k': k
+        }
 
     # ========================================================================
     # INVENTION HANDLING
@@ -1168,12 +1384,20 @@ class ContrastiveRecognitionModel(nn.Module):
     # BIGRAM SUPPORT
     # ========================================================================
 
-    def build_bigram_vocabulary(self, programs: List[Program], min_count: int = 2):
+    def build_bigram_vocabulary(self, programs: List[Program], min_count: int = 1, max_bigrams: int = 100):
         """
-        Build bigram vocabulary from solved programs.
+        Build bigram vocabulary from solved programs and reinitialize BigramHead to match.
         """
-        self.bigram_vocab = build_bigram_vocabulary(programs, min_count, self.bigram_head.num_bigrams)
+        self.bigram_vocab = build_bigram_vocabulary(programs, min_count, max_bigrams)
         self.bigram_to_idx = {bg: i for i, bg in enumerate(self.bigram_vocab)}
+
+        # Reinitialize BigramHead with correct vocabulary size
+        if len(self.bigram_vocab) > 0:
+            vocab_size = len(self.bigram_vocab)
+            input_dim = self.bigram_head.mlp[0].in_features
+            hidden_dim = self.bigram_head.mlp[0].out_features
+            self.bigram_head = BigramHead(input_dim, hidden_dim, vocab_size)
+            self.bigram_head.to(self.device)
 
     def predict_bigrams(self, task) -> Dict[Tuple[str, str], float]:
         """

@@ -166,7 +166,7 @@ def create_tasks_from_catalogue(
     rules: List = None,
     n_examples: int = 100,
     n_holdout: int = 20,
-    hand_size: int = 5,  # Default 5 for catalogue rules
+    hand_size: int = 6,  # Standardized to 6 for all experiments
     seed: int = 42,
     balanced: bool = True,  # Use balanced sampling
     min_per_class: int = 5  # Minimum examples per class (rules with fewer are skipped)

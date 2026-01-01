@@ -1,0 +1,146 @@
+{
+  "variant": "no_gestalt",
+  "removed_primitives": [
+    "all_same_suit",
+    "all_same_color"
+  ],
+  "n_primitives": 57,
+  "config": {
+    "variant": "no_gestalt",
+    "n_iterations": 1,
+    "enumeration_budget": 10000,
+    "enumeration_timeout": 30.0,
+    "max_depth": 8,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "hand_size": 6,
+    "results_dir": "results_ablation/ablation_20260101_173723"
+  },
+  "summary": {
+    "variant": "no_gestalt",
+    "removed": [
+      "all_same_suit",
+      "all_same_color"
+    ],
+    "n_primitives": 57,
+    "tasks_solved_final": 0,
+    "tasks_ever_solved": 0,
+    "total_tasks": 10,
+    "solve_rate": 0.0,
+    "avg_depth": 0,
+    "max_depth": 0,
+    "total_programs": 100000,
+    "total_time": 4.000757217407227
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "tasks_solved": 0,
+      "total_tasks": 10,
+      "total_programs": 100000,
+      "total_time": 4.000757217407227,
+      "task_results": [
+        {
+          "task_name": "Sorted_by_rank",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3906829357147217,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "S_before_H",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.40799689292907715,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.40054821968078613,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.39806318283081055,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Has_pair_ranks",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3996548652648926,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Uniform_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.40633392333984375,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_two_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.4000980854034424,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_or_more_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3968968391418457,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "At_most_three_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3968081474304199,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_one_club",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.4036741256713867,
+          "holdout_verified": false
+        }
+      ]
+    }
+  ]
+}

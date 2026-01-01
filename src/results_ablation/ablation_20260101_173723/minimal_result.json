@@ -1,0 +1,164 @@
+{
+  "variant": "minimal",
+  "removed_primitives": [
+    "first_half",
+    "second_half",
+    "has_suit",
+    "has_color",
+    "count_suit",
+    "count_color",
+    "all_same_suit",
+    "all_same_color",
+    "n_unique_suits",
+    "n_unique_ranks",
+    "n_unique_colors"
+  ],
+  "n_primitives": 48,
+  "config": {
+    "variant": "minimal",
+    "n_iterations": 1,
+    "enumeration_budget": 10000,
+    "enumeration_timeout": 30.0,
+    "max_depth": 8,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "hand_size": 6,
+    "results_dir": "results_ablation/ablation_20260101_173723"
+  },
+  "summary": {
+    "variant": "minimal",
+    "removed": [
+      "first_half",
+      "second_half",
+      "has_suit",
+      "has_color",
+      "count_suit",
+      "count_color",
+      "all_same_suit",
+      "all_same_color",
+      "n_unique_suits",
+      "n_unique_ranks",
+      "n_unique_colors"
+    ],
+    "n_primitives": 48,
+    "tasks_solved_final": 0,
+    "tasks_ever_solved": 0,
+    "total_tasks": 10,
+    "solve_rate": 0.0,
+    "avg_depth": 0,
+    "max_depth": 0,
+    "total_programs": 100000,
+    "total_time": 2.777568817138672
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "tasks_solved": 0,
+      "total_tasks": 10,
+      "total_programs": 100000,
+      "total_time": 2.777568817138672,
+      "task_results": [
+        {
+          "task_name": "Sorted_by_rank",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.27181196212768555,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "S_before_H",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.28441476821899414,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2740800380706787,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.27743005752563477,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Has_pair_ranks",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2804098129272461,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Uniform_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2858738899230957,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_two_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2729370594024658,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_or_more_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2821969985961914,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "At_most_three_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.27343320846557617,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_one_club",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.2749810218811035,
+          "holdout_verified": false
+        }
+      ]
+    }
+  ]
+}

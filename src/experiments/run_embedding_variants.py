@@ -44,7 +44,8 @@ EMBEDDING_VARIANTS = [
 
 class Task:
     """Task wrapper for rules."""
-    def __init__(self, rule, n_examples=50, hand_size=5):
+    # TODO: Consider consolidating Task classes across experiment files - Dec 2024
+    def __init__(self, rule, n_examples=50, hand_size=6):
         self.rule = rule
         self.id = rule.id
         self.examples = []

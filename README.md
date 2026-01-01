@@ -45,10 +45,9 @@ card-games-modeling/
 │   │   ├── catalogue.py         # Core 45 experimental rules
 │   │   └── pretraining_rules.py # Alternative 44 pre-training rules
 │   ├── visualization/           # Analysis & plotting
-│   ├── results/                 # Experiment outputs
-│   │   └── overnight_v3/        # Current overnight runs
-│   ├── run_overnight_v3.py      # Main overnight experiment script
-│   ├── resume_overnight_v3.py   # Resume interrupted runs
+│   ├── results*/                # Experiment outputs
+│   ├── run_incremental_wakesleep.py  # Current wake-sleep runner
+│   ├── run_progressive_wakesleep.py  # Alternative curriculum runner
 │   └── KNOWN_ISSUES.md          # Bug documentation
 ├── docs/                        # Documentation
 ├── CLAUDE.md                    # Coding agent guidelines
@@ -64,26 +63,26 @@ cd card-games-modeling
 pip install -r requirements.txt
 ```
 
-### Running Overnight Experiments
+### Running Experiments
 
-The main experiment script runs a multi-phase wake-sleep training loop:
+The main experiment scripts run wake-sleep training with ContrastiveRecognitionModel:
 
 ```bash
 cd src
 
 # Launch overnight run with caffeinate (prevents system sleep)
-nohup caffeinate -d -i -s python3 run_overnight_v3.py > overnight_v3.out 2>&1 &
+nohup caffeinate -d -i -s python3 run_incremental_wakesleep.py > overnight.out 2>&1 &
+
+# Or use progressive curriculum approach
+nohup caffeinate -d -i -s python3 run_progressive_wakesleep.py > overnight.out 2>&1 &
 
 # Monitor progress
-tail -f overnight_v3.out
-
-# Resume an interrupted run
-python3 resume_overnight_v3.py --run-dir results/overnight_v3/run_v3_YYYYMMDD_HHMMSS
+tail -f overnight.out
 ```
 
 ### Output
 
-Each run generates a timestamped directory under `src/results/overnight_v3/` containing:
+Each run generates a timestamped results directory containing:
 
 1. **Iteration checkpoints**: `iteration_checkpoints/iteration_NNNN.json`
 2. **Model weights**: `recognition_model_*.pt`
@@ -105,66 +104,51 @@ Our grammar has 5 levels:
 
 See `src/dreamcoder_core/lean_primitives.py` for implementation.
 
-### 2. Neural Recognition Model
+### 2. Contrastive Recognition Model
 
-The recognition model predicts which primitives are likely useful for solving a task, given input/output examples. This guides enumeration by prioritizing promising programs.
+The recognition model predicts which primitives are likely useful for solving a task, given positive and negative examples. This guides enumeration by prioritizing promising programs.
 
-**Architecture:**
+**Architecture** (`ContrastiveRecognitionModel`):
 
 ```
-Task with M examples [(hand₁, bool₁), (hand₂, bool₂), ...]
+Task with positive (satisfies rule) and negative (doesn't satisfy) examples
                     ↓
 ┌─────────────────────────────────────────────────────────┐
-│  Per-Card Feature Extraction (24 dimensions/card)       │
-│  ├─ Suit one-hot: 4 dims (♣♦♥♠)                        │
-│  ├─ Rank one-hot: 13 dims (2-A)                        │
-│  ├─ Color one-hot: 2 dims (red/black)                  │
-│  ├─ Normalized rank: 1 dim (0-1)                       │
-│  └─ Binary features: 4 dims (face, ace, even, odd)     │
+│  Factored Card Embeddings                               │
+│  ├─ E_suit(suit): 4 → 16 dims                          │
+│  ├─ E_rank(rank): 13 → 16 dims                         │
+│  ├─ E_position(pos): 5 → 16 dims                       │
+│  └─ Concatenate: 48 dims per card                      │
 └─────────────────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────────────────┐
-│  CardEncoder (per card → sequence → hand embedding)     │
-│  ├─ Linear(24 → 64) + ReLU + Dropout(0.1)              │
-│  ├─ Linear(64 → 64)                                     │
-│  ├─ Bidirectional GRU(64 → 64×2)                       │
-│  └─ Linear(128 → 64) [combine forward/backward]        │
-│  Output: 64-dim hand embedding                          │
+│  Hand Encoding (mean pooling over cards)               │
+│  ├─ Linear(48 → 64) → per-card                        │
+│  └─ Mean pool → 64-dim hand embedding                 │
 └─────────────────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────────────────┐
-│  ExampleEncoder (hand + output → example embedding)     │
-│  ├─ CardEncoder(hand) → 64 dims                        │
-│  ├─ Linear(2 → 64) + ReLU [output: True/False]         │
-│  ├─ Concat → 128 dims                                   │
-│  └─ Linear(128 → 64) + ReLU + Linear(64 → 64)         │
-│  Output: 64-dim example embedding (×M examples)         │
+│  Contrastive Task Encoding                             │
+│  ├─ τ_pos = mean(positive hand embeddings)            │
+│  ├─ τ_neg = mean(negative hand embeddings)            │
+│  └─ τ = τ_pos - τ_neg (decision boundary)             │
+│  Output: 64-dim task embedding capturing what          │
+│  distinguishes positive from negative examples         │
 └─────────────────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────────────────┐
-│  TaskEncoder (M examples → single task embedding)       │
-│  ├─ Attention weights: Linear(64→32→1) + Softmax       │
-│  ├─ Weighted pooling across examples                   │
-│  └─ Linear(64 → 64) + ReLU + Linear(64 → 64)          │
-│  Output: 64-dim task embedding                          │
-│  [Permutation-invariant over examples]                  │
-└─────────────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────────────┐
-│  PrimitivePredictor (task → primitive log-probs)        │
-│  ├─ Linear(64 → 128) + ReLU + Dropout(0.1)             │
-│  ├─ Linear(128 → 64) + ReLU + Dropout(0.1)             │
-│  └─ Linear(64 → num_primitives) + LogSoftmax           │
-│  Output: log P(primitive | task) for ~60 primitives     │
+│  Primitive Predictor (task → primitive probs)          │
+│  ├─ Linear(64 → 128) + ReLU                           │
+│  ├─ Linear(128 → 60) + Softmax (for search ranking)   │
+│  Output: P(primitive | task) for 60 primitives         │
 └─────────────────────────────────────────────────────────┘
 ```
 
 **Key Design Choices:**
-- **Bidirectional GRU**: Captures left-to-right and right-to-left card dependencies
-- **Attention-based pooling**: Learns which examples are most informative (not max-pool)
-- **Permutation invariance**: Example order doesn't affect predictions
-- **Multi-hot training targets**: Multiple primitives can be correct per task
-- **~25-30K parameters**: Small enough for rapid training in sleep phase
+- **Contrastive encoding** (τ = mean(pos) - mean(neg)): Directly captures the decision boundary
+- **Factored embeddings**: Learned embeddings for suit, rank, position (not one-hot)
+- **Softmax output**: Provides primitive **ranking** for search guidance (critical for enumeration)
+- **Auxiliary heads**: Count head (predicts # primitives), Bigram head (predicts co-occurrence)
 
 **Training:**
 - **Signal**: Primitives used in solved programs (from enumeration phase)

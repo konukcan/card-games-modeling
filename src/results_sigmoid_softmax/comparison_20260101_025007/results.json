@@ -1,0 +1,126 @@
+{
+  "sigmoid": {
+    "output_mode": "sigmoid",
+    "pretrain": {
+      "tasks_solved": 19,
+      "tasks_total": 44,
+      "solve_rate": 0.4318181818181818,
+      "solved_by_iteration": [
+        17,
+        19,
+        19,
+        19
+      ],
+      "solved_tasks": [
+        "poker_has_pair",
+        "poker_flush",
+        "poker_same_color",
+        "poker_two_suits",
+        "rummy_all_different",
+        "rummy_three_ranks",
+        "sol_same_suit_seq",
+        "simple_first_red",
+        "simple_last_black",
+        "simple_has_spade",
+        "simple_has_heart",
+        "simple_diverse_ranks",
+        "simple_two_suits",
+        "sym_ranks_palindrome",
+        "comp_left_half_uniform_color",
+        "comp_first_two_same_suit",
+        "comp_last_two_same_color",
+        "count_more_red",
+        "comp_right_half_has_pair"
+      ]
+    },
+    "prediction_metrics": {
+      "recall_at_5": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "recall_at_10": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "mrr": {
+        "mean": 0.6948099415204678,
+        "std": 0.1524363823203056
+      },
+      "entropy": {
+        "mean": 1.9080853462219238,
+        "std": 0.4445168306382948
+      },
+      "max_prob": {
+        "mean": 0.87285757378528,
+        "std": 0.14891146827435314
+      },
+      "prob_std": {
+        "mean": 0.16377526992245725,
+        "std": 0.038182261173436795
+      }
+    },
+    "total_time": 3273.0479860305786
+  },
+  "softmax": {
+    "output_mode": "softmax",
+    "pretrain": {
+      "tasks_solved": 19,
+      "tasks_total": 44,
+      "solve_rate": 0.4318181818181818,
+      "solved_by_iteration": [
+        17,
+        19,
+        19,
+        19
+      ],
+      "solved_tasks": [
+        "poker_has_pair",
+        "poker_flush",
+        "poker_same_color",
+        "poker_two_suits",
+        "rummy_all_different",
+        "rummy_three_ranks",
+        "sol_same_suit_seq",
+        "simple_first_red",
+        "simple_last_black",
+        "simple_has_spade",
+        "simple_has_heart",
+        "simple_diverse_ranks",
+        "simple_two_suits",
+        "sym_ranks_palindrome",
+        "comp_left_half_uniform_color",
+        "comp_first_two_same_suit",
+        "comp_last_two_same_color",
+        "count_more_red",
+        "comp_right_half_has_pair"
+      ]
+    },
+    "prediction_metrics": {
+      "recall_at_5": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "recall_at_10": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "mrr": {
+        "mean": 0.6948099415204678,
+        "std": 0.1524363823203056
+      },
+      "entropy": {
+        "mean": 1.0947684687072117,
+        "std": 0.583054810114913
+      },
+      "max_prob": {
+        "mean": 0.5328089641897302,
+        "std": 0.246638817174267
+      },
+      "prob_std": {
+        "mean": 0.08408541977405548,
+        "std": 0.02383676150056615
+      }
+    },
+    "total_time": 3254.7298340797424
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "n_pretrain_rules": 44,
+  "n_catalogue_rules": 45,
+  "n_examples_per_task": 50,
+  "n_holdout": 20,
+  "hand_size": 6,
+  "pretrain_iterations": 4,
+  "pretrain_budget": 50000,
+  "pretrain_depth": 7,
+  "pretrain_timeout": 30.0,
+  "eval_budget": 100000,
+  "eval_depth": 8,
+  "eval_timeout": 60.0,
+  "card_hidden": 64,
+  "card_out": 32,
+  "pred_hidden": 64,
+  "learning_rate": 0.001,
+  "epochs_per_iteration": 15,
+  "batch_size": 8,
+  "seed": 42,
+  "output_dir": "results_sigmoid_softmax",
+  "quick": false
+}

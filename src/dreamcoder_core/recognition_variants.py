@@ -471,6 +471,184 @@ class MultiHeadContrastEncoder(nn.Module):
 
 
 # ============================================================================
+# VARIANT 6a: RANDOM AUGMENTED CONTRAST ENCODER
+# ============================================================================
+
+# TODO: DELETE THIS CLASS - Experiments showed R@5=0.623 (-3.6% vs standard).
+# Random contrast adds noise, not signal. Keeping for reference until full review. - Dec 2024
+
+class RandomAugmentedEncoder(nn.Module):
+    """
+    Augment standard contrastive encoding with random hand contrast.
+
+    τ = mean(pos) - mean(neg) + λ * (mean(pos+neg) - mean(random))
+
+    The random contrast term helps the model learn what makes rule-following
+    hands special compared to any arbitrary hand, not just positive vs negative.
+
+    NOTE: This variant did NOT improve performance over standard contrastive encoding.
+    """
+
+    def __init__(
+        self,
+        hand_dim: int = 64,
+        output_dim: int = 64,
+        lambda_weight: float = 0.5
+    ):
+        super().__init__()
+        self.hand_dim = hand_dim
+        self.output_dim = output_dim
+        self.lambda_weight = lambda_weight
+
+        # Optional projection layer
+        if hand_dim != output_dim:
+            self.proj = nn.Linear(hand_dim, output_dim)
+        else:
+            self.proj = nn.Identity()
+
+    def forward(
+        self,
+        pos_embeddings: torch.Tensor,   # (n_pos, hand_dim)
+        neg_embeddings: torch.Tensor,   # (n_neg, hand_dim)
+        random_embeddings: torch.Tensor = None  # (n_random, hand_dim)
+    ) -> torch.Tensor:
+        """
+        Compute random-augmented contrastive encoding.
+        """
+        pos_mean = pos_embeddings.mean(dim=0)
+        neg_mean = neg_embeddings.mean(dim=0)
+
+        # Standard contrastive term
+        contrast = pos_mean - neg_mean
+
+        # Add random contrast if provided
+        if random_embeddings is not None and random_embeddings.shape[0] > 0:
+            combined_mean = torch.cat([pos_embeddings, neg_embeddings], dim=0).mean(dim=0)
+            random_mean = random_embeddings.mean(dim=0)
+            random_contrast = combined_mean - random_mean
+            contrast = contrast + self.lambda_weight * random_contrast
+
+        return self.proj(contrast)
+
+
+# TODO: DELETE THIS CLASS - Experiments showed R@5=0.620 (-4.0% vs standard).
+# Ignoring negatives loses important task-specific information. - Dec 2024
+
+class PositiveVsRandomEncoder(nn.Module):
+    """
+    Replace negative examples with random hands in the contrast.
+
+    τ = mean(pos) - mean(random)
+
+    This tests whether learning what makes positives different from random
+    is more informative than positive vs negative.
+
+    NOTE: This variant did NOT improve performance over standard contrastive encoding.
+    """
+
+    def __init__(
+        self,
+        hand_dim: int = 64,
+        output_dim: int = 64
+    ):
+        super().__init__()
+        self.hand_dim = hand_dim
+        self.output_dim = output_dim
+
+        if hand_dim != output_dim:
+            self.proj = nn.Linear(hand_dim, output_dim)
+        else:
+            self.proj = nn.Identity()
+
+    def forward(
+        self,
+        pos_embeddings: torch.Tensor,
+        neg_embeddings: torch.Tensor,  # Ignored
+        random_embeddings: torch.Tensor = None
+    ) -> torch.Tensor:
+        """
+        Compute positive vs random contrastive encoding.
+        """
+        pos_mean = pos_embeddings.mean(dim=0)
+
+        if random_embeddings is not None and random_embeddings.shape[0] > 0:
+            random_mean = random_embeddings.mean(dim=0)
+            contrast = pos_mean - random_mean
+        else:
+            # Fallback to pos - neg if no random provided
+            neg_mean = neg_embeddings.mean(dim=0)
+            contrast = pos_mean - neg_mean
+
+        return self.proj(contrast)
+
+
+# TODO: DELETE THIS CLASS - Experiments showed R@5=0.609 (-5.7% vs standard).
+# Extra contrasts dilute the useful pos-neg signal with noise. - Dec 2024
+
+class TripleContrastEncoder(nn.Module):
+    """
+    Concatenate three different contrasts for richer representation.
+
+    τ = concat([mean(pos)-mean(neg), mean(pos)-mean(random), mean(neg)-mean(random)])
+
+    This provides the model with three different perspectives:
+    1. What distinguishes positives from negatives for this rule
+    2. What makes positives special vs arbitrary hands
+    3. What makes negatives special vs arbitrary hands (rule anti-patterns)
+
+    NOTE: This variant did NOT improve performance over standard contrastive encoding.
+    """
+
+    def __init__(
+        self,
+        hand_dim: int = 64,
+        output_dim: int = 64
+    ):
+        super().__init__()
+        self.hand_dim = hand_dim
+        # Output is 3x the contrast dim, then projected
+        contrast_dim = hand_dim
+
+        # Project concatenated contrasts to output dim
+        self.proj = nn.Sequential(
+            nn.Linear(contrast_dim * 3, output_dim * 2),
+            nn.ReLU(),
+            nn.Linear(output_dim * 2, output_dim)
+        )
+        self.output_dim = output_dim
+
+    def forward(
+        self,
+        pos_embeddings: torch.Tensor,
+        neg_embeddings: torch.Tensor,
+        random_embeddings: torch.Tensor = None
+    ) -> torch.Tensor:
+        """
+        Compute triple contrastive encoding.
+        """
+        pos_mean = pos_embeddings.mean(dim=0)
+        neg_mean = neg_embeddings.mean(dim=0)
+
+        # Contrast 1: pos vs neg (standard)
+        c1 = pos_mean - neg_mean
+
+        if random_embeddings is not None and random_embeddings.shape[0] > 0:
+            random_mean = random_embeddings.mean(dim=0)
+            # Contrast 2: pos vs random
+            c2 = pos_mean - random_mean
+            # Contrast 3: neg vs random
+            c3 = neg_mean - random_mean
+        else:
+            # Without random, use zeros for c2, c3
+            c2 = torch.zeros_like(c1)
+            c3 = torch.zeros_like(c1)
+
+        # Concatenate and project
+        combined = torch.cat([c1, c2, c3], dim=-1)
+        return self.proj(combined)
+
+
+# ============================================================================
 # VARIANT 6: PRIMITIVE EMBEDDING HEAD
 # ============================================================================
 
@@ -801,7 +979,7 @@ class RecognitionModelVariant(nn.Module):
         grammar,
         card_encoder_type: str = 'standard',  # 'standard', 'enhanced'
         hand_encoder_type: str = 'mean',       # 'mean', 'attention', 'deepsets', 'multiscale'
-        task_encoder_type: str = 'standard',   # 'standard', 'multihead'
+        task_encoder_type: str = 'standard',   # 'standard', 'multihead', 'random_augmented', 'pos_vs_random', 'triple'
         prediction_head_type: str = 'sigmoid', # 'sigmoid', 'embedding', 'hierarchical'
         loss_type: str = 'bce',                # 'bce', 'focal'
         card_hidden: int = 128,
@@ -812,17 +990,23 @@ class RecognitionModelVariant(nn.Module):
         n_attention_heads: int = 4,
         n_contrast_heads: int = 4,
         focal_alpha: float = 0.25,
-        focal_gamma: float = 2.0
+        focal_gamma: float = 2.0,
+        n_random_hands: int = 25,              # Number of random hands to sample
+        random_lambda: float = 0.5             # Weight for random contrast term
     ):
         super().__init__()
 
         self.grammar = grammar
+        self.n_random_hands = n_random_hands
+        self.random_lambda = random_lambda
         self.config = {
             'card_encoder': card_encoder_type,
             'hand_encoder': hand_encoder_type,
             'task_encoder': task_encoder_type,
             'prediction_head': prediction_head_type,
-            'loss': loss_type
+            'loss': loss_type,
+            'n_random_hands': n_random_hands,
+            'random_lambda': random_lambda
         }
 
         # Get primitives
@@ -899,6 +1083,25 @@ class RecognitionModelVariant(nn.Module):
                 output_dim=card_out
             )
             task_dim = self.task_encoder.output_dim
+        elif task_encoder_type == 'random_augmented':
+            self.task_encoder = RandomAugmentedEncoder(
+                hand_dim=card_out,
+                output_dim=card_out,
+                lambda_weight=random_lambda
+            )
+            task_dim = self.task_encoder.output_dim
+        elif task_encoder_type == 'pos_vs_random':
+            self.task_encoder = PositiveVsRandomEncoder(
+                hand_dim=card_out,
+                output_dim=card_out
+            )
+            task_dim = self.task_encoder.output_dim
+        elif task_encoder_type == 'triple':
+            self.task_encoder = TripleContrastEncoder(
+                hand_dim=card_out,
+                output_dim=card_out
+            )
+            task_dim = self.task_encoder.output_dim
         else:
             self.task_encoder = None
             task_dim = card_out
@@ -968,6 +1171,8 @@ class RecognitionModelVariant(nn.Module):
 
     def encode_task_batched(self, task) -> torch.Tensor:
         """Encode a task into a contrastive embedding."""
+        from rules.cards import sample_hand  # Import here to avoid circular imports
+
         pos_hands = [h for h, label in task.examples if label]
         neg_hands = [h for h, label in task.examples if not label]
 
@@ -978,9 +1183,21 @@ class RecognitionModelVariant(nn.Module):
         pos_embeddings = torch.stack([self.encode_hand(h) for h in pos_hands])
         neg_embeddings = torch.stack([self.encode_hand(h) for h in neg_hands])
 
+        # Sample and encode random hands if using random contrast encoders
+        random_embeddings = None
+        uses_random = self.config['task_encoder'] in ['random_augmented', 'pos_vs_random', 'triple']
+        if uses_random and self.n_random_hands > 0:
+            # Sample random hands with same size as task hands
+            hand_size = len(pos_hands[0]) if pos_hands else 6  # Default 6 (standardized)
+            random_hands = [sample_hand(hand_size) for _ in range(self.n_random_hands)]
+            random_embeddings = torch.stack([self.encode_hand(h) for h in random_hands])
+
         # Compute contrastive encoding
         if self.task_encoder is not None:
-            τ = self.task_encoder(pos_embeddings, neg_embeddings)
+            if uses_random:
+                τ = self.task_encoder(pos_embeddings, neg_embeddings, random_embeddings)
+            else:
+                τ = self.task_encoder(pos_embeddings, neg_embeddings)
         else:
             τ = pos_embeddings.mean(dim=0) - neg_embeddings.mean(dim=0)
 
@@ -1006,11 +1223,35 @@ class RecognitionModelVariant(nn.Module):
         # Get ground truth primitives
         gt_prims = set()
         primitives = self.grammar.primitives()
-        if hasattr(task, 'rule') and hasattr(task.rule, 'program') and task.rule.program:
-            program_str = str(task.rule.program)
-            for i, prim in enumerate(primitives):
-                if prim.name in program_str:
-                    gt_prims.add(i)
+        prim_names = {p.name for p in primitives}
+        prim_to_idx = {p.name: i for i, p in enumerate(primitives)}
+
+        # Try multiple sources for ground truth primitives
+        if hasattr(task, 'primitives_used') and task.primitives_used:
+            # Direct attribute (RevelationTask style)
+            for pname in task.primitives_used:
+                if pname in prim_to_idx:
+                    gt_prims.add(prim_to_idx[pname])
+        elif hasattr(task, 'rule'):
+            rule = task.rule
+            # Catalogue Rule has primitives_used list
+            if hasattr(rule, 'primitives_used') and rule.primitives_used:
+                for pname in rule.primitives_used:
+                    if pname in prim_to_idx:
+                        gt_prims.add(prim_to_idx[pname])
+            # PretrainingRule has expected_program string
+            elif hasattr(rule, 'expected_program') and rule.expected_program:
+                import re
+                words = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*', rule.expected_program)
+                for w in words:
+                    if w in prim_to_idx:
+                        gt_prims.add(prim_to_idx[w])
+            # Legacy: program attribute
+            elif hasattr(rule, 'program') and rule.program:
+                program_str = str(rule.program)
+                for i, prim in enumerate(primitives):
+                    if prim.name in program_str:
+                        gt_prims.add(i)
 
         # Create target vector
         target = torch.zeros(self.num_primitives, device=self.device)

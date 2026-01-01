@@ -1,0 +1,527 @@
+#!/usr/bin/env python3
+"""
+Train recognition models with BALANCED embedding dimensions.
+
+Tests whether equal dimensions (16 each for suit/rank/position)
+removes the rank bias observed in the original models.
+"""
+
+import sys
+import json
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+from pathlib import Path
+from datetime import datetime
+from typing import Dict, List, Any
+from dataclasses import dataclass, asdict
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
+from rules.pretraining_rules import get_all_pretraining_rules
+from rules.cards import Suit, Rank, RANK_VALUES
+
+
+def print_flush(msg: str):
+    print(msg, flush=True)
+
+
+# =============================================================================
+# BALANCED EMBEDDING MODELS
+# =============================================================================
+
+class BalancedCardEncoder(nn.Module):
+    """Card encoder with EQUAL dimensions for all features."""
+
+    def __init__(self, dim_per_feature: int = 16):
+        super().__init__()
+        self.d_suit = dim_per_feature
+        self.d_rank = dim_per_feature
+        self.d_pos = dim_per_feature
+
+        self.suit_embed = nn.Embedding(4, self.d_suit)
+        self.rank_embed = nn.Embedding(13, self.d_rank)
+        self.pos_embed = nn.Embedding(8, self.d_pos)
+
+    def forward(self, suits, ranks, positions):
+        suit_emb = self.suit_embed(suits)
+        rank_emb = self.rank_embed(ranks)
+        pos_emb = self.pos_embed(positions)
+        return torch.cat([suit_emb, rank_emb, pos_emb], dim=-1)
+
+
+class BalancedLayerNormModel(nn.Module):
+    """LayerNorm model with balanced embeddings."""
+
+    def __init__(self, num_primitives: int, dim_per_feature: int = 16,
+                 hidden_dim: int = 64, scale_init: float = 20.0):
+        super().__init__()
+        self.card_encoder = BalancedCardEncoder(dim_per_feature)
+        d_card = dim_per_feature * 3  # Equal contribution from each feature
+
+        self.card_mlp = nn.Sequential(
+            nn.Linear(d_card, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
+
+        self.embedding_norm = nn.LayerNorm(hidden_dim)
+        self.embedding_scale = nn.Parameter(torch.tensor(scale_init))
+
+        self.primitive_head = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, num_primitives)
+        )
+
+        self.num_primitives = num_primitives
+        self.hidden_dim = hidden_dim
+        self.dim_per_feature = dim_per_feature
+
+    def encode_hand(self, hand) -> torch.Tensor:
+        if not hand:
+            return torch.zeros(self.hidden_dim)
+
+        suits, ranks, positions = [], [], []
+        for i, card in enumerate(hand):
+            suit_map = {Suit.SPADES: 0, Suit.HEARTS: 1, Suit.DIAMONDS: 2, Suit.CLUBS: 3}
+            suits.append(suit_map.get(card.suit, 0))
+            ranks.append(RANK_VALUES[card.rank] - 2)
+            positions.append(min(i, 7))
+
+        suits = torch.tensor(suits)
+        ranks = torch.tensor(ranks)
+        positions = torch.tensor(positions)
+
+        card_emb = self.card_encoder(suits, ranks, positions)
+        card_features = self.card_mlp(card_emb)
+        return card_features.mean(dim=0)
+
+    def encode_task(self, task) -> torch.Tensor:
+        pos_reprs, neg_reprs = [], []
+
+        for hand, label in task.examples:
+            repr = self.encode_hand(hand)
+            if label:
+                pos_reprs.append(repr)
+            else:
+                neg_reprs.append(repr)
+
+        pos_mean = torch.stack(pos_reprs).mean(dim=0) if pos_reprs else torch.zeros(self.hidden_dim)
+        neg_mean = torch.stack(neg_reprs).mean(dim=0) if neg_reprs else torch.zeros(self.hidden_dim)
+
+        tau = pos_mean - neg_mean
+        tau = self.embedding_norm(tau) * self.embedding_scale
+        return tau
+
+    def forward(self, task) -> torch.Tensor:
+        tau = self.encode_task(task)
+        logits = self.primitive_head(tau)
+        return torch.sigmoid(logits)
+
+
+class BalancedL2NormModel(nn.Module):
+    """L2Norm model with balanced embeddings."""
+
+    def __init__(self, num_primitives: int, dim_per_feature: int = 16,
+                 hidden_dim: int = 64, temperature_init: float = 20.0):
+        super().__init__()
+        self.card_encoder = BalancedCardEncoder(dim_per_feature)
+        d_card = dim_per_feature * 3
+
+        self.card_mlp = nn.Sequential(
+            nn.Linear(d_card, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
+
+        self.temperature = nn.Parameter(torch.tensor(temperature_init))
+
+        self.primitive_head = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(hidden_dim, num_primitives)
+        )
+
+        self.num_primitives = num_primitives
+        self.hidden_dim = hidden_dim
+        self.dim_per_feature = dim_per_feature
+
+    def encode_hand(self, hand) -> torch.Tensor:
+        if not hand:
+            return torch.zeros(self.hidden_dim)
+
+        suits, ranks, positions = [], [], []
+        for i, card in enumerate(hand):
+            suit_map = {Suit.SPADES: 0, Suit.HEARTS: 1, Suit.DIAMONDS: 2, Suit.CLUBS: 3}
+            suits.append(suit_map.get(card.suit, 0))
+            ranks.append(RANK_VALUES[card.rank] - 2)
+            positions.append(min(i, 7))
+
+        suits = torch.tensor(suits)
+        ranks = torch.tensor(ranks)
+        positions = torch.tensor(positions)
+
+        card_emb = self.card_encoder(suits, ranks, positions)
+        card_features = self.card_mlp(card_emb)
+        return card_features.mean(dim=0)
+
+    def encode_task(self, task) -> torch.Tensor:
+        pos_reprs, neg_reprs = [], []
+
+        for hand, label in task.examples:
+            repr = self.encode_hand(hand)
+            if label:
+                pos_reprs.append(repr)
+            else:
+                neg_reprs.append(repr)
+
+        pos_mean = torch.stack(pos_reprs).mean(dim=0) if pos_reprs else torch.zeros(self.hidden_dim)
+        neg_mean = torch.stack(neg_reprs).mean(dim=0) if neg_reprs else torch.zeros(self.hidden_dim)
+
+        tau = pos_mean - neg_mean
+        tau = F.normalize(tau, p=2, dim=-1) * self.temperature
+        return tau
+
+    def forward(self, task) -> torch.Tensor:
+        tau = self.encode_task(task)
+        logits = self.primitive_head(tau)
+        return torch.sigmoid(logits)
+
+
+# =============================================================================
+# TRAINING & ANALYSIS (reused from previous script)
+# =============================================================================
+
+def create_target_for_task(task_name: str, num_primitives: int, primitive_names: List[str]) -> torch.Tensor:
+    target = torch.zeros(num_primitives)
+
+    task_primitive_map = {
+        'poker_flush': ['all_same_suit', 'get_suit', 'eq'],
+        'poker_same_color': ['all_same_color', 'get_color', 'eq'],
+        'simple_has_spade': ['has_suit', 'get_suit', 'eq'],
+        'simple_has_heart': ['has_suit', 'get_suit', 'eq'],
+        'simple_first_red': ['first', 'get_color'],
+        'simple_last_black': ['last', 'get_color'],
+        'sol_same_suit_seq': ['all_same_suit', 'get_suit'],
+        'count_more_red': ['count_color', 'gt'],
+        'poker_has_pair': ['get_rank', 'n_unique_ranks', 'eq'],
+        'rummy_all_different': ['length', 'n_unique_ranks', 'eq'],
+        'rummy_three_ranks': ['3', 'n_unique_ranks', 'eq'],
+        'bj_sum_even': ['0', '2', 'sum_ranks', 'eq', 'mod'],
+        'bj_sum_odd': ['1', '2', 'sum_ranks', 'eq', 'mod'],
+        'sym_ranks_palindrome': ['get_rank', 'reverse', 'eq'],
+        'simple_diverse_ranks': ['length', 'n_unique_ranks', 'eq'],
+    }
+
+    relevant_prims = []
+    for prefix, prims in task_primitive_map.items():
+        if task_name.startswith(prefix) or task_name == prefix:
+            relevant_prims = prims
+            break
+
+    for prim in relevant_prims:
+        if prim in primitive_names:
+            idx = primitive_names.index(prim)
+            target[idx] = 1.0
+
+    if target.sum() == 0:
+        for prim in ['get_rank', 'get_suit', 'eq', 'map']:
+            if prim in primitive_names:
+                idx = primitive_names.index(prim)
+                target[idx] = 0.5
+
+    return target
+
+
+def train_model(model: nn.Module, tasks: List, primitive_names: List[str],
+                epochs: int = 100, lr: float = 0.001) -> Dict[str, Any]:
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.BCELoss()
+    training_history = []
+
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0
+
+        for task in tasks:
+            optimizer.zero_grad()
+            probs = model(task)
+            target = create_target_for_task(task.name, len(primitive_names), primitive_names)
+            loss = criterion(probs, target)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        avg_loss = total_loss / len(tasks)
+        training_history.append(avg_loss)
+
+        if (epoch + 1) % 20 == 0:
+            print_flush(f"    Epoch {epoch+1}/{epochs}: loss = {avg_loss:.4f}")
+
+    return {'training_history': training_history, 'final_loss': avg_loss}
+
+
+@dataclass
+class FeatureImportance:
+    task_name: str
+    suit_importance: float
+    rank_importance: float
+    position_importance: float
+    dominant_feature: str
+    top_primitives: List[Dict[str, Any]]
+
+
+def compute_entropy(probs: torch.Tensor) -> float:
+    eps = 1e-10
+    entropy = -(probs * torch.log(probs + eps) + (1 - probs) * torch.log(1 - probs + eps))
+    return entropy.sum().item()
+
+
+def analyze_feature_importance(model: nn.Module, task, primitive_names: List[str]) -> FeatureImportance:
+    model.eval()
+    dim = model.dim_per_feature
+
+    with torch.no_grad():
+        probs_baseline = model(task)
+        entropy_baseline = compute_entropy(probs_baseline)
+
+        original_encode = model.encode_hand
+        entropy_changes = {}
+
+        for feature in ['suit', 'rank', 'position']:
+            def make_ablated_encoder(ablate_feature):
+                def ablated_encode_hand(hand):
+                    if not hand:
+                        return torch.zeros(model.hidden_dim)
+
+                    suits, ranks, positions = [], [], []
+                    for i, card in enumerate(hand):
+                        suit_map = {Suit.SPADES: 0, Suit.HEARTS: 1, Suit.DIAMONDS: 2, Suit.CLUBS: 3}
+                        suits.append(suit_map.get(card.suit, 0))
+                        ranks.append(RANK_VALUES[card.rank] - 2)
+                        positions.append(min(i, 7))
+
+                    suits_t = torch.tensor(suits)
+                    ranks_t = torch.tensor(ranks)
+                    positions_t = torch.tensor(positions)
+
+                    suit_emb = model.card_encoder.suit_embed(suits_t)
+                    rank_emb = model.card_encoder.rank_embed(ranks_t)
+                    pos_emb = model.card_encoder.pos_embed(positions_t)
+
+                    if ablate_feature == 'suit':
+                        suit_emb = torch.zeros_like(suit_emb)
+                    elif ablate_feature == 'rank':
+                        rank_emb = torch.zeros_like(rank_emb)
+                    elif ablate_feature == 'position':
+                        pos_emb = torch.zeros_like(pos_emb)
+
+                    card_emb = torch.cat([suit_emb, rank_emb, pos_emb], dim=-1)
+                    card_features = model.card_mlp(card_emb)
+                    return card_features.mean(dim=0)
+
+                return ablated_encode_hand
+
+            model.encode_hand = make_ablated_encoder(feature)
+            probs_ablated = model(task)
+            entropy_ablated = compute_entropy(probs_ablated)
+            model.encode_hand = original_encode
+
+            entropy_changes[feature] = max(0, entropy_ablated - entropy_baseline)
+
+        total = sum(entropy_changes.values()) + 1e-10
+        suit_imp = entropy_changes['suit'] / total
+        rank_imp = entropy_changes['rank'] / total
+        pos_imp = entropy_changes['position'] / total
+
+        max_imp = max(suit_imp, rank_imp, pos_imp)
+        if max_imp == suit_imp:
+            dominant = 'suit'
+        elif max_imp == rank_imp:
+            dominant = 'rank'
+        else:
+            dominant = 'position'
+
+        top_k = min(5, len(primitive_names))
+        top_values, top_indices = torch.topk(probs_baseline, top_k)
+        top_primitives = [
+            {'name': primitive_names[idx.item()], 'prob': float(top_values[i])}
+            for i, idx in enumerate(top_indices)
+        ]
+
+        return FeatureImportance(
+            task_name=task.name,
+            suit_importance=float(suit_imp),
+            rank_importance=float(rank_imp),
+            position_importance=float(pos_imp),
+            dominant_feature=dominant,
+            top_primitives=top_primitives
+        )
+
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+def main():
+    print_flush("=" * 70)
+    print_flush("BALANCED EMBEDDING EXPERIMENT")
+    print_flush("Testing if equal dimensions (16 each) removes rank bias")
+    print_flush("=" * 70)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Setup
+    print_flush("\nLoading grammar and tasks...")
+    grammar = build_lean_grammar()
+    primitive_names = [p.name for p in grammar.primitives()]
+    num_primitives = len(primitive_names)
+    print_flush(f"  Primitives: {num_primitives}")
+
+    rules = get_all_pretraining_rules()
+    tasks = create_tasks_from_rules(rules, n_examples=20, seed=42)
+    print_flush(f"  Tasks: {len(tasks)}")
+
+    output_dir = Path(f"results_interpretability/balanced_{timestamp}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print_flush(f"  Output: {output_dir}")
+
+    # Task categories
+    suit_tasks = ['poker_flush', 'poker_same_color', 'sol_same_suit_seq',
+                  'simple_has_spade', 'simple_has_heart', 'simple_first_red',
+                  'simple_last_black', 'count_more_red']
+    rank_tasks = ['poker_has_pair', 'rummy_all_different', 'rummy_three_ranks',
+                  'bj_sum_even', 'bj_sum_odd', 'sym_ranks_palindrome', 'simple_diverse_ranks']
+
+    models_to_train = {
+        'Balanced_LayerNorm': lambda: BalancedLayerNormModel(num_primitives, dim_per_feature=16),
+        'Balanced_L2Norm': lambda: BalancedL2NormModel(num_primitives, dim_per_feature=16)
+    }
+
+    all_results = {}
+
+    for model_name, model_fn in models_to_train.items():
+        print_flush(f"\n{'='*60}")
+        print_flush(f"Training: {model_name}")
+        print_flush(f"  Embedding dims: 16 suit + 16 rank + 16 position = 48 total")
+        print_flush("=" * 60)
+
+        model = model_fn()
+
+        # Train
+        print_flush("\n  Training...")
+        train_result = train_model(model, tasks, primitive_names, epochs=100, lr=0.001)
+
+        # Save model
+        model_path = output_dir / f"{model_name}_model.pt"
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'primitive_names': primitive_names,
+            'training_history': train_result['training_history'],
+            'model_type': model_name
+        }, model_path)
+        print_flush(f"  Model saved: {model_path.name}")
+
+        # Check embedding balance
+        state_dict = model.state_dict()
+        suit_var = state_dict['card_encoder.suit_embed.weight'].var().item() * 16
+        rank_var = state_dict['card_encoder.rank_embed.weight'].var().item() * 16
+        pos_var = state_dict['card_encoder.pos_embed.weight'].var().item() * 16
+
+        print_flush(f"\n  Embedding signal (variance × dims):")
+        print_flush(f"    Suit:     {suit_var:.2f}")
+        print_flush(f"    Rank:     {rank_var:.2f}")
+        print_flush(f"    Position: {pos_var:.2f}")
+        print_flush(f"    Rank/Suit ratio: {rank_var/suit_var:.2f}x")
+
+        # Interpretability analysis
+        print_flush("\n  Running interpretability analysis...")
+
+        interpretability_results = []
+        correct_suit = 0
+        correct_rank = 0
+        total_suit = 0
+        total_rank = 0
+
+        for task in tasks:
+            result = analyze_feature_importance(model, task, primitive_names)
+            interpretability_results.append(result)
+
+            if task.name in suit_tasks:
+                total_suit += 1
+                if result.dominant_feature == 'suit':
+                    correct_suit += 1
+            elif task.name in rank_tasks:
+                total_rank += 1
+                if result.dominant_feature == 'rank':
+                    correct_rank += 1
+
+        mean_suit = np.mean([r.suit_importance for r in interpretability_results])
+        mean_rank = np.mean([r.rank_importance for r in interpretability_results])
+        mean_pos = np.mean([r.position_importance for r in interpretability_results])
+
+        print_flush(f"\n  Feature Usage:")
+        print_flush(f"    Suit:     {mean_suit:.3f}")
+        print_flush(f"    Rank:     {mean_rank:.3f}")
+        print_flush(f"    Position: {mean_pos:.3f}")
+
+        print_flush(f"\n  Correctness:")
+        if total_suit > 0:
+            print_flush(f"    Suit tasks: {correct_suit}/{total_suit} ({100*correct_suit/total_suit:.0f}%)")
+        if total_rank > 0:
+            print_flush(f"    Rank tasks: {correct_rank}/{total_rank} ({100*correct_rank/total_rank:.0f}%)")
+
+        all_top_preds = [r.top_primitives[0]['name'] for r in interpretability_results]
+        unique_top = len(set(all_top_preds))
+        print_flush(f"\n  Prediction Diversity:")
+        print_flush(f"    Unique top-1 predictions: {unique_top}/{len(tasks)}")
+
+        all_results[model_name] = {
+            'training': train_result,
+            'embedding_signal': {'suit': suit_var, 'rank': rank_var, 'position': pos_var},
+            'interpretability': [asdict(r) for r in interpretability_results],
+            'summary': {
+                'mean_suit_importance': float(mean_suit),
+                'mean_rank_importance': float(mean_rank),
+                'mean_position_importance': float(mean_pos),
+                'suit_task_accuracy': correct_suit / total_suit if total_suit > 0 else 0,
+                'rank_task_accuracy': correct_rank / total_rank if total_rank > 0 else 0,
+                'prediction_diversity': unique_top / len(tasks)
+            }
+        }
+
+    # Save results
+    results_path = output_dir / "results.json"
+    with open(results_path, 'w') as f:
+        json.dump(all_results, f, indent=2)
+
+    # Comparison
+    print_flush("\n" + "=" * 70)
+    print_flush("COMPARISON: ORIGINAL vs BALANCED EMBEDDINGS")
+    print_flush("=" * 70)
+
+    print_flush("\n                        | Suit Acc | Rank Acc | Diversity")
+    print_flush("-" * 60)
+
+    # Original results (hardcoded from previous run)
+    print_flush("Original LayerNorm      |   12%    |   86%    |    30%")
+    print_flush("Original L2Norm         |   25%    |   43%    |    32%")
+    print_flush("-" * 60)
+
+    for model_name, results in all_results.items():
+        s = results['summary']
+        print_flush(f"{model_name:23} | {100*s['suit_task_accuracy']:5.0f}%   | {100*s['rank_task_accuracy']:5.0f}%   |   {100*s['prediction_diversity']:5.0f}%")
+
+    print_flush(f"\nResults saved to: {output_dir}")
+    print_flush("=" * 70)
+
+
+if __name__ == "__main__":
+    main()

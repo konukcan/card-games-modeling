@@ -1,0 +1,78 @@
+{
+  "pipelineA_LayerNorm+Scale": {
+    "pipeline": "pretraining\u2192catalogue",
+    "model": "LayerNorm+Scale",
+    "untrained": {
+      "recall@5": 0.02814814814814815,
+      "recall@10": 0.02814814814814815,
+      "mrr": 0.06237208465472972,
+      "prob_ratio": 0.6859873378583773,
+      "n_tasks": 45
+    },
+    "trained": {
+      "recall@5": 0.22666666666666666,
+      "recall@10": 0.30671957671957667,
+      "mrr": 0.31045287396159926,
+      "prob_ratio": 6.136674660940965,
+      "n_tasks": 45
+    },
+    "final_loss": 0.12451677893598874
+  },
+  "pipelineA_L2Norm": {
+    "pipeline": "pretraining\u2192catalogue",
+    "model": "L2Norm",
+    "untrained": {
+      "recall@5": 0.05296296296296296,
+      "recall@10": 0.0991005291005291,
+      "mrr": 0.1095407219802042,
+      "prob_ratio": 1.0014175984594558,
+      "n_tasks": 45
+    },
+    "trained": {
+      "recall@5": 0.2721164021164021,
+      "recall@10": 0.36693121693121694,
+      "mrr": 0.3979690918878345,
+      "prob_ratio": 2.627399588955773,
+      "n_tasks": 45
+    },
+    "final_loss": 0.2442267785469691
+  },
+  "pipelineB_LayerNorm+Scale": {
+    "pipeline": "synthetic\u2192both",
+    "model": "LayerNorm+Scale",
+    "on_catalogue": {
+      "recall@5": 0.008888888888888889,
+      "recall@10": 0.026666666666666665,
+      "mrr": 0.033052506579912065,
+      "prob_ratio": 0.3076275675348103,
+      "n_tasks": 45
+    },
+    "on_pretraining": {
+      "recall@5": 0.030492424242424244,
+      "recall@10": 0.06420454545454546,
+      "mrr": 0.04686743278494601,
+      "prob_ratio": 0.43577834963798523,
+      "n_tasks": 44
+    },
+    "final_loss": 0.04071421424547831
+  },
+  "pipelineB_L2Norm": {
+    "pipeline": "synthetic\u2192both",
+    "model": "L2Norm",
+    "on_catalogue": {
+      "recall@5": 0.0,
+      "recall@10": 0.09190476190476192,
+      "mrr": 0.0468429535695068,
+      "prob_ratio": 0.977051223648919,
+      "n_tasks": 45
+    },
+    "on_pretraining": {
+      "recall@5": 0.0,
+      "recall@10": 0.1990530303030303,
+      "mrr": 0.055506633349453986,
+      "prob_ratio": 0.9709279537200928,
+      "n_tasks": 44
+    },
+    "final_loss": 0.3156587580839793
+  }
+}

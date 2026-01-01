@@ -11,14 +11,14 @@ This document provides guidelines for AI coding agents working on this DreamCode
 ### 1. Prevent System Sleep with Caffeinate
 
 ```bash
-# Launch the script, then attach caffeinate to its PID
-python3 run_overnight_v3.py &
+# Launch any script, then attach caffeinate to its PID
+python3 your_experiment.py &
 PID=$!
 caffeinate -d -i -s -w $PID &
 echo "Process $PID protected by caffeinate"
 
 # OR use nohup + caffeinate in one command:
-nohup caffeinate -d -i -s python3 run_overnight_v3.py > overnight.out 2>&1 &
+nohup caffeinate -d -i -s python3 your_experiment.py > output.out 2>&1 &
 ```
 
 **Caffeinate flags explained:**
@@ -38,7 +38,7 @@ ps aux | grep caffeinate | grep -v grep
 
 The process should survive terminal/session closure:
 ```bash
-nohup python3 run_overnight_v3.py > overnight.out 2>&1 &
+nohup python3 your_experiment.py > output.out 2>&1 &
 ```
 
 **This is NON-NEGOTIABLE for any run expected to take more than 30 minutes.**
@@ -204,12 +204,16 @@ This serves as institutional memory for future development.
 | Purpose | Authoritative File |
 |---------|-------------------|
 | Primitives | `src/dreamcoder_core/lean_primitives.py` |
-| Main overnight script | `src/run_overnight_v3.py` |
-| Resume interrupted runs | `src/resume_overnight_v3.py` |
+| Recognition model | `src/dreamcoder_core/contrastive_recognition.py` |
 | Known issues | `src/KNOWN_ISSUES.md` |
 | Rules catalogue | `src/rules/catalogue.py` |
 | Card representations | `src/rules/cards.py` |
-| Recognition network | `src/dreamcoder_core/neural_recognition.py` |
+| Module status | `docs/MODULE_STATUS.md` |
+| Feature status | `docs/FEATURE_STATUS.md` |
+
+### Legacy/Archived
+- `archived/legacy_recognition/` - Old recognition models (GRU, Set Transformer) - see README there for why they were superseded
+- `archived/legacy_runners/` - Old runner scripts - preserved for reference
 
 ## Testing Requirements
 

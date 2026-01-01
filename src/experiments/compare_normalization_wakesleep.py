@@ -64,7 +64,7 @@ def print_flush(*args, **kwargs):
     """Print with immediate flush for real-time output in background runs."""
     print(*args, **kwargs, flush=True)
 from dreamcoder_core.grammar import Grammar, Production
-from dreamcoder_core.program import Program, Primitive, Application, Abstraction
+from dreamcoder_core.program import Program, Primitive, Application, Abstraction, collect_primitive_names
 from dreamcoder_core.enumeration import TopDownEnumerator
 
 
@@ -550,9 +550,11 @@ def run_wake_sleep(
             total_programs += programs_tried
 
             if solution is not None:
+                # Extract primitives used in the solution for recognition training
+                task.primitives_used = collect_primitive_names(solution)
                 new_solved.append(task)
                 solved_names.add(task.name)
-                print_flush(f"    SOLVED: {task.name} after {programs_tried} programs")
+                print_flush(f"    SOLVED: {task.name} after {programs_tried} programs (uses: {len(task.primitives_used)} primitives)")
 
         # Update solved tasks
         solved_tasks.extend(new_solved)

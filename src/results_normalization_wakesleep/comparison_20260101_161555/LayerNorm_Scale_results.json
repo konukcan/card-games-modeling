@@ -1,0 +1,69 @@
+[
+  {
+    "iteration": 0,
+    "tasks_solved_total": 19,
+    "tasks_solved_new": 19,
+    "programs_enumerated": 1908867,
+    "wall_time": 160.26743602752686,
+    "training_loss": 2.3966803593768016,
+    "solved_task_names": [
+      "poker_has_pair",
+      "poker_flush",
+      "poker_same_color",
+      "poker_two_suits",
+      "bj_sum_even",
+      "bj_sum_odd",
+      "rummy_all_different",
+      "rummy_three_ranks",
+      "sol_same_suit_seq",
+      "simple_first_red",
+      "simple_last_black",
+      "simple_ends_suit",
+      "simple_ends_color",
+      "simple_has_spade",
+      "simple_has_heart",
+      "simple_diverse_ranks",
+      "simple_two_suits",
+      "sym_ranks_palindrome",
+      "count_more_red"
+    ]
+  },
+  {
+    "iteration": 1,
+    "tasks_solved_total": 20,
+    "tasks_solved_new": 1,
+    "programs_enumerated": 1526871,
+    "wall_time": 245.9195740222931,
+    "training_loss": 0.2930166295263916,
+    "solved_task_names": [
+      "sol_ascending"
+    ]
+  },
+  {
+    "iteration": 2,
+    "tasks_solved_total": 20,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 1500000,
+    "wall_time": 411.8503749370575,
+    "training_loss": 0.19915808564756945,
+    "solved_task_names": []
+  },
+  {
+    "iteration": 3,
+    "tasks_solved_total": 20,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 1500000,
+    "wall_time": 561.2316279411316,
+    "training_loss": 0.17358094848053346,
+    "solved_task_names": []
+  },
+  {
+    "iteration": 4,
+    "tasks_solved_total": 20,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 1500000,
+    "wall_time": 616.2065789699554,
+    "training_loss": 0.14517214592822003,
+    "solved_task_names": []
+  }
+]

@@ -1,0 +1,1302 @@
+{
+  "iteration": 1,
+  "tasks_solved": 22,
+  "tasks_total": 44,
+  "total_programs_enumerated": 3691270,
+  "programs_per_second": 23046.075795526398,
+  "wake_time_seconds": 160.16913390159607,
+  "newly_solved_this_iter": [
+    "poker_has_pair",
+    "poker_flush",
+    "poker_same_color",
+    "poker_two_suits",
+    "bj_sum_even",
+    "bj_sum_odd",
+    "rummy_all_different",
+    "rummy_three_ranks",
+    "sol_same_suit_seq",
+    "simple_first_red",
+    "simple_last_black",
+    "simple_ends_suit",
+    "simple_ends_color",
+    "simple_has_spade",
+    "simple_has_heart",
+    "simple_diverse_ranks",
+    "simple_two_suits",
+    "count_more_red",
+    "comp_left_half_uniform_color",
+    "comp_right_half_has_pair",
+    "comp_first_two_same_suit",
+    "comp_last_two_same_color"
+  ],
+  "recognition_epochs": [
+    {
+      "epoch": 1,
+      "total_loss": 3.5708541870117188,
+      "pred_loss": 2.499597930908203,
+      "struct_loss": 0.32137687683105465,
+      "count_loss": 0.0,
+      "n_tasks": 22
+    },
+    {
+      "epoch": 2,
+      "total_loss": 3.28877321879069,
+      "pred_loss": 2.302141253153483,
+      "struct_loss": 0.29598958969116207,
+      "count_loss": 0.0,
+      "n_tasks": 22
+    },
+    {
+      "epoch": 3,
+      "total_loss": 2.6902918815612793,
+      "pred_loss": 1.8832043170928954,
+      "struct_loss": 0.24212626934051512,
+      "count_loss": 0.0,
+      "n_tasks": 22
+    },
+    {
+      "epoch": 4,
+      "total_loss": 2.2952802975972495,
+      "pred_loss": 1.6066962083180745,
+      "struct_loss": 0.20657522678375242,
+      "count_loss": 0.0,
+      "n_tasks": 22
+    },
+    {
+      "epoch": 5,
+      "total_loss": 2.0184015035629272,
+      "pred_loss": 1.412881052494049,
+      "struct_loss": 0.18165613532066346,
+      "count_loss": 0.0,
+      "n_tasks": 22
+    }
+  ],
+  "final_recognition_loss": 2.0184015035629272,
+  "recognition_time_seconds": 0.3023519515991211,
+  "task_predictions": [
+    {
+      "task_name": "poker_has_pair",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999943971633911
+        ],
+        [
+          "filter",
+          0.9989595413208008
+        ],
+        [
+          "drop",
+          0.9975277781486511
+        ],
+        [
+          "second_half",
+          0.992112398147583
+        ],
+        [
+          "rank_val",
+          0.990882396697998
+        ]
+      ],
+      "prediction_entropy": 9.343807220458984,
+      "predicted_count": 3.6868062019348145
+    },
+    {
+      "task_name": "poker_three_of_kind",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9998750686645508
+        ],
+        [
+          "second_half",
+          0.9996185302734375
+        ],
+        [
+          "max_rank",
+          0.9991173148155212
+        ],
+        [
+          "zip_with",
+          0.9984037280082703
+        ],
+        [
+          "n_unique_suits",
+          0.9977572560310364
+        ]
+      ],
+      "prediction_entropy": 9.378787994384766,
+      "predicted_count": 0.015486232936382294
+    },
+    {
+      "task_name": "poker_flush",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.9994600415229797
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9991337656974792
+        ],
+        [
+          "HEARTS",
+          0.9987983703613281
+        ],
+        [
+          "get_suit",
+          0.9983789920806885
+        ],
+        [
+          "get_rank",
+          0.9974625110626221
+        ]
+      ],
+      "prediction_entropy": 7.682474136352539,
+      "predicted_count": 1.8000560998916626
+    },
+    {
+      "task_name": "poker_same_color",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.996752142906189
+        ],
+        [
+          "max_rank",
+          0.9864495396614075
+        ],
+        [
+          "false",
+          0.965822160243988
+        ],
+        [
+          "-",
+          0.9643976092338562
+        ],
+        [
+          "any",
+          0.963582456111908
+        ]
+      ],
+      "prediction_entropy": 11.78062915802002,
+      "predicted_count": 3.59539532661438
+    },
+    {
+      "task_name": "poker_two_suits",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9983932375907898
+        ],
+        [
+          "any",
+          0.994648277759552
+        ],
+        [
+          "max_rank",
+          0.9903535842895508
+        ],
+        [
+          "get_suit",
+          0.9857302904129028
+        ],
+        [
+          "at",
+          0.980274498462677
+        ]
+      ],
+      "prediction_entropy": 11.169258117675781,
+      "predicted_count": 3.458836793899536
+    },
+    {
+      "task_name": "poker_straight",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.999636173248291
+        ],
+        [
+          "max_rank",
+          0.998769223690033
+        ],
+        [
+          "any",
+          0.9979300498962402
+        ],
+        [
+          "-",
+          0.9957985281944275
+        ],
+        [
+          "get_suit",
+          0.9944044351577759
+        ]
+      ],
+      "prediction_entropy": 10.783317565917969,
+      "predicted_count": 0.48668646812438965
+    },
+    {
+      "task_name": "bj_sum_even",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.9997493624687195
+        ],
+        [
+          "any",
+          0.9988625049591064
+        ],
+        [
+          "rank_val",
+          0.9985161423683167
+        ],
+        [
+          "get_rank",
+          0.9981574416160583
+        ],
+        [
+          "map",
+          0.990691065788269
+        ]
+      ],
+      "prediction_entropy": 9.219989776611328,
+      "predicted_count": 3.749154567718506
+    },
+    {
+      "task_name": "bj_sum_odd",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999749660491943
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9998903274536133
+        ],
+        [
+          "length",
+          0.9750089049339294
+        ],
+        [
+          "count_suit",
+          0.9731822609901428
+        ],
+        [
+          "half_len",
+          0.9527701735496521
+        ]
+      ],
+      "prediction_entropy": 11.877704620361328,
+      "predicted_count": 1.2825597524642944
+    },
+    {
+      "task_name": "rummy_run_3",
+      "top_5_primitives": [
+        [
+          "sum_ranks",
+          0.9965601563453674
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9948791265487671
+        ],
+        [
+          "any",
+          0.9892874956130981
+        ],
+        [
+          "get_suit",
+          0.987343430519104
+        ],
+        [
+          "length",
+          0.9719139933586121
+        ]
+      ],
+      "prediction_entropy": 12.7783842086792,
+      "predicted_count": 1.7292101383209229
+    },
+    {
+      "task_name": "rummy_set_3",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999998807907104
+        ],
+        [
+          "second_half",
+          0.9999527931213379
+        ],
+        [
+          "sum_ranks",
+          0.9991926550865173
+        ],
+        [
+          "map",
+          0.9970940351486206
+        ],
+        [
+          "get_rank",
+          0.9964677095413208
+        ]
+      ],
+      "prediction_entropy": 7.912973403930664,
+      "predicted_count": -3.7523131370544434
+    },
+    {
+      "task_name": "rummy_all_different",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.999315619468689
+        ],
+        [
+          "any",
+          0.9974715709686279
+        ],
+        [
+          "second_half",
+          0.9897422790527344
+        ],
+        [
+          "count_suit",
+          0.979667067527771
+        ],
+        [
+          "max_rank",
+          0.9794495105743408
+        ]
+      ],
+      "prediction_entropy": 14.381892204284668,
+      "predicted_count": 0.720395565032959
+    },
+    {
+      "task_name": "rummy_three_ranks",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9998793601989746
+        ],
+        [
+          "n_unique_colors",
+          0.980461061000824
+        ],
+        [
+          "DIAMONDS",
+          0.979892373085022
+        ],
+        [
+          "max_rank",
+          0.9731922745704651
+        ],
+        [
+          "at",
+          0.9527032971382141
+        ]
+      ],
+      "prediction_entropy": 10.867791175842285,
+      "predicted_count": 4.463321208953857
+    },
+    {
+      "task_name": "sol_alternating",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9997690320014954
+        ],
+        [
+          "any",
+          0.997811496257782
+        ],
+        [
+          "max_rank",
+          0.9971128702163696
+        ],
+        [
+          "-",
+          0.9953644275665283
+        ],
+        [
+          "first_half",
+          0.9920294284820557
+        ]
+      ],
+      "prediction_entropy": 9.795376777648926,
+      "predicted_count": 1.106831431388855
+    },
+    {
+      "task_name": "sol_v_shape",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9997827410697937
+        ],
+        [
+          "max_rank",
+          0.9914594888687134
+        ],
+        [
+          "head",
+          0.9730480313301086
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9632236957550049
+        ],
+        [
+          "second_half",
+          0.9604200124740601
+        ]
+      ],
+      "prediction_entropy": 12.638172149658203,
+      "predicted_count": 1.4055675268173218
+    },
+    {
+      "task_name": "sol_ascending",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.9997873902320862
+        ],
+        [
+          "and",
+          0.9995052814483643
+        ],
+        [
+          "if",
+          0.9994838237762451
+        ],
+        [
+          "max_rank",
+          0.9992659687995911
+        ],
+        [
+          "first_half",
+          0.9990518689155579
+        ]
+      ],
+      "prediction_entropy": 7.573614120483398,
+      "predicted_count": 5.361323833465576
+    },
+    {
+      "task_name": "sol_sorted",
+      "top_5_primitives": [
+        [
+          "count_suit",
+          0.9997178912162781
+        ],
+        [
+          "HEARTS",
+          0.999362051486969
+        ],
+        [
+          "second_half",
+          0.9973785877227783
+        ],
+        [
+          "get_suit",
+          0.9972009658813477
+        ],
+        [
+          "sum_ranks",
+          0.996006190776825
+        ]
+      ],
+      "prediction_entropy": 11.259831428527832,
+      "predicted_count": 4.443485260009766
+    },
+    {
+      "task_name": "sol_same_suit_seq",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9991471767425537
+        ],
+        [
+          "second_half",
+          0.9957471489906311
+        ],
+        [
+          "sum_ranks",
+          0.9948967099189758
+        ],
+        [
+          "HEARTS",
+          0.9839260578155518
+        ],
+        [
+          "zip_with",
+          0.9728441834449768
+        ]
+      ],
+      "prediction_entropy": 10.89019775390625,
+      "predicted_count": 3.387662410736084
+    },
+    {
+      "task_name": "simple_first_red",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.999180257320404
+        ],
+        [
+          "max_rank",
+          0.998417854309082
+        ],
+        [
+          "get_color",
+          0.9936490654945374
+        ],
+        [
+          "count_suit",
+          0.9913472533226013
+        ],
+        [
+          "HEARTS",
+          0.9907028675079346
+        ]
+      ],
+      "prediction_entropy": 9.559225082397461,
+      "predicted_count": 5.0976481437683105
+    },
+    {
+      "task_name": "simple_last_black",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999998807907104
+        ],
+        [
+          "sum_ranks",
+          0.997978150844574
+        ],
+        [
+          "count_suit",
+          0.9977105855941772
+        ],
+        [
+          "first_half",
+          0.9944555163383484
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9941322207450867
+        ]
+      ],
+      "prediction_entropy": 8.719772338867188,
+      "predicted_count": 3.3741519451141357
+    },
+    {
+      "task_name": "simple_ends_suit",
+      "top_5_primitives": [
+        [
+          "count_suit",
+          0.9998401403427124
+        ],
+        [
+          "first_half",
+          0.9996918439865112
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9984488487243652
+        ],
+        [
+          "rank_val",
+          0.9983990788459778
+        ],
+        [
+          "second_half",
+          0.9925301671028137
+        ]
+      ],
+      "prediction_entropy": 9.759364128112793,
+      "predicted_count": 4.657403945922852
+    },
+    {
+      "task_name": "simple_ends_color",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9983686804771423
+        ],
+        [
+          "any",
+          0.9979571104049683
+        ],
+        [
+          "max_rank",
+          0.9916481971740723
+        ],
+        [
+          "zip_with",
+          0.9710685610771179
+        ],
+        [
+          "head",
+          0.9684309363365173
+        ]
+      ],
+      "prediction_entropy": 11.694547653198242,
+      "predicted_count": 1.77019464969635
+    },
+    {
+      "task_name": "simple_ends_rank",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999418258666992
+        ],
+        [
+          "HEARTS",
+          0.9996899366378784
+        ],
+        [
+          "second_half",
+          0.9969105124473572
+        ],
+        [
+          "get_rank",
+          0.9952777624130249
+        ],
+        [
+          "count_color",
+          0.9823289513587952
+        ]
+      ],
+      "prediction_entropy": 8.258421897888184,
+      "predicted_count": 4.410151481628418
+    },
+    {
+      "task_name": "simple_has_spade",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9999732971191406
+        ],
+        [
+          "sum_ranks",
+          0.9993756413459778
+        ],
+        [
+          "first_half",
+          0.998975396156311
+        ],
+        [
+          "count_suit",
+          0.9978985786437988
+        ],
+        [
+          "n_unique_suits",
+          0.9978559613227844
+        ]
+      ],
+      "prediction_entropy": 10.159425735473633,
+      "predicted_count": 1.9662362337112427
+    },
+    {
+      "task_name": "simple_has_heart",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9981334805488586
+        ],
+        [
+          "any",
+          0.9970421195030212
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9807968139648438
+        ],
+        [
+          "n_unique_suits",
+          0.9754736423492432
+        ],
+        [
+          "length",
+          0.9748719334602356
+        ]
+      ],
+      "prediction_entropy": 12.50717544555664,
+      "predicted_count": 2.4005637168884277
+    },
+    {
+      "task_name": "simple_all_even",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          1.0
+        ],
+        [
+          "-",
+          0.9999518394470215
+        ],
+        [
+          "any",
+          0.9996887445449829
+        ],
+        [
+          "count_suit",
+          0.9987995624542236
+        ],
+        [
+          "half_len",
+          0.996132493019104
+        ]
+      ],
+      "prediction_entropy": 9.804931640625,
+      "predicted_count": 1.1687146425247192
+    },
+    {
+      "task_name": "simple_all_odd",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9999524354934692
+        ],
+        [
+          "sum_ranks",
+          0.9999504089355469
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9999275207519531
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9993106126785278
+        ],
+        [
+          "first_half",
+          0.9987539052963257
+        ]
+      ],
+      "prediction_entropy": 10.168540000915527,
+      "predicted_count": 4.816806316375732
+    },
+    {
+      "task_name": "simple_diverse_ranks",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999768733978271
+        ],
+        [
+          "count_suit",
+          0.9951006770133972
+        ],
+        [
+          "get_rank",
+          0.9833609461784363
+        ],
+        [
+          "n_unique_suits",
+          0.9810071587562561
+        ],
+        [
+          "any",
+          0.9801726937294006
+        ]
+      ],
+      "prediction_entropy": 11.622690200805664,
+      "predicted_count": 4.0539445877075195
+    },
+    {
+      "task_name": "simple_two_suits",
+      "top_5_primitives": [
+        [
+          "get_rank",
+          0.9817699790000916
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9814167022705078
+        ],
+        [
+          "1",
+          0.9716964960098267
+        ],
+        [
+          "length",
+          0.969924807548523
+        ],
+        [
+          "at",
+          0.9546236991882324
+        ]
+      ],
+      "prediction_entropy": 13.284565925598145,
+      "predicted_count": 3.3723511695861816
+    },
+    {
+      "task_name": "sym_suits_palindrome",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999772310256958
+        ],
+        [
+          "second_half",
+          0.9999752044677734
+        ],
+        [
+          "HEARTS",
+          0.9997296929359436
+        ],
+        [
+          "get_rank",
+          0.9993699193000793
+        ],
+        [
+          "rank_val",
+          0.997593104839325
+        ]
+      ],
+      "prediction_entropy": 7.5435919761657715,
+      "predicted_count": 1.4376951456069946
+    },
+    {
+      "task_name": "sym_periodic_colors",
+      "top_5_primitives": [
+        [
+          "sum_ranks",
+          0.9999958276748657
+        ],
+        [
+          "count_suit",
+          0.9999637603759766
+        ],
+        [
+          "second_half",
+          0.9998915195465088
+        ],
+        [
+          "5",
+          0.9997970461845398
+        ],
+        [
+          "first_half",
+          0.9997472167015076
+        ]
+      ],
+      "prediction_entropy": 7.52847146987915,
+      "predicted_count": 0.26897573471069336
+    },
+    {
+      "task_name": "sym_ranks_palindrome",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9983179569244385
+        ],
+        [
+          "-",
+          0.9977536797523499
+        ],
+        [
+          "second_half",
+          0.9974797368049622
+        ],
+        [
+          "any",
+          0.9973825812339783
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9964389801025391
+        ]
+      ],
+      "prediction_entropy": 10.087398529052734,
+      "predicted_count": 0.7310627698898315
+    },
+    {
+      "task_name": "sym_halves_suits",
+      "top_5_primitives": [
+        [
+          "HEARTS",
+          0.99732506275177
+        ],
+        [
+          "if",
+          0.9960083961486816
+        ],
+        [
+          "count_suit",
+          0.9956430196762085
+        ],
+        [
+          "SPADES",
+          0.9946363568305969
+        ],
+        [
+          "first_half",
+          0.9903572201728821
+        ]
+      ],
+      "prediction_entropy": 9.646806716918945,
+      "predicted_count": 7.13661527633667
+    },
+    {
+      "task_name": "count_two_red",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9992802739143372
+        ],
+        [
+          "filter",
+          0.9979895353317261
+        ],
+        [
+          "any",
+          0.9976407289505005
+        ],
+        [
+          "all_same_color",
+          0.9971210360527039
+        ],
+        [
+          "second_half",
+          0.9957301020622253
+        ]
+      ],
+      "prediction_entropy": 8.334919929504395,
+      "predicted_count": 2.5712742805480957
+    },
+    {
+      "task_name": "count_more_red",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9981764554977417
+        ],
+        [
+          "-",
+          0.9941607117652893
+        ],
+        [
+          "1",
+          0.9924191236495972
+        ],
+        [
+          "half_len",
+          0.9907451868057251
+        ],
+        [
+          "second_half",
+          0.989286482334137
+        ]
+      ],
+      "prediction_entropy": 11.759856224060059,
+      "predicted_count": 3.4756741523742676
+    },
+    {
+      "task_name": "count_three_suit",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9988744854927063
+        ],
+        [
+          "second_half",
+          0.9984087347984314
+        ],
+        [
+          "n_unique_suits",
+          0.99599289894104
+        ],
+        [
+          "max_rank",
+          0.9952011108398438
+        ],
+        [
+          "zip_with",
+          0.9922031164169312
+        ]
+      ],
+      "prediction_entropy": 10.206571578979492,
+      "predicted_count": 0.4734543561935425
+    },
+    {
+      "task_name": "count_majority_color",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.9998210072517395
+        ],
+        [
+          "HEARTS",
+          0.9980615973472595
+        ],
+        [
+          "any",
+          0.997528612613678
+        ],
+        [
+          "max_rank",
+          0.9864110350608826
+        ],
+        [
+          "sum_ranks",
+          0.9831013083457947
+        ]
+      ],
+      "prediction_entropy": 10.931726455688477,
+      "predicted_count": 5.465324878692627
+    },
+    {
+      "task_name": "comp_left_half_uniform_color",
+      "top_5_primitives": [
+        [
+          "second_half",
+          0.9999799728393555
+        ],
+        [
+          "count_suit",
+          0.9994644522666931
+        ],
+        [
+          "any",
+          0.9988240599632263
+        ],
+        [
+          "map",
+          0.9987309575080872
+        ],
+        [
+          "SPADES",
+          0.9987220168113708
+        ]
+      ],
+      "prediction_entropy": 8.119942665100098,
+      "predicted_count": 1.3626000881195068
+    },
+    {
+      "task_name": "comp_right_half_has_pair",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999967813491821
+        ],
+        [
+          "half_len",
+          0.9953692555427551
+        ],
+        [
+          "map",
+          0.9895299077033997
+        ],
+        [
+          "-",
+          0.9878798127174377
+        ],
+        [
+          "if",
+          0.9855947494506836
+        ]
+      ],
+      "prediction_entropy": 10.55747127532959,
+      "predicted_count": 4.5053181648254395
+    },
+    {
+      "task_name": "comp_skip1_same_color",
+      "top_5_primitives": [
+        [
+          "rank_val",
+          0.9998030066490173
+        ],
+        [
+          "second_half",
+          0.9997614026069641
+        ],
+        [
+          "map",
+          0.9982261061668396
+        ],
+        [
+          "any",
+          0.9970836043357849
+        ],
+        [
+          "-",
+          0.9944880604743958
+        ]
+      ],
+      "prediction_entropy": 9.000313758850098,
+      "predicted_count": -1.4674761295318604
+    },
+    {
+      "task_name": "comp_shift2_color",
+      "top_5_primitives": [
+        [
+          "any",
+          0.996955394744873
+        ],
+        [
+          "second_half",
+          0.9966592788696289
+        ],
+        [
+          "first_half",
+          0.9900782108306885
+        ],
+        [
+          "max_rank",
+          0.9876589179039001
+        ],
+        [
+          "length",
+          0.9687439799308777
+        ]
+      ],
+      "prediction_entropy": 11.430628776550293,
+      "predicted_count": 0.1631181836128235
+    },
+    {
+      "task_name": "comp_first_two_same_suit",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9998063445091248
+        ],
+        [
+          "sum_ranks",
+          0.9814350605010986
+        ],
+        [
+          "eq",
+          0.9721763134002686
+        ],
+        [
+          "length",
+          0.9705601930618286
+        ],
+        [
+          "get_suit",
+          0.9679552316665649
+        ]
+      ],
+      "prediction_entropy": 12.091800689697266,
+      "predicted_count": 2.0107321739196777
+    },
+    {
+      "task_name": "comp_last_two_same_color",
+      "top_5_primitives": [
+        [
+          "any",
+          0.9998617172241211
+        ],
+        [
+          "second_half",
+          0.9990286827087402
+        ],
+        [
+          "CLUBS",
+          0.9961704611778259
+        ],
+        [
+          "sum_ranks",
+          0.9904748797416687
+        ],
+        [
+          "count_color",
+          0.9874635934829712
+        ]
+      ],
+      "prediction_entropy": 10.420736312866211,
+      "predicted_count": 2.1206979751586914
+    },
+    {
+      "task_name": "comp_binary_suit_alt",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999982118606567
+        ],
+        [
+          "n_unique_colors",
+          0.9998377561569214
+        ],
+        [
+          "at",
+          0.9997939467430115
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.9994527697563171
+        ],
+        [
+          "5",
+          0.9986333250999451
+        ]
+      ],
+      "prediction_entropy": 9.00528621673584,
+      "predicted_count": 2.673356294631958
+    },
+    {
+      "task_name": "comp_color_pairs",
+      "top_5_primitives": [
+        [
+          "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+          0.9999998807907104
+        ],
+        [
+          "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+          0.999595582485199
+        ],
+        [
+          "get_rank",
+          0.9990841150283813
+        ],
+        [
+          "count_suit",
+          0.9990429282188416
+        ],
+        [
+          "any",
+          0.997441291809082
+        ]
+      ],
+      "prediction_entropy": 12.585848808288574,
+      "predicted_count": 1.8317515850067139
+    }
+  ],
+  "mean_prediction_entropy": 10.321005821228027,
+  "prediction_entropy_std": 1.678794026374817,
+  "new_abstractions": [
+    {
+      "iteration": 1,
+      "abstraction_name": "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+      "abstraction_body": "(\u03bb (\u03bb (\u03bb $1 $2)))",
+      "size": 6,
+      "estimated_savings": 0.0
+    },
+    {
+      "iteration": 1,
+      "abstraction_name": "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+      "abstraction_body": "(\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4)))))",
+      "size": 12,
+      "estimated_savings": 0.0
+    },
+    {
+      "iteration": 1,
+      "abstraction_name": "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+      "abstraction_body": "(\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3))))",
+      "size": 9,
+      "estimated_savings": 0.0
+    }
+  ],
+  "compression_time_seconds": 0.021297931671142578,
+  "grammar_size": 62,
+  "dream_log": {
+    "iteration": 1,
+    "n_standard_dreams": 0,
+    "n_contrastive_dreams": 0,
+    "avg_examples_per_dream": 10.0,
+    "sample_dream_programs": []
+  },
+  "dream_time_seconds": 1.1920928955078125e-06,
+  "model_checkpoint_path": "results_overnight_wakesleep/study_20260101_200112/baseline_full_library/checkpoints/model_iter_01.pt"
+}

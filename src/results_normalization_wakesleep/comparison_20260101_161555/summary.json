@@ -1,0 +1,50 @@
+{
+  "config": {
+    "n_rules": 35,
+    "n_examples_per_task": 40,
+    "hand_size": 6,
+    "n_iterations": 5,
+    "enumeration_budget": 100000,
+    "max_depth": 8,
+    "hidden_dim": 64,
+    "recognition_epochs": 15,
+    "recognition_lr": 0.001,
+    "batch_size": 8,
+    "layernorm_scale_init": 20.0,
+    "n_workers": 4,
+    "seed": 42,
+    "output_dir": "results_normalization_wakesleep"
+  },
+  "approaches": [
+    "LayerNorm+Scale",
+    "L2Norm+Temperature"
+  ],
+  "learning_curves": {
+    "LayerNorm+Scale": [
+      19,
+      20,
+      20,
+      20,
+      20
+    ],
+    "L2Norm+Temperature": [
+      19,
+      19,
+      19,
+      20,
+      20
+    ]
+  },
+  "final_solved": {
+    "LayerNorm+Scale": 20,
+    "L2Norm+Temperature": 20
+  },
+  "total_time": {
+    "LayerNorm+Scale": 1995.4755918979645,
+    "L2Norm+Temperature": 1325.1574580669403
+  },
+  "total_programs": {
+    "LayerNorm+Scale": 7935738,
+    "L2Norm+Temperature": 8169507
+  }
+}

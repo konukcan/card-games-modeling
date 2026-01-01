@@ -84,7 +84,7 @@ def create_task_from_catalogue_rule(rule: Rule, n_examples: int = 50, seed: int 
     attempts = 0
 
     while (pos_count < n_examples // 2 or neg_count < n_examples // 2) and attempts < n_examples * 20:
-        hand = sample_hand(size=5)
+        hand = sample_hand(size=6)  # Standardized to 6
         try:
             label = rule.predicate(hand)
             if label and pos_count < n_examples // 2:

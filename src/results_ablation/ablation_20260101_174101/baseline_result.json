@@ -1,0 +1,490 @@
+{
+  "variant": "baseline",
+  "removed_primitives": [],
+  "n_primitives": 59,
+  "config": {
+    "variant": "baseline",
+    "n_iterations": 1,
+    "enumeration_budget": 200000,
+    "enumeration_timeout": 120.0,
+    "max_depth": 8,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "hand_size": 6,
+    "results_dir": "results_ablation/ablation_20260101_174101"
+  },
+  "summary": {
+    "variant": "baseline",
+    "removed": [],
+    "n_primitives": 59,
+    "tasks_solved_final": 0,
+    "tasks_ever_solved": 0,
+    "total_tasks": 45,
+    "solve_rate": 0.0,
+    "avg_depth": 0,
+    "max_depth": 0,
+    "total_programs": 9000000,
+    "total_time": 256.76492071151733
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "tasks_solved": 0,
+      "total_tasks": 45,
+      "total_programs": 9000000,
+      "total_time": 256.76492071151733,
+      "task_results": [
+        {
+          "task_name": "Sorted_by_rank",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.203736066818237,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "S_before_H",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.49720573425293,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_suit",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.285750865936279,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_color",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.562986850738525,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Has_pair_ranks",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.385473012924194,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Uniform_color",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.645819187164307,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_two_suits",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.286144971847534,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_or_more_same_suit",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.821904897689819,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "At_most_three_suits",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.344327211380005,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_one_club",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.780310869216919,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "AP_len3_anywhere_anyk",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.56102180480957,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "AP_len3_step2_anywhere",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.835353136062622,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "AP_len4_step2_anywhere",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.6093361377716064,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_sum_diff_geN",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.8976240158081055,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_sum_one_side_ge_2x_other",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.4392409324646,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_uniform_color_equal",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.917978763580322,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_AP_step1_equal",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.477934122085571,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_hearts_presence_equal",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.98323917388916,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_AP_len3_any_equal",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.617416858673096,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_AP_len2_step1_equal",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.890379190444946,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Well_formed_brackets_by_suit",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.764826059341431,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Even_opens_next_closes",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.958206415176392,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Odd_opens_next_closes",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.63264012336731,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Suits_palindrome",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.878622770309448,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Colors_palindrome",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.484762191772461,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ranks_palindrome",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.9493279457092285,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "AltColor1_palindrome",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.519767999649048,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "AltColor2_palindrome",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.001131057739258,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_altcolor1",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.576994895935059,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_copy_suits",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.040010929107666,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_copy_colors",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.562744140625,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_copy_ranks",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.977277994155884,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_copy_altcolor1",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.527383089065552,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_copy_altcolor2",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.961134195327759,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_same_suit_set",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.665369033813477,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Shift_half_plus_two",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.013366937637329,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Shift_half_ge",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.7307288646698,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Adj_same_rank_or_suit",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.046983957290649,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Skip2_same_rank_or_suit",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.4674601554870605,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Adj_rank_gap_le3",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.144873142242432,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Adj_same_rank_or_color",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.601430892944336,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Only_one_odd_rank",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 6.045675992965698,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Uniform_rank_parity",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.587303400039673,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Halves_radial_nonincreasing",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.94396185874939,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Global_radial_no_dominance",
+          "solved": false,
+          "programs_enumerated": 200000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 5.6397528648376465,
+          "holdout_verified": false
+        }
+      ]
+    }
+  ]
+}

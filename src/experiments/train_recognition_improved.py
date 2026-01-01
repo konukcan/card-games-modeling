@@ -67,7 +67,7 @@ def create_task_from_catalogue_rule(rule: Rule, n_examples: int = 50, seed: int 
     max_attempts = n_examples * 20
 
     while (pos_count < n_examples // 2 or neg_count < n_examples // 2) and attempts < max_attempts:
-        hand = sample_hand(size=5)
+        hand = sample_hand(size=6)  # Standardized to 6
         try:
             label = rule.predicate(hand)
             if label and pos_count < n_examples // 2:
@@ -247,7 +247,7 @@ def generate_synthetic_rules_improved(
             neg_count = 0
 
             for _ in range(500):  # Try up to 500 hands
-                hand = sample_hand(size=5)
+                hand = sample_hand(size=6)  # Standardized to 6
                 try:
                     result = fn(hand)
                     if result and pos_count < 25:

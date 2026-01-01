@@ -1,0 +1,1551 @@
+{
+  "model": "results/warmstart_experiment/contrastive_BOTH_20251225_145818/recognition_model_WARM.pt",
+  "n_tasks": 44,
+  "summary": {
+    "mean_suit_importance": 0.30982073362284185,
+    "mean_rank_importance": 0.3044916897073801,
+    "mean_position_importance": 0.27205121293974793
+  },
+  "tasks": [
+    {
+      "task_name": "poker_has_pair",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999999514045,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2564530670642853
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.23560215532779694
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.21541495621204376
+        },
+        {
+          "name": "5",
+          "prob": 0.20919173955917358
+        },
+        {
+          "name": "le",
+          "prob": 0.18137593567371368
+        }
+      ],
+      "entropy_baseline": 21.313453674316406,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 2.0578041076660156
+      }
+    },
+    {
+      "task_name": "poker_three_of_kind",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999999283739,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.26367881894111633
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.24340423941612244
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.22449921071529388
+        },
+        {
+          "name": "5",
+          "prob": 0.2177942395210266
+        },
+        {
+          "name": "le",
+          "prob": 0.18776164948940277
+        }
+      ],
+      "entropy_baseline": 22.259626388549805,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 1.396139144897461
+      }
+    },
+    {
+      "task_name": "poker_flush",
+      "suit_importance": 0.2901997121079303,
+      "rank_importance": 0.20402283904771146,
+      "position_importance": 0.505777448834857,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.19107374548912048
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.17143408954143524
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.14293751120567322
+        },
+        {
+          "name": "5",
+          "prob": 0.13878904283046722
+        },
+        {
+          "name": "le",
+          "prob": 0.11264557391405106
+        }
+      ],
+      "entropy_baseline": 13.303277969360352,
+      "entropy_changes": {
+        "suit": 3.054330825805664,
+        "rank": 2.1473255157470703,
+        "position": 5.323270797729492
+      }
+    },
+    {
+      "task_name": "poker_same_color",
+      "suit_importance": 0.4101433457279356,
+      "rank_importance": 0.4995339359342437,
+      "position_importance": 0.09032271832674275,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.11474598199129105
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.09930673986673355
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.07315696030855179
+        },
+        {
+          "name": "5",
+          "prob": 0.06822569668292999
+        },
+        {
+          "name": "le",
+          "prob": 0.05123430863022804
+        }
+      ],
+      "entropy_baseline": 5.908685684204102,
+      "entropy_changes": {
+        "suit": 3.702341079711914,
+        "rank": 4.509264945983887,
+        "position": 0.815338134765625
+      }
+    },
+    {
+      "task_name": "poker_two_suits",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2939896881580353
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.27172839641571045
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.2566826343536377
+        },
+        {
+          "name": "5",
+          "prob": 0.2510599195957184
+        },
+        {
+          "name": "le",
+          "prob": 0.22202999889850616
+        }
+      ],
+      "entropy_baseline": 25.92053985595703,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "poker_straight",
+      "suit_importance": 0.8216823665420168,
+      "rank_importance": 0.0,
+      "position_importance": 0.1783176334470708,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.23097237944602966
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2123079001903534
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.18630005419254303
+        },
+        {
+          "name": "5",
+          "prob": 0.1800498515367508
+        },
+        {
+          "name": "le",
+          "prob": 0.15323695540428162
+        }
+      ],
+      "entropy_baseline": 18.199920654296875,
+      "entropy_changes": {
+        "suit": 7.5297698974609375,
+        "rank": 0,
+        "position": 1.6340751647949219
+      }
+    },
+    {
+      "task_name": "bj_sum_even",
+      "suit_importance": 0.9999999999632501,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.33570149540901184
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.3166877031326294
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.3066633939743042
+        },
+        {
+          "name": "5",
+          "prob": 0.3038470149040222
+        },
+        {
+          "name": "le",
+          "prob": 0.2749008536338806
+        }
+      ],
+      "entropy_baseline": 31.22747039794922,
+      "entropy_changes": {
+        "suit": 2.7210922241210938,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "bj_sum_odd",
+      "suit_importance": 0.9999999999797791,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.21056438982486725
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.18995177745819092
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.16217690706253052
+        },
+        {
+          "name": "5",
+          "prob": 0.1577020138502121
+        },
+        {
+          "name": "le",
+          "prob": 0.1306762397289276
+        }
+      ],
+      "entropy_baseline": 15.516424179077148,
+      "entropy_changes": {
+        "suit": 4.945383071899414,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "rummy_run_3",
+      "suit_importance": 0.0,
+      "rank_importance": 0.5760770405857827,
+      "position_importance": 0.42392295940231955,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2572040557861328
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.23381412029266357
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.21180298924446106
+        },
+        {
+          "name": "5",
+          "prob": 0.2087099254131317
+        },
+        {
+          "name": "le",
+          "prob": 0.17774590849876404
+        }
+      ],
+      "entropy_baseline": 21.07687759399414,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 4.841896057128906,
+        "position": 3.56304931640625
+      }
+    },
+    {
+      "task_name": "rummy_set_3",
+      "suit_importance": 0.9999999998124737,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.3145947754383087
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2937960922718048
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.2798120677471161
+        },
+        {
+          "name": "5",
+          "prob": 0.27884551882743835
+        },
+        {
+          "name": "le",
+          "prob": 0.2467430680990219
+        }
+      ],
+      "entropy_baseline": 28.587106704711914,
+      "entropy_changes": {
+        "suit": 0.5332584381103516,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "rummy_all_different",
+      "suit_importance": 0.0,
+      "rank_importance": 0.6402954608093289,
+      "position_importance": 0.3597045391800033,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.21803787350654602
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.19754920899868011
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1731942743062973
+        },
+        {
+          "name": "5",
+          "prob": 0.1664811074733734
+        },
+        {
+          "name": "le",
+          "prob": 0.13937504589557648
+        }
+      ],
+      "entropy_baseline": 16.472129821777344,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 6.002071380615234,
+        "position": 3.371837615966797
+      }
+    },
+    {
+      "task_name": "rummy_three_ranks",
+      "suit_importance": 0.9999999999750764,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.20351722836494446
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.18412178754806519
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.15838535130023956
+        },
+        {
+          "name": "5",
+          "prob": 0.15165673196315765
+        },
+        {
+          "name": "le",
+          "prob": 0.1261971890926361
+        }
+      ],
+      "entropy_baseline": 14.880845069885254,
+      "entropy_changes": {
+        "suit": 4.012255668640137,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sol_alternating",
+      "suit_importance": 0.8933450644272971,
+      "rank_importance": 0.10665493556403048,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.10870528966188431
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.09422577917575836
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.06670498847961426
+        },
+        {
+          "name": "5",
+          "prob": 0.06321912258863449
+        },
+        {
+          "name": "le",
+          "prob": 0.046815723180770874
+        }
+      ],
+      "entropy_baseline": 5.474740982055664,
+      "entropy_changes": {
+        "suit": 10.300996780395508,
+        "rank": 1.229818344116211,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sol_v_shape",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999999877636,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.17184090614318848
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.15237459540367126
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1251702904701233
+        },
+        {
+          "name": "5",
+          "prob": 0.11878436803817749
+        },
+        {
+          "name": "le",
+          "prob": 0.09541282802820206
+        }
+      ],
+      "entropy_baseline": 11.245606422424316,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 8.17231273651123,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sol_ascending",
+      "suit_importance": 0.810653280809061,
+      "rank_importance": 0.0,
+      "position_importance": 0.18934671917457688,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.19104614853858948
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.17023935914039612
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1434594988822937
+        },
+        {
+          "name": "5",
+          "prob": 0.13732460141181946
+        },
+        {
+          "name": "le",
+          "prob": 0.11227720230817795
+        }
+      ],
+      "entropy_baseline": 13.26832103729248,
+      "entropy_changes": {
+        "suit": 4.954453468322754,
+        "rank": 0,
+        "position": 1.1572265625
+      }
+    },
+    {
+      "task_name": "sol_sorted",
+      "suit_importance": 0.9999999999588239,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2734425663948059
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.25283828377723694
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.2337108552455902
+        },
+        {
+          "name": "5",
+          "prob": 0.22792059183120728
+        },
+        {
+          "name": "le",
+          "prob": 0.199063241481781
+        }
+      ],
+      "entropy_baseline": 23.51702308654785,
+      "entropy_changes": {
+        "suit": 2.4285945892333984,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sol_same_suit_seq",
+      "suit_importance": 0.8121947055107045,
+      "rank_importance": 0.10216338081959808,
+      "position_importance": 0.08564191366284064,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.10812791436910629
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.09429170191287994
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.06768577545881271
+        },
+        {
+          "name": "5",
+          "prob": 0.0632915273308754
+        },
+        {
+          "name": "le",
+          "prob": 0.047251954674720764
+        }
+      ],
+      "entropy_baseline": 5.425642013549805,
+      "entropy_changes": {
+        "suit": 11.845027923583984,
+        "rank": 1.4899482727050781,
+        "position": 1.2489995956420898
+      }
+    },
+    {
+      "task_name": "simple_first_red",
+      "suit_importance": 0.4629368814256865,
+      "rank_importance": 0.43608596624434887,
+      "position_importance": 0.10097715231772712,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.14412063360214233
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.1265983134508133
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.09901581704616547
+        },
+        {
+          "name": "5",
+          "prob": 0.0934150442481041
+        },
+        {
+          "name": "le",
+          "prob": 0.07288554310798645
+        }
+      ],
+      "entropy_baseline": 8.496654510498047,
+      "entropy_changes": {
+        "suit": 3.782947540283203,
+        "rank": 3.5635318756103516,
+        "position": 0.8251476287841797
+      }
+    },
+    {
+      "task_name": "simple_last_black",
+      "suit_importance": 0.37495453513103694,
+      "rank_importance": 0.0,
+      "position_importance": 0.6250454648574407,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.21415099501609802
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.1934487223625183
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1657305657863617
+        },
+        {
+          "name": "5",
+          "prob": 0.16230513155460358
+        },
+        {
+          "name": "le",
+          "prob": 0.134632870554924
+        }
+      ],
+      "entropy_baseline": 15.91700267791748,
+      "entropy_changes": {
+        "suit": 3.25417423248291,
+        "rank": 0,
+        "position": 5.424675941467285
+      }
+    },
+    {
+      "task_name": "simple_ends_suit",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2831480801105499
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.25979989767074585
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.24364592134952545
+        },
+        {
+          "name": "5",
+          "prob": 0.23782318830490112
+        },
+        {
+          "name": "le",
+          "prob": 0.209512397646904
+        }
+      ],
+      "entropy_baseline": 24.47241973876953,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "simple_ends_color",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999987562557,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.347812682390213
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.32524165511131287
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.3237404227256775
+        },
+        {
+          "name": "5",
+          "prob": 0.31724095344543457
+        },
+        {
+          "name": "le",
+          "prob": 0.29095083475112915
+        }
+      ],
+      "entropy_baseline": 32.3094596862793,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0.08040237426757812
+      }
+    },
+    {
+      "task_name": "simple_ends_rank",
+      "suit_importance": 0.5062382323183549,
+      "rank_importance": 0.0,
+      "position_importance": 0.4937617676514203,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.330399751663208
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.30797943472862244
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.3003508448600769
+        },
+        {
+          "name": "5",
+          "prob": 0.29574054479599
+        },
+        {
+          "name": "le",
+          "prob": 0.2682863771915436
+        }
+      ],
+      "entropy_baseline": 30.31549072265625,
+      "entropy_changes": {
+        "suit": 1.6749076843261719,
+        "rank": 0,
+        "position": 1.6336288452148438
+      }
+    },
+    {
+      "task_name": "simple_has_spade",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999997488873,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.40507784485816956
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.39038944244384766
+        },
+        {
+          "name": "5",
+          "prob": 0.3899533450603485
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.3830537796020508
+        },
+        {
+          "name": "gt",
+          "prob": 0.378881573677063
+        }
+      ],
+      "entropy_baseline": 37.64244842529297,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0.3982276916503906
+      }
+    },
+    {
+      "task_name": "simple_has_heart",
+      "suit_importance": 0.7999162075724826,
+      "rank_importance": 0.0,
+      "position_importance": 0.20008379242197624,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.16244998574256897
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.1442813128232956
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.11647791415452957
+        },
+        {
+          "name": "5",
+          "prob": 0.11009109765291214
+        },
+        {
+          "name": "le",
+          "prob": 0.08916974812746048
+        }
+      ],
+      "entropy_baseline": 10.377578735351562,
+      "entropy_changes": {
+        "suit": 14.435554504394531,
+        "rank": 0,
+        "position": 3.61077880859375
+      }
+    },
+    {
+      "task_name": "simple_all_even",
+      "suit_importance": 0.0680326032892935,
+      "rank_importance": 0.819555120390445,
+      "position_importance": 0.11241227630961477,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.11289190500974655
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.09748212993144989
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.0730840340256691
+        },
+        {
+          "name": "5",
+          "prob": 0.06664478778839111
+        },
+        {
+          "name": "le",
+          "prob": 0.050477463752031326
+        }
+      ],
+      "entropy_baseline": 5.796921253204346,
+      "entropy_changes": {
+        "suit": 0.6390008926391602,
+        "rank": 7.697727680206299,
+        "position": 1.055840015411377
+      }
+    },
+    {
+      "task_name": "simple_all_odd",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999989201961,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "gt",
+          "prob": 0.4576473534107208
+        },
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.4540693163871765
+        },
+        {
+          "name": "has_color",
+          "prob": 0.45328038930892944
+        },
+        {
+          "name": "n_unique_suits",
+          "prob": 0.4522632658481598
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.45005396008491516
+        }
+      ],
+      "entropy_baseline": 40.224365234375,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0.09260940551757812
+      }
+    },
+    {
+      "task_name": "simple_diverse_ranks",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.9999999999551166,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.35135865211486816
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.32902759313583374
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.3274070918560028
+        },
+        {
+          "name": "5",
+          "prob": 0.3230975568294525
+        },
+        {
+          "name": "gt",
+          "prob": 0.2952454388141632
+        }
+      ],
+      "entropy_baseline": 32.80328369140625,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 2.2279930114746094
+      }
+    },
+    {
+      "task_name": "simple_two_suits",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9607249530839047,
+      "position_importance": 0.039275046885746866,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.3034845292568207
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.28181999921798706
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.26795434951782227
+        },
+        {
+          "name": "5",
+          "prob": 0.26494115591049194
+        },
+        {
+          "name": "le",
+          "prob": 0.23355871438980103
+        }
+      ],
+      "entropy_baseline": 27.111146926879883,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 3.1656455993652344,
+        "position": 0.12941360473632812
+      }
+    },
+    {
+      "task_name": "sym_suits_palindrome",
+      "suit_importance": 0.0,
+      "rank_importance": 0.6994210275502662,
+      "position_importance": 0.3005789724374423,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2258458286523819
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.20411396026611328
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.17720173299312592
+        },
+        {
+          "name": "5",
+          "prob": 0.17433862388134003
+        },
+        {
+          "name": "le",
+          "prob": 0.14492930471897125
+        }
+      ],
+      "entropy_baseline": 17.260900497436523,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 5.690330505371094,
+        "position": 2.4454421997070312
+      }
+    },
+    {
+      "task_name": "sym_periodic_colors",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999999671721,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2931841015815735
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2712922692298889
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.25882744789123535
+        },
+        {
+          "name": "5",
+          "prob": 0.2522726356983185
+        },
+        {
+          "name": "le",
+          "prob": 0.22279401123523712
+        }
+      ],
+      "entropy_baseline": 25.97498321533203,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 3.0461959838867188,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sym_ranks_palindrome",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999999369249,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2389412820339203
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.21585775911808014
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1957084685564041
+        },
+        {
+          "name": "5",
+          "prob": 0.18717390298843384
+        },
+        {
+          "name": "le",
+          "prob": 0.1592755764722824
+        }
+      ],
+      "entropy_baseline": 18.836292266845703,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 1.5854110717773438,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "sym_halves_suits",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.3029746115207672
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2815735936164856
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.26981690526008606
+        },
+        {
+          "name": "5",
+          "prob": 0.2632701098918915
+        },
+        {
+          "name": "le",
+          "prob": 0.23455284535884857
+        }
+      ],
+      "entropy_baseline": 27.095226287841797,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "count_two_red",
+      "suit_importance": 0.0,
+      "rank_importance": 0.6815359640568501,
+      "position_importance": 0.3184640359111295,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.24411194026470184
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.22064879536628723
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1964792162179947
+        },
+        {
+          "name": "5",
+          "prob": 0.19316625595092773
+        },
+        {
+          "name": "le",
+          "prob": 0.1628388613462448
+        }
+      ],
+      "entropy_baseline": 19.350400924682617,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 2.1284427642822266,
+        "position": 0.9945659637451172
+      }
+    },
+    {
+      "task_name": "count_more_red",
+      "suit_importance": 0.9999999999655999,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.19467324018478394
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.1744568645954132
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.1496332734823227
+        },
+        {
+          "name": "5",
+          "prob": 0.14178451895713806
+        },
+        {
+          "name": "le",
+          "prob": 0.11698582768440247
+        }
+      ],
+      "entropy_baseline": 13.851512908935547,
+      "entropy_changes": {
+        "suit": 2.9069652557373047,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "count_three_suit",
+      "suit_importance": 0.0,
+      "rank_importance": 0.892844824173402,
+      "position_importance": 0.10715517580595424,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.28707364201545715
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.265917032957077
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.25051629543304443
+        },
+        {
+          "name": "5",
+          "prob": 0.24368226528167725
+        },
+        {
+          "name": "le",
+          "prob": 0.21368691325187683
+        }
+      ],
+      "entropy_baseline": 25.098949432373047,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 4.325023651123047,
+        "position": 0.5190696716308594
+      }
+    },
+    {
+      "task_name": "count_majority_color",
+      "suit_importance": 0.501239558199807,
+      "rank_importance": 0.38876038450124506,
+      "position_importance": 0.1100000572489182,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.245209202170372
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2246561050415039
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.202158123254776
+        },
+        {
+          "name": "5",
+          "prob": 0.19595663249492645
+        },
+        {
+          "name": "le",
+          "prob": 0.16727711260318756
+        }
+      ],
+      "entropy_baseline": 19.837993621826172,
+      "entropy_changes": {
+        "suit": 1.0018844604492188,
+        "rank": 0.7770595550537109,
+        "position": 0.21986961364746094
+      }
+    },
+    {
+      "task_name": "comp_left_half_uniform_color",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_suits",
+          "prob": 0.4928795099258423
+        },
+        {
+          "name": "4",
+          "prob": 0.49244213104248047
+        },
+        {
+          "name": "gt",
+          "prob": 0.4923492968082428
+        },
+        {
+          "name": "has_color",
+          "prob": 0.48842570185661316
+        },
+        {
+          "name": "count_color",
+          "prob": 0.4873863458633423
+        }
+      ],
+      "entropy_baseline": 40.746978759765625,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "comp_right_half_has_pair",
+      "suit_importance": 0.3363132982908319,
+      "rank_importance": 0.1822820036432631,
+      "position_importance": 0.4814046980512898,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.185081347823143
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.1644657552242279
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.13630427420139313
+        },
+        {
+          "name": "5",
+          "prob": 0.1316988319158554
+        },
+        {
+          "name": "le",
+          "prob": 0.10675839334726334
+        }
+      ],
+      "entropy_baseline": 12.559991836547852,
+      "entropy_changes": {
+        "suit": 2.3011274337768555,
+        "rank": 1.2472124099731445,
+        "position": 3.2938737869262695
+      }
+    },
+    {
+      "task_name": "comp_skip1_same_color",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999999075483,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2752852141857147
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.25288406014442444
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.23340997099876404
+        },
+        {
+          "name": "5",
+          "prob": 0.22875401377677917
+        },
+        {
+          "name": "le",
+          "prob": 0.1984143704175949
+        }
+      ],
+      "entropy_baseline": 23.42023277282715,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 1.0816459655761719,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "comp_shift2_color",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999999908854,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.23711387813091278
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.21485762298107147
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.18994486331939697
+        },
+        {
+          "name": "5",
+          "prob": 0.1849096119403839
+        },
+        {
+          "name": "le",
+          "prob": 0.15475350618362427
+        }
+      ],
+      "entropy_baseline": 18.56024932861328,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 10.971406936645508,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "comp_first_two_same_suit",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.999999999913563,
+      "dominant_feature": "position",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.2612103819847107
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.23872750997543335
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.2162109613418579
+        },
+        {
+          "name": "5",
+          "prob": 0.2145703285932541
+        },
+        {
+          "name": "le",
+          "prob": 0.1840636432170868
+        }
+      ],
+      "entropy_baseline": 21.594867706298828,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 1.156911849975586
+      }
+    },
+    {
+      "task_name": "comp_last_two_same_color",
+      "suit_importance": 0.0,
+      "rank_importance": 0.9999999995905151,
+      "position_importance": 0.0,
+      "dominant_feature": "rank",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.24538692831993103
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.22382788360118866
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.19962307810783386
+        },
+        {
+          "name": "5",
+          "prob": 0.1957428902387619
+        },
+        {
+          "name": "le",
+          "prob": 0.16580629348754883
+        }
+      ],
+      "entropy_baseline": 19.764272689819336,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0.24420928955078125,
+        "position": 0
+      }
+    },
+    {
+      "task_name": "comp_binary_suit_alt",
+      "suit_importance": 0.5442624883975995,
+      "rank_importance": 0.20767651133949497,
+      "position_importance": 0.24806100024804298,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.17800270020961761
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.15905103087425232
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.13054756820201874
+        },
+        {
+          "name": "5",
+          "prob": 0.12509001791477203
+        },
+        {
+          "name": "le",
+          "prob": 0.10094155371189117
+        }
+      ],
+      "entropy_baseline": 11.915290832519531,
+      "entropy_changes": {
+        "suit": 3.6619873046875,
+        "rank": 1.3973197937011719,
+        "position": 1.6690406799316406
+      }
+    },
+    {
+      "task_name": "comp_color_pairs",
+      "suit_importance": 0.0,
+      "rank_importance": 0.0,
+      "position_importance": 0.0,
+      "dominant_feature": "suit",
+      "top_primitives": [
+        {
+          "name": "n_unique_ranks",
+          "prob": 0.30424273014068604
+        },
+        {
+          "name": "all_same_suit",
+          "prob": 0.2824743390083313
+        },
+        {
+          "name": "all_same_color",
+          "prob": 0.26906731724739075
+        },
+        {
+          "name": "5",
+          "prob": 0.26364514231681824
+        },
+        {
+          "name": "le",
+          "prob": 0.2343519628047943
+        }
+      ],
+      "entropy_baseline": 27.255064010620117,
+      "entropy_changes": {
+        "suit": 0,
+        "rank": 0,
+        "position": 0
+      }
+    }
+  ]
+}

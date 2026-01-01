@@ -1,0 +1,96 @@
+[
+  {
+    "variant": "baseline",
+    "removed": [],
+    "n_primitives": 59,
+    "tasks_solved_final": 22,
+    "tasks_ever_solved": 22,
+    "total_tasks": 44,
+    "solve_rate": 0.5,
+    "avg_depth": 5.0,
+    "max_depth": 7,
+    "total_programs": 14373810,
+    "total_time": 457.44067311286926
+  },
+  {
+    "variant": "no_gestalt",
+    "removed": [
+      "all_same_suit",
+      "all_same_color"
+    ],
+    "n_primitives": 57,
+    "tasks_solved_final": 22,
+    "tasks_ever_solved": 22,
+    "total_tasks": 44,
+    "solve_rate": 0.5,
+    "avg_depth": 5.454545454545454,
+    "max_depth": 7,
+    "total_programs": 14428632,
+    "total_time": 592.3457787036896
+  },
+  {
+    "variant": "no_n_unique",
+    "removed": [
+      "n_unique_suits",
+      "n_unique_ranks",
+      "n_unique_colors"
+    ],
+    "n_primitives": 56,
+    "tasks_solved_final": 16,
+    "tasks_ever_solved": 16,
+    "total_tasks": 44,
+    "solve_rate": 0.36363636363636365,
+    "avg_depth": 4.875,
+    "max_depth": 7,
+    "total_programs": 17632650,
+    "total_time": 575.0707812309265
+  },
+  {
+    "variant": "no_direct_queries",
+    "removed": [
+      "has_suit",
+      "has_color",
+      "count_suit",
+      "count_color",
+      "all_same_suit",
+      "all_same_color",
+      "n_unique_suits",
+      "n_unique_ranks",
+      "n_unique_colors"
+    ],
+    "n_primitives": 50,
+    "tasks_solved_final": 2,
+    "tasks_ever_solved": 2,
+    "total_tasks": 44,
+    "solve_rate": 0.045454545454545456,
+    "avg_depth": 6.5,
+    "max_depth": 7,
+    "total_programs": 25468335,
+    "total_time": 861.1030814647675
+  },
+  {
+    "variant": "minimal",
+    "removed": [
+      "first_half",
+      "second_half",
+      "has_suit",
+      "has_color",
+      "count_suit",
+      "count_color",
+      "all_same_suit",
+      "all_same_color",
+      "n_unique_suits",
+      "n_unique_ranks",
+      "n_unique_colors"
+    ],
+    "n_primitives": 48,
+    "tasks_solved_final": 2,
+    "tasks_ever_solved": 2,
+    "total_tasks": 44,
+    "solve_rate": 0.045454545454545456,
+    "avg_depth": 6.5,
+    "max_depth": 7,
+    "total_programs": 25439943,
+    "total_time": 793.3497774600983
+  }
+]

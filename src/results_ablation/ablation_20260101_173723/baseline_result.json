@@ -1,0 +1,140 @@
+{
+  "variant": "baseline",
+  "removed_primitives": [],
+  "n_primitives": 59,
+  "config": {
+    "variant": "baseline",
+    "n_iterations": 1,
+    "enumeration_budget": 10000,
+    "enumeration_timeout": 30.0,
+    "max_depth": 8,
+    "n_examples_per_task": 50,
+    "n_holdout_per_task": 20,
+    "hand_size": 6,
+    "results_dir": "results_ablation/ablation_20260101_173723"
+  },
+  "summary": {
+    "variant": "baseline",
+    "removed": [],
+    "n_primitives": 59,
+    "tasks_solved_final": 0,
+    "tasks_ever_solved": 0,
+    "total_tasks": 10,
+    "solve_rate": 0.0,
+    "avg_depth": 0,
+    "max_depth": 0,
+    "total_programs": 100000,
+    "total_time": 3.658642292022705
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "tasks_solved": 0,
+      "total_tasks": 10,
+      "total_programs": 100000,
+      "total_time": 3.658642292022705,
+      "task_results": [
+        {
+          "task_name": "Sorted_by_rank",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.35436320304870605,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "S_before_H",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.35408520698547363,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.35765504837036133,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Ends_same_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.38103508949279785,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Has_pair_ranks",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.362332820892334,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Uniform_color",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.418576717376709,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_two_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.36936330795288086,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Half_or_more_same_suit",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3541080951690674,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "At_most_three_suits",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3538649082183838,
+          "holdout_verified": false
+        },
+        {
+          "task_name": "Exactly_one_club",
+          "solved": false,
+          "programs_enumerated": 10000,
+          "solution_str": null,
+          "solution_depth": null,
+          "solution_size": null,
+          "time_seconds": 0.3532578945159912,
+          "holdout_verified": false
+        }
+      ]
+    }
+  ]
+}
