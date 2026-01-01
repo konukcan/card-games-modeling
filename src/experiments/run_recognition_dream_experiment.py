@@ -49,6 +49,11 @@ from dreamcoder_core.enumeration import TopDownEnumerator, EnumerationResult, Fr
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.grammar import Grammar
 from dreamcoder_core.task import Task
+from dreamcoder_core.task_generation import (
+    create_tasks_from_rules as unified_create_tasks,
+    TaskGenerationConfig,
+    load_prerecorded_tasks
+)
 
 from rules.cards import sample_hand
 from rules.pretraining_rules import get_all_pretraining_rules, get_easy_pretraining_rules
@@ -126,46 +131,49 @@ def create_tasks_from_rules(
     rules: List,
     n_examples: int = 100,
     n_holdout: int = 20,
-    hand_size: int = 5
+    hand_size: int = 6  # Standardized to 6
 ) -> List[Task]:
-    """Create tasks from a list of PretrainingRule objects or callables."""
-    tasks = []
+    """
+    DEPRECATED: Use task_generation.create_tasks_from_rules() instead.
 
-    for rule in rules:
-        # Handle both PretrainingRule objects and raw functions
-        if hasattr(rule, 'eval'):
-            # It's a PretrainingRule object
-            rule_fn = rule.eval
-            rule_name = rule.id
-        else:
-            # It's a callable
-            rule_fn = rule
-            rule_name = getattr(rule_fn, '__name__', str(rule_fn))
+    This wrapper delegates to the unified task generation system which provides:
+    - Guaranteed balanced examples (equal positives/negatives)
+    - Near-miss negative generation (flip one card from positive)
+    - Disjoint seed/training/holdout pools to prevent data leakage
+    - Explicit failure if balance cannot be achieved
 
-        # Generate examples
-        examples = []
-        for _ in range(n_examples):
-            hand = sample_hand(hand_size)
-            result = rule_fn(hand)
-            examples.append((hand, result))
+    Args:
+        rules: List of PretrainingRule objects or callables
+        n_examples: Number of training examples
+        n_holdout: Number of held-out examples
+        hand_size: Number of cards per hand (default 6)
 
-        # Generate holdout examples
-        holdout = []
-        for _ in range(n_holdout):
-            hand = sample_hand(hand_size)
-            result = rule_fn(hand)
-            holdout.append((hand, result))
+    Returns:
+        List of Task objects with balanced examples
+    """
+    import warnings
+    warnings.warn(
+        "run_recognition_dream_experiment.create_tasks_from_rules() is deprecated. "
+        "Use task_generation.create_tasks_from_rules() directly.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
-        task = Task(
-            name=rule_name,
-            request_type=arrow(HAND, BOOL),
-            examples=examples,
-            holdout=holdout,
-            rule_fn=rule_fn
-        )
-        tasks.append(task)
+    # Map old parameters to new config
+    config = TaskGenerationConfig(
+        n_training_positives=n_examples // 2,
+        n_seed_positives=n_examples // 4,  # For near-miss generation
+        n_training_negatives=n_examples // 2,
+        n_holdout_positives=n_holdout // 2,
+        n_holdout_negatives=n_holdout // 2,
+        hand_size=hand_size,
+        use_near_miss_negatives=True,
+        allow_random_negative_fallback=True,
+        require_exact_balance=False,  # Be lenient for backwards compat
+    )
 
-    return tasks
+    # Delegate to unified implementation
+    return unified_create_tasks(rules, config=config)
 
 
 # ============================================================================

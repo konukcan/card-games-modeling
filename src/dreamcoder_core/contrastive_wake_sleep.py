@@ -47,6 +47,11 @@ from dreamcoder_core.contrastive_dreaming import (
     ContrastiveDreamer, StandardDreamer, HybridDreamer, ContrastiveDream
 )
 from dreamcoder_core.task import Task
+from dreamcoder_core.task_generation import (
+    create_tasks_from_rules as unified_create_tasks,
+    TaskGenerationConfig,
+    load_prerecorded_tasks
+)
 
 
 # ============================================================================
@@ -689,47 +694,95 @@ class ContrastiveWakeSleep:
 def create_tasks_from_rules(
     rules: List,
     n_examples: int = 20,
-    seed: int = 42
+    seed: int = 42,
+    use_unified: bool = True
 ) -> List[Task]:
-    """Create Task objects from rule definitions."""
-    from rules.cards import sample_hand
+    """
+    Create Task objects from rule definitions.
 
-    random.seed(seed)
-    tasks = []
+    DEPRECATED: This function now delegates to the unified task_generation module.
+    For new code, import directly from dreamcoder_core.task_generation instead.
 
-    for rule in rules:
-        positives = []
-        negatives = []
-        target = n_examples // 2
+    The unified version provides:
+    - Guaranteed balanced examples
+    - Near-miss negative generation
+    - Separate seed pool to prevent data leakage
+    - Holdout generation
+    - Explicit failure if balance cannot be achieved
 
-        for _ in range(10000):
-            hand = sample_hand(6)
-            try:
-                label = rule.eval(hand)
-                if label and len(positives) < target:
-                    positives.append((hand, True))
-                elif not label and len(negatives) < target:
-                    negatives.append((hand, False))
-            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
-                # Rule evaluation failed for this hand - skip it
-                continue
+    Args:
+        rules: List of Rule objects with .eval() and .id
+        n_examples: Total number of training examples (will be split 50/50)
+        seed: Random seed for reproducibility
+        use_unified: If True (default), use the new unified implementation
 
-            if len(positives) >= target and len(negatives) >= target:
-                break
+    Returns:
+        List of Task objects
+    """
+    import warnings
+    warnings.warn(
+        "create_tasks_from_rules in contrastive_wake_sleep.py is deprecated. "
+        "Use dreamcoder_core.task_generation.create_tasks_from_rules instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
-        examples = positives[:target] + negatives[:target]
-        random.shuffle(examples)
-
-        task = Task(
-            name=rule.id,
-            request_type=arrow(HAND, BOOL),
-            examples=examples,
-            family=getattr(rule, 'family', ''),
-            difficulty_level=getattr(rule, 'level', 0)
+    if use_unified:
+        # Use the new unified task generation
+        config = TaskGenerationConfig(
+            n_training_positives=n_examples // 2,
+            n_seed_positives=n_examples // 2,
+            n_training_negatives=n_examples // 2,
+            n_holdout_positives=n_examples // 4,
+            n_holdout_negatives=n_examples // 4,
+            use_near_miss_negatives=True,
         )
-        tasks.append(task)
+        tasks, failures = unified_create_tasks(rules, config, seed, skip_failures=True, verbose=False)
 
-    return tasks
+        if failures:
+            for rule_id, reason in failures:
+                print(f"Warning: Task generation failed for {rule_id}: {reason[:60]}...")
+
+        return tasks
+    else:
+        # Legacy implementation (for comparison only)
+        from rules.cards import sample_hand
+
+        random.seed(seed)
+        tasks = []
+
+        for rule in rules:
+            positives = []
+            negatives = []
+            target = n_examples // 2
+
+            for _ in range(10000):
+                hand = sample_hand(6)
+                try:
+                    label = rule.eval(hand)
+                    if label and len(positives) < target:
+                        positives.append((hand, True))
+                    elif not label and len(negatives) < target:
+                        negatives.append((hand, False))
+                except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError):
+                    continue
+
+                if len(positives) >= target and len(negatives) >= target:
+                    break
+
+            examples = positives[:target] + negatives[:target]
+            random.shuffle(examples)
+
+            task = Task(
+                name=rule.id,
+                request_type=arrow(HAND, BOOL),
+                examples=examples,
+                family=getattr(rule, 'family', ''),
+                difficulty_level=getattr(rule, 'level', 0)
+            )
+            tasks.append(task)
+
+        return tasks
 
 
 # ============================================================================

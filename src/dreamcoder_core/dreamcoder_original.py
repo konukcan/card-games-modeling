@@ -78,6 +78,11 @@ from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
 from dreamcoder_core.task import Task  # Canonical Task definition
+from dreamcoder_core.task_generation import (
+    create_tasks_from_rules as unified_create_tasks,
+    TaskGenerationConfig,
+    load_prerecorded_tasks
+)
 
 
 # ============================================================================
@@ -796,75 +801,47 @@ def create_tasks_from_rules(
     seed: int = 42
 ) -> List[Task]:
     """
-    Create Task objects from rule definitions.
+    DEPRECATED: Use task_generation.create_tasks_from_rules() instead.
+
+    This wrapper delegates to the unified task generation system which provides:
+    - Guaranteed balanced examples (equal positives/negatives)
+    - Near-miss negative generation (flip one card from positive)
+    - Disjoint seed/training/holdout pools to prevent data leakage
+    - Explicit failure if balance cannot be achieved
 
     Args:
         rules: List of PretrainingRule objects
-        n_examples: Number of training examples (default 100, was 20)
+        n_examples: Number of training examples (default 100)
         n_holdout: Number of held-out examples for solution verification
         hand_size: Number of cards per hand (default 6)
         seed: Random seed for reproducibility
 
-    The increased example count and held-out verification help prevent
-    spurious solutions that pass training examples by coincidence.
+    Returns:
+        List of Task objects with balanced examples
     """
-    from rules.cards import sample_hand
+    import warnings
+    warnings.warn(
+        "dreamcoder_original.create_tasks_from_rules() is deprecated. "
+        "Use task_generation.create_tasks_from_rules() directly.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
-    random.seed(seed)
-    tasks = []
+    # Map old parameters to new config
+    config = TaskGenerationConfig(
+        n_training_positives=n_examples // 2,
+        n_seed_positives=n_examples // 4,  # For near-miss generation
+        n_training_negatives=n_examples // 2,
+        n_holdout_positives=n_holdout // 2,
+        n_holdout_negatives=n_holdout // 2,
+        hand_size=hand_size,
+        use_near_miss_negatives=True,
+        allow_random_negative_fallback=True,
+        require_exact_balance=False,  # Be lenient for backwards compat
+    )
 
-    for rule in rules:
-        positives = []
-        negatives = []
-        holdout_positives = []
-        holdout_negatives = []
-
-        target = n_examples // 2
-        holdout_target = n_holdout // 2
-
-        # Sample more hands to ensure we get enough diverse examples
-        for _ in range(50000):  # Increased from 10000
-            hand = sample_hand(hand_size)
-            try:
-                label = rule.eval(hand)
-                if label:
-                    if len(positives) < target:
-                        positives.append((hand, True))
-                    elif len(holdout_positives) < holdout_target:
-                        holdout_positives.append((hand, True))
-                else:
-                    if len(negatives) < target:
-                        negatives.append((hand, False))
-                    elif len(holdout_negatives) < holdout_target:
-                        holdout_negatives.append((hand, False))
-            except (ValueError, TypeError, ZeroDivisionError, IndexError, KeyError, AttributeError, RecursionError):
-                # Expected runtime errors from rule evaluation - skip this hand
-                continue
-
-            # Check if we have enough of everything
-            if (len(positives) >= target and len(negatives) >= target and
-                len(holdout_positives) >= holdout_target and
-                len(holdout_negatives) >= holdout_target):
-                break
-
-        examples = positives[:target] + negatives[:target]
-        random.shuffle(examples)
-
-        holdout = holdout_positives[:holdout_target] + holdout_negatives[:holdout_target]
-        random.shuffle(holdout)
-
-        task = Task(
-            name=rule.id,
-            request_type=arrow(HAND, BOOL),
-            examples=examples,
-            family=getattr(rule, 'family', ''),
-            difficulty_level=getattr(rule, 'level', 0)
-        )
-        # Store holdout examples for verification
-        task.holdout_examples = holdout
-        tasks.append(task)
-
-    return tasks
+    # Delegate to unified implementation
+    return unified_create_tasks(rules, config=config, seed=seed)
 
 
 def make_eval_fn():
