@@ -271,3 +271,25 @@ This is a DreamCoder-inspired program synthesis system for modeling card game ru
 - **Wake-Sleep Loop**: Iterative improvement of recognition and enumeration
 
 The companion behavioral experiment is at: https://github.com/konukcan/card-games
+
+---
+
+## Paused Subprojects
+
+### LAPS (Language-Assisted Program Synthesis) - PAUSED
+
+**Status**: Paused as of January 2025
+**Location**: `../laps-subproject-PAUSED/` (moved outside main project)
+**Resume when**: Core non-language DreamCoder model is working well
+
+This subproject explored using natural language descriptions to guide program synthesis. Key findings:
+- LLM descriptions had 50.5% error rate initially (hallucinated poker features)
+- Improved prompting reduced errors to 7.5% but lost discrimination
+- LLMs focus on surface features (colors 63%, ranks 62%) not structural patterns (8%)
+
+**To resume**: Read `../laps-subproject-PAUSED/LAPS_SUBPROJECT_REPORT.md` for full context.
+
+Files archived:
+- `description_generator/` - Core Python module for feature extraction
+- `results_llm_annotation/` - All experiment data and PDFs
+- `LAPS_SUBPROJECT_REPORT.md` - Comprehensive documentation
