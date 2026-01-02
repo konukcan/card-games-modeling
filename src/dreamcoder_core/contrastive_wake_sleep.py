@@ -41,7 +41,7 @@ from dreamcoder_core.program import Program, Primitive, Application, Abstraction
 from dreamcoder_core.grammar import Grammar, Production
 from dreamcoder_core.enumeration import TopDownEnumerator, Frontier, EnumerationResult
 # NOTE: enumerate_simple is deprecated - use TopDownEnumerator instead
-from dreamcoder_core.compression import compress_frontiers, CompressionResult
+from dreamcoder_core.compression import compress_frontiers, compress_frontiers_recognition, CompressionResult
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.contrastive_dreaming import (
     ContrastiveDreamer, StandardDreamer, HybridDreamer, ContrastiveDream
@@ -178,6 +178,8 @@ class ContrastiveWakeSleep:
         # Compression settings
         max_inventions_per_iteration: int = 5,
         min_compression_savings: float = 2.0,
+        use_recognition_guided_compression: bool = True,
+        corpus_guidance_alpha: float = 0.7,
 
         # Recognition settings
         recognition_hidden_dim: int = 32,
@@ -219,6 +221,8 @@ class ContrastiveWakeSleep:
         # Compression settings
         self.max_inventions_per_iteration = max_inventions_per_iteration
         self.min_compression_savings = min_compression_savings
+        self.use_recognition_guided_compression = use_recognition_guided_compression
+        self.corpus_guidance_alpha = corpus_guidance_alpha
 
         # Recognition settings
         self.recognition_hidden_dim = recognition_hidden_dim
@@ -455,13 +459,41 @@ class ContrastiveWakeSleep:
                     all_frontiers.append(programs_with_ll)
 
             if all_frontiers:
-                result = compress_frontiers(
-                    self.grammar,
-                    all_frontiers,
-                    max_inventions=self.max_inventions_per_iteration,
-                    min_savings=self.min_compression_savings,
-                    use_anti_unification=True
+                # Collect unsolved tasks for forward-looking scoring
+                unsolved_tasks = [f.task for f in self.frontiers.values() if not f.solved]
+
+                # Use recognition-guided compression if enabled and we have a trained model
+                use_recognition_guidance = (
+                    self.use_recognition_guided_compression
+                    and self.recognition is not None
+                    and iteration > 0  # Need at least one training iteration
+                    and len(unsolved_tasks) > 0  # Need unsolved tasks to guide
                 )
+
+                if use_recognition_guidance:
+                    self.log(f"Using recognition-guided compression (alpha={self.corpus_guidance_alpha})", 1)
+                    self.log(f"  {len(unsolved_tasks)} unsolved tasks for forward scoring", 2)
+                    result = compress_frontiers_recognition(
+                        self.grammar,
+                        all_frontiers,
+                        unsolved_tasks=unsolved_tasks,
+                        recognition_model=self.recognition,
+                        max_inventions=self.max_inventions_per_iteration,
+                        min_savings=self.min_compression_savings,
+                        use_anti_unification=True,
+                        alpha=self.corpus_guidance_alpha
+                    )
+                else:
+                    # Fall back to standard compression
+                    reason = "first iteration" if iteration == 0 else "no unsolved tasks" if len(unsolved_tasks) == 0 else "recognition disabled"
+                    self.log(f"Using standard compression ({reason})", 1)
+                    result = compress_frontiers(
+                        self.grammar,
+                        all_frontiers,
+                        max_inventions=self.max_inventions_per_iteration,
+                        min_savings=self.min_compression_savings,
+                        use_anti_unification=True
+                    )
 
                 if result.new_inventions:
                     self.grammar = result.new_grammar
@@ -635,6 +667,8 @@ class ContrastiveWakeSleep:
                 'max_depth': self.max_depth,
                 'keep_top_k': self.keep_top_k,
                 'use_compression': self.use_compression,
+                'use_recognition_guided_compression': self.use_recognition_guided_compression,
+                'corpus_guidance_alpha': self.corpus_guidance_alpha,
                 'use_recognition': self.use_recognition,
                 'use_dreaming': self.use_dreaming,
                 'contrastive_dream_ratio': self.contrastive_dream_ratio,
