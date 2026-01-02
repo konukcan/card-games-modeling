@@ -1,0 +1,47 @@
+[
+  {
+    "program": "(\u03bb lt 0 2)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb false)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb all_same_suit (#((\u03bb first_half (first_half $0))) $0))",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb le 4 1)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb gt 2 0)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb not true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb gt 3 (max_rank $0))",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  }
+]

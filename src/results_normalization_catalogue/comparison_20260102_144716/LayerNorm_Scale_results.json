@@ -1,0 +1,58 @@
+[
+  {
+    "iteration": 0,
+    "tasks_solved_total": 10,
+    "tasks_solved_new": 10,
+    "programs_enumerated": 3935865,
+    "wall_time": 344.8519699573517,
+    "training_loss": 1.8552009612321854,
+    "solved_task_names": [
+      "Ends_same_suit",
+      "Ends_same_color",
+      "Has_pair_ranks",
+      "Uniform_color",
+      "Exactly_two_suits",
+      "At_most_three_suits",
+      "Even_opens_next_closes",
+      "Odd_opens_next_closes",
+      "Only_one_odd_rank",
+      "Uniform_rank_parity"
+    ]
+  },
+  {
+    "iteration": 1,
+    "tasks_solved_total": 10,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 3400000,
+    "wall_time": 320.53279304504395,
+    "training_loss": 0.034015518275555226,
+    "solved_task_names": []
+  },
+  {
+    "iteration": 2,
+    "tasks_solved_total": 10,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 3400000,
+    "wall_time": 312.47498512268066,
+    "training_loss": 0.0003022783774971079,
+    "solved_task_names": []
+  },
+  {
+    "iteration": 3,
+    "tasks_solved_total": 10,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 3400000,
+    "wall_time": 323.5727491378784,
+    "training_loss": 4.210427935191774e-06,
+    "solved_task_names": []
+  },
+  {
+    "iteration": 4,
+    "tasks_solved_total": 10,
+    "tasks_solved_new": 0,
+    "programs_enumerated": 3400000,
+    "wall_time": 359.45233821868896,
+    "training_loss": 3.09114548976049e-08,
+    "solved_task_names": []
+  }
+]

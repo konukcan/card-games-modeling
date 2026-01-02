@@ -1,0 +1,10 @@
+{
+  "total_time_seconds": 1770.593250989914,
+  "variants": {
+    "minimal_no_gestalt": {
+      "solve_rate": 0.3181818181818182,
+      "solved": 28,
+      "abstractions": 24
+    }
+  }
+}

@@ -55,8 +55,8 @@ from dreamcoder_core.lean_primitives import build_lean_primitives
 from dreamcoder_core.task import Task
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 
-# Import LoggingWakeSleep from the overnight study script
-from experiments.run_overnight_wakesleep_study import LoggingWakeSleep
+# Import LoggingWakeSleep and ExperimentConfig from the overnight study script
+from experiments.run_overnight_wakesleep_study import LoggingWakeSleep, ExperimentConfig
 
 # Paths to prerecorded tasks
 SRC_DIR = Path(__file__).parent.parent
@@ -181,25 +181,19 @@ def build_ablated_grammar(config: AblationConfig) -> Tuple[Grammar, List[str]]:
 # ============================================================================
 
 def load_pretraining_tasks() -> List[Task]:
-    """Load pretraining tasks."""
-    rules = get_pretraining_rules()
-    tasks = []
-    for rule in rules:
-        task = generate_balanced_task(rule, n_positive=8, n_negative=8)
-        if task:
-            tasks.append(task)
+    """Load prerecorded pretraining tasks."""
+    if not PRETRAINING_TASKS_PATH.exists():
+        raise FileNotFoundError(f"Pretraining tasks not found: {PRETRAINING_TASKS_PATH}")
+    tasks = load_prerecorded_tasks(PRETRAINING_TASKS_PATH)
     logger.info(f"Loaded {len(tasks)} pretraining tasks")
     return tasks
 
 
 def load_catalogue_tasks() -> List[Task]:
-    """Load catalogue tasks."""
-    rules = get_catalogue_rules()
-    tasks = []
-    for rule in rules:
-        task = generate_balanced_task(rule, n_positive=8, n_negative=8)
-        if task:
-            tasks.append(task)
+    """Load prerecorded catalogue tasks."""
+    if not CATALOGUE_TASKS_PATH.exists():
+        raise FileNotFoundError(f"Catalogue tasks not found: {CATALOGUE_TASKS_PATH}")
+    tasks = load_prerecorded_tasks(CATALOGUE_TASKS_PATH)
     logger.info(f"Loaded {len(tasks)} catalogue tasks")
     return tasks
 
@@ -286,53 +280,27 @@ class VariantResult:
 
 def run_phase(
     learner: LoggingWakeSleep,
-    tasks: List[Task],
-    n_iterations: int,
-    phase_name: str,
-    output_dir: Path,
+    phase_num: int,
 ) -> PhaseResult:
-    """Run one phase of the experiment."""
+    """Run one phase of the experiment using LoggingWakeSleep.run()."""
     import time
 
     start_time = time.time()
-    total_programs = 0
 
-    for iteration in range(n_iterations):
-        print(f"\n{'='*60}")
-        print(f"ITERATION {iteration + 1}/{n_iterations}")
-        print(f"{'='*60}")
-
-        # Run wake-sleep iteration
-        result = learner.iteration(tasks)
-
-        # Track programs enumerated
-        if hasattr(result, 'programs_enumerated'):
-            total_programs += result.programs_enumerated
-
-        # Save iteration log
-        iter_log = {
-            'iteration': iteration + 1,
-            'solved': len(learner.cumulative_solved),
-            'total_tasks': len(tasks),
-            'grammar_size': len(learner.grammar.primitives()),
-            'abstractions': len(learner.all_abstractions),
-        }
-
-        log_path = output_dir / f"iter_{iteration + 1:02d}_log.json"
-        with open(log_path, 'w') as f:
-            json.dump(iter_log, f, indent=2)
+    # Run the learner - it handles all iterations internally
+    exp_result = learner.run()
 
     elapsed = time.time() - start_time
 
     return PhaseResult(
-        phase=1 if 'phase1' in phase_name.lower() else 2,
-        iterations=n_iterations,
-        tasks_total=len(tasks),
-        tasks_solved=len(learner.cumulative_solved),
-        solve_rate=len(learner.cumulative_solved) / len(tasks),
-        abstractions_learned=len(learner.all_abstractions),
+        phase=phase_num,
+        iterations=learner.config.iterations,
+        tasks_total=len(learner.tasks),
+        tasks_solved=exp_result.cumulative_solved,
+        solve_rate=exp_result.final_solve_rate,
+        abstractions_learned=len(exp_result.all_abstractions_learned),
         final_grammar_size=len(learner.grammar.primitives()),
-        total_programs_enumerated=total_programs,
+        total_programs_enumerated=0,  # Tracked internally
         total_time_seconds=elapsed,
     )
 
@@ -374,23 +342,28 @@ def run_variant(
     phase1_dir = variant_dir / "phase1_pretraining"
     phase1_dir.mkdir(parents=True, exist_ok=True)
 
+    # Create ExperimentConfig for LoggingWakeSleep
+    exp_config = ExperimentConfig(
+        name=config.name,
+        track='A',
+        description=config.description,
+        remove_primitives=config.remove_primitives,
+        iterations=config.iterations_phase1,
+        enumeration_budget=config.enumeration_budget,
+        recognition_epochs=config.recognition_epochs,
+    )
+
     # Create learner for Phase 1
     learner = LoggingWakeSleep(
+        config=exp_config,
         grammar=grammar,
-        budget=config.enumeration_budget,
-        recognition_epochs=config.recognition_epochs,
+        tasks=pretraining_tasks,
         output_dir=phase1_dir,
         device=device,
     )
 
     # Run Phase 1
-    result.phase1 = run_phase(
-        learner=learner,
-        tasks=pretraining_tasks,
-        n_iterations=config.iterations_phase1,
-        phase_name="phase1_pretraining",
-        output_dir=phase1_dir,
-    )
+    result.phase1 = run_phase(learner=learner, phase_num=1)
 
     print(f"\nPhase 1 complete: {result.phase1.tasks_solved}/{result.phase1.tasks_total} solved")
     print(f"  Abstractions: {result.phase1.abstractions_learned}")
@@ -416,11 +389,22 @@ def run_variant(
     # Create fresh grammar for Phase 2 (same primitives, no inventions)
     grammar2, _ = build_ablated_grammar(config)
 
+    # Create ExperimentConfig for Phase 2
+    exp_config2 = ExperimentConfig(
+        name=config.name,
+        track='A',
+        description=config.description,
+        remove_primitives=config.remove_primitives,
+        iterations=config.iterations_phase2,
+        enumeration_budget=config.enumeration_budget,
+        recognition_epochs=config.recognition_epochs,
+    )
+
     # Create new learner for Phase 2
     learner2 = LoggingWakeSleep(
+        config=exp_config2,
         grammar=grammar2,
-        budget=config.enumeration_budget,
-        recognition_epochs=config.recognition_epochs,
+        tasks=catalogue_tasks,
         output_dir=phase2_dir,
         device=device,
     )
@@ -444,13 +428,7 @@ def run_variant(
         print(f"  Loaded {len(compatible_dict)}/{len(pretrained_dict)} weight tensors")
 
     # Run Phase 2
-    result.phase2 = run_phase(
-        learner=learner2,
-        tasks=catalogue_tasks,
-        n_iterations=config.iterations_phase2,
-        phase_name="phase2_catalogue",
-        output_dir=phase2_dir,
-    )
+    result.phase2 = run_phase(learner=learner2, phase_num=2)
 
     print(f"\nPhase 2 complete: {result.phase2.tasks_solved}/{result.phase2.tasks_total} solved")
     print(f"  Abstractions: {result.phase2.abstractions_learned}")

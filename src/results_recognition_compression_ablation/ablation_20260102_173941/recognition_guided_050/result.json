@@ -1,0 +1,367 @@
+{
+  "config": {
+    "name": "recognition_guided_050",
+    "description": "Recognition-guided compression with alpha=0.5 (50% backward, 50% forward)",
+    "use_recognition_guided_compression": true,
+    "corpus_guidance_alpha": 0.5,
+    "iterations_per_phase": 3,
+    "enumeration_budget": 150000,
+    "enumeration_timeout": 120.0,
+    "max_depth": 8,
+    "recognition_epochs": 5,
+    "recognition_lr": 0.001,
+    "recognition_hidden_dim": 32,
+    "structural_similarity_weight": 0.3,
+    "max_inventions_per_iteration": 3,
+    "min_compression_savings": 2.0,
+    "dreams_per_iteration": 20,
+    "contrastive_dream_ratio": 0.5
+  },
+  "start_time": "2026-01-02T18:29:03.926108",
+  "end_time": "2026-01-02T19:00:38.408055",
+  "total_duration_seconds": 1894.481947183609,
+  "phase1_result": {
+    "phase": 1,
+    "task_set": "pretraining",
+    "n_tasks": 44,
+    "tasks_solved": 23,
+    "solve_rate": 0.5227272727272727,
+    "abstractions_learned": [
+      "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+      "#((\u03bb last $0))",
+      "#((\u03bb #((\u03bb last $0)) $0))",
+      "#((\u03bb #((\u03bb #((\u03bb last $0)) $0)) $0))",
+      "#((\u03bb (\u03bb (\u03bb le $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3))))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3)))))"
+    ],
+    "iteration_logs": [
+      {
+        "iteration": 1,
+        "phase": 1,
+        "tasks_solved": 22,
+        "tasks_total": 44,
+        "total_programs_enumerated": 3691270,
+        "wake_time_seconds": 161.51927995681763,
+        "newly_solved_this_iter": [
+          "poker_has_pair",
+          "poker_flush",
+          "poker_same_color",
+          "poker_two_suits",
+          "bj_sum_even",
+          "bj_sum_odd",
+          "rummy_all_different",
+          "rummy_three_ranks",
+          "sol_same_suit_seq",
+          "simple_first_red",
+          "simple_last_black",
+          "simple_ends_suit",
+          "simple_ends_color",
+          "simple_has_spade",
+          "simple_has_heart",
+          "simple_diverse_ranks",
+          "simple_two_suits",
+          "count_more_red",
+          "comp_left_half_uniform_color",
+          "comp_right_half_has_pair",
+          "comp_first_two_same_suit",
+          "comp_last_two_same_color"
+        ],
+        "compression_analysis": {
+          "iteration": 1,
+          "n_candidates_evaluated": 22,
+          "n_abstractions_added": 3,
+          "recognition_guided": false,
+          "alpha_used": 1.0,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+              "body": "(\u03bb (\u03bb (\u03bb $1 $2)))",
+              "size": 6
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+              "body": "(\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4)))))",
+              "size": 12
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+              "body": "(\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3))))",
+              "size": 9
+            }
+          ]
+        },
+        "compression_time_seconds": 0.016602039337158203,
+        "grammar_size": 62,
+        "final_recognition_loss": 2.9333409468332925,
+        "recognition_time_seconds": 0.2594590187072754,
+        "n_dreams": 0,
+        "dream_time_seconds": 0.0
+      },
+      {
+        "iteration": 2,
+        "phase": 1,
+        "tasks_solved": 23,
+        "tasks_total": 44,
+        "total_programs_enumerated": 3298884,
+        "wake_time_seconds": 184.6461796760559,
+        "newly_solved_this_iter": [
+          "count_two_red"
+        ],
+        "compression_analysis": {
+          "iteration": 2,
+          "n_candidates_evaluated": 23,
+          "n_abstractions_added": 3,
+          "recognition_guided": true,
+          "alpha_used": 0.5,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb last $0))",
+              "body": "(\u03bb last $0)",
+              "size": 4
+            },
+            {
+              "name": "#((\u03bb #((\u03bb last $0)) $0))",
+              "body": "(\u03bb #((\u03bb last $0)) $0)",
+              "size": 4
+            },
+            {
+              "name": "#((\u03bb #((\u03bb #((\u03bb last $0)) $0)) $0))",
+              "body": "(\u03bb #((\u03bb #((\u03bb last $0)) $0)) $0)",
+              "size": 4
+            }
+          ]
+        },
+        "compression_time_seconds": 4.247618913650513,
+        "grammar_size": 65,
+        "final_recognition_loss": 1.8558226029078166,
+        "recognition_time_seconds": 0.27195000648498535,
+        "n_dreams": 3,
+        "dream_time_seconds": 0.489595890045166
+      },
+      {
+        "iteration": 3,
+        "phase": 1,
+        "tasks_solved": 23,
+        "tasks_total": 44,
+        "total_programs_enumerated": 3150000,
+        "wake_time_seconds": 210.1376440525055,
+        "newly_solved_this_iter": [],
+        "compression_analysis": {
+          "iteration": 3,
+          "n_candidates_evaluated": 23,
+          "n_abstractions_added": 3,
+          "recognition_guided": true,
+          "alpha_used": 0.5,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb le $1 $2))))",
+              "body": "(\u03bb (\u03bb (\u03bb le $1 $2)))",
+              "size": 8
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3))))))",
+              "body": "(\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3)))))",
+              "size": 9
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3)))))",
+              "body": "(\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3))))",
+              "size": 11
+            }
+          ]
+        },
+        "compression_time_seconds": 4.1322221755981445,
+        "grammar_size": 68,
+        "final_recognition_loss": 1.567803939183553,
+        "recognition_time_seconds": 0.27117204666137695,
+        "n_dreams": 3,
+        "dream_time_seconds": 0.49620914459228516
+      }
+    ],
+    "total_time_seconds": 566.8467020988464
+  },
+  "phase2_result": {
+    "phase": 2,
+    "task_set": "catalogue",
+    "n_tasks": 44,
+    "tasks_solved": 6,
+    "solve_rate": 0.13636363636363635,
+    "abstractions_learned": [
+      "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 $2 $3)))))",
+      "#((\u03bb last $0))",
+      "#((\u03bb #((\u03bb last $0)) $0))",
+      "#((\u03bb #((\u03bb #((\u03bb last $0)) $0)) $0))",
+      "#((\u03bb (\u03bb (\u03bb le $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3))))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3)))))",
+      "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+      "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+      "#((\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (last $0))))))",
+      "#((\u03bb last $0))",
+      "#((\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (#((\u03bb last $0)) $0))))))",
+      "#((\u03bb #((\u03bb last $0)) $0))",
+      "#((\u03bb first_half (first_half $0)))",
+      "#((\u03bb (\u03bb (\u03bb $1 (#((\u03bb first_half (first_half $0))) $0) ($2 (last $0))))))",
+      "#((\u03bb n_unique_suits $0))"
+    ],
+    "iteration_logs": [
+      {
+        "iteration": 1,
+        "phase": 2,
+        "tasks_solved": 6,
+        "tasks_total": 44,
+        "total_programs_enumerated": 5925718,
+        "wake_time_seconds": 258.93646693229675,
+        "newly_solved_this_iter": [
+          "Ends_same_suit",
+          "Ends_same_color",
+          "Has_pair_ranks",
+          "Uniform_color",
+          "Exactly_two_suits",
+          "At_most_three_suits"
+        ],
+        "compression_analysis": {
+          "iteration": 1,
+          "n_candidates_evaluated": 6,
+          "n_abstractions_added": 3,
+          "recognition_guided": false,
+          "alpha_used": 1.0,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4))))))",
+              "body": "(\u03bb (\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3) $4)))))",
+              "size": 12
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb $1 $2))))",
+              "body": "(\u03bb (\u03bb (\u03bb $1 $2)))",
+              "size": 6
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (last $0))))))",
+              "body": "(\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (last $0)))))",
+              "size": 16
+            }
+          ]
+        },
+        "compression_time_seconds": 0.002443075180053711,
+        "grammar_size": 62,
+        "final_recognition_loss": 1.3443890810012817,
+        "recognition_time_seconds": 0.0749349594116211,
+        "n_dreams": 0,
+        "dream_time_seconds": 0.0
+      },
+      {
+        "iteration": 2,
+        "phase": 2,
+        "tasks_solved": 6,
+        "tasks_total": 44,
+        "total_programs_enumerated": 5700000,
+        "wake_time_seconds": 338.01716661453247,
+        "newly_solved_this_iter": [],
+        "compression_analysis": {
+          "iteration": 2,
+          "n_candidates_evaluated": 6,
+          "n_abstractions_added": 3,
+          "recognition_guided": true,
+          "alpha_used": 0.5,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb last $0))",
+              "body": "(\u03bb last $0)",
+              "size": 4
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (#((\u03bb last $0)) $0))))))",
+              "body": "(\u03bb (\u03bb (\u03bb $1 (first_half (first_half $0)) ($2 (#((\u03bb last $0)) $0)))))",
+              "size": 16
+            },
+            {
+              "name": "#((\u03bb #((\u03bb last $0)) $0))",
+              "body": "(\u03bb #((\u03bb last $0)) $0)",
+              "size": 4
+            }
+          ]
+        },
+        "compression_time_seconds": 0.8651669025421143,
+        "grammar_size": 65,
+        "final_recognition_loss": 1.6930875778198242,
+        "recognition_time_seconds": 0.06802892684936523,
+        "n_dreams": 3,
+        "dream_time_seconds": 0.31665873527526855
+      },
+      {
+        "iteration": 3,
+        "phase": 2,
+        "tasks_solved": 6,
+        "tasks_total": 44,
+        "total_programs_enumerated": 5700000,
+        "wake_time_seconds": 727.7946529388428,
+        "newly_solved_this_iter": [],
+        "compression_analysis": {
+          "iteration": 3,
+          "n_candidates_evaluated": 6,
+          "n_abstractions_added": 3,
+          "recognition_guided": true,
+          "alpha_used": 0.5,
+          "backward_scores": [],
+          "forward_scores": [],
+          "combined_scores": [],
+          "abstraction_names": [],
+          "abstractions_added": [
+            {
+              "name": "#((\u03bb first_half (first_half $0)))",
+              "body": "(\u03bb first_half (first_half $0))",
+              "size": 6
+            },
+            {
+              "name": "#((\u03bb (\u03bb (\u03bb $1 (#((\u03bb first_half (first_half $0))) $0) ($2 (last $0))))))",
+              "body": "(\u03bb (\u03bb (\u03bb $1 (#((\u03bb first_half (first_half $0))) $0) ($2 (last $0)))))",
+              "size": 14
+            },
+            {
+              "name": "#((\u03bb n_unique_suits $0))",
+              "body": "(\u03bb n_unique_suits $0)",
+              "size": 4
+            }
+          ]
+        },
+        "compression_time_seconds": 0.6829018592834473,
+        "grammar_size": 68,
+        "final_recognition_loss": 1.2075954675674438,
+        "recognition_time_seconds": 0.06914806365966797,
+        "n_dreams": 3,
+        "dream_time_seconds": 0.4562559127807617
+      }
+    ],
+    "total_time_seconds": 1327.6300220489502
+  },
+  "total_tasks_solved": 29,
+  "total_abstractions": 27,
+  "transfer_effectiveness": 0.2608695652173913
+}

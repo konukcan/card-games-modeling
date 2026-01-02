@@ -368,9 +368,8 @@ class LoggingWakeSleep:
         print(f"  Abstractions learned: {len(state['all_abstractions'])}")
         print(f"  Tasks previously solved: {len(state['cumulative_solved'])}")
 
-        # Rebuild grammar from saved productions
-        from dreamcoder_core.lean_primitives import build_lean_grammar
-        base_grammar = build_lean_grammar()
+        # Rebuild grammar with same variant restrictions as Phase 1
+        base_grammar = build_variant_grammar(config)
 
         # Parse saved productions to rebuild grammar with inventions
         for prod_str, log_prob, type_str in state['grammar_productions']:

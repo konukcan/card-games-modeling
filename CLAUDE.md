@@ -45,6 +45,29 @@ nohup python3 your_experiment.py > output.out 2>&1 &
 
 ---
 
+## Experiment Scripts
+
+All experiment scripts are in `src/experiments/`. Key scripts (Jan 2, 2026, to be updated as the project evolves):
+
+| Script | Purpose |
+|--------|---------|
+| `run_overnight_wakesleep_study.py` | Full wake-sleep loop with recognition training |
+| `run_targeted_ablation_study.py` | Ablation studies for model components |
+| `run_transfer_study.py` | Transfer learning experiments |
+| `run_recognition_compression_ablation.py` | Recognition + compression ablations |
+
+**Legacy scripts** (in `src/`, kept for reference):
+- `run_overnight_v3.py` - Original overnight runner
+- `run_progressive_wakesleep.py` - Progressive training variant
+
+**Running any experiment**:
+```bash
+cd src
+nohup caffeinate -d -i -s python3 experiments/<script>.py > output.out 2>&1 &
+```
+
+---
+
 ## Pre-Flight Checks (Before Running Any Script)
 
 Before executing any script, especially overnight runs, verify:
@@ -143,17 +166,13 @@ path = Path(__file__).parent / "relative" / "path"
 #### Commit Routine (FOLLOW EXACTLY):
 
 ```bash
-cd /Users/cankonuk/Documents/card-games-modeling
+cd /Users/cankonuk/Documents/self-explanations-project/card-games-modelling
 git add -A
 git status  # Review what's being committed
 git diff --cached --stat  # See summary of changes
 git commit -m "feat/fix/chore: <description>
 
-<brief summary of what was accomplished>
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+<brief summary of what was accomplished>"
 ```
 
 #### Self-Check Question:
@@ -175,6 +194,8 @@ Logging should be **as detailed as possible** to enable post-hoc analysis:
   - Feature importance scores
 - Log timing information for performance analysis
 - Include task identifiers in all parallel processing logs
+
+⚠️ CRITICAL: **Also, make sure that for every run we are able to log intermediate results before the end of the run, so we can quick check it along the way.
 
 ## Updating KNOWN_ISSUES.md
 
@@ -228,15 +249,7 @@ Before committing changes to experiment scripts:
 
 When the user asks for a "debrief" of an overnight run (or similar phrasing like "what happened last night", "how did the run go", etc.), provide a **comprehensive analysis** that includes:
 
-### 1. Generate the HTML Report (MANDATORY)
-**Every fresh debrief MUST start with generating the HTML report.** Always run the report generator script first:
-```bash
-cd /Users/cankonuk/Documents/card-games-modeling/src
-python3 generate_systematic_report.py --run-dir <results_directory>
-```
-Then tell the user where the report is located so they can open it.
-
-### 2. Provide Text Summary
+### 1. Provide Text Summary
 Include the following in your text debrief:
 
 - **Run Summary**: Duration, tasks solved/total, success rate, grammar growth
@@ -249,14 +262,14 @@ Include the following in your text debrief:
 - **Phase Comparison** (if multi-phase): Performance differences between phases
 - **Any anomalies or bugs** observed in logs
 
-### 3. Check for System Issues
+### 2. Check for System Issues
 If the user mentions system problems (crashes, freezes, unresponsiveness):
 - Check `/Library/Logs/DiagnosticReports/` for JetsamEvent files (memory pressure)
 - Check for crash reports
 - Correlate timestamps with the run timeline
 - Provide diagnosis and recommendations
 
-### 4. Results Location
+### 3. Results Location
 Always mention where the results are saved:
 - Main results JSON
 - HTML report location

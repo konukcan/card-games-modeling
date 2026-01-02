@@ -1,0 +1,31 @@
+{
+  "task_source": "catalogue_tasks.json",
+  "learning_curves": {
+    "LayerNorm+Scale": [
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "L2Norm+Temperature": [
+      10,
+      11,
+      11,
+      11,
+      11
+    ]
+  },
+  "final_solved": {
+    "LayerNorm+Scale": 10,
+    "L2Norm+Temperature": 11
+  },
+  "total_time": {
+    "LayerNorm+Scale": 1660.8848354816437,
+    "L2Norm+Temperature": 1520.5534043312073
+  },
+  "final_training_loss": {
+    "LayerNorm+Scale": 3.09114548976049e-08,
+    "L2Norm+Temperature": 0.0014886452932842075
+  }
+}

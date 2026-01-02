@@ -1,0 +1,41 @@
+{
+  "variant": "baseline",
+  "removed_primitives": [],
+  "config": {
+    "name": "baseline",
+    "remove_primitives": [],
+    "description": "Full 59-primitive library (control)",
+    "iterations_phase1": 1,
+    "iterations_phase2": 1,
+    "enumeration_budget": 100000,
+    "recognition_epochs": 15
+  },
+  "phase1": {
+    "phase": 1,
+    "iterations": 1,
+    "tasks_total": 44,
+    "tasks_solved": 22,
+    "solve_rate": 0.5,
+    "abstractions_learned": 3,
+    "final_grammar_size": 62,
+    "total_programs_enumerated": 0,
+    "total_time_seconds": 91.4240620136261
+  },
+  "phase2": {
+    "phase": 2,
+    "iterations": 1,
+    "tasks_total": 44,
+    "tasks_solved": 6,
+    "solve_rate": 0.13636363636363635,
+    "abstractions_learned": 3,
+    "final_grammar_size": 62,
+    "total_programs_enumerated": 0,
+    "total_time_seconds": 137.3670949935913
+  },
+  "combined": {
+    "total_tasks": 88,
+    "total_solved": 28,
+    "combined_rate": 0.3181818181818182,
+    "total_abstractions": 6
+  }
+}

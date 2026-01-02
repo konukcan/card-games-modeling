@@ -1,0 +1,6 @@
+{
+  "n_rules": 44,
+  "n_iterations": 5,
+  "enumeration_budget": 100000,
+  "task_source": "catalogue_tasks.json"
+}

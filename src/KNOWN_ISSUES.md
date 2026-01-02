@@ -442,3 +442,60 @@ The following files are actively used and must be kept:
 - `dreamcoder_core/html_report.py` - Used by `run_curriculum.py` (lines 37, 439-444)
 - `generate_full_report.py` - Comprehensive rule catalogue with real neural network data
 - `generate_overnight_report.py` - Primary overnight report generator
+
+---
+
+## Abstraction Quality Filtering (Fixed)
+
+### 3. Degenerate Abstraction Learning
+
+**Severity**: HIGH
+**Status**: FIXED (January 2026)
+**Location**: `dreamcoder_core/compression.py` lines 200-475
+
+**Symptoms:**
+- Compression was learning useless abstractions like `(λ last $0)` (eta-expanded wrapper)
+- These patterns cascaded: `#last` → `(λ #last $0)` → `(λ (λ #last $0) $0)` → infinite regress
+- Library bloated with trivial wrappers providing zero compression benefit
+- Observed in ablation study: all variants learned 6-9 degenerate patterns
+
+**Root Cause:**
+Our Python port of DreamCoder's compression was missing the quality filters present in:
+- Original DreamCoder OCaml: `nontrivial` function in `compression.ml`
+- Stitch Rust: Multiple pruning mechanisms in `compression.rs`
+
+**What Was Missing:**
+| Mechanism | DreamCoder | Stitch | Our Python (Before) |
+|-----------|-----------|--------|---------------------|
+| Nontrivial check | ✅ | Implicit | ❌ |
+| Eta-reduction | ✅ | ✅ | ❌ |
+| Single-task pruning | ❌ | ✅ | ❌ |
+
+**Fix:**
+Added three quality filtering functions to `compression.py`:
+
+```python
+def is_nontrivial(program) -> bool:
+    """Requires ≥2 primitives OR ≥1 primitive with duplicated variable uses."""
+    # Port of DreamCoder OCaml 'nontrivial'
+
+def is_eta_reducible(program) -> bool:
+    """Checks if (λ x. f x) where x not free in f."""
+    # Catches eta-expanded wrappers
+
+def is_single_task_abstraction(program, match_locs, program_to_task) -> bool:
+    """Checks if pattern only appears in one task."""
+    # From Stitch
+```
+
+These are called via `passes_abstraction_quality_checks()` at 9 locations across all compression functions.
+
+**Lessons Learned:**
+1. **Port ALL quality gates, not just the algorithm**: The compression algorithm was ported but quality checks were overlooked.
+2. **Check original implementations**: DreamCoder OCaml and Stitch Rust have battle-tested filters.
+3. **Test with specific failure cases**: Write tests for known-bad patterns like `(λ f $0)`.
+
+**References:**
+- DreamCoder: `solvers/compression.ml`, function `nontrivial`
+- Stitch: `src/compression.rs`, `src/pattern_args.rs`
+- Babble: Concreteness constraint in e-graph extraction

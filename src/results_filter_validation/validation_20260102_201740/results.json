@@ -1,0 +1,114 @@
+{
+  "timestamp": "20260102_201740",
+  "config": {
+    "n_tasks": 20,
+    "n_iterations": 2,
+    "max_inventions_per_iter": 3,
+    "enumeration_timeout": 30.0
+  },
+  "iteration_logs": [
+    {
+      "iteration": 1,
+      "tasks_solved": 8,
+      "tasks_total": 20,
+      "solutions": [
+        [
+          "poker_has_pair",
+          "(\u03bb le (n_unique_ranks $0) 5)"
+        ],
+        [
+          "poker_flush",
+          "(\u03bb all_same_suit $0)"
+        ],
+        [
+          "poker_same_color",
+          "(\u03bb all_same_color $0)"
+        ],
+        [
+          "poker_two_suits",
+          "(\u03bb not (all_same_suit $0))"
+        ],
+        [
+          "rummy_all_different",
+          "(\u03bb gt (n_unique_ranks $0) 5)"
+        ],
+        [
+          "sol_same_suit_seq",
+          "(\u03bb all_same_suit $0)"
+        ],
+        [
+          "simple_first_red",
+          "(\u03bb has_color (first_half (first_half $0)) RED)"
+        ],
+        [
+          "simple_last_black",
+          "(\u03bb has_color (drop 5 $0) BLACK)"
+        ]
+      ],
+      "new_inventions": [
+        "#((\u03bb (\u03bb $1 (n_unique_ranks $0) 5)))"
+      ],
+      "compression_time_seconds": 0.0014069080352783203,
+      "iteration_time_seconds": 39.33197593688965
+    },
+    {
+      "iteration": 2,
+      "tasks_solved": 8,
+      "tasks_total": 20,
+      "solutions": [
+        [
+          "poker_has_pair",
+          "(\u03bb le (n_unique_ranks $0) 5)"
+        ],
+        [
+          "poker_flush",
+          "(\u03bb all_same_suit $0)"
+        ],
+        [
+          "poker_same_color",
+          "(\u03bb all_same_color $0)"
+        ],
+        [
+          "poker_two_suits",
+          "(\u03bb not (all_same_suit $0))"
+        ],
+        [
+          "rummy_all_different",
+          "(\u03bb lt 5 (n_unique_ranks $0))"
+        ],
+        [
+          "sol_same_suit_seq",
+          "(\u03bb all_same_suit $0)"
+        ],
+        [
+          "simple_first_red",
+          "(\u03bb has_color (first_half (first_half $0)) RED)"
+        ],
+        [
+          "simple_last_black",
+          "(\u03bb has_color (drop 5 $0) BLACK)"
+        ]
+      ],
+      "new_inventions": [],
+      "compression_time_seconds": 0.00072479248046875,
+      "iteration_time_seconds": 34.119611978530884
+    }
+  ],
+  "total_inventions": 1,
+  "invention_analyses": [
+    {
+      "name": "#((\u03bb (\u03bb $1 (n_unique_ranks $0) 5)))",
+      "body": "(\u03bb (\u03bb $1 (n_unique_ranks $0) 5))",
+      "n_primitives": 2,
+      "is_trivial": false,
+      "is_eta": false,
+      "is_nested_eta": false,
+      "category": "useful"
+    }
+  ],
+  "category_counts": {
+    "useful": 1
+  },
+  "quality_rate": 100.0,
+  "success": true
+}

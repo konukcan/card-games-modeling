@@ -1,0 +1,27 @@
+{
+  "iteration": 3,
+  "phase": 2,
+  "tasks_solved": 6,
+  "tasks_total": 44,
+  "total_programs_enumerated": 5700000,
+  "wake_time_seconds": 391.45749402046204,
+  "newly_solved_this_iter": [],
+  "compression_analysis": {
+    "iteration": 3,
+    "n_candidates_evaluated": 6,
+    "n_abstractions_added": 0,
+    "recognition_guided": false,
+    "alpha_used": 1.0,
+    "backward_scores": [],
+    "forward_scores": [],
+    "combined_scores": [],
+    "abstraction_names": [],
+    "abstractions_added": []
+  },
+  "compression_time_seconds": 0.00074005126953125,
+  "grammar_size": 65,
+  "final_recognition_loss": 1.1983267068862915,
+  "recognition_time_seconds": 0.07107782363891602,
+  "n_dreams": 5,
+  "dream_time_seconds": 0.5910189151763916
+}

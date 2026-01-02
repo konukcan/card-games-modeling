@@ -1,0 +1,43 @@
+{
+  "iteration": 3,
+  "phase": 1,
+  "tasks_solved": 23,
+  "tasks_total": 44,
+  "total_programs_enumerated": 3150000,
+  "wake_time_seconds": 210.1376440525055,
+  "newly_solved_this_iter": [],
+  "compression_analysis": {
+    "iteration": 3,
+    "n_candidates_evaluated": 23,
+    "n_abstractions_added": 3,
+    "recognition_guided": true,
+    "alpha_used": 0.5,
+    "backward_scores": [],
+    "forward_scores": [],
+    "combined_scores": [],
+    "abstraction_names": [],
+    "abstractions_added": [
+      {
+        "name": "#((\u03bb (\u03bb (\u03bb le $1 $2))))",
+        "body": "(\u03bb (\u03bb (\u03bb le $1 $2)))",
+        "size": 8
+      },
+      {
+        "name": "#((\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3))))))",
+        "body": "(\u03bb (\u03bb (\u03bb (\u03bb $1 ($2 $3)))))",
+        "size": 9
+      },
+      {
+        "name": "#((\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3)))))",
+        "body": "(\u03bb (\u03bb (\u03bb (\u03bb has_color ($1 $2) $3))))",
+        "size": 11
+      }
+    ]
+  },
+  "compression_time_seconds": 4.1322221755981445,
+  "grammar_size": 68,
+  "final_recognition_loss": 1.567803939183553,
+  "recognition_time_seconds": 0.27117204666137695,
+  "n_dreams": 3,
+  "dream_time_seconds": 0.49620914459228516
+}
