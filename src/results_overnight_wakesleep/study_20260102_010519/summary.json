@@ -1,0 +1,10 @@
+{
+  "total_time_seconds": 1409.5948858261108,
+  "variants": {
+    "baseline_full_library": {
+      "solve_rate": 0.3181818181818182,
+      "solved": 28,
+      "abstractions": 24
+    }
+  }
+}

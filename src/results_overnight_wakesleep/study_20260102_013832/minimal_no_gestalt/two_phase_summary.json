@@ -1,0 +1,19 @@
+{
+  "phase1": {
+    "tasks": 44,
+    "solved": 2,
+    "solve_rate": 0.045454545454545456,
+    "abstractions": 2
+  },
+  "phase2": {
+    "tasks": 44,
+    "solved": 6,
+    "solve_rate": 0.13636363636363635,
+    "abstractions": 8
+  },
+  "combined": {
+    "total_tasks": 88,
+    "total_solved": 8,
+    "total_abstractions": 10
+  }
+}

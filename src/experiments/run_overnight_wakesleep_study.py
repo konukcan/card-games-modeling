@@ -141,9 +141,15 @@ def make_addition_primitives() -> Dict[str, Primitive]:
     }
 
 
-# Gestalt primitives to remove for minimal library
+# Gestalt primitives - only the actual gestalt patterns (holistic judgments)
+# These can be composed from n_unique_* primitives
 GESTALT_PRIMITIVES = [
     'all_same_suit', 'all_same_color',
+]
+
+# Other "convenience" primitives that could be removed in more aggressive ablations
+# (These are NOT gestalt - they're counting/querying primitives)
+CONVENIENCE_PRIMITIVES = [
     'n_unique_suits', 'n_unique_ranks', 'n_unique_colors',
     'has_suit', 'has_color',
     'count_suit', 'count_color',
@@ -323,12 +329,23 @@ class LoggingWakeSleep:
 
     def save_transfer_state(self, path: Path) -> None:
         """Save model weights and grammar for transfer to Phase 2."""
+        # Serialize grammar productions (handle both Primitive and Invented types)
+        grammar_prods = []
+        for p in self.grammar.productions:
+            prog_str = str(p.program)
+            log_prob = p.log_probability
+            # Get type - Primitive has .tp, Invented needs .infer()
+            if hasattr(p.program, 'tp'):
+                type_str = str(p.program.tp)
+            elif hasattr(p.program, 'infer'):
+                type_str = str(p.program.infer())
+            else:
+                type_str = "?"
+            grammar_prods.append((prog_str, log_prob, type_str))
+
         state = {
             'model_state_dict': self.recognition.state_dict(),
-            'grammar_productions': [
-                (str(p.program), p.log_probability, str(p.program.infer()))
-                for p in self.grammar.productions
-            ],
+            'grammar_productions': grammar_prods,
             'all_abstractions': self.all_abstractions,
             'cumulative_solved': list(self.cumulative_solved),
         }
@@ -793,11 +810,11 @@ def get_experiment_variants() -> List[ExperimentConfig]:
             recognition_epochs=15,
         ),
 
-        # Track A: Minimal (remove gestalt primitives)
+        # Track A: No gestalt (remove only all_same_suit, all_same_color)
         ExperimentConfig(
             name='minimal_no_gestalt',
             track='A',
-            description='Remove all gestalt primitives (48 primitives)',
+            description='Remove gestalt primitives only (57 primitives)',
             remove_primitives=GESTALT_PRIMITIVES,
             add_primitives=[],
             iterations=6,
@@ -805,11 +822,11 @@ def get_experiment_variants() -> List[ExperimentConfig]:
             recognition_epochs=15,
         ),
 
-        # Track B: Minimal + Combinators
+        # Track B: No gestalt + Combinators
         ExperimentConfig(
             name='minimal_plus_combinators',
             track='B',
-            description='Minimal library + compose, flip, fold, neq',
+            description='No gestalt + compose, flip, fold, neq (61 primitives)',
             remove_primitives=GESTALT_PRIMITIVES,
             add_primitives=['compose', 'flip', 'fold', 'neq'],
             iterations=6,
@@ -828,7 +845,7 @@ def build_variant_grammar(config: ExperimentConfig) -> Grammar:
     # Remove specified primitives
     if config.remove_primitives:
         remove_set = set(config.remove_primitives)
-        primitives = [p for p in primitives if str(p.program) not in remove_set]
+        primitives = [p for p in primitives if p.name not in remove_set]
 
     # Add specified primitives
     if config.add_primitives:
@@ -934,9 +951,10 @@ def main():
         print("\n=== DRY RUN ===")
         print(f"Output: {output_base}")
         if args.two_phase:
+            iters_per_phase = 2 if args.quick_test else 3
             print(f"Mode: TWO-PHASE TRANSFER LEARNING")
-            print(f"  Phase 1: {len(pretraining_tasks)} pretraining tasks (3 iterations)")
-            print(f"  Phase 2: {len(catalogue_tasks)} catalogue tasks (3 iterations)")
+            print(f"  Phase 1: {len(pretraining_tasks)} pretraining tasks ({iters_per_phase} iterations)")
+            print(f"  Phase 2: {len(catalogue_tasks)} catalogue tasks ({iters_per_phase} iterations)")
         else:
             print(f"Tasks: {len(tasks)}")
         print(f"\nVariants:")
@@ -947,8 +965,8 @@ def main():
             print(f"    Remove: {v.remove_primitives}")
             print(f"    Add: {v.add_primitives}")
             if args.two_phase:
-                print(f"    Phase 1 iterations: 3")
-                print(f"    Phase 2 iterations: 3")
+                print(f"    Phase 1 iterations: {iters_per_phase}")
+                print(f"    Phase 2 iterations: {iters_per_phase}")
             else:
                 print(f"    Iterations: {v.iterations}")
             print(f"    Budget: {v.enumeration_budget:,}")

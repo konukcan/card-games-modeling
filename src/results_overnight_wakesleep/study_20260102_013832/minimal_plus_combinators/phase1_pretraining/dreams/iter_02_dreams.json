@@ -1,0 +1,52 @@
+[
+  {
+    "program": "(\u03bb not false)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb not false)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb ge 1 1)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb or true true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb all ((\u03bb true)) $0)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb false)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb not true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb lt 2 3)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  }
+]

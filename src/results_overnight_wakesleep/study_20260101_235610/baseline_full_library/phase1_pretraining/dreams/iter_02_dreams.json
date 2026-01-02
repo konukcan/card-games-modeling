@@ -1,0 +1,37 @@
+[
+  {
+    "program": "(\u03bb not false)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb not true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb lt 1 5)",
+    "n_examples": 5,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb all_same_suit $0)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb true)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  },
+  {
+    "program": "(\u03bb false)",
+    "n_examples": 10,
+    "n_near_miss": 0
+  }
+]
