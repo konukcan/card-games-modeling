@@ -134,10 +134,10 @@ class PreFlightValidator:
             return False
 
         try:
-            from dreamcoder_core.neural_recognition import NeuralRecognitionModel
-            self.ok("Neural recognition module")
+            from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
+            self.ok("Contrastive recognition module")
         except ImportError as e:
-            self.error(f"Neural recognition import failed: {e}")
+            self.error(f"Contrastive recognition import failed: {e}")
             return False
 
         try:
@@ -160,7 +160,7 @@ class PreFlightValidator:
 
             # Verify key primitives exist
             prim_names = {str(p.program) for p in grammar.productions}
-            required = {'all_same_suit', 'all_same_color', 'eq', 'count_suit', 'get_rank'}
+            required = {'n_unique_suits', 'n_unique_colors', 'eq', 'count_suit', 'get_rank', 'lt'}
             missing = required - prim_names
             if missing:
                 self.warn(f"Missing expected primitives: {missing}")
@@ -252,19 +252,20 @@ class PreFlightValidator:
             return False, [], []
 
     def validate_recognition_model(self, grammar: Any, tasks: List) -> bool:
-        """Validate neural recognition model initialization."""
+        """Validate contrastive recognition model initialization."""
         print("\n5. Validating recognition model...")
 
         try:
-            from dreamcoder_core.neural_recognition import NeuralRecognitionModel
+            from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 
-            model = NeuralRecognitionModel(
+            model = ContrastiveRecognitionModel(
                 grammar=grammar,
-                hidden_dim=256,
+                card_hidden=128,
                 learning_rate=5e-4,
-                device='cpu'
+                device='cpu',
+                output_mode='softmax'
             )
-            self.ok(f"Model initialized: hidden_dim=256")
+            self.ok(f"Model initialized: ContrastiveRecognitionModel")
 
             # Test forward pass on a task
             if tasks:
@@ -273,8 +274,8 @@ class PreFlightValidator:
                 self.ok(f"Forward pass works: embedding shape {emb.shape}")
 
                 # Test primitive prediction
-                log_probs = model.predict_primitive_probs(task)
-                self.ok(f"Primitive prediction works: {log_probs.shape[0]} primitives")
+                probs = model.predict_primitives(task)
+                self.ok(f"Primitive prediction works: {probs.shape[0]} primitives")
 
             return True
         except Exception as e:

@@ -59,8 +59,8 @@ def main():
         "(λ false)",
         "(λ not true)",
         "(λ not false)",
-        "(λ all_same_suit $0)",
-        "(λ all_same_rank $0)",
+        "(λ lt (n_unique_suits $0) 2)",  # Flush check (was all_same_suit)
+        "(λ lt (n_unique_ranks $0) 2)",  # All same rank check
     ]
 
     original_set = set(original_progs)

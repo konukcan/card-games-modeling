@@ -113,7 +113,7 @@ def main():
     print("Loading modules...")
     import torch
     from dreamcoder_core.lean_primitives import build_lean_grammar
-    from dreamcoder_core.neural_recognition import NeuralRecognitionModel
+    from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel  # noqa: F401
     from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
     from rules.pretraining_rules import get_all_pretraining_rules, get_easy_pretraining_rules
     from run_overnight_cython import CythonOptimizedDreamCoder, PhaseConfig as RunnerPhaseConfig, make_eval_fn

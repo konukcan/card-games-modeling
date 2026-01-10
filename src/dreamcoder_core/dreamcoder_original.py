@@ -75,7 +75,7 @@ from dreamcoder_core.grammar import Grammar, Production, uniform_grammar
 # and Grammar.sample() or Grammar.sample_requiring_variable() for dreaming
 from dreamcoder_core.enumeration import TopDownEnumerator
 from dreamcoder_core.compression import compress_frontiers
-from dreamcoder_core.neural_recognition import NeuralRecognitionModel
+from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.lean_primitives import build_lean_grammar
 from dreamcoder_core.task import Task  # Canonical Task definition
 from dreamcoder_core.task_generation import (
@@ -200,7 +200,7 @@ class NeuralDreamer:
     def __init__(
         self,
         grammar: Grammar,
-        recognition_model: NeuralRecognitionModel,
+        recognition_model: ContrastiveRecognitionModel,
         eval_fn: Callable,
         device: str = 'cpu'
     ):
@@ -381,11 +381,12 @@ class DreamCoderV2:
         self.device = device
 
         if use_recognition:
-            self.recognition = NeuralRecognitionModel(
+            self.recognition = ContrastiveRecognitionModel(
                 grammar=grammar,
-                hidden_dim=recognition_hidden_dim,
+                card_hidden=recognition_hidden_dim,  # Map hidden_dim to card_hidden
                 learning_rate=recognition_lr,
-                device=device
+                device=device,
+                output_mode='softmax'  # Use softmax for search guidance
             )
         else:
             self.recognition = None

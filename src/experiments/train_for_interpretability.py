@@ -250,13 +250,13 @@ def create_target_for_task(task_name: str, num_primitives: int, primitive_names:
     # Map task types to relevant primitives
     task_primitive_map = {
         # Suit-based tasks
-        'poker_flush': ['all_same_suit', 'get_suit', 'eq'],
-        'poker_same_color': ['all_same_color', 'get_color', 'eq'],
+        'poker_flush': ['n_unique_suits', 'lt', '2'],  # (lt (n_unique_suits hand) 2)
+        'poker_same_color': ['n_unique_colors', 'lt', '2'],  # (lt (n_unique_colors hand) 2)
         'simple_has_spade': ['has_suit', 'get_suit', 'eq'],
         'simple_has_heart': ['has_suit', 'get_suit', 'eq'],
         'simple_first_red': ['first', 'get_color', 'is_red'],
         'simple_last_black': ['last', 'get_color', 'is_black'],
-        'sol_same_suit_seq': ['all_same_suit', 'get_suit'],
+        'sol_same_suit_seq': ['n_unique_suits', 'lt', '2', 'get_suit'],  # Sequence of same suit
         'count_more_red': ['count_color', 'gt', 'is_red'],
 
         # Rank-based tasks

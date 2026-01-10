@@ -23,8 +23,10 @@ REMOVED:
 ADDED:
 - has_suit, has_color (direct membership queries)
 - count_suit, count_color (direct counting)
-- all_same_suit, all_same_color (gestalt perception)
 - n_unique_suits, n_unique_ranks, n_unique_colors (diversity)
+
+REMOVED (v4):
+- all_same_suit, all_same_color (gestalt perception - redundant with n_unique_* < 2)
 - sum_ranks, max_rank, min_rank (aggregates)
 
 Changes from v2:
@@ -317,19 +319,9 @@ def make_direct_queries() -> List[Primitive]:
         lambda hand: lambda color: sum(1 for c in hand if card_color(c) == color)
     ))
 
-    # All same suit? - "Is it a flush?" (gestalt perception)
-    prims.append(Primitive(
-        'all_same_suit',
-        arrow(HAND, BOOL),
-        lambda hand: len(set(c.suit for c in hand)) == 1 if hand else True
-    ))
-
-    # All same color? - "Are they all red?"
-    prims.append(Primitive(
-        'all_same_color',
-        arrow(HAND, BOOL),
-        lambda hand: len(set(card_color(c) for c in hand)) == 1 if hand else True
-    ))
+    # NOTE: all_same_suit and all_same_color were removed in v4
+    # They are redundant with: (lt (n_unique_suits hand) 2) and (lt (n_unique_colors hand) 2)
+    # See experiments/run_targeted_ablation_study.py for empirical validation
 
     # Number of unique suits - "How many suits represented?"
     prims.append(Primitive(
@@ -622,11 +614,11 @@ def show_expected_depths():
          "(λ eq 2 (count_color $0 RED))",
          "v1: (λ eq 2 (count (λ eq RED (get_color $0)) $0))", 3, 6),
         ("poker_flush",
-         "(λ all_same_suit $0)",
-         "v1: (λ eq 1 (length (unique (map get_suit $0))))", 2, 6),
+         "(λ lt (n_unique_suits $0) 2)",
+         "v3: (λ all_same_suit $0) [removed in v4]", 3, 6),
         ("poker_same_color",
-         "(λ all_same_color $0)",
-         "v1: (λ eq 1 (length (unique (map get_color $0))))", 2, 6),
+         "(λ lt (n_unique_colors $0) 2)",
+         "v3: (λ all_same_color $0) [removed in v4]", 3, 6),
         ("simple_two_suits",
          "(λ eq 2 (n_unique_suits $0))",
          "v1: (λ eq 2 (length (unique (map get_suit $0))))", 3, 6),
@@ -726,11 +718,9 @@ if __name__ == "__main__":
     count_suit = prim_dict['count_suit'].value
     print(f"  count_suit hand HEARTS: {count_suit(test_hand)(Suit.HEARTS)}")
 
-    all_same_suit = prim_dict['all_same_suit'].value
-    print(f"  all_same_suit hand: {all_same_suit(test_hand)}")
-
     n_unique_suits = prim_dict['n_unique_suits'].value
     print(f"  n_unique_suits hand: {n_unique_suits(test_hand)}")
+    # Note: all_same_suit was removed in v4 - use (lt (n_unique_suits hand) 2) instead
 
     # Test aggregates
     print("\nAggregate Tests:")

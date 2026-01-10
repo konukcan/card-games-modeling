@@ -93,7 +93,7 @@ def paraphrase_program(program: str) -> str:
     Convert a lambda expression to human-readable English.
 
     Examples:
-        (λ all_same_suit $0) → "All cards have the same suit"
+        (λ lt (n_unique_suits $0) 2) → "All cards have the same suit"
         (λ eq 14 (max_rank $0)) → "The highest rank is 14 (Ace)"
     """
     if not program:
@@ -101,7 +101,10 @@ def paraphrase_program(program: str) -> str:
 
     # Common patterns and their paraphrases
     paraphrases = {
-        # Suit patterns
+        # Suit patterns (new v4 style using n_unique_*)
+        r'\(λ lt \(n_unique_suits \$0\) 2\)': "All cards have the same suit (flush)",
+        r'\(λ lt \(n_unique_colors \$0\) 2\)': "All cards have the same color",
+        # Legacy patterns (kept for backwards compatibility with old results)
         r'\(λ all_same_suit \$0\)': "All cards have the same suit (flush)",
         r'\(λ all_same_color \$0\)': "All cards have the same color",
         r'\(λ not \(all_same_suit \$0\)\)': "Cards have at least two different suits",
@@ -152,6 +155,16 @@ def parse_program_structure(program: str) -> str:
     """Parse program structure for less common patterns."""
 
     # Extract key components
+    # New v4 patterns using n_unique_*
+    if 'n_unique_suits' in program and ('lt' in program or 'le' in program):
+        if '2' in program:
+            return "All cards share the same suit"
+        return "Constraint on number of unique suits"
+    if 'n_unique_colors' in program and ('lt' in program or 'le' in program):
+        if '2' in program:
+            return "All cards share the same color"
+        return "Constraint on number of unique colors"
+    # Legacy patterns (for backwards compatibility)
     if 'all_same_suit' in program:
         return "All cards share the same suit"
     if 'all_same_color' in program:
@@ -199,6 +212,12 @@ def paraphrase_abstraction(abstraction: str) -> str:
         return "Count cards by color"
     if 'sum_ranks' in core:
         return "Sum all ranks"
+    # New v4: n_unique_suits/colors < 2 = all same
+    if 'n_unique_suits' in core and 'lt' in core:
+        return "Check if all same suit"
+    if 'n_unique_colors' in core and 'lt' in core:
+        return "Check if all same color"
+    # Legacy patterns (for backwards compatibility)
     if 'all_same_suit' in core:
         return "Check if all same suit"
     if 'all_same_color' in core:
@@ -1675,8 +1694,7 @@ def generate_library_refresher_section(run_data: RunData) -> str:
         'Card Accessors': ['get_suit', 'get_rank', 'rank_val', 'get_color'],
         'Position Operations': ['head', 'last', 'at', 'length', 'reverse'],
         'Direct Queries': ['has_suit', 'has_color', 'count_suit', 'count_color',
-                          'all_same_suit', 'all_same_color', 'n_unique_suits',
-                          'n_unique_ranks', 'n_unique_colors'],
+                          'n_unique_suits', 'n_unique_ranks', 'n_unique_colors'],
         'Aggregates': ['sum_ranks', 'max_rank', 'min_rank'],
         'Comparisons': ['eq', 'lt', 'le', 'gt', 'ge'],  # neq removed in v3
         'Boolean Operators': ['and', 'or', 'not', 'if'],

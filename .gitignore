@@ -45,6 +45,7 @@ data/*.npy
 
 # Experiment outputs (large files - model checkpoints, logs, results)
 src/results/
+src/results_*/
 *.pt
 *.pkl
 *.pid

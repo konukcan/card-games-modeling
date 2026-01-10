@@ -366,14 +366,14 @@ def test_recognition_to_enumeration_integration():
     try:
         # Import the actual components
         from dreamcoder_core.lean_primitives import build_lean_grammar
-        from dreamcoder_core.neural_recognition import NeuralRecognitionModel
+        from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 
         # Build real grammar
         grammar = build_lean_grammar()
         print(f"\nGrammar loaded with {len(grammar)} primitives")
 
         # Create recognition model
-        model = NeuralRecognitionModel(grammar, hidden_dim=64)
+        model = ContrastiveRecognitionModel(grammar, card_hidden=64, output_mode='softmax')
         print(f"Recognition model created with {model.num_primitives} primitives")
 
         # Create fake task for testing
