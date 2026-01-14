@@ -628,7 +628,7 @@ class ReferenceWakeSleep:
             # ==========================================
             # SLEEP - DREAMING: Synthetic Tasks
             # ==========================================
-            if self.config.use_dreaming and iteration > 1:
+            if self.config.use_dreaming and iteration >= 1:
                 self.logger.phase_start("DREAMING")
                 dream_metrics = self._run_dreaming_phase(iteration)
                 self.logger.phase_end("DREAMING",
@@ -760,26 +760,40 @@ class ReferenceWakeSleep:
                 if time.time() - enum_start > self.config.enumeration_timeout:
                     break
 
-                # Evaluate on all examples
+                # Evaluate on training examples
                 try:
-                    correct = sum(
+                    training_correct = sum(
                         1 for inp, expected in task.examples
                         if eval_program(program, inp) == expected
                     )
 
-                    if correct == len(task.examples):
-                        entry = EnumerationResult(
-                            program=program,
-                            log_probability=log_prob,
-                            log_likelihood=0.0,
-                            description_length=-log_prob / math.log(2),
-                            programs_enumerated=programs_tried,
-                            time_seconds=time.time() - enum_start
-                        )
-                        frontier.add(entry)
+                    if training_correct == len(task.examples):
+                        # CRITICAL: Also verify on holdout examples
+                        # This prevents spurious solutions that memorize training data
+                        holdout_correct = 0
+                        if task.holdout:
+                            holdout_correct = sum(
+                                1 for inp, expected in task.holdout
+                                if eval_program(program, inp) == expected
+                            )
+                            passes_holdout = (holdout_correct == len(task.holdout))
+                        else:
+                            passes_holdout = True  # No holdout = skip verification
 
-                        if frontier.n_solutions >= self.config.keep_top_k:
-                            break
+                        if passes_holdout:
+                            entry = EnumerationResult(
+                                program=program,
+                                log_probability=log_prob,
+                                log_likelihood=0.0,
+                                description_length=-log_prob / math.log(2),
+                                programs_enumerated=programs_tried,
+                                time_seconds=time.time() - enum_start
+                            )
+                            frontier.add(entry)
+
+                            if frontier.n_solutions >= self.config.keep_top_k:
+                                break
+                        # else: program passed training but failed holdout (spurious)
                 except Exception:
                     pass
 
@@ -1009,7 +1023,7 @@ class ReferenceWakeSleep:
             dreams = self.dreamer.generate_dreams(
                 request_type=arrow(HAND, BOOL),
                 n_dreams=self.config.dreams_per_iteration,
-                verbose=(self.config.verbose_level >= 3)
+                verbose=(self.config.verbose >= 3)
             )
         except Exception as e:
             self.logger.info(f"Dream generation failed: {e}", 1)
