@@ -27,7 +27,7 @@ This repository implements a computational model of rule learning using **progra
 
 | Feature | Description |
 |---------|-------------|
-| **60 Primitives in 5 Levels** | Cognitively-realistic DSL for card game rules |
+| **57 Primitives in 10 Categories** | Cognitively-realistic DSL for card game rules |
 | **Memoized Enumeration** | 1000x+ speedup over naive search |
 | **Contrastive Recognition** | Neural network predicts useful primitives from examples |
 | **Library Learning** | MDL-based compression with quality filters |
@@ -41,7 +41,7 @@ This implementation follows the architecture of [Ellis et al. (2023)](https://do
 
 **Key adaptations for this domain:**
 - **Domain**: Card game predicates instead of list/graphics/text tasks
-- **DSL**: 5-level compositional grammar extracted from cognitive analysis
+- **DSL**: 10-category compositional grammar designed for cognitive realism
 - **Recognition**: Predicts primitives from task examples (not full programs)
 - **Compression**: Quality filters prevent degenerate abstractions
 
@@ -67,18 +67,21 @@ pip install -r requirements.txt
 
 ```bash
 cd src
-python main_demo.py
+python ../examples/main_demo.py
 ```
 
-This runs a small enumeration task and shows the system finding solutions.
+This runs a small demo showing rule loading, task generation, and visualization.
 
 ### Run a Full Experiment
 
 ```bash
 cd src
 
-# Launch overnight run with caffeinate (REQUIRED for runs > 30 min)
-nohup caffeinate -d -i -s python3 experiments/run_overnight_wakesleep_study.py > overnight.out 2>&1 &
+# Launch canonical wake-sleep experiment with caffeinate (REQUIRED for runs > 30 min)
+nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py > overnight.out 2>&1 &
+
+# Quick test run (15 minutes)
+python3 experiments/run_reference_wakesleep.py --quick --verbose 3
 
 # Monitor progress
 tail -f overnight.out
@@ -87,7 +90,8 @@ tail -f overnight.out
 ### Generate a Report
 
 ```bash
-python generate_systematic_report.py --run-dir results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/
+cd src
+python generate_systematic_report.py --run-dir ../results/run_YYYYMMDD_HHMMSS/
 ```
 
 ---
@@ -138,41 +142,45 @@ python generate_systematic_report.py --run-dir results_overnight_wakesleep/study
 
 ### Recognition Model Architecture
 
+The recognition model predicts which primitives are useful for a task based on its positive and negative examples. The key insight is **contrastive encoding**: by subtracting the mean negative embedding from the mean positive embedding, we get a vector that captures what distinguishes "yes" hands from "no" hands.
+
+**Stage 1: Card → Vector (Factored Embeddings)**
+
+Each card is represented by three learned embeddings concatenated together:
+
+| Property | Values | Embedding Dims |
+|----------|--------|----------------|
+| Suit | ♣ ♦ ♥ ♠ (4) | 8 |
+| Rank | 2-A (13) | 16 |
+| Position | 1st-8th (8) | 8 |
+| **Total** | | **32 per card** |
+
+*Why factored?* A single embedding table for all 52×8 card-position combinations would need 416 vectors. Factoring lets us learn just 4+13+8=25 embeddings that combine compositionally.
+
+**Stage 2: Hand → Vector (Mean Pooling)**
+
+Each card embedding passes through an MLP, then we average across all cards:
 ```
-Input: Task with positive and negative card hands
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Factored Card Embeddings                                       │
-│  ├─ E_suit(suit): 4 → 16 dims                                  │
-│  ├─ E_rank(rank): 13 → 16 dims                                 │
-│  ├─ E_position(pos): 5 → 16 dims                               │
-│  └─ Concatenate: 48 dims per card                              │
-└─────────────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Hand Encoding                                                  │
-│  ├─ Linear(48 → 64) per card                                   │
-│  └─ Mean pooling → 64-dim hand embedding                       │
-└─────────────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Contrastive Task Encoding                                      │
-│  ├─ τ_pos = mean(positive hand embeddings)                     │
-│  ├─ τ_neg = mean(negative hand embeddings)                     │
-│  └─ τ = τ_pos - τ_neg  (captures decision boundary)            │
-└─────────────────────────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Primitive Predictor                                            │
-│  ├─ Linear(64 → 128) + ReLU                                    │
-│  ├─ Linear(128 → 60) + Softmax                                 │
-│  └─ Output: P(primitive | task) for 60 primitives              │
-└─────────────────────────────────────────────────────────────────┘
+cards → MLP(32 → 64 → 32) per card → mean pool → 32-dim hand vector
 ```
+
+**Stage 3: Task → Vector (Contrastive Encoding)**
+
+A task has positive examples (hands satisfying the rule) and negative examples. We compute:
+```
+τ = mean(positive hand vectors) − mean(negative hand vectors)
+```
+
+This difference vector encodes the decision boundary. For example, if the rule is "all red cards," positive hands have high "redness" in their embedding, negatives don't, and τ captures this contrast.
+
+**Stage 4: Vector → Primitive Probabilities**
+
+An MLP maps the 32-dim task vector to probabilities over 57 primitives:
+```
+τ → Linear(32 → 64) → ReLU → Linear(64 → 57) → Softmax → P(primitive | task)
+```
+
+These probabilities guide program search by biasing toward likely-useful primitives.
 
 ### Data Flow
 
@@ -200,10 +208,10 @@ Behavioral Experiment (card-games/)
 card-games-modelling/
 ├── src/                              # Main implementation
 │   ├── dreamcoder_core/              # Core DreamCoder components
-│   │   ├── lean_primitives.py        # 🔑 AUTHORITATIVE primitive library (60 primitives)
+│   │   ├── primitives.py             # 🔑 AUTHORITATIVE primitive library (57 primitives)
 │   │   ├── contrastive_recognition.py# 🔑 PRIMARY recognition model
 │   │   ├── enumeration.py            # TopDownEnumerator with memoization
-│   │   ├── compression/              # Library learning package (9 modules)
+│   │   ├── compression/              # Library learning package (10 modules)
 │   │   │   ├── compress.py           # Main compression algorithm
 │   │   │   ├── quality_filters.py    # Abstraction quality checks
 │   │   │   ├── recognition_guided.py # Recognition-guided compression
@@ -213,9 +221,7 @@ card-games-modelling/
 │   │   ├── program.py                # Program representation and parsing
 │   │   ├── type_system.py            # Hindley-Milner type system
 │   │   ├── task.py                   # Task definition
-│   │   ├── wake_sleep.py             # Wake-sleep training loop
-│   │   ├── interpretability.py       # Feature importance, embeddings
-│   │   └── html_report.py            # Report generation
+│   │   └── wake_sleep.py             # Wake-sleep training loop
 │   │
 │   ├── rules/                        # Card game domain
 │   │   ├── catalogue.py              # 🔑 45 core experimental rules
@@ -223,36 +229,41 @@ card-games-modelling/
 │   │   ├── cards.py                  # Card/Hand representations
 │   │   └── primitives.py             # Python helper functions
 │   │
-│   ├── experiments/                  # Experiment scripts (50+)
-│   │   ├── run_overnight_wakesleep_study.py  # Full wake-sleep training
-│   │   ├── run_targeted_ablation_study.py    # Component ablations
-│   │   ├── run_recognition_guided_ablation.py # Recognition + compression
-│   │   ├── run_transfer_study.py             # Transfer learning
-│   │   ├── compare_*.py                      # Comparison studies
+│   ├── experiments/                  # Canonical experiment scripts (7)
+│   │   ├── run_reference_wakesleep.py       # ⭐ PRIMARY entry point
+│   │   ├── run_comprehensive_library_ablation.py
+│   │   ├── run_recognition_guided_ablation.py
+│   │   ├── run_transfer_study.py
+│   │   ├── run_targeted_ablation_study.py
 │   │   └── ...
 │   │
-│   ├── tests/                        # Unit tests
-│   ├── visualization/                # Plotting utilities
-│   ├── results_*/                    # Experiment outputs (38+ directories)
-│   │
-│   │  # Entry Point Scripts
-│   ├── run_incremental_wakesleep.py  # Incremental wake-sleep runner
-│   ├── run_progressive_wakesleep.py  # Curriculum-based runner
-│   ├── generate_systematic_report.py # Report generator
+│   ├── tests/                        # Consolidated unit tests (7 files)
+│   └── generate_systematic_report.py # Report generator
+│
+├── examples/                         # Simple demonstrations
 │   ├── main_demo.py                  # Interactive demo
-│   └── KNOWN_ISSUES.md               # 🔑 Bug documentation
+│   └── README.md                     # How to run examples
 │
 ├── docs/                             # Documentation
+│   ├── ARCHITECTURE.md               # System architecture
+│   ├── KNOWN_ISSUES.md               # 🔑 Bug documentation
 │   ├── MODULE_STATUS.md              # Module status reference
 │   ├── FEATURE_STATUS.md             # Feature implementation status
-│   ├── EXPERIMENTS_STATUS.md         # Active experiments
-│   ├── rule_difficulty_classification.md
-│   └── ...
+│   ├── ONBOARDING.md                 # Getting started guide
+│   └── EXPERIMENTS_STATUS.md         # Active experiments
 │
-├── archived/                         # Legacy code
+├── archived/                         # Historical code (52 files)
+│   ├── parameter_tuning/             # Ablation & comparison scripts
+│   ├── analysis/                     # Evaluation & diagnostic scripts
+│   ├── model_development/            # Training variant scripts
 │   ├── legacy_recognition/           # Old recognition models (GRU, Set Transformer)
-│   └── deprecated_experiments/       # Superseded experiment scripts
+│   ├── legacy_runners/               # Old runner scripts
+│   └── laps_research/                # LAPS subproject (paused)
 │
+├── data/                             # Input data and samples
+│   └── sample_results/               # Example outputs for testing
+│
+├── results/                          # Experiment outputs (gitignored)
 ├── CLAUDE.md                         # AI coding agent guidelines
 ├── requirements.txt                  # Python dependencies
 └── README.md                         # This file
@@ -262,22 +273,36 @@ card-games-modelling/
 
 ## Core Components
 
-### 1. Primitives (`lean_primitives.py`)
+### 1. Primitives (`primitives.py`)
 
-The DSL contains **60 primitives in 5 levels**, designed for cognitive realism:
+The DSL contains **57 primitives in 10 categories**, designed for cognitive realism:
 
-| Level | Category | Examples | Count |
-|-------|----------|----------|-------|
-| 0 | Constants | `TRUE`, `FALSE`, `0-5`, `CLUBS`, `HEARTS`... | 18 |
-| 1 | Basic Operations | `eq`, `lt`, `gt`, `add`, `sub`, `and`, `or`, `not` | 12 |
-| 2 | Card Accessors | `get_rank`, `get_suit`, `get_color`, `first`, `last` | 8 |
-| 3 | List Operations | `map`, `filter`, `all`, `any`, `length`, `count` | 14 |
-| 4 | Aggregates | `n_unique_ranks`, `n_unique_suits`, `has_pair`, `is_sorted` | 8 |
+| Category | Examples | Count |
+|----------|----------|-------|
+| Constants | `true`, `false`, `0-5`, `CLUBS`, `HEARTS`, `RED`, `BLACK` | 14 |
+| Card Accessors | `get_rank`, `get_suit`, `get_color`, `rank_val` | 4 |
+| Position Ops | `head`, `last`, `at`, `length`, `reverse` | 5 |
+| List Slicing | `take`, `drop`, `zip_with`, `adjacent_pairs`, `first_half`, `second_half` | 7 |
+| Direct Queries | `has_suit`, `has_color`, `count_suit`, `count_color`, `n_unique_suits` | 7 |
+| Aggregates | `sum_ranks`, `max_rank`, `min_rank` | 3 |
+| Comparisons | `eq`, `lt`, `le`, `gt`, `ge` | 5 |
+| Boolean Ops | `and`, `or`, `not`, `if` | 4 |
+| Higher-Order | `map`, `filter`, `all`, `any`, `unique` | 5 |
+| Arithmetic | `+`, `-`, `mod` | 3 |
 
-**Example rule in DSL notation:**
+**Example rules in DSL notation:**
 ```
-# "Hand is sorted by rank"
-(all (λx. λy. (lt (get_rank x) (get_rank y))) (shifted_pairs hand))
+# "First card is red"
+(λ hand. (eq RED (get_color (head hand))))
+
+# "Hand contains a spade"
+(λ hand. (has_suit hand SPADES))
+
+# "All cards are the same suit" (flush)
+(λ hand. (lt (n_unique_suits hand) 2))
+
+# "Hand has exactly two colors"
+(λ hand. (eq 2 (n_unique_colors hand)))
 ```
 
 ### 2. Recognition Model (`contrastive_recognition.py`)
@@ -286,15 +311,15 @@ The DSL contains **60 primitives in 5 levels**, designed for cognitive realism:
 
 ```python
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
+from dreamcoder_core.primitives import build_lean_grammar
 
+grammar = build_lean_grammar()  # 57 primitives
 model = ContrastiveRecognitionModel(
-    n_primitives=60,
+    grammar=grammar,            # Model derives num_primitives from grammar
     card_hidden=64,
-    card_out=64,
-    pred_hidden=128,
-    output_mode='softmax',  # Use 'softmax' for search ranking
-    use_count_head=True,
-    use_bigram_head=True
+    card_out=32,
+    pred_hidden=64,
+    output_mode='softmax',      # Use 'softmax' for search ranking
 )
 
 # Training
@@ -305,7 +330,7 @@ for epoch in range(100):
     optimizer.step()
 
 # Inference
-primitive_probs = model(task)  # Shape: (60,)
+primitive_probs = model.predict_primitives(task)  # Shape: (num_primitives,)
 ```
 
 ### 3. Enumeration (`enumeration.py`)
@@ -314,9 +339,9 @@ primitive_probs = model(task)  # Shape: (60,)
 
 ```python
 from dreamcoder_core.enumeration import TopDownEnumerator
-from dreamcoder_core.lean_primitives import create_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 
-grammar = create_grammar()
+grammar = build_lean_grammar()
 enumerator = TopDownEnumerator(grammar, max_depth=10, max_programs=50000)
 
 # Use memoized enumeration (ALWAYS use this)
@@ -387,13 +412,17 @@ for iteration in range(n_iterations):
 
 ### Available Experiment Scripts
 
+All scripts are in `src/experiments/`. The canonical entry point is marked with ⭐.
+
 | Script | Purpose | Typical Duration |
 |--------|---------|------------------|
-| `run_overnight_wakesleep_study.py` | Full wake-sleep training | 6-10 hours |
-| `run_targeted_ablation_study.py` | Component ablations | 2-4 hours |
+| `run_reference_wakesleep.py` ⭐ | **Canonical** wake-sleep training | 6-10 hours |
+| `run_overnight_wakesleep_study.py` | Full overnight study | 8-12 hours |
+| `run_comprehensive_library_ablation.py` | Library learning ablation | 4-8 hours |
 | `run_recognition_guided_ablation.py` | Recognition + compression | 4-8 hours |
+| `run_recognition_compression_ablation.py` | Recognition vs compression | 4-6 hours |
+| `run_targeted_ablation_study.py` | Component ablations | 2-4 hours |
 | `run_transfer_study.py` | Transfer learning | 2-4 hours |
-| `compare_normalization_*.py` | Normalization strategies | 1-2 hours |
 
 ### Overnight Run Protocol
 
@@ -440,17 +469,22 @@ run_study(n_iterations=2, budget=5000, timeout=60)  # Quick test
 
 ### Recognition Model Parameters
 
+The model takes a `grammar` object and derives `num_primitives` automatically.
+
 ```python
-config = {
-    'card_hidden': 64,      # Card encoder hidden size
-    'card_out': 64,         # Card embedding dimension
-    'pred_hidden': 128,     # Primitive predictor hidden size
-    'n_primitives': 60,     # Number of primitives in grammar
-    'output_mode': 'softmax',  # 'softmax' for search, 'sigmoid' for classification
-    'use_count_head': True,    # Predict number of primitives
-    'use_bigram_head': True,   # Predict primitive co-occurrence
-    'normalization': 'layernorm_scale',  # 'l2', 'layernorm_scale', or None
-}
+# ContrastiveRecognitionModel constructor parameters
+model = ContrastiveRecognitionModel(
+    grammar=grammar,           # Required: provides primitives
+    d_suit=8,                  # Suit embedding dimension
+    d_rank=16,                 # Rank embedding dimension
+    d_pos=8,                   # Position embedding dimension
+    card_hidden=64,            # Card MLP hidden size
+    card_out=32,               # Final card/task embedding dimension
+    pred_hidden=64,            # Primitive predictor hidden size
+    output_mode='softmax',     # 'softmax' for search ranking, 'sigmoid' for classification
+    normalize_embeddings=True, # Apply LayerNorm to task embeddings
+    device='cpu'               # 'cpu' or 'cuda'
+)
 ```
 
 ### Enumeration Parameters
@@ -584,19 +618,19 @@ python -m pytest tests/ -v
 
 - **Type hints** on all function signatures
 - **Docstrings** for all public functions
-- Use `lean_primitives.py` as the authoritative primitive source
+- Use `primitives.py` as the authoritative primitive source
 - Follow existing patterns for new experiment scripts
 
 ### Adding a New Experiment
 
 1. Create script in `src/experiments/`
-2. Use existing scripts as templates
-3. Save results to `src/results_<experiment_name>/`
+2. Use `run_reference_wakesleep.py` as a template
+3. Results save to `results/` (gitignored - not committed)
 4. Document in `docs/EXPERIMENTS_STATUS.md`
 
 ### Bug Documentation
 
-When fixing bugs, document in `src/KNOWN_ISSUES.md`:
+When fixing bugs, document in `docs/KNOWN_ISSUES.md`:
 1. Severity level
 2. Symptoms observed
 3. Root cause analysis
@@ -636,26 +670,46 @@ The companion experiment is at: [card-games](https://github.com/konukcan/card-ga
 
 ## Citation
 
-If you use this code, please cite:
+This project builds upon the following foundational work:
+
+**DreamCoder** — The wake-sleep program synthesis framework this project implements:
 
 ```bibtex
-@software{cardgames_dreamcoder_2025,
-  author = {Can Konuk},
-  title = {DreamCoder for Card Game Rule Learning},
-  year = {2025},
-  url = {https://github.com/konukcan/card-games-modelling}
-}
-
 @article{ellis2023dreamcoder,
-  title={DreamCoder: growing generalizable, interpretable knowledge with wake--sleep Bayesian program learning},
-  author={Ellis, Kevin and Wong, Catherine and Nye, Maxwell and others},
+  title={DreamCoder: Growing generalizable, interpretable knowledge with wake-sleep Bayesian program learning},
+  author={Ellis, Kevin and Wong, Catherine and Nye, Maxwell and Mathew, Sable-Meyer and
+          Cary, Luke and Morales, Luc and Hewitt, Luke and Solar-Lezama, Armando and Tenenbaum, Joshua B},
   journal={Philosophical Transactions of the Royal Society A},
   volume={381},
   number={2251},
   pages={20220050},
-  year={2023}
+  year={2023},
+  doi={10.1098/rsta.2022.0050}
 }
 ```
+
+- **GitHub**: [https://github.com/ellisk42/ec](https://github.com/ellisk42/ec)
+- **Documentation**: [https://ellisk42.github.io/ec/](https://ellisk42.github.io/ec/)
+
+**DreamDecompiler** — Recognition-guided compression used in our library learning:
+
+```bibtex
+@inproceedings{palmarini2024dreamdecompiler,
+  title={Bayesian Program Learning by Decompiling Amortized Knowledge},
+  author={Palmarini, Alessandro B and Lucas, Christopher G and Siddharth, N},
+  booktitle={International Conference on Machine Learning (ICML)},
+  pages={39042--39055},
+  year={2024},
+  volume={235},
+  series={PMLR},
+  url={https://arxiv.org/abs/2306.07856}
+}
+```
+
+### Additional Influences
+
+- **Wong et al. (2021)** — LAPS language-guided synthesis: "Leveraging Language to Learn Program Abstractions and Search Heuristics." *ICML 2021*. [arXiv:2106.11053](https://arxiv.org/abs/2106.11053)
+- **Chi et al. (1994)** — Self-explanation in learning: "Eliciting self-explanations improves understanding." *Cognitive Science*, 18(3).
 
 ---
 
