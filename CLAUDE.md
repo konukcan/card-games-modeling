@@ -100,7 +100,7 @@ Before executing any script, especially overnight runs, verify:
 1. **Imports resolve correctly** - Run a quick syntax check or import test
 2. **Task-result mapping uses dictionary keying** - NEVER rely on list ordering with `as_completed()` (see KNOWN_ISSUES.md for the critical bug this caused)
 3. **Holdout verification is enabled** - Solutions must be verified on held-out examples
-4. **Primitives are from `lean_primitives.py`** - This is the authoritative primitive library
+4. **Primitives are from `primitives.py`** - This is the authoritative primitive library
 
 ## Known Bug Patterns to Avoid
 
@@ -240,7 +240,7 @@ This serves as institutional memory for future development.
 
 - **Type hints** on all function signatures
 - **Docstrings** for all public functions
-- Use `lean_primitives.py` as the authoritative primitive library
+- Use `primitives.py` as the authoritative primitive library
 - Cython modules exist but are **NOT currently active** (`USE_CYTHON = False`)
   - Main speedup comes from PyPy workers, not Cython
   - See KNOWN_ISSUES.md for why Cython isn't used (pickle serialization issues)
@@ -249,7 +249,7 @@ This serves as institutional memory for future development.
 
 | Purpose | Authoritative File |
 |---------|-------------------|
-| Primitives | `src/dreamcoder_core/lean_primitives.py` |
+| Primitives | `src/dreamcoder_core/primitives.py` |
 | Recognition model | `src/dreamcoder_core/contrastive_recognition.py` |
 | Task generation | `src/dreamcoder_core/task_generation.py` |
 | Reference experiment | `src/experiments/run_reference_wakesleep.py` |

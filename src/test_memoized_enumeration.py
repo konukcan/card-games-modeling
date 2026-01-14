@@ -23,7 +23,7 @@ from datetime import datetime
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.contrastive_wake_sleep import ContrastiveWakeSleep, create_tasks_from_rules
 from dreamcoder_core.program import Program
 from rules.cards import sample_hand

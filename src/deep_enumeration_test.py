@@ -38,7 +38,7 @@ from dataclasses import dataclass, asdict
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.enumeration import TopDownEnumerator
 from dreamcoder_core.type_system import HAND, BOOL, arrow
 from dreamcoder_core.program import Program

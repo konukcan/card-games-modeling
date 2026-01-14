@@ -344,7 +344,7 @@ def _worker_enumerate_task(args: Tuple) -> Dict:
     try:
         # Import grammar and type reconstruction
         from .grammar import Grammar
-        from .lean_primitives import build_lean_grammar
+        from .primitives import build_lean_grammar
         from .type_system import arrow, HAND, BOOL
 
         # Rebuild grammar (in practice, might want to pass pickled version)

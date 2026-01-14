@@ -890,7 +890,7 @@ if __name__ == "__main__":
     print("=" * 70)
 
     # Import dependencies
-    from dreamcoder_core.lean_primitives import build_lean_grammar
+    from dreamcoder_core.primitives import build_lean_grammar
     from rules.cards import sample_hand, Card, Suit, Rank
 
     # Build grammar

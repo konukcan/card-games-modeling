@@ -590,4 +590,4 @@ The DSL's limited expressiveness is intentional:
 
 ---
 
-*Document maintained as part of the card-games-modelling project. For implementation details, see `src/dreamcoder_core/lean_primitives.py`.*
+*Document maintained as part of the card-games-modelling project. For implementation details, see `src/dreamcoder_core/primitives.py`.*

@@ -71,8 +71,8 @@ from itertools import combinations
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dreamcoder_core.grammar import Grammar, uniform_grammar
-from dreamcoder_core.lean_primitives import (
-    build_lean_primitives,
+from dreamcoder_core.primitives import (
+    build_primitives,
     make_constants,
     make_card_accessors,
     make_position_ops,
@@ -313,7 +313,7 @@ def build_all_variants() -> List[AblationVariant]:
     # =========================================================================
 
     # Start with minimal set and progressively add
-    all_primitives = build_lean_primitives()
+    all_primitives = build_primitives()
     all_prim_names = {p.name for p in all_primitives}
 
     # Minimal core: constants + card_accessors + comparisons + boolean_ops
@@ -441,7 +441,7 @@ def build_ablated_grammar(variant: AblationVariant) -> Tuple[Grammar, List[str],
     to_remove = set(variant.remove_primitives)
 
     # Build full primitive list
-    all_primitives = build_lean_primitives()
+    all_primitives = build_primitives()
 
     # Filter
     kept = [p for p in all_primitives if p.name not in to_remove]

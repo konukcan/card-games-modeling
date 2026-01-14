@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dreamcoder_core.neural_recognition import (
     NeuralRecognitionModel, encode_hand, encode_output
 )
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
 from rules.catalogue import create_all_rules
 

@@ -69,7 +69,7 @@ from dreamcoder_core.compression import (
     compress_frontiers_recognition,
     CompressionResult
 )
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 from rules.cards import sample_hand, Card, Hand
 

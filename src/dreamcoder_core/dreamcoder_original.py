@@ -76,7 +76,7 @@ from dreamcoder_core.grammar import Grammar, Production, uniform_grammar
 from dreamcoder_core.enumeration import TopDownEnumerator
 from dreamcoder_core.compression import compress_frontiers
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.task import Task  # Canonical Task definition
 from dreamcoder_core.task_generation import (
     create_tasks_from_rules as unified_create_tasks,

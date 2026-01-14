@@ -11,7 +11,7 @@ import torch
 import numpy as np
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
 from rules.catalogue import create_all_rules as get_catalogue_rules
 

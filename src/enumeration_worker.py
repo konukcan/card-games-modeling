@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from dreamcoder_core.type_system import arrow, HAND, BOOL
 from dreamcoder_core.enumeration import enumerate_simple
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from rules.cards import Card, Suit, Rank
 
 

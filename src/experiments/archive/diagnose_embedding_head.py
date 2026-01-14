@@ -15,7 +15,7 @@ from dreamcoder_core.recognition_variants import (
     RecognitionModelVariant,
     PrimitiveEmbeddingHead
 )
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from rules.catalogue import create_all_rules
 from rules.cards import sample_hand
 

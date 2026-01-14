@@ -53,7 +53,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dreamcoder_core.grammar import Grammar, Production, uniform_grammar
-from dreamcoder_core.lean_primitives import build_lean_primitives
+from dreamcoder_core.primitives import build_primitives
 from dreamcoder_core.type_system import arrow, HAND, BOOL
 from dreamcoder_core.program import Program, Primitive, Invented
 from dreamcoder_core.enumeration import TopDownEnumerator, EnumerationResult, Frontier
@@ -1170,7 +1170,7 @@ def main():
     print(f"Loaded {len(tasks)} tasks")
 
     # Build grammar
-    primitives = build_lean_primitives()
+    primitives = build_primitives()
     grammar = uniform_grammar(primitives)
     print(f"Grammar: {len(grammar.productions)} primitives")
 

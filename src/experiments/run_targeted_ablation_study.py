@@ -51,7 +51,7 @@ from typing import List, Dict, Optional, Tuple, Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dreamcoder_core.grammar import Grammar, uniform_grammar
-from dreamcoder_core.lean_primitives import build_lean_primitives
+from dreamcoder_core.primitives import build_primitives
 from dreamcoder_core.task import Task
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 
@@ -161,7 +161,7 @@ def build_ablated_grammar(config: AblationConfig) -> Tuple[Grammar, List[str]]:
     primitives_to_remove = set(config.remove_primitives)
 
     # Build full primitive list
-    all_primitives = build_lean_primitives()
+    all_primitives = build_primitives()
 
     # Filter out removed primitives
     kept_primitives = [p for p in all_primitives if p.name not in primitives_to_remove]

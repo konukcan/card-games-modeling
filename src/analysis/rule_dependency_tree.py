@@ -63,7 +63,7 @@ BASE_PRIMITIVES = {
     '4': ('constant', '4'),
     '5': ('constant', '5'),
     # Note: Rank constants 10-14 and game thresholds 17, 21 were removed
-    # to keep the grammar generalizable (see lean_primitives.py v3)
+    # to keep the grammar generalizable (see primitives.py v3)
 
     # Card accessors
     'get_suit': ('accessor', 'λc. c.suit'),

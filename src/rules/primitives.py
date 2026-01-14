@@ -3,7 +3,7 @@ Primitive helper functions for catalogue rules.
 
 This module provides simple Python helper functions used by the rule catalogue
 to define the 56 experimental rules. These are NOT the typed DSL primitives
-used by DreamCoder (those are in dreamcoder_core/lean_primitives.py).
+used by DreamCoder (those are in dreamcoder_core/primitives.py).
 
 These functions are designed to be readable and match human intuition about
 card game rules.

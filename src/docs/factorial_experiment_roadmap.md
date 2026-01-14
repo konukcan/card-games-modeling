@@ -166,7 +166,7 @@ negative_hand = [Ah, Kh, Qh, Jh, 2s]  # not a flush (near-miss)
 ## Factor 3: Primitive Libraries
 
 ### Level 3a: Lean Primitives (67 primitives)
-**File**: `dreamcoder_core/lean_primitives.py`
+**File**: `dreamcoder_core/primitives.py`
 
 **Design Philosophy**: "Cognitive Realism"
 - High-level primitives matching human conceptual vocabulary

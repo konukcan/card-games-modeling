@@ -20,7 +20,7 @@ import random
 from collections import Counter
 
 from dreamcoder_core.type_system import arrow, HAND, BOOL
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.neural_recognition import NeuralRecognitionModel
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.contrastive_dreaming import (

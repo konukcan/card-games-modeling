@@ -523,7 +523,7 @@ if __name__ == "__main__":
     print("=" * 70)
 
     from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
-    from dreamcoder_core.lean_primitives import build_lean_grammar
+    from dreamcoder_core.primitives import build_lean_grammar
     from dreamcoder_core.dreamcoder_original import create_tasks_from_rules
     from rules.catalogue import create_all_rules
 

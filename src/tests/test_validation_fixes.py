@@ -365,7 +365,7 @@ def test_recognition_to_enumeration_integration():
 
     try:
         # Import the actual components
-        from dreamcoder_core.lean_primitives import build_lean_grammar
+        from dreamcoder_core.primitives import build_lean_grammar
         from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 
         # Build real grammar
@@ -443,7 +443,7 @@ def test_normalization_performance():
     print("="*70)
 
     try:
-        from dreamcoder_core.lean_primitives import build_lean_grammar
+        from dreamcoder_core.primitives import build_lean_grammar
 
         grammar = build_lean_grammar()
         n_prims = len(grammar)
@@ -476,7 +476,7 @@ def test_normalization_performance():
         return True
 
     except ImportError:
-        print("SKIP: Could not import lean_primitives")
+        print("SKIP: Could not import primitives")
         return True
 
 

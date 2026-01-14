@@ -71,7 +71,7 @@ from dreamcoder_core.compression import (
 )
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.contrastive_dreaming import HybridDreamer
-from dreamcoder_core.lean_primitives import build_lean_primitives, build_lean_grammar
+from dreamcoder_core.primitives import build_primitives, build_lean_grammar
 from dreamcoder_core.task import Task
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 

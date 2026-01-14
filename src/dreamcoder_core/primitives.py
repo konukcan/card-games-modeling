@@ -546,7 +546,7 @@ def make_arithmetic() -> List[Primitive]:
 # BUILD COGNITIVE PRIMITIVE LIBRARY
 # ============================================================================
 
-def build_lean_primitives() -> List[Primitive]:
+def build_primitives() -> List[Primitive]:
     """
     Build the cognitively realistic primitive library v2.
 
@@ -579,7 +579,7 @@ def build_lean_primitives() -> List[Primitive]:
 
 def build_lean_grammar() -> Grammar:
     """Build the cognitive grammar for card game learning."""
-    prims = build_lean_primitives()
+    prims = build_primitives()
     return uniform_grammar(prims)
 
 
@@ -664,7 +664,7 @@ if __name__ == "__main__":
     print("COGNITIVE PRIMITIVE LIBRARY v2")
     print("=" * 70)
 
-    prims = build_lean_primitives()
+    prims = build_primitives()
     print(f"\nTotal primitives: {len(prims)}")
 
     # Group by category

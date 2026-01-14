@@ -57,7 +57,7 @@ from dreamcoder_core.enumeration import TopDownEnumerator, EnumerationResult
 from dreamcoder_core.compression import compress_frontiers, CompressionResult
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
 from dreamcoder_core.contrastive_dreaming import HybridDreamer, ContrastiveDream
-from dreamcoder_core.lean_primitives import build_lean_primitives, build_lean_grammar
+from dreamcoder_core.primitives import build_primitives, build_lean_grammar
 from dreamcoder_core.task import Task
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 
@@ -839,7 +839,7 @@ def build_variant_grammar(config: ExperimentConfig) -> Grammar:
     """Build grammar for a specific variant."""
 
     # Start with full primitives
-    primitives = build_lean_primitives()
+    primitives = build_primitives()
 
     # Remove specified primitives
     if config.remove_primitives:

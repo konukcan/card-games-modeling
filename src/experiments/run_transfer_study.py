@@ -43,7 +43,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rules.cards import sample_hand, Card
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 from dreamcoder_core.type_system import arrow, HAND, BOOL
 from dreamcoder_core.task_generation import load_prerecorded_tasks
 from dreamcoder_core.grammar import Grammar, Production

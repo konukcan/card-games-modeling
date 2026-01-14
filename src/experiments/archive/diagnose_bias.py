@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import torch
 import torch.nn as nn
 from dreamcoder_core.contrastive_recognition import ContrastiveRecognitionModel
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 
 RESULTS_DIR = Path("results/warmstart_experiment")
 
