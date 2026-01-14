@@ -36,16 +36,17 @@ env/
 .ipynb_checkpoints/
 *.ipynb
 
-# Data & Results (keep structure, ignore contents for now)
-results/*.png
-results/*.json
-results/*.csv
+# Results - ALL results directories (regeneratable)
+results/
+src/results/
+src/results_*/
+!data/sample_results/
+
+# Data (large files)
 data/*.pkl
 data/*.npy
 
-# Experiment outputs (large files - model checkpoints, logs, results)
-src/results/
-src/results_*/
+# Model checkpoints
 *.pt
 *.pkl
 *.pid
