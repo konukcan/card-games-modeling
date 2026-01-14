@@ -1,7 +1,5 @@
 # Card Game Rule Learning: DreamCoder Modeling
 
-A **DreamCoder-inspired program synthesis system** for modeling how humans learn compositional rules in card game tasks. This project is part of PhD research connecting self-explanation (cognitive science) to program induction mechanisms.
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -711,14 +709,3 @@ This project builds upon the following foundational work:
 - **Wong et al. (2021)** — LAPS language-guided synthesis: "Leveraging Language to Learn Program Abstractions and Search Heuristics." *ICML 2021*. [arXiv:2106.11053](https://arxiv.org/abs/2106.11053)
 - **Chi et al. (1994)** — Self-explanation in learning: "Eliciting self-explanations improves understanding." *Cognitive Science*, 18(3).
 
----
-
-## License
-
-MIT License - see LICENSE file
-
-## Contact
-
-For questions about this modeling work, open an issue or contact the repository owner.
-
-For the behavioral experiment, see the main [card-games repository](https://github.com/konukcan/card-games).
