@@ -1036,16 +1036,43 @@ class ReferenceWakeSleep:
                 if hasattr(dream, 'program'):
                     sample_dreams.append(str(dream.program))
 
-        # Train recognition on dreams
+        # Train recognition on dreams by converting to frontier format
         dreams_trained = 0
         if dreams:
-            for dream in dreams:
+            # Convert dreams to frontier format for train_on_frontiers()
+            dream_tasks = []
+            dream_frontiers = {}
+
+            for i, dream in enumerate(dreams):
                 if hasattr(dream, 'task') and hasattr(dream, 'program'):
-                    try:
-                        self.recognition.train_on_dream(dream.task, dream.program)
-                        dreams_trained += 1
-                    except Exception:
-                        pass  # Skip dreams that fail to train
+                    task = dream.task
+                    # Create a minimal frontier-like object
+                    entry = EnumerationResult(
+                        program=dream.program,
+                        log_probability=0.0,
+                        log_likelihood=0.0,
+                        description_length=1.0,
+                        programs_enumerated=1,
+                        time_seconds=0.0
+                    )
+                    frontier = TaskFrontier(task=task, max_size=1)
+                    frontier.add(entry)
+
+                    dream_tasks.append(task)
+                    dream_frontiers[task.name] = frontier
+                    dreams_trained += 1
+
+            # Train if we have valid dreams
+            if dream_tasks:
+                try:
+                    self.recognition.train_on_frontiers(
+                        tasks=dream_tasks,
+                        frontiers=dream_frontiers,
+                        epochs=1,
+                        batch_size=min(8, len(dream_tasks))
+                    )
+                except Exception as e:
+                    self.logger.info(f"Dream training failed: {e}", 2)
 
         # Log dreaming details
         self.logger.dreaming_details(n_standard, n_contrastive, sample_dreams)

@@ -199,12 +199,18 @@ class ContrastiveDreamer:
         max_depth: int = 5
     ) -> Tuple[Optional[Program], float]:
         """
-        Sample a program from the grammar using direct stochastic sampling.
+        Sample a program from the grammar that actually uses the input variable.
 
-        This uses Grammar.sample() which is O(depth) rather than the old
-        enumerate-then-sample approach which was O(enumeration size).
+        Uses sample_requiring_variable() to avoid trivial constant programs
+        like (λ true) or (λ false) that ignore the input.
         """
-        result = self.grammar.sample(request_type, max_depth=max_depth, temperature=temperature)
+        result = self.grammar.sample_requiring_variable(
+            request_type,
+            variable_index=0,  # Must use $0
+            max_depth=max_depth,
+            temperature=temperature,
+            max_retries=10
+        )
         if result is None:
             return None, 0.0
         return result
@@ -474,12 +480,18 @@ class BalancedDreamer:
         max_depth: int = 5
     ) -> Tuple[Optional[Program], float]:
         """
-        Sample a program from the grammar using direct stochastic sampling.
+        Sample a program from the grammar that actually uses the input variable.
 
-        This uses Grammar.sample() which is O(depth) rather than the old
-        enumerate-then-sample approach which was O(enumeration size).
+        Uses sample_requiring_variable() to avoid trivial constant programs
+        like (λ true) or (λ false) that ignore the input.
         """
-        result = self.grammar.sample(request_type, max_depth=max_depth, temperature=temperature)
+        result = self.grammar.sample_requiring_variable(
+            request_type,
+            variable_index=0,  # Must use $0
+            max_depth=max_depth,
+            temperature=temperature,
+            max_retries=10
+        )
         if result is None:
             return None, 0.0
         return result
@@ -641,12 +653,18 @@ class StandardDreamer:
         max_depth: int = 5
     ) -> Tuple[Optional[Program], float]:
         """
-        Sample a program from the grammar using direct stochastic sampling.
+        Sample a program from the grammar that actually uses the input variable.
 
-        This uses Grammar.sample() which is O(depth) rather than the old
-        enumerate-then-sample approach which was O(enumeration size).
+        Uses sample_requiring_variable() to avoid trivial constant programs
+        like (λ true) or (λ false) that ignore the input.
         """
-        result = self.grammar.sample(request_type, max_depth=max_depth, temperature=temperature)
+        result = self.grammar.sample_requiring_variable(
+            request_type,
+            variable_index=0,  # Must use $0
+            max_depth=max_depth,
+            temperature=temperature,
+            max_retries=10
+        )
         if result is None:
             return None, 0.0
         return result
