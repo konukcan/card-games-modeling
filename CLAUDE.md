@@ -47,7 +47,32 @@ nohup python3 your_experiment.py > output.out 2>&1 &
 
 ## Experiment Scripts
 
-All experiment scripts are in `src/experiments/`. Key scripts (Jan 2, 2026, to be updated as the project evolves):
+All experiment scripts are in `src/experiments/`.
+
+### Canonical Reference Script
+
+**`run_reference_wakesleep.py`** - The canonical reference implementation for DreamCoder wake-sleep learning. Use this as the template for all new experiments.
+
+```bash
+# Quick test (~10-15 minutes)
+python3 src/experiments/run_reference_wakesleep.py --quick --verbose 3
+
+# Overnight run (~12 hours)
+cd src
+nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py --overnight > ref.out 2>&1 &
+
+# Resume from checkpoint
+python3 src/experiments/run_reference_wakesleep.py --resume results/run_YYYYMMDD_HHMMSS/
+```
+
+**Verbose levels:**
+- `--verbose 1`: Iteration summaries only (default)
+- `--verbose 2`: + Phase progress (wake/compression/recognition/dreaming)
+- `--verbose 3`: + Per-task details and diagnostic info
+
+See `src/experiments/ARCHITECTURE.md` for detailed explanation of design decisions.
+
+### Other Experiment Scripts
 
 | Script | Purpose |
 |--------|---------|
@@ -226,6 +251,8 @@ This serves as institutional memory for future development.
 |---------|-------------------|
 | Primitives | `src/dreamcoder_core/lean_primitives.py` |
 | Recognition model | `src/dreamcoder_core/contrastive_recognition.py` |
+| Reference experiment | `src/experiments/run_reference_wakesleep.py` |
+| Architecture docs | `src/experiments/ARCHITECTURE.md` |
 | Known issues | `src/KNOWN_ISSUES.md` |
 | Rules catalogue | `src/rules/catalogue.py` |
 | Card representations | `src/rules/cards.py` |
