@@ -253,10 +253,10 @@ This serves as institutional memory for future development.
 | Recognition model | `src/dreamcoder_core/contrastive_recognition.py` |
 | Task generation | `src/dreamcoder_core/task_generation.py` |
 | Reference experiment | `src/experiments/run_reference_wakesleep.py` |
-| Architecture docs | `src/experiments/ARCHITECTURE.md` |
+| Architecture docs | `docs/ARCHITECTURE.md` |
 | Task generation docs | `src/docs/TASK_GENERATION.md` |
 | Task visual report | `src/docs/prerecorded_tasks_report.pdf` |
-| Known issues | `src/KNOWN_ISSUES.md` |
+| Known issues | `docs/KNOWN_ISSUES.md` |
 | Rules catalogue | `src/rules/catalogue.py` |
 | Card representations | `src/rules/cards.py` |
 | Module status | `docs/MODULE_STATUS.md` |
