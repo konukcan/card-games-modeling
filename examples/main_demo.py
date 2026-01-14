@@ -9,15 +9,16 @@ This script demonstrates the complete pipeline:
 5. Run program enumeration with neural guidance
 6. Visualize results
 
-Run with: python src/main_demo.py
+Run with: cd src && python ../examples/main_demo.py
 """
 
 import sys
 import os
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add src to path (script is in examples/, src is a sibling directory)
+src_path = Path(__file__).parent.parent / "src"
+sys.path.insert(0, str(src_path))
 
 import numpy as np
 import matplotlib.pyplot as plt
