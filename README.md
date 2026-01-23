@@ -61,20 +61,12 @@ cd card-games-modeling
 pip install -r requirements.txt
 ```
 
-### Run a Quick Demo
-
-```bash
-python examples/main_demo.py
-```
-
-This runs a small demo showing rule loading, task generation, and visualization.
-
 ### Run a Full Experiment
 
 ```bash
 cd src
 
-# Launch canonical wake-sleep experiment with caffeinate (REQUIRED for runs > 30 min)
+# Launch canonical wake-sleep experiment
 nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py > overnight.out 2>&1 &
 
 # Quick test run (15 minutes)
@@ -237,10 +229,6 @@ card-games-modelling/
 │   │
 │   ├── tests/                        # Consolidated unit tests (7 files)
 │   └── generate_systematic_report.py # Report generator
-│
-├── examples/                         # Simple demonstrations
-│   ├── main_demo.py                  # Interactive demo
-│   └── README.md                     # How to run examples
 │
 ├── docs/                             # Documentation
 │   ├── ARCHITECTURE.md               # System architecture
@@ -424,8 +412,6 @@ All scripts are in `src/experiments/`. The canonical entry point is marked with 
 
 ### Overnight Run Protocol
 
-**CRITICAL**: Any run expected to exceed 30 minutes MUST use caffeinate:
-
 ```bash
 cd src
 
@@ -563,7 +549,7 @@ open results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/report.html
 
 #### "Process killed" or system becomes unresponsive
 **Cause**: System went to sleep during overnight run
-**Fix**: Always use `caffeinate -d -i -s` (see [Overnight Run Protocol](#overnight-run-protocol))
+**Fix**: Use `caffeinate -d -i -s` to prevent sleep (see [Overnight Run Protocol](#overnight-run-protocol))
 
 #### Zero tasks solved despite long runtime
 **Cause**: Likely the task-result scrambling bug (if using old scripts)

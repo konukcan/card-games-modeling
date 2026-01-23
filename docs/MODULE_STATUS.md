@@ -89,7 +89,6 @@ See `archived/legacy_recognition/README.md` for detailed explanation of why thes
 |--------|---------|--------|
 | `enumeration_worker.py` | Worker process for parallel enumeration | STABLE |
 | `enumeration_worker_set_transformer.py` | Worker for Set Transformer | STABLE |
-| `main_demo.py` | Interactive demo | STABLE |
 | `benchmark_enumeration.py` | Enumeration performance testing | UTILITY |
 | `deep_enumeration_test.py` | Deep enumeration testing | UTILITY |
 | `parallel_primitive_experiment.py` | Primitive experiment parallelization | UTILITY |

@@ -38,24 +38,16 @@ python3 --version
 pip install torch numpy matplotlib tqdm
 ```
 
-### 2. Run the Demo
-
-```bash
-# Interactive demo showing the system in action
-python3 main_demo.py
-```
-
-### 3. Run a Small Experiment
+### 2. Run a Small Experiment
 
 ```bash
 # Quick recognition model evaluation (< 5 minutes)
 python3 experiments/train_and_evaluate_recognition.py
 ```
 
-### 4. Full Overnight Run
+### 3. Full Overnight Run
 
 ```bash
-# IMPORTANT: Always use caffeinate for long runs!
 nohup caffeinate -d -i -s python3 run_incremental_wakesleep.py > overnight.out 2>&1 &
 echo $!  # Note the PID
 
@@ -101,11 +93,9 @@ card-games-modelling/
 │   ├── rule_difficulty_classification.md  # Rule taxonomy
 │   └── ...                           # Other docs
 │
-├── archived/                         # Archived code
-│   ├── legacy_runners/               # Old runner scripts
-│   └── legacy_recognition/           # Superseded recognition models
-│
-└── CLAUDE.md                         # Agent guidelines
+└── archived/                         # Archived code
+    ├── legacy_runners/               # Old runner scripts
+    └── legacy_recognition/           # Superseded recognition models
 ```
 
 ---
@@ -272,19 +262,6 @@ Rules are classified by difficulty (see `docs/rule_difficulty_classification.md`
 ## Getting Help
 
 1. **Documentation**: Check `docs/` directory
-2. **Known Issues**: See `src/KNOWN_ISSUES.md`
+2. **Known Issues**: See `docs/KNOWN_ISSUES.md`
 3. **Module Status**: See `docs/MODULE_STATUS.md`
 4. **Feature Status**: See `docs/FEATURE_STATUS.md`
-5. **Agent Guidelines**: See `CLAUDE.md`
-
----
-
-## Next Steps for New Contributors
-
-1. **Run the demo** (`main_demo.py`) to see the system in action
-2. **Read MODULE_STATUS.md** to understand the codebase
-3. **Read KNOWN_ISSUES.md** to learn from past bugs
-4. **Try a small experiment** with reduced iterations
-5. **Explore results** using `generate_systematic_report.py`
-
-Welcome to the project!
