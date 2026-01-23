@@ -75,6 +75,13 @@ docs/generated/
 *.log
 *.out
 
+# LaTeX build artifacts
+*.aux
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
 # Claude Code agent guidelines (local only)
 CLAUDE.md
 .claude/

@@ -6,13 +6,14 @@ Unit and integration tests for the DreamCoder card game modeling system.
 
 | File | Purpose |
 |------|---------|
-| `test_enumeration_optimized.py` | Tests for memoized enumeration speedups |
-| `test_memoized_enumeration.py` | Additional memoization tests |
+| `test_memoized_enumeration.py` | Memoization correctness tests |
 | `test_deep_enumeration.py` | Deep enumeration integration tests |
 | `test_compression_refactoring.py` | Tests for compression module refactoring |
 | `test_task_generation.py` | Tests for task generation from rules |
 | `test_validation_fixes.py` | Tests for solution validation fixes |
 | `test_ab_comparison.py` | Tests for A/B pipeline comparison |
+
+**Note**: `test_enumeration_optimized.py` was moved to `dreamcoder_core/experimental_parallel/` (pending integration).
 
 ## Running Tests
 
@@ -25,7 +26,7 @@ cd src
 python -m pytest tests/
 
 # Run a specific test file
-python -m pytest tests/test_enumeration_optimized.py
+python -m pytest tests/test_deep_enumeration.py
 
 # Run with verbose output
 python -m pytest tests/ -v
