@@ -76,13 +76,6 @@ python3 experiments/run_reference_wakesleep.py --quick --verbose 3
 tail -f overnight.out
 ```
 
-### Generate a Report
-
-```bash
-cd src
-python generate_systematic_report.py --run-dir ../results/run_YYYYMMDD_HHMMSS/
-```
-
 ---
 
 ## Architecture
@@ -227,16 +220,12 @@ card-games-modelling/
 │   │   ├── run_targeted_ablation_study.py
 │   │   └── ...
 │   │
-│   ├── tests/                        # Consolidated unit tests (7 files)
-│   └── generate_systematic_report.py # Report generator
+│   └── tests/                        # Consolidated unit tests
 │
 ├── docs/                             # Documentation
 │   ├── ARCHITECTURE.md               # System architecture
 │   ├── KNOWN_ISSUES.md               # 🔑 Bug documentation
-│   ├── MODULE_STATUS.md              # Module status reference
-│   ├── FEATURE_STATUS.md             # Feature implementation status
-│   ├── ONBOARDING.md                 # Getting started guide
-│   └── EXPERIMENTS_STATUS.md         # Active experiments
+│   └── ONBOARDING.md                 # Getting started guide
 │
 ├── archived/                         # Historical code (52 files)
 │   ├── parameter_tuning/             # Ablation & comparison scripts
@@ -499,36 +488,19 @@ config = {
 
 ### Output Structure
 
-Each experiment creates a timestamped directory:
+Each experiment creates a timestamped directory in `src/results_reference/`:
 
 ```
-results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/
-├── experiment_config.json       # Run configuration
-├── final_result.json            # Summary metrics
-├── report.html                  # Visual HTML report
-├── iteration_checkpoints/       # Per-iteration state
-│   ├── iteration_0001.json
-│   ├── iteration_0002.json
+run_YYYYMMDD_HHMMSS/
+├── iter_01/                     # First iteration checkpoint
+│   ├── model.pt                 # Recognition model weights
+│   ├── grammar.json             # Grammar state
+│   ├── frontiers.json           # Solved programs
+│   ├── metrics.json             # Performance metrics
+│   └── config.json              # Configuration snapshot
+├── iter_02/
 │   └── ...
-├── models/                      # Saved model weights
-│   ├── recognition_model_iter_01.pt
-│   └── ...
-├── grammars/                    # Grammar snapshots
-│   ├── grammar_iter_01.json
-│   └── ...
-└── frontiers/                   # Solved programs
-    ├── frontiers_iter_01.json
-    └── ...
-```
-
-### Generating Reports
-
-```bash
-# Generate HTML report for a completed run
-python generate_systematic_report.py --run-dir results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/
-
-# View in browser
-open results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/report.html
+└── final_results.json           # Summary (written at end)
 ```
 
 ### Key Metrics to Monitor
@@ -608,8 +580,7 @@ python -m pytest tests/ -v
 
 1. Create script in `src/experiments/`
 2. Use `run_reference_wakesleep.py` as a template
-3. Results save to `results/` (gitignored - not committed)
-4. Document in `docs/EXPERIMENTS_STATUS.md`
+3. Results save to `src/results_reference/` (gitignored)
 
 ### Bug Documentation
 

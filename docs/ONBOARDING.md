@@ -48,7 +48,8 @@ python3 experiments/train_and_evaluate_recognition.py
 ### 3. Full Overnight Run
 
 ```bash
-nohup caffeinate -d -i -s python3 run_incremental_wakesleep.py > overnight.out 2>&1 &
+cd src
+nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py > overnight.out 2>&1 &
 echo $!  # Note the PID
 
 # Monitor progress
@@ -63,7 +64,7 @@ tail -f overnight.out
 card-games-modelling/
 ├── src/                              # Main source code
 │   ├── dreamcoder_core/              # Core DreamCoder modules
-│   │   ├── lean_primitives.py        # ★ Authoritative primitives (60 ops)
+│   │   ├── primitives.py             # ★ Authoritative primitives (57 ops)
 │   │   ├── enumeration.py            # Program enumeration
 │   │   ├── contrastive_recognition.py # ★ Primary recognition model
 │   │   ├── grammar.py                # Probabilistic grammar
@@ -78,20 +79,13 @@ card-games-modelling/
 │   │   ├── archive/                  # Archived diagnostic scripts
 │   │   └── *.py                      # Active experiments
 │   │
-│   ├── logs/                         # Organized log files
-│   │   ├── production/               # Main runs
-│   │   ├── experiments/              # Experiment logs
-│   │   └── historical/               # Important historical logs
-│   │
-│   ├── run_incremental_wakesleep.py  # ★ Current wake-sleep runner
-│   ├── run_progressive_wakesleep.py  # Alternative curriculum runner
-│   └── generate_systematic_report.py # Report generation
+│   └── experiments/                  # Experiment scripts
+│       └── run_reference_wakesleep.py  # ★ Primary entry point
 │
 ├── docs/                             # Documentation
-│   ├── MODULE_STATUS.md              # Module reference
-│   ├── FEATURE_STATUS.md             # Feature reference
-│   ├── rule_difficulty_classification.md  # Rule taxonomy
-│   └── ...                           # Other docs
+│   ├── ARCHITECTURE.md               # System architecture
+│   ├── KNOWN_ISSUES.md               # Bug documentation
+│   └── ONBOARDING.md                 # This file
 │
 └── archived/                         # Archived code
     ├── legacy_runners/               # Old runner scripts
@@ -118,15 +112,16 @@ print(f"Total rules: {len(rules)}")  # 45 rules
 ### 2. Primitives
 
 **Primitives** are the building blocks of programs (60 total):
-- Level 0: Constants (TRUE, FALSE, 0-13, SPADES, etc.)
-- Level 1: Basic ops (eq, lt, add, sub, etc.)
-- Level 2: Card accessors (get_rank, get_suit, get_color)
-- Level 3: List ops (map, filter, all, any, etc.)
-- Level 4: Aggregates (count, sum, unique, etc.)
+- Constants (TRUE, FALSE, 0-5, SPADES, HEARTS, RED, BLACK, etc.)
+- Card accessors (get_rank, get_suit, get_color, rank_val)
+- List ops (head, last, take, drop, map, filter, all, any)
+- Queries (has_suit, count_color, n_unique_suits, etc.)
+- Comparisons and arithmetic (eq, lt, +, -, mod)
 
 ```python
-from dreamcoder_core.lean_primitives import ALL_PRIMITIVES
-print(f"Total primitives: {len(ALL_PRIMITIVES)}")  # 60
+from dreamcoder_core.primitives import build_lean_grammar
+grammar = build_lean_grammar()
+print(f"Total primitives: {len(grammar.primitives)}")  # 57
 ```
 
 ### 3. Programs
@@ -141,8 +136,8 @@ This checks if all cards are red.
 
 The **grammar** assigns probabilities to primitives:
 ```python
-from dreamcoder_core.grammar import Grammar
-grammar = Grammar.uniform(ALL_PRIMITIVES)
+from dreamcoder_core.primitives import build_lean_grammar
+grammar = build_lean_grammar()
 ```
 
 ### 5. Recognition Model
@@ -159,41 +154,35 @@ model = ContrastiveRecognitionModel(n_primitives=60, output_mode='softmax')
 
 ### Running Experiments
 
-1. **Wake-sleep training** (current recommended approach):
+1. **Wake-sleep training**:
    ```bash
-   # Incremental wake-sleep with ContrastiveRecognitionModel
-   nohup caffeinate -d -i -s python3 run_incremental_wakesleep.py > overnight.out 2>&1 &
-
-   # Or progressive curriculum
-   nohup caffeinate -d -i -s python3 run_progressive_wakesleep.py > overnight.out 2>&1 &
+   cd src
+   nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py > overnight.out 2>&1 &
    ```
 
-2. **Generate report**:
+2. **Quick test** (reduced iterations):
    ```bash
-   python3 generate_systematic_report.py --run-dir results_*/
-   ```
-
-3. **Quick evaluation** (experiments directory):
-   ```bash
-   python3 experiments/train_and_evaluate_recognition.py
+   python3 experiments/run_reference_wakesleep.py --quick --verbose 3
    ```
 
 ### Analyzing Results
 
-Results are saved in `results_*/` directories:
+Results are saved in `src/results_reference/`:
 ```
-results_overnight_20250101_123456/
-├── results.json           # Main results data
-├── report.html            # Visual report
-├── models/                # Saved model checkpoints
-│   └── recognition_iter_N.pt
-└── iteration_N/           # Per-iteration data
+run_YYYYMMDD_HHMMSS/
+├── iter_01/               # Per-iteration checkpoints
+│   ├── model.pt           # Recognition model
+│   ├── grammar.json       # Grammar state
+│   ├── frontiers.json     # Solved programs
+│   └── metrics.json       # Performance metrics
+├── iter_02/
+└── final_results.json     # Summary
 ```
 
 ### Debugging
 
 1. **Check logs**: `tail -f overnight.out`
-2. **Check system**: `ps aux | grep python` and `ps aux | grep caffeinate`
+2. **Check process**: `ps aux | grep python`
 3. **Check known issues**: `src/KNOWN_ISSUES.md`
 
 ---
@@ -236,11 +225,11 @@ results = [f.result() for f in as_completed(futures)]
 
 | Purpose | File |
 |---------|------|
-| Primitives | `dreamcoder_core/lean_primitives.py` |
+| Primitives | `dreamcoder_core/primitives.py` |
 | Recognition model | `dreamcoder_core/contrastive_recognition.py` |
 | Rules | `rules/catalogue.py` |
-| Main runners | `run_incremental_wakesleep.py`, `run_progressive_wakesleep.py` |
-| Known bugs | `KNOWN_ISSUES.md` |
+| Main runner | `experiments/run_reference_wakesleep.py` |
+| Known bugs | `docs/KNOWN_ISSUES.md` |
 
 ---
 
@@ -263,5 +252,4 @@ Rules are classified by difficulty (see `docs/rule_difficulty_classification.md`
 
 1. **Documentation**: Check `docs/` directory
 2. **Known Issues**: See `docs/KNOWN_ISSUES.md`
-3. **Module Status**: See `docs/MODULE_STATUS.md`
-4. **Feature Status**: See `docs/FEATURE_STATUS.md`
+3. **Architecture**: See `docs/ARCHITECTURE.md`

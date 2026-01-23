@@ -139,7 +139,7 @@ This document specifies a rigorous experimental methodology to test whether **wa
 ```
 FOR warm-start conditions:
     1. Initialize:
-       - Fresh grammar from lean_primitives.py
+       - Fresh grammar from primitives.py
        - Fresh NeuralRecognitionModel
        - Empty frontier dict
 
@@ -181,7 +181,7 @@ FOR warm-start conditions:
 ```
 FOR all conditions:
     1. Initialize:
-       - Grammar: lean_primitives + pretraining inventions (WARM) or lean_primitives only (COLD)
+       - Grammar: base primitives + pretraining inventions (WARM) or base primitives only (COLD)
        - Recognition: pretrained (WARM) or fresh (COLD)
        - Empty frontier dict for catalogue rules
 
@@ -287,7 +287,7 @@ SEEDS = [42, 123, 456, 789, 1010]
 | **Compute** | Total enumeration budget equal across conditions |
 | **Time** | Wall-clock time reported but not equalized (hardware-dependent) |
 | **Information** | Same rule definitions and evaluation functions |
-| **Initialization** | Same grammar primitives (60 from lean_primitives.py) |
+| **Initialization** | Same grammar primitives (57 from primitives.py) |
 
 ### 6.2 Accounting for Pretraining Compute
 

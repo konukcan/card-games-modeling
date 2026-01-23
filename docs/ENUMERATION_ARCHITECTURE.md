@@ -13,14 +13,15 @@ The enumeration system is the "WAKE" phase of DreamCoder's wake-sleep learning l
 
 ```
 dreamcoder_core/
-├── type_system.py      # Type definitions and unification (667 lines)
-├── program.py          # AST representation (2134 lines)
-├── grammar.py          # PCFG for program synthesis (1130 lines)
-├── enumeration.py      # Main enumeration algorithms (2111 lines)
-├── enumeration_optimized.py  # Multi-processing variants (598 lines)
-├── enumeration_worker.py     # PyPy worker for parallel execution (150 lines)
-├── lean_primitives.py        # DSL primitives (780 lines)
-└── wake_sleep.py             # Full learning loop integration (539 lines)
+├── type_system.py           # Type definitions and unification
+├── program.py               # AST representation
+├── grammar.py               # PCFG for program synthesis
+├── enumeration.py           # Main enumeration algorithms
+├── primitives.py            # DSL primitives (57 primitives)
+├── wake_sleep.py            # Full learning loop integration
+└── experimental_parallel/   # NOT USED - pending testing
+    ├── enumeration_optimized.py  # Multiprocessing variants
+    └── enumeration_worker.py     # PyPy worker (never integrated)
 ```
 
 ---
@@ -439,14 +440,14 @@ Main enumeration with early pruning:
 
 ---
 
-## 7. PRIMITIVES (`lean_primitives.py`)
+## 7. PRIMITIVES (`primitives.py`)
 
 The Domain-Specific Language for card games.
 
 ### Design Philosophy
 **Cognitive Realism**: Primitives should be "directly nameable" - expressible in short natural language phrases that humans use.
 
-### Primitive Categories (59 total)
+### Primitive Categories (57 total)
 
 | Category | Count | Examples |
 |----------|-------|----------|
@@ -476,8 +477,8 @@ The Domain-Specific Language for card games.
 ### Build Functions
 
 ```python
-build_lean_primitives() -> List[Primitive]  # Get all 59 primitives
-build_lean_grammar() -> Grammar             # Uniform grammar over primitives
+build_primitives() -> List[Primitive]  # Get all 57 primitives
+build_lean_grammar() -> Grammar        # Uniform grammar over primitives
 ```
 
 ---
@@ -625,7 +626,7 @@ for program, log_prob in enumerator.enumerate(request_type):
 
 ### Creating a Grammar
 ```python
-from dreamcoder_core.lean_primitives import build_lean_grammar
+from dreamcoder_core.primitives import build_lean_grammar
 grammar = build_lean_grammar()
 ```
 

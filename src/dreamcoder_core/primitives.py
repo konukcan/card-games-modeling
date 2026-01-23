@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Cognitive Primitive Library for Card Game Learning (v3)
+Cognitive Primitive Library for Card Game Learning (v4)
+
+Current count: 57 primitives
 
 Philosophy:
 This library is designed for COGNITIVE REALISM - it contains primitives that
@@ -13,35 +15,35 @@ Key design principles:
 4. Use only small numeric constants (0-5) for counting, not rank thresholds
 5. Keep the grammar size reasonable to maintain search tractability
 
-Changes from v1:
-REMOVED:
-- compose, flip, const, id (abstract combinators - low cognitive reality)
-- cons, nil (list construction - not how we think about hands)
-- fst, snd, pairs, zip_with (pair operations - rarely needed)
-- take, drop (can be composed, rarely used directly)
+Version History:
+---------------
+v1 (Initial):
+  - Abstract combinator style following original DreamCoder
+  - Included compose, flip, const, id, cons, nil, fst, snd
 
-ADDED:
-- has_suit, has_color (direct membership queries)
-- count_suit, count_color (direct counting)
-- n_unique_suits, n_unique_ranks, n_unique_colors (diversity)
+v2 (Cognitive Refocus):
+  REMOVED: compose, flip, const, id (abstract combinators - low cognitive reality)
+  REMOVED: cons, nil (list construction - not how we think about hands)
+  REMOVED: fst, snd, pairs (pair operations - rarely needed)
+  REMOVED: Rank constants 10-14 (face card values - too specific)
+  REMOVED: Game thresholds 17, 21 (blackjack rules - too specific)
+  ADDED: has_suit, has_color (direct membership queries)
+  ADDED: count_suit, count_color (direct counting)
+  ADDED: n_unique_suits, n_unique_ranks, n_unique_colors (diversity)
+  ADDED: all_same_suit, all_same_color (gestalt perception)
+  ADDED: sum_ranks, max_rank, min_rank (aggregates)
 
-REMOVED (v4):
-- all_same_suit, all_same_color (gestalt perception - redundant with n_unique_* < 2)
-- sum_ranks, max_rank, min_rank (aggregates)
+v3 (List Operations):
+  ADDED: take, drop (list slicing - needed for halves operations)
+  ADDED: zip_with (parallel comparison - needed for palindromes)
+  ADDED: first_half, second_half, half_len (direct halves access)
+  ADDED: adjacent_pairs (for sorted checks)
+  REMOVED: neq (not equal) - use 'not (eq x y)' instead
 
-Changes from v2:
-REMOVED:
-- Rank constants 10, 11, 12, 13, 14 (face card values - too specific)
-- Game thresholds 17, 21 (blackjack rules - too specific)
-Rules should use relative comparisons (gt, lt) not absolute thresholds.
-
-Changes from v2 to v3:
-REMOVED (unused by any active rule):
-- neq (not equal) - use 'not (eq x y)' instead
-Note: cons, empty, tail, foldr, is_empty were never in this library
-(they existed only in the rule_dependency_tree.py documentation)
-
-Target: ~45 primitives with high cognitive reality
+v4 (Current - Redundancy Removal):
+  REMOVED: all_same_suit, all_same_color
+    Reason: Redundant with (lt (n_unique_suits hand) 2)
+    See experiments/run_targeted_ablation_study.py for empirical validation
 """
 
 import sys
@@ -548,31 +550,33 @@ def make_arithmetic() -> List[Primitive]:
 
 def build_primitives() -> List[Primitive]:
     """
-    Build the cognitively realistic primitive library v2.
+    Build the cognitively realistic primitive library v4.
 
-    Organized by cognitive naturalness:
-    - Constants: Suits, colors, game-relevant numbers
-    - Card accessors: Get properties from cards
-    - Position access: First, last, at
-    - Direct queries: Has suit? Count suit? All same suit?
-    - Aggregates: Sum, max, min of ranks
-    - Comparisons: eq, lt, etc.
-    - Boolean: and, or, not, if
-    - Higher-order: map, filter, all, any, unique
-    - Arithmetic: +, -, mod
+    Returns 57 primitives organized by cognitive naturalness:
+    - Constants (14): Suits, colors, numbers 0-5, booleans
+    - Card accessors (4): get_suit, get_rank, rank_val, get_color
+    - Position access (5): head, last, at, length, reverse
+    - List slicing (7): take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half
+    - Direct queries (7): has_suit/color, count_suit/color, n_unique_suits/ranks/colors
+    - Aggregates (3): sum_ranks, max_rank, min_rank
+    - Comparisons (5): eq, lt, le, gt, ge
+    - Boolean (4): and, or, not, if
+    - Higher-order (5): map, filter, all, any, unique
+    - Arithmetic (3): +, -, mod
     """
     prims = []
 
-    prims.extend(make_constants())       # 14 primitives (4 suits + 2 colors + 6 numbers + 2 bools)
-    prims.extend(make_card_accessors())  # 4 primitives
-    prims.extend(make_position_ops())    # 5 primitives
-    prims.extend(make_list_slicing())    # 7 primitives (take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half)
-    prims.extend(make_direct_queries())  # 9 primitives (NEW)
-    prims.extend(make_aggregates())      # 3 primitives (NEW)
-    prims.extend(make_comparisons())     # 5 primitives (eq, lt, le, gt, ge - neq removed)
-    prims.extend(make_boolean_ops())     # 4 primitives
-    prims.extend(make_higher_order())    # 5 primitives (reduced)
-    prims.extend(make_arithmetic())      # 3 primitives (reduced)
+    prims.extend(make_constants())       # 14: 4 suits + 2 colors + 6 numbers (0-5) + 2 bools
+    prims.extend(make_card_accessors())  # 4: get_suit, get_rank, rank_val, get_color
+    prims.extend(make_position_ops())    # 5: head, last, at, length, reverse
+    prims.extend(make_list_slicing())    # 7: take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half
+    prims.extend(make_direct_queries())  # 7: has_suit/color, count_suit/color, n_unique_suits/ranks/colors
+    prims.extend(make_aggregates())      # 3: sum_ranks, max_rank, min_rank
+    prims.extend(make_comparisons())     # 5: eq, lt, le, gt, ge
+    prims.extend(make_boolean_ops())     # 4: and, or, not, if
+    prims.extend(make_higher_order())    # 5: map, filter, all, any, unique
+    prims.extend(make_arithmetic())      # 3: +, -, mod
+    # TOTAL: 57 primitives
 
     return prims
 
