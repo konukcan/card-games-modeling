@@ -1,0 +1,462 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{dsl}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codepurple},
+    numberstyle=\tiny\color{codegray},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Card Games Modelling}
+\lhead{Primitive Library Design Rationale}
+\rfoot{Page \thepage}
+
+\title{\textbf{Primitive Library Design Rationale}\\[0.5em]\large Card Games Rule Induction Project}
+\author{}
+\date{January 2025}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction: The Design Problem}
+
+\subsection{The Task}
+
+Our goal is to build a domain-specific language (DSL) for expressing card game rules as predicates of type \texttt{Hand $\to$ Bool}, where a \texttt{Hand} is a list of \texttt{Card} objects. This DSL serves a program induction task: given examples of winning and losing hands, the system must synthesize a program that correctly classifies them.
+
+The design of this primitive library must negotiate between two competing imperatives.
+
+\subsection{Imperative I: Domain Generality}
+
+The first pull is toward \emph{domain generality}---building a library of primitives so fundamental that they could, in principle, apply to list-processing domains far beyond card games. This approach favors the most abstract, compositional operators possible.
+
+The canonical example is DreamCoder \cite{ellis2021dreamcoder}, whose base library for list manipulation consists of:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Primitive} & \textbf{Type} \\
+\midrule
+\texttt{cons} & $a \to [a] \to [a]$ \\
+\texttt{car} (head) & $[a] \to a$ \\
+\texttt{cdr} (tail) & $[a] \to [a]$ \\
+\texttt{empty} & $[a]$ \\
+\texttt{empty?} & $[a] \to \text{Bool}$ \\
+\texttt{fold} & $(a \to b \to b) \to b \to [a] \to b$ \\
+\texttt{map} & $(a \to b) \to [a] \to [b]$ \\
+\texttt{if} & $\text{Bool} \to a \to a \to a$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+From this minimal basis, all other list operations---\texttt{filter}, \texttt{length}, \texttt{reverse}, \texttt{any}, \texttt{all}, \texttt{sum}, \texttt{max}, and so on---can be derived by composition. The elegance is undeniable: a handful of primitives generates an entire universe of list computations.
+
+\subsection{Imperative II: Cognitive Naturalness}
+
+The second pull is toward \emph{cognitive naturalness}---ensuring that the primitives align with how humans actually conceptualize card game rules. This matters for two reasons:
+
+\begin{enumerate}
+    \item \textbf{Search tractability.} Our synthesis engine enumerates programs by depth. If a natural rule requires depth 7 in a minimal library but depth 2 with convenience primitives, the search time difference is exponential.
+    
+    \item \textbf{Interpretability and transfer.} We want the induced programs to be legible and to support transfer learning. Programs composed of cognitively natural units are easier to interpret and more likely to share substructure with related rules.
+\end{enumerate}
+
+Consider the rule ``the sum of ranks exceeds 21'' (as in Blackjack). In DreamCoder's minimal library, this requires something like:
+
+\begin{lstlisting}[style=dsl]
+gt (fold (λc acc. + (rank_val c) acc) 0 hand) 21
+\end{lstlisting}
+
+\noindent But humans describe this rule as ``the total is over 21''---a single conceptual unit. With a dedicated \texttt{sum\_ranks} primitive, the program becomes:
+
+\begin{lstlisting}[style=dsl]
+gt (sum_ranks hand) 21
+\end{lstlisting}
+
+\noindent The depth reduction from $\sim$7 to $\sim$2 translates directly to orders-of-magnitude speedups in enumeration-based synthesis.
+
+\subsection{The Chicken-and-Egg Problem}
+
+These two imperatives create a methodological tension. To know which convenience primitives are worth including, we need some notion of the rules we intend to cover. But part of the point of building this library is to have a principled criterion for selecting rules---specifically, rules where we expect interesting transfer effects and where explicit reasoning can leverage compositional structure.
+
+We address this circularity through an empirical bootstrapping process:
+
+\begin{enumerate}
+    \item \textbf{Start with a garden-variety rule catalogue.} We compiled two rule sets: (a) 44 ``pre-training'' rules inspired by familiar card games (Poker, Blackjack, Rummy, Solitaire), and (b) 45 ``experimental'' rules spanning a range from simple positional checks to exotic structural patterns (palindromes, bracket matching, arithmetic progressions).
+    
+    \item \textbf{Analyze compositional structure.} For each rule, we wrote out its logical form in terms of candidate primitives, identifying recurring patterns and bottlenecks.
+    
+    \item \textbf{Iterate on the library.} Where a natural rule required excessive composition depth, we considered adding a convenience primitive. Where primitives were rarely used or easily derived, we considered removing them.
+\end{enumerate}
+
+The result is a library that balances generality with tractability---not minimal in the theoretical sense, but optimized for the empirical distribution of rules we care about.
+
+%==============================================================================
+\section{The List Processing Core}
+%==============================================================================
+
+In building this library, we start with the fact that our card hands are list objects. The goal of the task is to find a function of type \texttt{Hand $\to$ Bool}, where \texttt{Hand} is a list. As a result, our language must have list primitives capable of extracting patterns from lists in general.
+
+\subsection{The Minimal Basis We Did Not Choose}
+
+From a theoretical standpoint, list operations can be reduced to a minimal set of five primitives: \texttt{nil} (empty list), \texttt{cons} (prepend), \texttt{head} (first element), \texttt{tail} (rest of list), and \texttt{null?} (emptiness test). Combined with recursion, these generate all list operations. More powerfully, a single operation---\texttt{fold}---serves as the universal list eliminator, from which \texttt{map}, \texttt{filter}, \texttt{any}, \texttt{all}, \texttt{length}, \texttt{sum}, \texttt{max}, and virtually every other list-consuming function can be derived.
+
+We deliberately rejected this minimal approach for the reasons outlined above. Consider concrete examples from our rule catalogue:
+
+\medskip
+\noindent\textbf{Example: Flush (all same suit).} The rule \texttt{poker\_flush} checks whether all cards share a suit. In our library:
+\begin{lstlisting}[style=dsl]
+eq 1 (length (unique (map get_suit hand)))
+\end{lstlisting}
+With only \texttt{fold}, this becomes:
+\begin{lstlisting}[style=dsl]
+eq 1 (length (fold (λc acc. if (member (get_suit c) acc) 
+                               acc 
+                               (cons (get_suit c) acc)) 
+                   [] hand))
+\end{lstlisting}
+The depth explosion is evident.
+
+\medskip
+\noindent\textbf{Example: Sorted by rank.} The rule \texttt{Sorted\_by\_rank} (r1x) checks non-decreasing order:
+\begin{lstlisting}[style=dsl]
+all (λp. le (rank_val (fst p)) (rank_val (snd p))) (adjacent_pairs hand)
+\end{lstlisting}
+Without \texttt{adjacent\_pairs} as a primitive, constructing pairs requires \texttt{zip\_with} applied to the list and its tail---adding several layers of composition.
+
+\subsection{Our List Primitives}
+
+We include the following list operations, organized by function:
+
+\subsubsection{Positional Access}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Purpose and Example Rules} \\
+\midrule
+\texttt{head} & $[a] \to a$ & First element. Used in \texttt{simple\_first\_red}: ``the first card is red'' $\to$ \texttt{eq RED (get\_color (head hand))} \\
+\texttt{last} & $[a] \to a$ & Final element. Used in \texttt{simple\_last\_black}: ``the last card is black'' $\to$ \texttt{eq BLACK (get\_color (last hand))} \\
+\texttt{at} & $\text{Int} \to [a] \to a$ & Index access. Used in \texttt{comp\_first\_two\_same\_suit}: \texttt{eq (get\_suit (at hand 0)) (get\_suit (at hand 1))} \\
+\texttt{length} & $[a] \to \text{Int}$ & Size. Used in counting rules and as denominator in ``majority'' predicates. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Slicing and Restructuring}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Purpose and Example Rules} \\
+\midrule
+\texttt{take} & $\text{Int} \to [a] \to [a]$ & First $n$ elements. Used in half-based rules: \texttt{take (half\_len hand) hand} \\
+\texttt{drop} & $\text{Int} \to [a] \to [a]$ & Skip first $n$. Used for right-half access and shifted pairs. \\
+\texttt{reverse} & $[a] \to [a]$ & Reverse order. Essential for palindrome rules like \texttt{Suits\_palindrome}: \texttt{eq (map get\_suit hand) (reverse (map get\_suit hand))} \\
+\texttt{zip\_with} & $(a \to b \to c) \to [a] \to [b] \to [c]$ & Parallel combination. Used to construct adjacent pairs and shifted pairs for relational patterns. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Higher-Order Operations}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Purpose and Example Rules} \\
+\midrule
+\texttt{map} & $(a \to b) \to [a] \to [b]$ & Transform each element. Ubiquitous: \texttt{map get\_suit hand}, \texttt{map rank\_val hand}. \\
+\texttt{filter} & $(a \to \text{Bool}) \to [a] \to [a]$ & Select matching elements. Used in \texttt{count\_two\_red}: \texttt{eq 2 (length (filter (λc. eq RED (get\_color c)) hand))} \\
+\texttt{any} & $(a \to \text{Bool}) \to [a] \to \text{Bool}$ & Existential quantification. Used in \texttt{simple\_has\_spade}: \texttt{any (λc. eq SPADES (get\_suit c)) hand} \\
+\texttt{all} & $(a \to \text{Bool}) \to [a] \to \text{Bool}$ & Universal quantification. Used in \texttt{sol\_ascending}: \texttt{all (λp. lt (rank\_val (fst p)) (rank\_val (snd p))) (pairs hand)} \\
+\texttt{unique} & $[a] \to [a]$ & Remove duplicates. Essential for counting distinct values: \texttt{length (unique (map get\_suit hand))} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsubsection{Aggregation (In Lieu of Fold)}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Purpose and Example Rules} \\
+\midrule
+\texttt{sum\_ranks} & $\text{Hand} \to \text{Int}$ & Total of rank values. Would be \texttt{fold (+) 0 (map rank\_val hand)}. Used in \texttt{bj\_sum\_even}: \texttt{eq 0 (mod (sum\_ranks hand) 2)} \\
+\texttt{max\_rank} & $\text{Hand} \to \text{Int}$ & Highest rank. Would require fold with conditional. \\
+\texttt{min\_rank} & $\text{Hand} \to \text{Int}$ & Lowest rank. Symmetric to \texttt{max\_rank}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These aggregates would be derivable from \texttt{fold}, but we include them as primitives because they appear frequently in real card games and their explicit inclusion dramatically reduces search depth.
+
+The cost of omitting \texttt{fold}: if a rule needs an unusual aggregation (say, ``product of ranks mod 7''), we would need to add a new primitive rather than expressing it compositionally. In practice, our rule catalogue does not require such exotic aggregations.
+
+%==============================================================================
+\section{Derived Operations Included for Cognitive Naturalness}
+%==============================================================================
+
+Beyond the core list machinery, we include several operations that are technically derivable from other primitives but which correspond to natural units of thought in how humans reason about card games.
+
+\subsection{Structural Conveniences}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{6cm}}
+\toprule
+\textbf{Primitive} & \textbf{Derivation} & \textbf{Cognitive Motivation} \\
+\midrule
+\texttt{last} & \texttt{head (reverse xs)} or \texttt{at (length xs - 1) xs} & ``The last card'' is a natural referent; nobody thinks ``head of the reversal.'' Used in rules like \texttt{Ends\_same\_suit} (r44x). \\
+\texttt{first\_half} & \texttt{take (half\_len xs) xs} & Many games involve comparing halves. Used in \texttt{Halves\_copy\_suits} (r21x): ``left suits match right suits.'' \\
+\texttt{second\_half} & \texttt{drop (half\_len xs) xs} & Symmetric to \texttt{first\_half}. \\
+\texttt{half\_len} & \texttt{div (length xs) 2} & Supporting primitive for half-based patterns. \\
+\texttt{adjacent\_pairs} & \texttt{zip\_with pair xs (drop 1 xs)} & Rules about consecutive cards are pervasive: \texttt{sol\_alternating} (``colors alternate''), \texttt{Adj\_same\_rank\_or\_suit} (r38x). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Games frequently reference structural positions directly: ``split the deck,'' ``the last card played,'' ``each consecutive pair must differ by one.'' Including these as primitives respects the grain of human card-game discourse.
+
+\subsection{The Color Abstraction}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{6cm}}
+\toprule
+\textbf{Primitive} & \textbf{Derivation} & \textbf{Cognitive Motivation} \\
+\midrule
+\texttt{get\_color} & \texttt{if (or (eq s HEARTS) (eq s DIAMONDS)) RED BLACK} where \texttt{s = get\_suit card} & Color is phenomenologically primary, not derived. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Technically, color is a function of suit---red for hearts/diamonds, black for clubs/spades. But cognitively, color is often perceived as a primitive attribute. People say ``alternate red and black'' without decomposing this into suit logic. Rules like \texttt{Uniform\_color} (r3x: ``all cards are the same color'') and \texttt{sol\_alternating} (``colors alternate throughout'') are stated in terms of color directly.
+
+The same logic motivates the alternative color groupings \texttt{get\_altcolor1} (Pointy: $\spadesuit\diamondsuit$ vs.\ Round: $\heartsuit\clubsuit$) and \texttt{get\_altcolor2} (SH: $\spadesuit\heartsuit$ vs.\ DC: $\diamondsuit\clubsuit$) used in rules like \texttt{AltColor1\_palindrome} (r27x).
+
+\subsection{Direct Query Primitives}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{5.5cm}}
+\toprule
+\textbf{Primitive} & \textbf{Derivation} & \textbf{Example Rule} \\
+\midrule
+\texttt{has\_suit} & \texttt{any (λc. eq (get\_suit c) s) hand} & \texttt{simple\_has\_spade}: ``hand contains at least one spade'' \\
+\texttt{has\_color} & \texttt{any (λc. eq (get\_color c) c) hand} & ``Is there a red card?'' \\
+\texttt{count\_suit} & \texttt{length (filter (λc. eq (get\_suit c) s) hand)} & \texttt{Exactly\_one\_club} (r43x): ``exactly one $\clubsuit$'' \\
+\texttt{count\_color} & \texttt{length (filter ...)} & \texttt{count\_two\_red}: ``exactly 2 red cards'' \\
+\texttt{n\_unique\_suits} & \texttt{length (unique (map get\_suit hand))} & \texttt{poker\_flush}: ``all same suit'' $\equiv$ unique suits $= 1$ \\
+\texttt{n\_unique\_ranks} & \texttt{length (unique (map get\_rank hand))} & \texttt{poker\_has\_pair}: unique ranks $<$ length implies a pair \\
+\texttt{n\_unique\_colors} & \texttt{length (unique (map get\_color hand))} & \texttt{poker\_same\_color}: unique colors $= 1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These are all one-liners in terms of more basic operations, but they correspond to questions players naturally ask. ``Do I have any spades?'' is a single cognitive unit, not a quantified predicate over suit-equality. Including these as primitives compresses common queries into single tokens, both accelerating search and aligning the DSL with human conceptualization.
+
+\subsection{Comparison Conveniences}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{6cm}}
+\toprule
+\textbf{Primitive} & \textbf{Derivation} & \textbf{Cognitive Motivation} \\
+\midrule
+\texttt{all} & \texttt{not $\circ$ any $\circ$ (not $\circ$ p)} & ``All cards satisfy P'' is as natural as ``some card satisfies P.'' Used pervasively. \\
+\texttt{le} & \texttt{or (lt x y) (eq x y)} & ``At most'' is common in threshold rules. \\
+\texttt{gt} & \texttt{lt y x} & ``Greater than'' is symmetric to ``less than.'' \\
+\texttt{ge} & \texttt{not (lt x y)} & ``At least'' appears in minimum-threshold rules like \texttt{count\_three\_suit}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+While \texttt{any} and \texttt{lt} suffice in principle, the derived comparisons and quantifiers map directly to English phrasing (``at least 3,'' ``all cards,'' ``greater than 10'') and are included to preserve this alignment.
+
+%==============================================================================
+\section{Card-Specific Primitives}
+%==============================================================================
+
+Beyond list operations, we need primitives for accessing card attributes.
+
+\subsection{Record Accessors}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Status} \\
+\midrule
+\texttt{get\_suit} & $\text{Card} \to \text{Suit}$ & \textbf{Primitive.} Extracts suit ($\clubsuit, \diamondsuit, \heartsuit, \spadesuit$). \\
+\texttt{get\_rank} & $\text{Card} \to \text{Rank}$ & \textbf{Primitive.} Extracts rank (2--A). \\
+\texttt{rank\_val} & $\text{Card} \to \text{Int}$ & \textbf{Primitive.} Numeric value (2--14). \\
+\texttt{get\_color} & $\text{Card} \to \text{Color}$ & \textbf{Derived} (from suit), but included for cognitive naturalness. \\
+\texttt{get\_parity} & $\text{Card} \to \text{Parity}$ & \textbf{Derived} (from rank\_val mod 2). Used in \texttt{Uniform\_rank\_parity} (r48x). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Constants}
+
+We include a minimal set of constants:
+
+\begin{itemize}
+    \item \textbf{Suits:} \texttt{CLUBS}, \texttt{DIAMONDS}, \texttt{HEARTS}, \texttt{SPADES}
+    \item \textbf{Colors:} \texttt{RED}, \texttt{BLACK}
+    \item \textbf{Integers:} 0--5 only (for counting; no arbitrary thresholds like 21)
+    \item \textbf{Booleans:} \texttt{true}, \texttt{false}
+\end{itemize}
+
+Notably, we exclude rank constants (e.g., 11 for Jack, 14 for Ace). This was a deliberate design decision: rules like ``has a face card'' or ``sum exceeds 21'' require arbitrary numeric thresholds that don't transfer well across rule families. By restricting to small counting constants, we force the library toward structural patterns rather than domain-specific magic numbers.
+
+%==============================================================================
+\section{Boolean and Arithmetic Operations}
+%==============================================================================
+
+\subsection{Boolean Logic}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Status} \\
+\midrule
+\texttt{and} & $\text{Bool} \to \text{Bool} \to \text{Bool}$ & \textbf{Primitive.} Logical conjunction. \\
+\texttt{or} & $\text{Bool} \to \text{Bool} \to \text{Bool}$ & \textbf{Primitive.} Logical disjunction. \\
+\texttt{not} & $\text{Bool} \to \text{Bool}$ & \textbf{Primitive.} Logical negation. \\
+\texttt{if} & $\text{Bool} \to a \to a \to a$ & \textbf{Primitive.} Conditional. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These form a complete basis for propositional logic.
+
+\subsection{Comparisons}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Status} \\
+\midrule
+\texttt{eq} & $a \to a \to \text{Bool}$ & \textbf{Primitive.} Polymorphic equality. \\
+\texttt{lt} & $\text{Int} \to \text{Int} \to \text{Bool}$ & \textbf{Primitive.} Strict less-than. \\
+\texttt{le}, \texttt{gt}, \texttt{ge} & $\text{Int} \to \text{Int} \to \text{Bool}$ & \textbf{Derived} from \texttt{lt}, \texttt{eq}, \texttt{not}. Included for naturalness. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Arithmetic}
+
+\begin{center}
+\begin{tabular}{llp{7cm}}
+\toprule
+\textbf{Primitive} & \textbf{Type} & \textbf{Status} \\
+\midrule
+\texttt{+} & $\text{Int} \to \text{Int} \to \text{Int}$ & \textbf{Primitive.} Addition. \\
+\texttt{-} & $\text{Int} \to \text{Int} \to \text{Int}$ & \textbf{Primitive.} Subtraction. \\
+\texttt{mod} & $\text{Int} \to \text{Int} \to \text{Int}$ & \textbf{Primitive.} Modulo. Used for parity: \texttt{eq 0 (mod (sum\_ranks hand) 2)} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%==============================================================================
+\section{Expressiveness and Limitations}
+%==============================================================================
+
+\subsection{What the DSL Can Express}
+
+Our library supports:
+
+\begin{itemize}
+    \item \textbf{Regular patterns:} ``All hearts,'' ``alternating colors,'' ``first card is red.''
+    \item \textbf{Bounded counting:} ``Exactly 3 hearts,'' ``more red than black,'' ``at least half same suit.''
+    \item \textbf{Linear scans with bounded memory:} ``Sorted by rank,'' ``all adjacent pairs satisfy R.''
+    \item \textbf{Parallel structure comparison:} ``Halves have same suit sequence,'' ``palindromic colors.''
+    \item \textbf{Arithmetic progressions:} ``Contains a 3-term rank pattern with equal steps.''
+\end{itemize}
+
+\subsection{What the DSL Cannot Express}
+
+\begin{itemize}
+    \item \textbf{Pushdown patterns:} Bracket matching (e.g., \texttt{Well\_formed\_brackets\_by\_suit}, r15x) requires stack semantics. We include this as a specialized primitive rather than deriving it.
+    \item \textbf{Unbounded recursion:} No Turing-complete computation.
+    \item \textbf{Variable cross-element dependencies:} ``Card $i$ relates to card $i+k$'' for variable $k$ is limited.
+\end{itemize}
+
+\subsection{The Fold Trade-off}
+
+The absence of \texttt{fold} is the most significant expressiveness limitation. With \texttt{fold}, arbitrary reductions become expressible:
+
+\begin{lstlisting}[style=dsl]
+-- Product of ranks
+fold (*) 1 (map rank_val hand)
+
+-- Running maximum
+fold (λc acc. if (gt (rank_val c) acc) (rank_val c) acc) 0 hand
+
+-- Custom aggregation
+fold (λc acc. if (condition c) (f acc) acc) init hand
+\end{lstlisting}
+
+Without \texttt{fold}, we must pre-specify which aggregations to support (\texttt{sum\_ranks}, \texttt{max\_rank}, \texttt{min\_rank}). This is a deliberate trade-off: we sacrifice expressiveness for search tractability, betting that our pre-specified aggregations cover the empirically relevant rules.
+
+%==============================================================================
+\section{Summary: The Final Library}
+%==============================================================================
+
+Our library contains 59 base primitives organized as follows:
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+\textbf{Category} & \textbf{Count} \\
+\midrule
+Constants (suits, colors, integers, booleans) & 14 \\
+Card accessors & 4 \\
+Positional access & 5 \\
+List slicing & 7 \\
+Direct queries & 7 \\
+Aggregates & 3 \\
+Comparisons & 5 \\
+Boolean operations & 4 \\
+Higher-order functions & 5 \\
+Arithmetic & 3 \\
+\midrule
+\textbf{Total} & 59 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Of these, roughly 27 are ``truly primitive'' in the sense of being irreducible, while the remaining 32 are derived but included for cognitive naturalness and search efficiency.
+
+The guiding principle throughout has been: \emph{optimize for the empirical distribution of rules we care about, not for theoretical minimality}. The result is a library that makes natural rules easy to express while remaining general enough to support transfer learning across rule families.
+
+\begin{thebibliography}{9}
+\bibitem{ellis2021dreamcoder}
+Ellis, K., Wong, C., Nye, M., Sablé-Meyer, M., Morales, L., Hewitt, L., ... \& Tenenbaum, J. B. (2021). DreamCoder: Bootstrapping inductive program synthesis with wake-sleep library learning. \textit{PLDI 2021}.
+\end{thebibliography}
+
+\end{document}
