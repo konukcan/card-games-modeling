@@ -38,6 +38,7 @@ env/
 
 # Results - ALL results directories (regeneratable)
 results/
+results_archive/
 src/results/
 src/results_*/
 !data/sample_results/
@@ -68,6 +69,7 @@ htmlcov/
 docs/_build/
 docs/_static/
 docs/_templates/
+docs/generated/
 
 # Logs
 *.log

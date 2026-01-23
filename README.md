@@ -56,16 +56,15 @@ This implementation follows the architecture of [Ellis et al. (2023)](https://do
 ### Installation
 
 ```bash
-git clone https://github.com/[your-username]/card-games-modelling.git
-cd card-games-modelling
+git clone https://github.com/konukcan/card-games-modeling.git
+cd card-games-modeling
 pip install -r requirements.txt
 ```
 
 ### Run a Quick Demo
 
 ```bash
-cd src
-python ../examples/main_demo.py
+python examples/main_demo.py
 ```
 
 This runs a small demo showing rule loading, task generation, and visualization.
@@ -180,22 +179,23 @@ An MLP maps the 32-dim task vector to probabilities over 57 primitives:
 
 These probabilities guide program search by biasing toward likely-useful primitives.
 
-### Data Flow
+### Research Pipeline
 
 ```
-Behavioral Experiment (card-games/)
-           │
-           ▼
-   Participant responses (.csv)
-           │
-           ▼
-   Model fitting (this repo)
-           │
-           ▼
-   Predicted learning curves
-           │
-           ▼
-   Compare to human data
+This Repository                    Behavioral Experiment
+(Computational Model)              (card-games/)
+        │                                  │
+        ▼                                  ▼
+  Train on rule tasks              Collect human data
+        │                                  │
+        ▼                                  ▼
+  Predict difficulty,              Learning curves,
+  learning curves                  transfer patterns
+        │                                  │
+        └──────────────┬───────────────────┘
+                       ▼
+              Compare predictions
+              to human behavior
 ```
 
 ---
@@ -261,10 +261,10 @@ card-games-modelling/
 ├── data/                             # Input data and samples
 │   └── sample_results/               # Example outputs for testing
 │
-├── results/                          # Experiment outputs (gitignored)
-├── CLAUDE.md                         # AI coding agent guidelines
 ├── requirements.txt                  # Python dependencies
 └── README.md                         # This file
+
+# Note: results/ is gitignored (experiment outputs saved locally only)
 ```
 
 ---
@@ -451,15 +451,14 @@ tail -f overnight.out
 
 ### Quick Validation Run
 
-Before overnight runs, validate with small budgets:
+Before overnight runs, validate with a quick test:
 
 ```bash
 cd src
-python -c "
-from experiments.run_overnight_wakesleep_study import run_study
-run_study(n_iterations=2, budget=5000, timeout=60)  # Quick test
-"
+python3 experiments/run_reference_wakesleep.py --quick --verbose 3
 ```
+
+This runs 2 iterations with reduced budgets (~10-15 minutes).
 
 ---
 
@@ -517,7 +516,7 @@ config = {
 Each experiment creates a timestamped directory:
 
 ```
-results_overnight_wakesleep/study_20260102_225624/
+results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/
 ├── experiment_config.json       # Run configuration
 ├── final_result.json            # Summary metrics
 ├── report.html                  # Visual HTML report
@@ -540,10 +539,10 @@ results_overnight_wakesleep/study_20260102_225624/
 
 ```bash
 # Generate HTML report for a completed run
-python generate_systematic_report.py --run-dir results_overnight_wakesleep/study_20260102_225624/
+python generate_systematic_report.py --run-dir results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/
 
 # View in browser
-open results_overnight_wakesleep/study_20260102_225624/report.html
+open results_overnight_wakesleep/study_YYYYMMDD_HHMMSS/report.html
 ```
 
 ### Key Metrics to Monitor

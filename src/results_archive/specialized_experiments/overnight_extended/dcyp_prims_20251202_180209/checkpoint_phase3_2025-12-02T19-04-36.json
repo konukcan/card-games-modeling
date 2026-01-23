@@ -1,8 +1,0 @@
-{
-  "phase": "phase3",
-  "global_iteration": 12,
-  "tasks_solved": 5,
-  "grammar_size": 131,
-  "timestamp": "2025-12-02T19-04-36",
-  "cython_enabled": false
-}
