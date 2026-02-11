@@ -349,7 +349,7 @@ DreamCoder induced: halves (17 uses), hasAP (9 uses), seqPalindrome (5 uses)
 
 - **Primitives**: `src/rules/primitives.py` (Python)
 - **Catalogue**: `src/rules/catalogue.py` (45 core rules)
-- **Grammar Analysis**: `compositional_grammar_analysis/compositional_rule_grammar.tex`
+- **Library Design**: `src/docs/library-explanations.tex` and `src/docs/primitive_library_design.md`
 - **Recognition Network**: `dreamcoder_modeling/dreamcoder_demo.py` (working!)
 
 ## Next Steps

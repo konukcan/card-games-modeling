@@ -56,8 +56,8 @@ This implementation follows the architecture of [Ellis et al. (2023)](https://do
 ### Installation
 
 ```bash
-git clone https://github.com/konukcan/card-games-modeling.git
-cd card-games-modeling
+git clone https://github.com/konukcan/card-games-modelling.git
+cd card-games-modelling
 pip install -r requirements.txt
 ```
 
@@ -619,6 +619,38 @@ The companion experiment is at: [card-games](https://github.com/konukcan/card-ga
 2. **What predicts rule difficulty?** (program length, search depth)
 3. **How does library learning improve efficiency?**
 4. **Which primitives are cognitively natural?**
+
+---
+
+## Key Results
+
+*Results from reference wake-sleep experiments (to be updated with latest run):*
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Tasks solved | _/45 | After N wake-sleep iterations |
+| Recognition accuracy | _% | On held-out tasks |
+| Library growth | _ primitives | Through MDL-based compression |
+| Enumeration speedup | 1000x+ | Via memoized enumeration (see docs/KNOWN_ISSUES.md) |
+
+**To reproduce:**
+```bash
+cd src
+
+# Quick validation (~15 minutes)
+python3 experiments/run_reference_wakesleep.py --quick --verbose 3
+
+# Full overnight run (6-10 hours, produces comprehensive metrics)
+nohup caffeinate -d -i -s python3 experiments/run_reference_wakesleep.py > overnight.out 2>&1 &
+```
+
+---
+
+## Future Directions
+
+- **Language-guided program synthesis**: The core next step is integrating natural language into the synthesis loop — using verbal descriptions (from humans or LLMs) to bias program search toward likely primitives. This directly models self-explanation: just as LAPS-style systems (Wong et al., 2021) use language to constrain program search, human self-explanations may serve as a natural-language prior over the hypothesis space. The recognition model already predicts primitives from examples; adding a language channel would let it also learn from *what the learner says about the rule*.
+- **Transfer prediction**: Use shared library components to predict which rule pairs should show positive transfer, then validate against behavioral data from the card-games experiment.
+- **Dream phase**: Generate synthetic training tasks from learned library components (DreamCoder's dream phase), enabling the model to practice on self-generated problems between wake-sleep iterations.
 
 ---
 
