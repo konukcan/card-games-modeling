@@ -1,0 +1,112 @@
+id,family,base_rate,base_rate_pct,base_rate_se,template,description
+Halves_both_has_pair_ranks,HALVES_PROPERTY,0.03006,3.01,0.000764,λh. has_pair_ranks(L(h)) ∧ has_pair_ranks(R(h)),Both halves satisfy has_pair_ranks
+adj_alt_color,ADJACENT,0.03368,3.37,0.000807,"λh. ∀i. alt_color(h[i], h[i+1])",Every pair at offset 1 satisfies alt_color
+Palindrome_mod3,PALINDROME,0.0337,3.37,0.000807,"λh. map(mod3, h) = reverse(map(mod3, h))",The sequence of mod3 values is a palindrome
+Halves_copy_mod3,HALVES_COPY,0.03486,3.49,0.00082,"λh. map(mod3, L(h)) = map(mod3, R(h))",Right half copies left half in mod3
+adj_same_rank_or_color,ADJACENT,0.03524,3.52,0.000825,"λh. ∀i. same_rank_or_color(h[i], h[i+1])",Every pair at offset 1 satisfies same_rank_or_color
+Halves_both_is_sorted_asc,HALVES_PROPERTY,0.0384,3.84,0.000859,λh. is_sorted_asc(L(h)) ∧ is_sorted_asc(R(h)),Both halves satisfy is_sorted_asc
+rank_range_le_5,GLOBAL,0.03848,3.85,0.00086,λh. max_rank(h) - min_rank(h) ≤ 5,Rank range (max - min) is at most 5
+skip2_rank_nondec,ADJACENT,0.04022,4.02,0.000879,"λh. ∀i. rank_nondec(h[i], h[i+2])",Every pair at offset 2 satisfies rank_nondec
+shift_2_rank_ge,SHIFT,0.0404,4.04,0.000881,"λh. ∀i. rank_ge(h[i], h[i+2])",At offset 2: rank_ge
+count_high_cards_eq_0,COUNT,0.04588,4.59,0.000936,λh. count(high_cards) eq 0,Number of high_cards is eq 0
+skip2_same_color,ADJACENT,0.05456,5.46,0.001016,"λh. ∀i. same_color(h[i], h[i+2])",Every pair at offset 2 satisfies same_color
+shift_2_same_color,SHIFT,0.05606,5.61,0.001029,"λh. ∀i. same_color(h[i], h[i+2])",At offset 2: same_color
+Ends_same_rank_val,ENDS,0.05664,5.66,0.001034,λh. rank_val(first(h)) = rank_val(last(h)),First and last cards have the same rank_val
+count_aces_eq_2,COUNT,0.05784,5.78,0.001044,λh. count(aces) eq 2,Number of aces is eq 2
+count_even_ranks_eq_1,COUNT,0.05788,5.79,0.001044,λh. count(even_ranks) eq 1,Number of even_ranks is eq 1
+Ends_same_rank,ENDS,0.0586,5.86,0.00105,λh. rank(first(h)) = rank(last(h)),First and last cards have the same rank
+count_aces_ge_2,COUNT,0.05902,5.9,0.001054,λh. count(aces) ge 2,Number of aces is ge 2
+skip2_same_parity,ADJACENT,0.05962,5.96,0.001059,"λh. ∀i. same_parity(h[i], h[i+2])",Every pair at offset 2 satisfies same_parity
+adj_rank_diff_le4,ADJACENT,0.06352,6.35,0.001091,"λh. ∀i. rank_diff_le4(h[i], h[i+1])",Every pair at offset 1 satisfies rank_diff_le4
+skip2_alt_color,ADJACENT,0.0663,6.63,0.001113,"λh. ∀i. alt_color(h[i], h[i+2])",Every pair at offset 2 satisfies alt_color
+unique_suits_eq_2,COUNT,0.06666,6.67,0.001115,λh. unique_suits(h) eq 2,Number of unique_suits is eq 2
+unique_suits_le_2,COUNT,0.06758,6.76,0.001123,λh. unique_suits(h) le 2,Number of unique_suits is le 2
+skip2_same_rank_or_color,ADJACENT,0.07582,7.58,0.001184,"λh. ∀i. same_rank_or_color(h[i], h[i+2])",Every pair at offset 2 satisfies same_rank_or_color
+Halves_same_set_suit,HALVES_COPY,0.07924,7.92,0.001208,"λh. set(map(suit, L(h))) = set(map(suit, R(h)))",Both halves contain the same set of suit values
+rank_range_le_6,GLOBAL,0.08942,8.94,0.001276,λh. max_rank(h) - min_rank(h) ≤ 6,Rank range (max - min) is at most 6
+sum_ranks_ge_60,GLOBAL,0.09756,9.76,0.001327,λh. sum_ranks(h) ≥ 60,Sum of rank values is at least 60
+shift_3_rank_gt,SHIFT,0.10328,10.33,0.001361,"λh. ∀i. rank_gt(h[i], h[i+3])",At offset 3: rank_gt
+shift_half_rank_gt,SHIFT,0.10378,10.38,0.001364,"λh. ∀i. rank_gt(h[i], h[i+half])",At offset half: rank_gt
+count_face_cards_eq_3,COUNT,0.10626,10.63,0.001378,λh. count(face_cards) eq 3,Number of face_cards is eq 3
+skip2_rank_diff_le4,ADJACENT,0.10728,10.73,0.001384,"λh. ∀i. rank_diff_le4(h[i], h[i+2])",Every pair at offset 2 satisfies rank_diff_le4
+count_odd_ranks_eq_1,COUNT,0.11538,11.54,0.001429,λh. count(odd_ranks) eq 1,Number of odd_ranks is eq 1
+Palindrome_color,PALINDROME,0.11758,11.76,0.001441,"λh. map(color, h) = reverse(map(color, h))",The sequence of color values is a palindrome
+Halves_copy_color,HALVES_COPY,0.11758,11.76,0.001441,"λh. map(color, L(h)) = map(color, R(h))",Right half copies left half in color
+shift_3_same_color,SHIFT,0.11766,11.77,0.001441,"λh. ∀i. same_color(h[i], h[i+3])",At offset 3: same_color
+shift_half_same_color,SHIFT,0.11982,11.98,0.001452,"λh. ∀i. same_color(h[i], h[i+half])",At offset half: same_color
+Palindrome_parity,PALINDROME,0.1203,12.03,0.001455,"λh. map(parity, h) = reverse(map(parity, h))",The sequence of parity values is a palindrome
+Halves_copy_parity,HALVES_COPY,0.12052,12.05,0.001456,"λh. map(parity, L(h)) = map(parity, R(h))",Right half copies left half in parity
+count_spades_eq_3,COUNT,0.12462,12.46,0.001477,λh. count(suit=spades) eq 3,Number of spades is eq 3
+count_hearts_eq_3,COUNT,0.12552,12.55,0.001482,λh. count(suit=hearts) eq 3,Number of hearts is eq 3
+count_clubs_eq_3,COUNT,0.1283,12.83,0.001496,λh. count(suit=clubs) eq 3,Number of clubs is eq 3
+count_diamonds_eq_3,COUNT,0.1296,12.96,0.001502,λh. count(suit=diamonds) eq 3,Number of diamonds is eq 3
+count_face_cards_ge_3,COUNT,0.13024,13.02,0.001505,λh. count(face_cards) ge 3,Number of face_cards is ge 3
+rank_pairs_eq_2,COUNT,0.13086,13.09,0.001508,λh. rank_pairs(h) eq 2,Number of rank pairs is eq 2
+rank_pairs_ge_2,COUNT,0.13522,13.52,0.001529,λh. rank_pairs(h) ge 2,Number of rank pairs is ge 2
+Palindrome_high,PALINDROME,0.13642,13.64,0.001535,"λh. map(high, h) = reverse(map(high, h))",The sequence of high values is a palindrome
+Halves_copy_high,HALVES_COPY,0.1374,13.74,0.00154,"λh. map(high, L(h)) = map(high, R(h))",Right half copies left half in high
+Halves_both_has_consec2,HALVES_PROPERTY,0.14034,14.03,0.001553,λh. has_consec2(L(h)) ∧ has_consec2(R(h)),Both halves satisfy has_consec2
+shift_3_rank_ge,SHIFT,0.14646,14.65,0.001581,"λh. ∀i. rank_ge(h[i], h[i+3])",At offset 3: rank_ge
+shift_half_rank_ge,SHIFT,0.14828,14.83,0.001589,"λh. ∀i. rank_ge(h[i], h[i+half])",At offset half: rank_ge
+count_clubs_ge_3,COUNT,0.15556,15.56,0.001621,λh. count(suit=clubs) ge 3,Number of clubs is ge 3
+count_hearts_ge_3,COUNT,0.15616,15.62,0.001623,λh. count(suit=hearts) ge 3,Number of hearts is ge 3
+count_hearts_le_0,COUNT,0.1573,15.73,0.001628,λh. count(suit=hearts) le 0,Number of hearts is le 0
+count_clubs_le_0,COUNT,0.15806,15.81,0.001631,λh. count(suit=clubs) le 0,Number of clubs is le 0
+count_spades_ge_3,COUNT,0.15808,15.81,0.001632,λh. count(suit=spades) ge 3,Number of spades is ge 3
+unique_ranks_eq_4,COUNT,0.1592,15.92,0.001636,λh. unique_ranks(h) eq 4,Number of unique_ranks is eq 4
+count_diamonds_eq_0,COUNT,0.1605,16.05,0.001642,λh. count(suit=diamonds) eq 0,Number of diamonds is eq 0
+count_spades_le_0,COUNT,0.16056,16.06,0.001642,λh. count(suit=spades) le 0,Number of spades is le 0
+count_spades_eq_0,COUNT,0.16066,16.07,0.001642,λh. count(suit=spades) eq 0,Number of spades is eq 0
+count_clubs_eq_0,COUNT,0.16092,16.09,0.001643,λh. count(suit=clubs) eq 0,Number of clubs is eq 0
+count_diamonds_ge_3,COUNT,0.16094,16.09,0.001643,λh. count(suit=diamonds) ge 3,Number of diamonds is ge 3
+count_hearts_eq_0,COUNT,0.16164,16.16,0.001646,λh. count(suit=hearts) eq 0,Number of hearts is eq 0
+count_diamonds_le_0,COUNT,0.1641,16.41,0.001656,λh. count(suit=diamonds) le 0,Number of diamonds is le 0
+all_but_one_same_color,GLOBAL,0.16756,16.76,0.00167,λh. all_but_one_same_color(h),All but at most one card share the same color
+unique_ranks_le_4,COUNT,0.1678,16.78,0.001671,λh. unique_ranks(h) le 4,Number of unique_ranks is le 4
+all_but_one_same_parity,GLOBAL,0.17428,17.43,0.001697,λh. all_but_one_same_parity(h),All but at most one card share the same parity
+count_face_cards_eq_0,COUNT,0.188,18.8,0.001747,λh. count(face_cards) eq 0,Number of face_cards is eq 0
+count_even_ranks_eq_2,COUNT,0.19792,19.79,0.001782,λh. count(even_ranks) eq 2,Number of even_ranks is eq 2
+count_high_cards_eq_1,COUNT,0.19888,19.89,0.001785,λh. count(high_cards) eq 1,Number of high_cards is eq 1
+Ends_same_suit,ENDS,0.23826,23.83,0.001905,λh. suit(first(h)) = suit(last(h)),First and last cards have the same suit
+Halves_copy_face,HALVES_COPY,0.25088,25.09,0.001939,"λh. map(face, L(h)) = map(face, R(h))",Right half copies left half in face
+Palindrome_face,PALINDROME,0.25132,25.13,0.00194,"λh. map(face, h) = reverse(map(face, h))",The sequence of face values is a palindrome
+adj_diff_suit,ADJACENT,0.25548,25.55,0.00195,"λh. ∀i. diff_suit(h[i], h[i+1])",Every pair at offset 1 satisfies diff_suit
+count_high_cards_eq_3,COUNT,0.2799,27.99,0.002008,λh. count(high_cards) eq 3,Number of high_cards is eq 3
+count_odd_ranks_eq_2,COUNT,0.2812,28.12,0.002011,λh. count(odd_ranks) eq 2,Number of odd_ranks is eq 2
+Halves_both_has_face,HALVES_PROPERTY,0.29246,29.25,0.002034,λh. has_face(L(h)) ∧ has_face(R(h)),Both halves satisfy has_face
+count_face_cards_eq_2,COUNT,0.29378,29.38,0.002037,λh. count(face_cards) eq 2,Number of face_cards is eq 2
+count_spades_eq_2,COUNT,0.3139,31.39,0.002075,λh. count(suit=spades) eq 2,Number of spades is eq 2
+count_hearts_eq_2,COUNT,0.31552,31.55,0.002078,λh. count(suit=hearts) eq 2,Number of hearts is eq 2
+count_diamonds_eq_2,COUNT,0.31632,31.63,0.00208,λh. count(suit=diamonds) eq 2,Number of diamonds is eq 2
+count_clubs_eq_2,COUNT,0.3183,31.83,0.002083,λh. count(suit=clubs) eq 2,Number of clubs is eq 2
+Ends_same_mod3,ENDS,0.32454,32.45,0.002094,λh. mod3(first(h)) = mod3(last(h)),First and last cards have the same mod3
+count_even_ranks_eq_3,COUNT,0.32738,32.74,0.002099,λh. count(even_ranks) eq 3,Number of even_ranks is eq 3
+count_odd_ranks_eq_3,COUNT,0.32874,32.87,0.002101,λh. count(odd_ranks) eq 3,Number of odd_ranks is eq 3
+Halves_both_has_spade,HALVES_PROPERTY,0.33274,33.27,0.002107,λh. has_spade(L(h)) ∧ has_spade(R(h)),Both halves satisfy has_spade
+skip2_diff_suit,ADJACENT,0.33396,33.4,0.002109,"λh. ∀i. diff_suit(h[i], h[i+2])",Every pair at offset 2 satisfies diff_suit
+Halves_both_has_heart,HALVES_PROPERTY,0.33468,33.47,0.00211,λh. has_heart(L(h)) ∧ has_heart(R(h)),Both halves satisfy has_heart
+count_aces_eq_1,COUNT,0.33698,33.7,0.002114,λh. count(aces) eq 1,Number of aces is eq 1
+count_high_cards_eq_2,COUNT,0.33956,33.96,0.002118,λh. count(high_cards) eq 2,Number of high_cards is eq 2
+rank_pairs_eq_0,COUNT,0.3464,34.64,0.002128,λh. rank_pairs(h) eq 0,Number of rank pairs is eq 0
+count_clubs_eq_1,COUNT,0.366,36.6,0.002154,λh. count(suit=clubs) eq 1,Number of clubs is eq 1
+count_diamonds_eq_1,COUNT,0.36746,36.75,0.002156,λh. count(suit=diamonds) eq 1,Number of diamonds is eq 1
+count_hearts_eq_1,COUNT,0.36844,36.84,0.002157,λh. count(suit=hearts) eq 1,Number of hearts is eq 1
+count_spades_eq_1,COUNT,0.3697,36.97,0.002159,λh. count(suit=spades) eq 1,Number of spades is eq 1
+count_face_cards_eq_1,COUNT,0.38786,38.79,0.002179,λh. count(face_cards) eq 1,Number of face_cards is eq 1
+count_aces_ge_1,COUNT,0.3961,39.61,0.002187,λh. count(aces) ge 1,Number of aces is ge 1
+count_high_cards_ge_3,COUNT,0.41848,41.85,0.002206,λh. count(high_cards) ge 3,Number of high_cards is ge 3
+unique_suits_ge_4,COUNT,0.42526,42.53,0.002211,λh. unique_suits(h) ge 4,Number of unique_suits is ge 4
+count_face_cards_ge_2,COUNT,0.4256,42.56,0.002211,λh. count(face_cards) ge 2,Number of face_cards is ge 2
+unique_suits_eq_4,COUNT,0.42594,42.59,0.002211,λh. unique_suits(h) eq 4,Number of unique_suits is eq 4
+sum_ranks_ge_50,GLOBAL,0.43738,43.74,0.002218,λh. sum_ranks(h) ≥ 50,Sum of rank values is at least 50
+count_spades_ge_2,COUNT,0.46956,46.96,0.002232,λh. count(suit=spades) ge 2,Number of spades is ge 2
+count_diamonds_ge_2,COUNT,0.4709,47.09,0.002232,λh. count(suit=diamonds) ge 2,Number of diamonds is ge 2
+count_hearts_ge_2,COUNT,0.47338,47.34,0.002233,λh. count(suit=hearts) ge 2,Number of hearts is ge 2
+count_clubs_ge_2,COUNT,0.474,47.4,0.002233,λh. count(suit=clubs) ge 2,Number of clubs is ge 2
+Halves_bicon_has_face,HALVES_PROPERTY,0.48464,48.46,0.002235,λh. has_face(L(h)) ↔ has_face(R(h)),"Both halves satisfy has_face, or neither does"
+Halves_bicon_has_diamond,HALVES_PROPERTY,0.48978,48.98,0.002236,λh. has_diamond(L(h)) ↔ has_diamond(R(h)),"Both halves satisfy has_diamond, or neither does"
+Ends_same_color,ENDS,0.49146,49.15,0.002236,λh. color(first(h)) = color(last(h)),First and last cards have the same color
+Halves_bicon_has_club,HALVES_PROPERTY,0.49374,49.37,0.002236,λh. has_club(L(h)) ↔ has_club(R(h)),"Both halves satisfy has_club, or neither does"
+Ends_same_parity,ENDS,0.49404,49.4,0.002236,λh. parity(first(h)) = parity(last(h)),First and last cards have the same parity
+Halves_bicon_has_heart,HALVES_PROPERTY,0.4951,49.51,0.002236,λh. has_heart(L(h)) ↔ has_heart(R(h)),"Both halves satisfy has_heart, or neither does"
+Halves_bicon_has_spade,HALVES_PROPERTY,0.49594,49.59,0.002236,λh. has_spade(L(h)) ↔ has_spade(R(h)),"Both halves satisfy has_spade, or neither does"

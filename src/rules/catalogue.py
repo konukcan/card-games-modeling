@@ -983,6 +983,235 @@ def create_all_rules() -> List[Rule]:
         level=2
     ))
 
+    # =========================================================================
+    # 8-FAMILY 16-RULE TRANSFER DESIGN (from experimental-methodology.tex)
+    # These rules were added in JS rules.js but not yet in Python catalogue.
+    # =========================================================================
+
+    # r58x: Halves face card equal — both halves have J/Q/K or neither does
+    def halves_face_card_equal(hand: Hand) -> bool:
+        n = len(hand)
+        k = n // 2
+        left_half = hand[:k]
+        right_half = hand[n - k:]
+        has_face_left = any_fn(lambda c: get_rank(c) in (Rank.JACK, Rank.QUEEN, Rank.KING), left_half)
+        has_face_right = any_fn(lambda c: get_rank(c) in (Rank.JACK, Rank.QUEEN, Rank.KING), right_half)
+        return has_face_left == has_face_right
+
+    rules.append(Rule(
+        id="Halves_face_card_equal",
+        token="r58x",
+        name="Both halves have a face card, or neither does",
+        predicate=halves_face_card_equal,
+        family="HIER",
+        description="Either both halves contain at least one face card (J/Q/K), or neither half has any.",
+        composition=C("eq", C("any", C("is_face"), C("left_half")), C("any", C("is_face"), C("right_half"))),
+        primitives_used=["halves", "any", "is_face", "eq"],
+        level=2
+    ))
+
+    # r60x: AP len3 step1 anywhere — 3 consecutive ranks anywhere
+    def ap_len3_step1_anywhere(hand: Hand) -> bool:
+        vals = set(get_rank_val(c) for c in hand)
+        for v in vals:
+            if (v + 1) in vals and (v + 2) in vals:
+                return True
+        return False
+
+    rules.append(Rule(
+        id="AP_len3_step1_anywhere",
+        token="r60x",
+        name="Three consecutive ranks (anywhere)",
+        predicate=ap_len3_step1_anywhere,
+        family="AP",
+        description="Somewhere in the hand, three cards have consecutive ranks like 5, 6, 7 or J, Q, K.",
+        composition=C("has_AP", length=3, step=1, aligned=False),
+        primitives_used=["has_AP", "get_rank_val"],
+        level=3
+    ))
+
+    # r61x: All but one same color
+    def all_but_one_same_color(hand: Hand) -> bool:
+        red = sum(1 for c in hand if get_color(c) == Color.RED)
+        black = len(hand) - red
+        return min(red, black) <= 1
+
+    rules.append(Rule(
+        id="All_but_one_same_color",
+        token="r61x",
+        name="All but one same color",
+        predicate=all_but_one_same_color,
+        family="GLOBAL",
+        description="All cards except at most one are the same color (all red or all black, with at most one exception).",
+        composition=C("le", C("min", C("count_color", color="RED"), C("count_color", color="BLACK")), value=1),
+        primitives_used=["count_color", "min", "le"],
+        level=1
+    ))
+
+    # r62x: Three or more same suit
+    def three_or_more_same_suit(hand: Hand) -> bool:
+        counts = {}
+        for c in hand:
+            s = get_suit(c)
+            counts[s] = counts.get(s, 0) + 1
+        return max(counts.values()) >= 3
+
+    rules.append(Rule(
+        id="Three_or_more_same_suit",
+        token="r62x",
+        name="At least 3 cards same suit",
+        predicate=three_or_more_same_suit,
+        family="GLOBAL",
+        description="At least 3 cards share the same suit (e.g., 3 hearts).",
+        composition=C("ge", C("max", C("count_per_suit")), value=3),
+        primitives_used=["count_per_suit", "max", "ge"],
+        level=1
+    ))
+
+    # r63x: Two pairs ranks
+    def two_pairs_ranks(hand: Hand) -> bool:
+        counts = {}
+        for c in hand:
+            r = get_rank(c)
+            counts[r] = counts.get(r, 0) + 1
+        pairs = sum(1 for v in counts.values() if v >= 2)
+        return pairs >= 2
+
+    rules.append(Rule(
+        id="Two_pairs_ranks",
+        token="r63x",
+        name="Two pairs (different ranks)",
+        predicate=two_pairs_ranks,
+        family="COUNT",
+        description="Two different ranks each appear at least twice (e.g., two 5s and two Kings).",
+        composition=C("ge", C("count_pairs", C("group_by_rank")), value=2),
+        primitives_used=["group_by_rank", "count_pairs", "ge"],
+        level=1
+    ))
+
+    # r64x: Two pairs suits
+    def two_pairs_suits(hand: Hand) -> bool:
+        counts = {}
+        for c in hand:
+            s = get_suit(c)
+            counts[s] = counts.get(s, 0) + 1
+        pairs = sum(1 for v in counts.values() if v >= 2)
+        return pairs >= 2
+
+    rules.append(Rule(
+        id="Two_pairs_suits",
+        token="r64x",
+        name="Two pairs (different suits)",
+        predicate=two_pairs_suits,
+        family="COUNT",
+        description="Two different suits each appear at least twice (e.g., 2+ hearts and 2+ spades).",
+        composition=C("ge", C("count_pairs", C("group_by_suit")), value=2),
+        primitives_used=["group_by_suit", "count_pairs", "ge"],
+        level=1
+    ))
+
+    # r65x: Halves uniform color equal (biconditional)
+    # NOTE: This is extensionally identical to r12x (same predicate, same behavior).
+    # In JS rules.js both r12x and r65x map to Halves_uniform_color_equal.
+    # We keep r65x as an alias with a distinct Python id for the 8-family design.
+    def halves_uniform_color_equal_v2(hand: Hand) -> bool:
+        n = len(hand)
+        k = n // 2
+        left_h = hand[:k]
+        right_h = hand[n - k:]
+        left_uni = len(set(get_color(c) for c in left_h)) <= 1
+        right_uni = len(set(get_color(c) for c in right_h)) <= 1
+        return left_uni == right_uni
+
+    rules.append(Rule(
+        id="Halves_uniform_color_equal_r65x",
+        token="r65x",
+        name="Both halves uniform color (or neither)",
+        predicate=halves_uniform_color_equal_v2,
+        family="HIER",
+        description="Either both halves are all one color, OR neither half is uniform. Mixed fails. (Alias of r12x for 8-family design.)",
+        composition=C("eq", C("uniform_color", C("left_half")), C("uniform_color", C("right_half"))),
+        primitives_used=["halves", "uniform_color", "eq"],
+        level=2
+    ))
+
+    # r66x: Halves majority suit equal (biconditional)
+    def halves_majority_suit_equal(hand: Hand) -> bool:
+        n = len(hand)
+        k = n // 2
+        left_h = hand[:k]
+        right_h = hand[n - k:]
+        def has_majority_suit(h):
+            counts = {}
+            for c in h:
+                s = get_suit(c)
+                counts[s] = counts.get(s, 0) + 1
+            return max(counts.values()) >= 2 if counts else False
+        return has_majority_suit(left_h) == has_majority_suit(right_h)
+
+    rules.append(Rule(
+        id="Halves_majority_suit_equal",
+        token="r66x",
+        name="Both halves have 2+ same suit (or neither)",
+        predicate=halves_majority_suit_equal,
+        family="HIER",
+        description="Either both halves have at least 2 cards of the same suit, OR neither does.",
+        composition=C("eq", C("has_pair_suit", C("left_half")), C("has_pair_suit", C("right_half"))),
+        primitives_used=["halves", "has_pair_suit", "eq"],
+        level=2
+    ))
+
+    # r67x: Halves both AP len3 step1 — both halves contain 3 consecutive ranks
+    def halves_both_ap_len3_step1(hand: Hand) -> bool:
+        n = len(hand)
+        k = n // 2
+        left_h = hand[:k]
+        right_h = hand[n - k:]
+        def has_consec3(h):
+            vals = set(get_rank_val(c) for c in h)
+            for v in vals:
+                if (v + 1) in vals and (v + 2) in vals:
+                    return True
+            return False
+        return has_consec3(left_h) and has_consec3(right_h)
+
+    rules.append(Rule(
+        id="Halves_both_AP_len3_step1",
+        token="r67x",
+        name="Both halves have 3 consecutive ranks",
+        predicate=halves_both_ap_len3_step1,
+        family="HIER",
+        description="Each half must contain three consecutive ranks (like 4, 5, 6).",
+        composition=C("and", C("has_AP", C("left_half"), length=3, step=1), C("has_AP", C("right_half"), length=3, step=1)),
+        primitives_used=["halves", "has_AP", "and", "get_rank_val"],
+        level=3
+    ))
+
+    # r68x: Halves both adj rank or suit — both halves satisfy adjacency constraint
+    def halves_both_adj_rank_or_suit(hand: Hand) -> bool:
+        n = len(hand)
+        k = n // 2
+        left_h = hand[:k]
+        right_h = hand[n - k:]
+        def satisfies_adj(h):
+            for i in range(len(h) - 1):
+                if not (get_rank(h[i]) == get_rank(h[i+1]) or get_suit(h[i]) == get_suit(h[i+1])):
+                    return False
+            return True
+        return satisfies_adj(left_h) and satisfies_adj(right_h)
+
+    rules.append(Rule(
+        id="Halves_both_adj_rank_or_suit",
+        token="r68x",
+        name="Both halves: neighbors share rank or suit",
+        predicate=halves_both_adj_rank_or_suit,
+        family="HIER",
+        description="In each half, every adjacent pair shares either rank or suit.",
+        composition=C("and", C("adj_check", C("left_half")), C("adj_check", C("right_half"))),
+        primitives_used=["halves", "adjacent_pairs", "all", "get_rank", "get_suit", "eq", "or", "and"],
+        level=2
+    ))
+
     return rules
 
 

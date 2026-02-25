@@ -1,0 +1,605 @@
+program,cost,dl_bits,base_rate,base_rate_pct,base_rate_se,n_valid
+(λ not (has_suit $0 CLUBS)),12.0384,17.3678,0.166,16.6,0.003721,10000
+(λ not (has_suit $0 DIAMONDS)),12.0384,17.3678,0.1603,16.03,0.003669,10000
+(λ not (has_suit $0 HEARTS)),12.0384,17.3678,0.1604,16.04,0.00367,10000
+(λ not (has_suit $0 SPADES)),12.0384,17.3678,0.1633,16.33,0.003696,10000
+(λ lt 3 (n_unique_suits $0)),13.3069,19.1978,0.4197,41.97,0.004935,10000
+(λ lt 3 (min_rank $0)),13.3069,19.1978,0.3468,34.68,0.00476,10000
+(λ lt 4 (min_rank $0)),13.3069,19.1978,0.1913,19.13,0.003933,10000
+(λ lt 5 (n_unique_ranks $0)),13.3069,19.1978,0.3536,35.36,0.004781,10000
+(λ lt 5 (min_rank $0)),13.3069,19.1978,0.0988,9.88,0.002984,10000
+(λ lt (n_unique_suits $0) 3),13.3069,19.1978,0.0696,6.96,0.002545,10000
+(λ lt (n_unique_ranks $0) 5),13.3069,19.1978,0.1733,17.33,0.003785,10000
+(λ lt (min_rank $0) 3),13.3069,19.1978,0.3953,39.53,0.004889,10000
+(λ has_color (first_half (first_half $0)) RED),13.8665,20.0052,0.4969,49.69,0.005,10000
+(λ has_color (first_half (second_half $0)) BLACK),13.8665,20.0052,0.4997,49.97,0.005,10000
+(λ has_suit (first_half (first_half $0)) CLUBS),14.1179,20.3678,0.2515,25.15,0.004339,10000
+(λ has_suit (first_half (first_half $0)) DIAMONDS),14.1179,20.3678,0.2458,24.58,0.004306,10000
+(λ has_suit (first_half (first_half $0)) HEARTS),14.1179,20.3678,0.2511,25.11,0.004336,10000
+(λ has_suit (first_half (first_half $0)) SPADES),14.1179,20.3678,0.2516,25.16,0.004339,10000
+(λ has_suit (first_half (second_half $0)) CLUBS),14.1179,20.3678,0.2518,25.18,0.00434,10000
+(λ has_suit (first_half (second_half $0)) DIAMONDS),14.1179,20.3678,0.2498,24.98,0.004329,10000
+(λ has_suit (first_half (second_half $0)) HEARTS),14.1179,20.3678,0.2505,25.05,0.004333,10000
+(λ has_suit (first_half (second_half $0)) SPADES),14.1179,20.3678,0.2479,24.79,0.004318,10000
+(λ has_suit (second_half (first_half $0)) CLUBS),14.1179,20.3678,0.4415,44.15,0.004966,10000
+(λ has_suit (second_half (first_half $0)) DIAMONDS),14.1179,20.3678,0.4385,43.85,0.004962,10000
+(λ has_suit (second_half (first_half $0)) HEARTS),14.1179,20.3678,0.4374,43.74,0.004961,10000
+(λ has_suit (second_half (first_half $0)) SPADES),14.1179,20.3678,0.4427,44.27,0.004967,10000
+(λ has_suit (second_half (second_half $0)) CLUBS),14.1179,20.3678,0.434,43.4,0.004956,10000
+(λ has_suit (second_half (second_half $0)) DIAMONDS),14.1179,20.3678,0.4449,44.49,0.00497,10000
+(λ has_suit (second_half (second_half $0)) HEARTS),14.1179,20.3678,0.4456,44.56,0.00497,10000
+(λ has_suit (second_half (second_half $0)) SPADES),14.1179,20.3678,0.4395,43.95,0.004963,10000
+(λ has_suit (head (adjacent_pairs $0)) CLUBS),14.1979,20.4832,0.4425,44.25,0.004967,10000
+(λ has_suit (head (adjacent_pairs $0)) DIAMONDS),14.1979,20.4832,0.4331,43.31,0.004955,10000
+(λ has_suit (head (adjacent_pairs $0)) HEARTS),14.1979,20.4832,0.4456,44.56,0.00497,10000
+(λ has_suit (head (adjacent_pairs $0)) SPADES),14.1979,20.4832,0.444,44.4,0.004969,10000
+(λ not (has_color (first_half $0) RED)),14.272,20.5901,0.1178,11.78,0.003224,10000
+(λ not (has_color (first_half $0) BLACK)),14.272,20.5901,0.1122,11.22,0.003156,10000
+(λ not (has_color (second_half $0) RED)),14.272,20.5901,0.1121,11.21,0.003155,10000
+(λ not (has_color (second_half $0) BLACK)),14.272,20.5901,0.1199,11.99,0.003248,10000
+(λ not (has_suit (first_half $0) CLUBS)),14.5233,20.9527,0.4125,41.25,0.004923,10000
+(λ not (has_suit (first_half $0) DIAMONDS)),14.5233,20.9527,0.4165,41.65,0.00493,10000
+(λ not (has_suit (first_half $0) HEARTS)),14.5233,20.9527,0.4117,41.17,0.004921,10000
+(λ not (has_suit (first_half $0) SPADES)),14.5233,20.9527,0.4102,41.02,0.004919,10000
+(λ not (has_suit (second_half $0) CLUBS)),14.5233,20.9527,0.4201,42.01,0.004936,10000
+(λ not (has_suit (second_half $0) DIAMONDS)),14.5233,20.9527,0.4089,40.89,0.004916,10000
+(λ not (has_suit (second_half $0) HEARTS)),14.5233,20.9527,0.4145,41.45,0.004926,10000
+(λ not (has_suit (second_half $0) SPADES)),14.5233,20.9527,0.4183,41.83,0.004933,10000
+(λ has_color (drop 5 $0) BLACK),14.5597,21.0052,0.49,49.0,0.004999,10000
+(λ lt (rank_val (head $0)) 3),14.6932,21.1978,0.0744,7.44,0.002624,10000
+(λ lt (rank_val (head $0)) 4),14.6932,21.1978,0.1532,15.32,0.003602,10000
+(λ lt (rank_val (head $0)) 5),14.6932,21.1978,0.23,23.0,0.004208,10000
+(λ lt (rank_val (last $0)) 3),14.6932,21.1978,0.0775,7.75,0.002674,10000
+(λ lt (rank_val (last $0)) 4),14.6932,21.1978,0.155,15.5,0.003619,10000
+(λ lt (rank_val (last $0)) 5),14.6932,21.1978,0.2383,23.83,0.00426,10000
+(λ le (rank_val (head $0)) 5),14.6932,21.1978,0.3054,30.54,0.004606,10000
+(λ le (rank_val (last $0)) 5),14.6932,21.1978,0.313,31.3,0.004637,10000
+(λ has_suit (drop 5 $0) CLUBS),14.811,21.3678,0.2439,24.39,0.004294,10000
+(λ has_suit (drop 5 $0) DIAMONDS),14.811,21.3678,0.2486,24.86,0.004322,10000
+(λ has_suit (drop 5 $0) HEARTS),14.811,21.3678,0.2614,26.14,0.004394,10000
+(λ has_suit (drop 5 $0) SPADES),14.811,21.3678,0.2461,24.61,0.004307,10000
+(λ lt 3 (count_color $0 RED)),15.2528,22.0052,0.3331,33.31,0.004713,10000
+(λ lt 3 (count_color $0 BLACK)),15.2528,22.0052,0.3328,33.28,0.004712,10000
+(λ lt 4 (count_color $0 RED)),15.2528,22.0052,0.0937,9.37,0.002914,10000
+(λ lt 4 (count_color $0 BLACK)),15.2528,22.0052,0.0926,9.26,0.002899,10000
+(λ gt (count_suit $0 CLUBS) 1),15.5041,22.3678,0.4708,47.08,0.004991,10000
+(λ gt (count_suit $0 CLUBS) 2),15.5041,22.3678,0.1584,15.84,0.003651,10000
+(λ gt (count_suit $0 DIAMONDS) 1),15.5041,22.3678,0.4733,47.33,0.004993,10000
+(λ gt (count_suit $0 DIAMONDS) 2),15.5041,22.3678,0.1517,15.17,0.003587,10000
+(λ gt (count_suit $0 HEARTS) 1),15.5041,22.3678,0.4759,47.59,0.004994,10000
+(λ gt (count_suit $0 HEARTS) 2),15.5041,22.3678,0.1588,15.88,0.003655,10000
+(λ gt (count_suit $0 SPADES) 1),15.5041,22.3678,0.4753,47.53,0.004994,10000
+(λ gt (count_suit $0 SPADES) 2),15.5041,22.3678,0.1628,16.28,0.003692,10000
+(λ lt (n_unique_suits (first_half $0)) 2),15.7918,22.7828,0.0486,4.86,0.00215,10000
+(λ lt (n_unique_suits (second_half $0)) 2),15.7918,22.7828,0.0514,5.14,0.002208,10000
+(λ lt (n_unique_ranks (first_half $0)) 3),15.7918,22.7828,0.1709,17.09,0.003764,10000
+(λ lt (n_unique_ranks (second_half $0)) 3),15.7918,22.7828,0.1711,17.11,0.003766,10000
+(λ lt (n_unique_colors (first_half $0)) 2),15.7918,22.7828,0.23,23.0,0.004208,10000
+(λ lt (n_unique_colors (second_half $0)) 2),15.7918,22.7828,0.232,23.2,0.004221,10000
+(λ lt (min_rank (first_half $0)) 3),15.7918,22.7828,0.2123,21.23,0.004089,10000
+(λ lt (min_rank (first_half $0)) 4),15.7918,22.7828,0.403,40.3,0.004905,10000
+(λ lt (min_rank (second_half $0)) 3),15.7918,22.7828,0.2184,21.84,0.004132,10000
+(λ lt (min_rank (second_half $0)) 4),15.7918,22.7828,0.3982,39.82,0.004895,10000
+(λ gt (n_unique_suits (first_half $0)) 2),15.7918,22.7828,0.3977,39.77,0.004894,10000
+(λ gt (n_unique_suits (second_half $0)) 2),15.7918,22.7828,0.3896,38.96,0.004877,10000
+(λ gt (min_rank (first_half $0)) 4),15.7918,22.7828,0.4479,44.79,0.004973,10000
+(λ gt (min_rank (first_half $0)) 5),15.7918,22.7828,0.3254,32.54,0.004685,10000
+(λ gt (min_rank (second_half $0)) 4),15.7918,22.7828,0.447,44.7,0.004972,10000
+(λ gt (min_rank (second_half $0)) 5),15.7918,22.7828,0.3213,32.13,0.00467,10000
+(λ has_color (first_half (reverse (first_half $0))) RED),16.3514,23.5901,0.4955,49.55,0.005,10000
+(λ has_color (first_half (second_half (first_half $0))) RED),16.3514,23.5901,0.4951,49.51,0.005,10000
+(λ has_color (first_half (second_half (second_half $0))) BLACK),16.3514,23.5901,0.4992,49.92,0.005,10000
+(λ has_suit (first_half (reverse (first_half $0))) CLUBS),16.6028,23.9527,0.2524,25.24,0.004344,10000
+(λ has_suit (first_half (reverse (first_half $0))) DIAMONDS),16.6028,23.9527,0.2486,24.86,0.004322,10000
+(λ has_suit (first_half (reverse (first_half $0))) HEARTS),16.6028,23.9527,0.2469,24.69,0.004312,10000
+(λ has_suit (first_half (reverse (first_half $0))) SPADES),16.6028,23.9527,0.2521,25.21,0.004342,10000
+(λ has_suit (first_half (second_half (first_half $0))) CLUBS),16.6028,23.9527,0.2514,25.14,0.004338,10000
+(λ has_suit (first_half (second_half (first_half $0))) DIAMONDS),16.6028,23.9527,0.2451,24.51,0.004301,10000
+(λ has_suit (first_half (second_half (first_half $0))) HEARTS),16.6028,23.9527,0.25,25.0,0.00433,10000
+(λ has_suit (first_half (second_half (first_half $0))) SPADES),16.6028,23.9527,0.2535,25.35,0.00435,10000
+(λ has_suit (first_half (second_half (second_half $0))) CLUBS),16.6028,23.9527,0.2436,24.36,0.004293,10000
+(λ has_suit (first_half (second_half (second_half $0))) DIAMONDS),16.6028,23.9527,0.2555,25.55,0.004361,10000
+(λ has_suit (first_half (second_half (second_half $0))) HEARTS),16.6028,23.9527,0.2453,24.53,0.004303,10000
+(λ has_suit (first_half (second_half (second_half $0))) SPADES),16.6028,23.9527,0.2556,25.56,0.004362,10000
+(λ has_suit (second_half (reverse (second_half $0))) CLUBS),16.6028,23.9527,0.4348,43.48,0.004957,10000
+(λ has_suit (second_half (reverse (second_half $0))) DIAMONDS),16.6028,23.9527,0.4472,44.72,0.004972,10000
+(λ has_suit (second_half (reverse (second_half $0))) HEARTS),16.6028,23.9527,0.4355,43.55,0.004958,10000
+(λ has_suit (second_half (reverse (second_half $0))) SPADES),16.6028,23.9527,0.4428,44.28,0.004967,10000
+(λ not (has_color (second_half (first_half $0)) RED)),16.7569,24.1751,0.247,24.7,0.004313,10000
+(λ not (has_color (second_half (first_half $0)) BLACK)),16.7569,24.1751,0.2376,23.76,0.004256,10000
+(λ not (has_color (second_half (second_half $0)) RED)),16.7569,24.1751,0.2387,23.87,0.004263,10000
+(λ not (has_color (second_half (second_half $0)) BLACK)),16.7569,24.1751,0.2495,24.95,0.004327,10000
+(λ has_suit (head (second_half (adjacent_pairs $0))) CLUBS),16.7628,24.1837,0.4407,44.07,0.004965,10000
+(λ has_suit (head (second_half (adjacent_pairs $0))) DIAMONDS),16.7628,24.1837,0.4387,43.87,0.004962,10000
+(λ has_suit (head (second_half (adjacent_pairs $0))) HEARTS),16.7628,24.1837,0.4385,43.85,0.004962,10000
+(λ has_suit (head (second_half (adjacent_pairs $0))) SPADES),16.7628,24.1837,0.4411,44.11,0.004965,10000
+(λ not (has_color (head (adjacent_pairs $0)) RED)),16.837,24.2906,0.2501,25.01,0.004331,10000
+(λ not (has_color (head (adjacent_pairs $0)) BLACK)),16.837,24.2906,0.2421,24.21,0.004284,10000
+(λ lt (rank_val (head (second_half $0))) 3),17.1781,24.7828,0.0782,7.82,0.002685,10000
+(λ lt (rank_val (head (second_half $0))) 4),17.1781,24.7828,0.154,15.4,0.003609,10000
+(λ lt (rank_val (head (second_half $0))) 5),17.1781,24.7828,0.227,22.7,0.004189,10000
+(λ lt (rank_val (last (first_half $0))) 3),17.1781,24.7828,0.0756,7.56,0.002644,10000
+(λ lt (rank_val (last (first_half $0))) 4),17.1781,24.7828,0.1564,15.64,0.003632,10000
+(λ lt (rank_val (last (first_half $0))) 5),17.1781,24.7828,0.2295,22.95,0.004205,10000
+(λ le (rank_val (head (second_half $0))) 5),17.1781,24.7828,0.3053,30.53,0.004605,10000
+(λ le (rank_val (last (first_half $0))) 5),17.1781,24.7828,0.3043,30.43,0.004601,10000
+(λ lt (length $0) (min_rank $0)),17.3674,25.0558,0.047,4.7,0.002116,10000
+(λ lt (n_unique_suits $0) (min_rank $0)),17.3674,25.0558,0.2985,29.85,0.004576,10000
+(λ lt (n_unique_ranks $0) (min_rank $0)),17.3674,25.0558,0.1087,10.87,0.003113,10000
+(λ lt (min_rank $0) (n_unique_suits $0)),17.3674,25.0558,0.473,47.3,0.004993,10000
+(λ le (n_unique_suits $0) (n_unique_colors $0)),17.3674,25.0558,0.0473,4.73,0.002123,10000
+(λ le (n_unique_ranks $0) (n_unique_suits $0)),17.3674,25.0558,0.0919,9.19,0.002889,10000
+(λ le (n_unique_ranks $0) (min_rank $0)),17.3674,25.0558,0.1978,19.78,0.003983,10000
+(λ le (min_rank $0) (n_unique_colors $0)),17.3674,25.0558,0.3858,38.58,0.004868,10000
+(λ not (has_color (take 4 $0) RED)),17.4501,25.1751,0.0566,5.66,0.002311,10000
+(λ not (has_color (take 4 $0) BLACK)),17.4501,25.1751,0.0501,5.01,0.002182,10000
+(λ not (has_color (drop 2 $0) RED)),17.4501,25.1751,0.0533,5.33,0.002246,10000
+(λ not (has_color (drop 2 $0) BLACK)),17.4501,25.1751,0.0533,5.33,0.002246,10000
+(λ not (has_suit (take 4 $0) CLUBS)),17.7014,25.5377,0.3055,30.55,0.004606,10000
+(λ not (has_suit (take 4 $0) DIAMONDS)),17.7014,25.5377,0.3082,30.82,0.004617,10000
+(λ not (has_suit (take 4 $0) HEARTS)),17.7014,25.5377,0.2995,29.95,0.00458,10000
+(λ not (has_suit (take 4 $0) SPADES)),17.7014,25.5377,0.3053,30.53,0.004605,10000
+(λ not (has_suit (take 5 $0) CLUBS)),17.7014,25.5377,0.2253,22.53,0.004178,10000
+(λ not (has_suit (take 5 $0) DIAMONDS)),17.7014,25.5377,0.2221,22.21,0.004157,10000
+(λ not (has_suit (take 5 $0) HEARTS)),17.7014,25.5377,0.2204,22.04,0.004145,10000
+(λ not (has_suit (take 5 $0) SPADES)),17.7014,25.5377,0.2204,22.04,0.004145,10000
+(λ not (has_suit (drop 1 $0) CLUBS)),17.7014,25.5377,0.2269,22.69,0.004188,10000
+(λ not (has_suit (drop 1 $0) DIAMONDS)),17.7014,25.5377,0.2171,21.71,0.004123,10000
+(λ not (has_suit (drop 1 $0) HEARTS)),17.7014,25.5377,0.2247,22.47,0.004174,10000
+(λ not (has_suit (drop 1 $0) SPADES)),17.7014,25.5377,0.2235,22.35,0.004166,10000
+(λ not (has_suit (drop 2 $0) CLUBS)),17.7014,25.5377,0.3084,30.84,0.004618,10000
+(λ not (has_suit (drop 2 $0) DIAMONDS)),17.7014,25.5377,0.3025,30.25,0.004593,10000
+(λ not (has_suit (drop 2 $0) HEARTS)),17.7014,25.5377,0.3043,30.43,0.004601,10000
+(λ not (has_suit (drop 2 $0) SPADES)),17.7014,25.5377,0.3031,30.31,0.004596,10000
+(λ lt 1 (count_color (first_half $0) RED)),17.7377,25.5901,0.4931,49.31,0.005,10000
+(λ lt 1 (count_color (second_half $0) BLACK)),17.7377,25.5901,0.4967,49.67,0.005,10000
+(λ lt (rank_val (at $0 1)) 3),17.8713,25.7828,0.0746,7.46,0.002627,10000
+(λ lt (rank_val (at $0 1)) 4),17.8713,25.7828,0.1504,15.04,0.003575,10000
+(λ lt (rank_val (at $0 1)) 5),17.8713,25.7828,0.2284,22.84,0.004198,10000
+(λ lt (rank_val (at $0 4)) 3),17.8713,25.7828,0.0738,7.38,0.002614,10000
+(λ lt (rank_val (at $0 4)) 4),17.8713,25.7828,0.1475,14.75,0.003546,10000
+(λ lt (rank_val (at $0 4)) 5),17.8713,25.7828,0.2296,22.96,0.004206,10000
+(λ le (rank_val (at $0 1)) 5),17.8713,25.7828,0.3066,30.66,0.004611,10000
+(λ le (rank_val (at $0 4)) 5),17.8713,25.7828,0.3074,30.74,0.004614,10000
+(λ gt (count_suit (first_half $0) CLUBS) 1),17.9891,25.9527,0.1543,15.43,0.003612,10000
+(λ gt (count_suit (first_half $0) DIAMONDS) 1),17.9891,25.9527,0.1453,14.53,0.003524,10000
+(λ gt (count_suit (first_half $0) HEARTS) 1),17.9891,25.9527,0.1485,14.85,0.003556,10000
+(λ gt (count_suit (first_half $0) SPADES) 1),17.9891,25.9527,0.1542,15.42,0.003611,10000
+(λ gt (count_suit (second_half $0) CLUBS) 1),17.9891,25.9527,0.1463,14.63,0.003534,10000
+(λ gt (count_suit (second_half $0) DIAMONDS) 1),17.9891,25.9527,0.151,15.1,0.00358,10000
+(λ gt (count_suit (second_half $0) HEARTS) 1),17.9891,25.9527,0.1588,15.88,0.003655,10000
+(λ gt (count_suit (second_half $0) SPADES) 1),17.9891,25.9527,0.1543,15.43,0.003612,10000
+(λ lt (n_unique_suits (second_half (first_half $0))) 2),18.2767,26.3678,0.2399,23.99,0.00427,10000
+(λ lt (n_unique_suits (second_half (second_half $0))) 2),18.2767,26.3678,0.236,23.6,0.004246,10000
+(λ lt (n_unique_ranks (second_half (first_half $0))) 2),18.2767,26.3678,0.056,5.6,0.002299,10000
+(λ lt (n_unique_ranks (second_half (second_half $0))) 2),18.2767,26.3678,0.0581,5.81,0.002339,10000
+(λ lt (n_unique_colors (second_half (first_half $0))) 2),18.2767,26.3678,0.4846,48.46,0.004998,10000
+(λ lt (n_unique_colors (second_half (second_half $0))) 2),18.2767,26.3678,0.4882,48.82,0.004999,10000
+(λ lt (min_rank (second_half (first_half $0))) 3),18.2767,26.3678,0.1468,14.68,0.003539,10000
+(λ lt (min_rank (second_half (first_half $0))) 4),18.2767,26.3678,0.2875,28.75,0.004526,10000
+(λ lt (min_rank (second_half (first_half $0))) 5),18.2767,26.3678,0.4084,40.84,0.004915,10000
+(λ lt (min_rank (second_half (second_half $0))) 3),18.2767,26.3678,0.1476,14.76,0.003547,10000
+(λ lt (min_rank (second_half (second_half $0))) 4),18.2767,26.3678,0.2818,28.18,0.004499,10000
+(λ lt (min_rank (second_half (second_half $0))) 5),18.2767,26.3678,0.4156,41.56,0.004928,10000
+(λ le (max_rank (second_half (first_half $0))) 5),18.2767,26.3678,0.0902,9.02,0.002865,10000
+(λ le (max_rank (second_half (second_half $0))) 5),18.2767,26.3678,0.0924,9.24,0.002896,10000
+(λ gt (min_rank (second_half (first_half $0))) 5),18.2767,26.3678,0.4793,47.93,0.004996,10000
+(λ gt (min_rank (second_half (second_half $0))) 5),18.2767,26.3678,0.472,47.2,0.004992,10000
+(λ lt (n_unique_suits (head (adjacent_pairs $0))) 2),18.3568,26.4832,0.2348,23.48,0.004239,10000
+(λ lt (n_unique_ranks (head (adjacent_pairs $0))) 2),18.3568,26.4832,0.061,6.1,0.002393,10000
+(λ lt (n_unique_colors (head (adjacent_pairs $0))) 2),18.3568,26.4832,0.4922,49.22,0.004999,10000
+(λ lt (max_rank (head (adjacent_pairs $0))) 5),18.3568,26.4832,0.0468,4.68,0.002112,10000
+(λ lt (min_rank (head (adjacent_pairs $0))) 3),18.3568,26.4832,0.1445,14.45,0.003516,10000
+(λ lt (min_rank (head (adjacent_pairs $0))) 4),18.3568,26.4832,0.2846,28.46,0.004512,10000
+(λ lt (min_rank (head (adjacent_pairs $0))) 5),18.3568,26.4832,0.4116,41.16,0.004921,10000
+(λ le (max_rank (head (adjacent_pairs $0))) 5),18.3568,26.4832,0.0871,8.71,0.00282,10000
+(λ gt (min_rank (head (adjacent_pairs $0))) 5),18.3568,26.4832,0.4751,47.51,0.004994,10000
+(λ has_color (drop (n_unique_ranks $0) $0) RED),18.6201,26.8632,0.3719,37.19,0.004833,10000
+(λ has_color (drop (n_unique_ranks $0) $0) BLACK),18.6201,26.8632,0.3691,36.91,0.004826,10000
+(λ lt (rank_val (head $0)) (n_unique_suits $0)),18.7537,27.0558,0.102,10.2,0.003026,10000
+(λ lt (rank_val (head $0)) (n_unique_ranks $0)),18.7537,27.0558,0.2431,24.31,0.00429,10000
+(λ lt (rank_val (last $0)) (n_unique_suits $0)),18.7537,27.0558,0.1057,10.57,0.003075,10000
+(λ lt (rank_val (last $0)) (n_unique_ranks $0)),18.7537,27.0558,0.2467,24.67,0.004311,10000
+(λ le (max_rank $0) (rank_val (head $0))),18.7537,27.0558,0.1999,19.99,0.003999,10000
+(λ le (max_rank $0) (rank_val (last $0))),18.7537,27.0558,0.193,19.3,0.003947,10000
+(λ le (rank_val (head $0)) (length $0)),18.7537,27.0558,0.3811,38.11,0.004857,10000
+(λ le (rank_val (head $0)) (n_unique_suits $0)),18.7537,27.0558,0.1837,18.37,0.003872,10000
+(λ le (rank_val (head $0)) (n_unique_ranks $0)),18.7537,27.0558,0.3188,31.88,0.00466,10000
+(λ le (rank_val (head $0)) (min_rank $0)),18.7537,27.0558,0.1976,19.76,0.003982,10000
+(λ le (rank_val (last $0)) (length $0)),18.7537,27.0558,0.3883,38.83,0.004874,10000
+(λ le (rank_val (last $0)) (n_unique_suits $0)),18.7537,27.0558,0.1845,18.45,0.003879,10000
+(λ le (rank_val (last $0)) (n_unique_ranks $0)),18.7537,27.0558,0.328,32.8,0.004695,10000
+(λ le (rank_val (last $0)) (n_unique_colors $0)),18.7537,27.0558,0.0759,7.59,0.002648,10000
+(λ le (rank_val (last $0)) (min_rank $0)),18.7537,27.0558,0.1992,19.92,0.003994,10000
+(λ has_suit (take (n_unique_colors $0) $0) CLUBS),18.8714,27.2257,0.4391,43.91,0.004963,10000
+(λ has_suit (take (n_unique_colors $0) $0) DIAMONDS),18.8714,27.2257,0.43,43.0,0.004951,10000
+(λ has_suit (take (n_unique_colors $0) $0) HEARTS),18.8714,27.2257,0.4433,44.33,0.004968,10000
+(λ has_suit (take (n_unique_colors $0) $0) SPADES),18.8714,27.2257,0.4411,44.11,0.004965,10000
+(λ has_suit (drop (n_unique_ranks $0) $0) CLUBS),18.8714,27.2257,0.1918,19.18,0.003937,10000
+(λ has_suit (drop (n_unique_ranks $0) $0) DIAMONDS),18.8714,27.2257,0.1951,19.51,0.003963,10000
+(λ has_suit (drop (n_unique_ranks $0) $0) HEARTS),18.8714,27.2257,0.2013,20.13,0.00401,10000
+(λ has_suit (drop (n_unique_ranks $0) $0) SPADES),18.8714,27.2257,0.2002,20.02,0.004001,10000
+(λ lt (n_unique_suits (take 4 $0)) 3),18.9699,27.3678,0.3133,31.33,0.004638,10000
+(λ lt (n_unique_suits (take 5 $0)) 3),18.9699,27.3678,0.1496,14.96,0.003567,10000
+(λ lt (n_unique_suits (drop 1 $0)) 3),18.9699,27.3678,0.1524,15.24,0.003594,10000
+(λ lt (n_unique_suits (drop 2 $0)) 3),18.9699,27.3678,0.3148,31.48,0.004644,10000
+(λ lt (n_unique_ranks (take 4 $0)) 4),18.9699,27.3678,0.3216,32.16,0.004671,10000
+(λ lt (n_unique_ranks (take 5 $0)) 4),18.9699,27.3678,0.0721,7.21,0.002587,10000
+(λ lt (n_unique_ranks (take 5 $0)) 5),18.9699,27.3678,0.4907,49.07,0.004999,10000
+(λ lt (n_unique_ranks (drop 1 $0)) 4),18.9699,27.3678,0.0727,7.27,0.002596,10000
+(λ lt (n_unique_ranks (drop 1 $0)) 5),18.9699,27.3678,0.4873,48.73,0.004998,10000
+(λ lt (n_unique_ranks (drop 2 $0)) 4),18.9699,27.3678,0.3204,32.04,0.004666,10000
+(λ lt (n_unique_colors (take 4 $0)) 2),18.9699,27.3678,0.1067,10.67,0.003087,10000
+(λ lt (n_unique_colors (drop 1 $0)) 2),18.9699,27.3678,0.0484,4.84,0.002146,10000
+(λ lt (n_unique_colors (drop 2 $0)) 2),18.9699,27.3678,0.1066,10.66,0.003086,10000
+(λ lt (min_rank (take 4 $0)) 3),18.9699,27.3678,0.2781,27.81,0.004481,10000
+(λ lt (min_rank (take 5 $0)) 3),18.9699,27.3678,0.3378,33.78,0.00473,10000
+(λ lt (min_rank (drop 1 $0)) 3),18.9699,27.3678,0.341,34.1,0.00474,10000
+(λ lt (min_rank (drop 2 $0)) 3),18.9699,27.3678,0.2812,28.12,0.004496,10000
+(λ lt (min_rank (drop 2 $0)) 4),18.9699,27.3678,0.4972,49.72,0.005,10000
+(λ gt (n_unique_suits (take 4 $0)) 3),18.9699,27.3678,0.1027,10.27,0.003036,10000
+(λ gt (n_unique_suits (take 5 $0)) 3),18.9699,27.3678,0.2628,26.28,0.004402,10000
+(λ gt (n_unique_suits (drop 1 $0)) 3),18.9699,27.3678,0.2614,26.14,0.004394,10000
+(λ gt (n_unique_suits (drop 2 $0)) 3),18.9699,27.3678,0.107,10.7,0.003091,10000
+(λ gt (min_rank (take 4 $0)) 3),18.9699,27.3678,0.4996,49.96,0.005,10000
+(λ gt (min_rank (take 4 $0)) 4),18.9699,27.3678,0.3407,34.07,0.004739,10000
+(λ gt (min_rank (take 4 $0)) 5),18.9699,27.3678,0.2184,21.84,0.004132,10000
+(λ gt (min_rank (take 5 $0)) 3),18.9699,27.3678,0.4188,41.88,0.004934,10000
+(λ gt (min_rank (take 5 $0)) 4),18.9699,27.3678,0.2577,25.77,0.004374,10000
+(λ gt (min_rank (take 5 $0)) 5),18.9699,27.3678,0.1477,14.77,0.003548,10000
+(λ gt (min_rank (drop 1 $0)) 3),18.9699,27.3678,0.4178,41.78,0.004932,10000
+(λ gt (min_rank (drop 1 $0)) 4),18.9699,27.3678,0.254,25.4,0.004353,10000
+(λ gt (min_rank (drop 1 $0)) 5),18.9699,27.3678,0.149,14.9,0.003561,10000
+(λ gt (min_rank (drop 2 $0)) 4),18.9699,27.3678,0.3399,33.99,0.004737,10000
+(λ gt (min_rank (drop 2 $0)) 5),18.9699,27.3678,0.2212,22.12,0.004151,10000
+(λ not (has_color (second_half (reverse (second_half $0))) RED)),19.2418,27.7601,0.2436,24.36,0.004293,10000
+(λ not (has_color (second_half (reverse (second_half $0))) BLACK)),19.2418,27.7601,0.2447,24.47,0.004299,10000
+(λ has_color (first_half (first_half $0)) (get_color (last $0))),19.3133,27.8632,0.4959,49.59,0.005,10000
+(λ has_color (first_half (second_half $0)) (get_color (head $0))),19.3133,27.8632,0.486,48.6,0.004998,10000
+(λ has_color (first_half (second_half $0)) (get_color (last $0))),19.3133,27.8632,0.4875,48.75,0.004998,10000
+(λ lt (n_unique_suits $0) (count_color $0 RED)),19.3133,27.8632,0.2454,24.54,0.004303,10000
+(λ lt (n_unique_suits $0) (count_color $0 BLACK)),19.3133,27.8632,0.2418,24.18,0.004282,10000
+(λ lt (min_rank $0) (count_color $0 RED)),19.3133,27.8632,0.3688,36.88,0.004825,10000
+(λ lt (min_rank $0) (count_color $0 BLACK)),19.3133,27.8632,0.3642,36.42,0.004812,10000
+(λ lt (count_color $0 RED) (min_rank $0)),19.3133,27.8632,0.4095,40.95,0.004917,10000
+(λ lt (count_color $0 BLACK) (min_rank $0)),19.3133,27.8632,0.411,41.1,0.00492,10000
+(λ le (n_unique_suits $0) (count_color $0 RED)),19.3133,27.8632,0.4778,47.78,0.004995,10000
+(λ le (n_unique_suits $0) (count_color $0 BLACK)),19.3133,27.8632,0.4779,47.79,0.004995,10000
+(λ le (n_unique_ranks $0) (count_color $0 RED)),19.3133,27.8632,0.1083,10.83,0.003108,10000
+(λ le (n_unique_ranks $0) (count_color $0 BLACK)),19.3133,27.8632,0.1118,11.18,0.003151,10000
+(λ not (has_color (head (second_half (adjacent_pairs $0))) RED)),19.4019,27.991,0.2479,24.79,0.004318,10000
+(λ not (has_color (head (second_half (adjacent_pairs $0))) BLACK)),19.4019,27.991,0.2437,24.37,0.004293,10000
+(λ has_suit (first_half (first_half $0)) (get_suit (last $0))),19.5646,28.2257,0.2438,24.38,0.004294,10000
+(λ has_suit (first_half (second_half $0)) (get_suit (head $0))),19.5646,28.2257,0.2325,23.25,0.004224,10000
+(λ has_suit (first_half (second_half $0)) (get_suit (last $0))),19.5646,28.2257,0.2375,23.75,0.004256,10000
+(λ has_suit (second_half (first_half $0)) (get_suit (head $0))),19.5646,28.2257,0.411,41.1,0.00492,10000
+(λ has_suit (second_half (first_half $0)) (get_suit (last $0))),19.5646,28.2257,0.4189,41.89,0.004934,10000
+(λ has_suit (second_half (second_half $0)) (get_suit (head $0))),19.5646,28.2257,0.4264,42.64,0.004946,10000
+(λ gt (count_suit $0 CLUBS) (n_unique_suits $0)),19.5646,28.2257,0.0426,4.26,0.00202,10000
+(λ gt (count_suit $0 CLUBS) (n_unique_colors $0)),19.5646,28.2257,0.1624,16.24,0.003688,10000
+(λ gt (count_suit $0 CLUBS) (min_rank $0)),19.5646,28.2257,0.073,7.3,0.002601,10000
+(λ gt (count_suit $0 DIAMONDS) (n_unique_suits $0)),19.5646,28.2257,0.0401,4.01,0.001962,10000
+(λ gt (count_suit $0 DIAMONDS) (n_unique_colors $0)),19.5646,28.2257,0.1542,15.42,0.003611,10000
+(λ gt (count_suit $0 DIAMONDS) (min_rank $0)),19.5646,28.2257,0.0683,6.83,0.002523,10000
+(λ gt (count_suit $0 HEARTS) (n_unique_suits $0)),19.5646,28.2257,0.0425,4.25,0.002017,10000
+(λ gt (count_suit $0 HEARTS) (n_unique_colors $0)),19.5646,28.2257,0.1612,16.12,0.003677,10000
+(λ gt (count_suit $0 HEARTS) (min_rank $0)),19.5646,28.2257,0.0746,7.46,0.002627,10000
+(λ gt (count_suit $0 SPADES) (n_unique_suits $0)),19.5646,28.2257,0.0439,4.39,0.002049,10000
+(λ gt (count_suit $0 SPADES) (n_unique_colors $0)),19.5646,28.2257,0.1649,16.49,0.003711,10000
+(λ gt (count_suit $0 SPADES) (min_rank $0)),19.5646,28.2257,0.068,6.8,0.002517,10000
+(λ ge (count_suit $0 CLUBS) (n_unique_suits $0)),19.5646,28.2257,0.1355,13.55,0.003423,10000
+(λ ge (count_suit $0 CLUBS) (min_rank $0)),19.5646,28.2257,0.2341,23.41,0.004234,10000
+(λ ge (count_suit $0 DIAMONDS) (n_unique_suits $0)),19.5646,28.2257,0.132,13.2,0.003385,10000
+(λ ge (count_suit $0 DIAMONDS) (min_rank $0)),19.5646,28.2257,0.2276,22.76,0.004193,10000
+(λ ge (count_suit $0 HEARTS) (n_unique_suits $0)),19.5646,28.2257,0.1361,13.61,0.003429,10000
+(λ ge (count_suit $0 HEARTS) (min_rank $0)),19.5646,28.2257,0.2345,23.45,0.004237,10000
+(λ ge (count_suit $0 SPADES) (n_unique_suits $0)),19.5646,28.2257,0.1388,13.88,0.003457,10000
+(λ ge (count_suit $0 SPADES) (n_unique_colors $0)),19.5646,28.2257,0.4767,47.67,0.004995,10000
+(λ ge (count_suit $0 SPADES) (min_rank $0)),19.5646,28.2257,0.2333,23.33,0.004229,10000
+(λ has_suit (head (adjacent_pairs $0)) (get_suit (last $0))),19.6446,28.3412,0.426,42.6,0.004945,10000
+(λ lt (- (max_rank $0) 5) 5),19.663,28.3678,0.0411,4.11,0.001985,10000
+(λ lt (mod 3 (min_rank $0)) 1),19.663,28.3678,0.2579,25.79,0.004375,10000
+(λ lt (mod 4 (n_unique_suits $0)) 1),19.663,28.3678,0.4893,48.93,0.004999,10000
+(λ lt (mod 4 (n_unique_ranks $0)) 1),19.663,28.3678,0.1611,16.11,0.003676,10000
+(λ lt (mod 5 (n_unique_ranks $0)) 1),19.663,28.3678,0.4731,47.31,0.004993,10000
+(λ lt (mod 5 (min_rank $0)) 1),19.663,28.3678,0.0925,9.25,0.002897,10000
+(λ lt (mod (n_unique_ranks $0) 3) 1),19.663,28.3678,0.3658,36.58,0.004817,10000
+(λ lt (mod (sum_ranks $0) 3) 1),19.663,28.3678,0.3347,33.47,0.004719,10000
+(λ lt (mod (sum_ranks $0) 4) 1),19.663,28.3678,0.2506,25.06,0.004334,10000
+(λ lt (mod (sum_ranks $0) 4) 2),19.663,28.3678,0.4974,49.74,0.005,10000
+(λ lt (mod (sum_ranks $0) 5) 1),19.663,28.3678,0.207,20.7,0.004052,10000
+(λ lt (mod (sum_ranks $0) 5) 2),19.663,28.3678,0.4067,40.67,0.004912,10000
+(λ lt (mod (max_rank $0) 3) 1),19.663,28.3678,0.1809,18.09,0.003849,10000
+(λ lt (mod (max_rank $0) 3) 2),19.663,28.3678,0.4916,49.16,0.004999,10000
+(λ lt (mod (max_rank $0) 4) 1),19.663,28.3678,0.1689,16.89,0.003747,10000
+(λ lt (mod (max_rank $0) 4) 2),19.663,28.3678,0.4443,44.43,0.004969,10000
+(λ lt (mod (max_rank $0) 5) 1),19.663,28.3678,0.053,5.3,0.00224,10000
+(λ lt (mod (max_rank $0) 5) 2),19.663,28.3678,0.1501,15.01,0.003572,10000
+(λ lt (mod (max_rank $0) 5) 3),19.663,28.3678,0.3126,31.26,0.004636,10000
+(λ lt (mod (min_rank $0) 3) 1),19.663,28.3678,0.3148,31.48,0.004644,10000
+(λ lt (mod (min_rank $0) 4) 1),19.663,28.3678,0.1662,16.62,0.003723,10000
+(λ lt (mod (min_rank $0) 4) 2),19.663,28.3678,0.2638,26.38,0.004407,10000
+(λ lt (mod (min_rank $0) 5) 2),19.663,28.3678,0.1463,14.63,0.003534,10000
+(λ le (- (max_rank $0) 5) 5),19.663,28.3678,0.0937,9.37,0.002914,10000
+(λ gt (mod 4 (min_rank $0)) 0),19.663,28.3678,0.4492,44.92,0.004974,10000
+(λ gt (mod 5 (min_rank $0)) 1),19.663,28.3678,0.3567,35.67,0.00479,10000
+(λ gt (mod (n_unique_ranks $0) 2) 0),19.663,28.3678,0.4853,48.53,0.004998,10000
+(λ gt (mod (sum_ranks $0) 2) 0),19.663,28.3678,0.494,49.4,0.005,10000
+(λ gt (mod (sum_ranks $0) 3) 1),19.663,28.3678,0.3251,32.51,0.004684,10000
+(λ gt (mod (sum_ranks $0) 4) 2),19.663,28.3678,0.2472,24.72,0.004314,10000
+(λ gt (mod (sum_ranks $0) 5) 2),19.663,28.3678,0.3894,38.94,0.004876,10000
+(λ gt (mod (sum_ranks $0) 5) 3),19.663,28.3678,0.1952,19.52,0.003964,10000
+(λ gt (mod (max_rank $0) 2) 0),19.663,28.3678,0.3763,37.63,0.004845,10000
+(λ gt (mod (max_rank $0) 4) 2),19.663,28.3678,0.1009,10.09,0.003012,10000
+(λ gt (mod (max_rank $0) 5) 3),19.663,28.3678,0.4229,42.29,0.00494,10000
+(λ gt (mod (min_rank $0) 2) 0),19.663,28.3678,0.3852,38.52,0.004866,10000
+(λ gt (mod (min_rank $0) 3) 1),19.663,28.3678,0.499,49.9,0.005,10000
+(λ gt (mod (min_rank $0) 4) 2),19.663,28.3678,0.2876,28.76,0.004526,10000
+(λ gt (mod (min_rank $0) 5) 2),19.663,28.3678,0.4292,42.92,0.00495,10000
+(λ gt (mod (min_rank $0) 5) 3),19.663,28.3678,0.1606,16.06,0.003672,10000
+(λ not (has_color (first_half $0) (get_color (last $0)))),19.7187,28.4481,0.1216,12.16,0.003268,10000
+(λ not (has_color (second_half $0) (get_color (head $0)))),19.7187,28.4481,0.1221,12.21,0.003274,10000
+(λ lt (n_unique_suits (first_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.0433,4.33,0.002035,10000
+(λ lt (n_unique_suits (second_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.0463,4.63,0.002101,10000
+(λ lt (n_unique_ranks (first_half $0)) (min_rank $0)),19.8523,28.6408,0.3883,38.83,0.004874,10000
+(λ lt (n_unique_ranks (second_half $0)) (min_rank $0)),19.8523,28.6408,0.3893,38.93,0.004876,10000
+(λ lt (n_unique_colors (first_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.2076,20.76,0.004056,10000
+(λ lt (n_unique_colors (second_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.2096,20.96,0.00407,10000
+(λ lt (max_rank (first_half $0)) (max_rank $0)),19.8523,28.6408,0.4408,44.08,0.004965,10000
+(λ lt (max_rank (second_half $0)) (max_rank $0)),19.8523,28.6408,0.4503,45.03,0.004975,10000
+(λ lt (min_rank (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.2735,27.35,0.004458,10000
+(λ lt (min_rank (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.2798,27.98,0.004489,10000
+(λ le (n_unique_ranks (first_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.1685,16.85,0.003743,10000
+(λ le (sum_ranks (first_half $0)) (max_rank $0)),19.8523,28.6408,0.0337,3.37,0.001805,10000
+(λ le (sum_ranks (second_half $0)) (max_rank $0)),19.8523,28.6408,0.0361,3.61,0.001865,10000
+(λ le (max_rank (first_half $0)) (length $0)),19.8523,28.6408,0.0503,5.03,0.002186,10000
+(λ le (max_rank (second_half $0)) (length $0)),19.8523,28.6408,0.0553,5.53,0.002286,10000
+(λ le (min_rank (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.4529,45.29,0.004978,10000
+(λ le (min_rank (first_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.2066,20.66,0.004049,10000
+(λ le (min_rank (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.4501,45.01,0.004975,10000
+(λ le (min_rank (second_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.2138,21.38,0.0041,10000
+(λ gt (n_unique_suits (first_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.4148,41.48,0.004927,10000
+(λ gt (n_unique_suits (first_half $0)) (min_rank $0)),19.8523,28.6408,0.1519,15.19,0.003589,10000
+(λ gt (n_unique_suits (second_half $0)) (n_unique_colors $0)),19.8523,28.6408,0.4069,40.69,0.004913,10000
+(λ gt (n_unique_suits (second_half $0)) (min_rank $0)),19.8523,28.6408,0.1546,15.46,0.003615,10000
+(λ gt (n_unique_ranks (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.0615,6.15,0.002402,10000
+(λ gt (n_unique_ranks (first_half $0)) (min_rank $0)),19.8523,28.6408,0.3365,33.65,0.004725,10000
+(λ gt (n_unique_ranks (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.0605,6.05,0.002384,10000
+(λ gt (n_unique_ranks (second_half $0)) (min_rank $0)),19.8523,28.6408,0.3359,33.59,0.004723,10000
+(λ gt (min_rank (first_half $0)) (length $0)),19.8523,28.6408,0.2264,22.64,0.004185,10000
+(λ gt (min_rank (first_half $0)) (n_unique_ranks $0)),19.8523,28.6408,0.3111,31.11,0.004629,10000
+(λ gt (min_rank (first_half $0)) (min_rank $0)),19.8523,28.6408,0.4438,44.38,0.004968,10000
+(λ gt (min_rank (second_half $0)) (length $0)),19.8523,28.6408,0.2252,22.52,0.004177,10000
+(λ gt (min_rank (second_half $0)) (n_unique_ranks $0)),19.8523,28.6408,0.3072,30.72,0.004613,10000
+(λ gt (min_rank (second_half $0)) (min_rank $0)),19.8523,28.6408,0.4487,44.87,0.004974,10000
+(λ ge (n_unique_suits (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.2157,21.57,0.004113,10000
+(λ ge (n_unique_suits (first_half $0)) (min_rank $0)),19.8523,28.6408,0.4804,48.04,0.004996,10000
+(λ ge (n_unique_suits (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.2114,21.14,0.004083,10000
+(λ ge (n_unique_suits (second_half $0)) (min_rank $0)),19.8523,28.6408,0.4746,47.46,0.004994,10000
+(λ ge (n_unique_ranks (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.4958,49.58,0.005,10000
+(λ ge (n_unique_ranks (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.4951,49.51,0.005,10000
+(λ ge (n_unique_colors (first_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.0392,3.92,0.001941,10000
+(λ ge (n_unique_colors (first_half $0)) (min_rank $0)),19.8523,28.6408,0.3004,30.04,0.004584,10000
+(λ ge (n_unique_colors (second_half $0)) (n_unique_suits $0)),19.8523,28.6408,0.0394,3.94,0.001945,10000
+(λ ge (n_unique_colors (second_half $0)) (min_rank $0)),19.8523,28.6408,0.3046,30.46,0.004602,10000
+(λ ge (min_rank (first_half $0)) (n_unique_ranks $0)),19.8523,28.6408,0.4292,42.92,0.00495,10000
+(λ ge (min_rank (second_half $0)) (n_unique_ranks $0)),19.8523,28.6408,0.4294,42.94,0.00495,10000
+(λ not (has_color (second_half (take 5 $0)) RED)),19.935,28.7601,0.1169,11.69,0.003213,10000
+(λ not (has_color (second_half (take 5 $0)) BLACK)),19.935,28.7601,0.1148,11.48,0.003188,10000
+(λ not (has_suit (first_half $0) (get_suit (last $0)))),19.9701,28.8107,0.4331,43.31,0.004955,10000
+(λ not (has_suit (second_half $0) (get_suit (head $0)))),19.9701,28.8107,0.4327,43.27,0.004955,10000
+(λ has_color (drop (rank_val (head $0)) $0) RED),20.0064,28.8632,0.2378,23.78,0.004257,10000
+(λ has_color (drop (rank_val (head $0)) $0) BLACK),20.0064,28.8632,0.2343,23.43,0.004236,10000
+(λ has_color (drop (rank_val (last $0)) $0) RED),20.0064,28.8632,0.2447,24.47,0.004299,10000
+(λ has_color (drop (rank_val (last $0)) $0) BLACK),20.0064,28.8632,0.2398,23.98,0.00427,10000
+(λ lt (rank_val (head $0)) (rank_val (last $0))),20.14,29.0558,0.4703,47.03,0.004991,10000
+(λ lt (rank_val (last $0)) (rank_val (head $0))),20.14,29.0558,0.474,47.4,0.004993,10000
+(λ not (has_suit (second_half (take 5 $0)) CLUBS)),20.1863,29.1226,0.4177,41.77,0.004932,10000
+(λ not (has_suit (second_half (take 5 $0)) DIAMONDS)),20.1863,29.1226,0.4114,41.14,0.004921,10000
+(λ not (has_suit (second_half (take 5 $0)) HEARTS)),20.1863,29.1226,0.4178,41.78,0.004932,10000
+(λ not (has_suit (second_half (take 5 $0)) SPADES)),20.1863,29.1226,0.408,40.8,0.004915,10000
+(λ has_suit (drop (rank_val (head $0)) $0) CLUBS),20.2577,29.2257,0.1494,14.94,0.003565,10000
+(λ has_suit (drop (rank_val (head $0)) $0) DIAMONDS),20.2577,29.2257,0.1532,15.32,0.003602,10000
+(λ has_suit (drop (rank_val (head $0)) $0) HEARTS),20.2577,29.2257,0.15,15.0,0.003571,10000
+(λ has_suit (drop (rank_val (head $0)) $0) SPADES),20.2577,29.2257,0.1477,14.77,0.003548,10000
+(λ has_suit (drop (rank_val (last $0)) $0) CLUBS),20.2577,29.2257,0.1528,15.28,0.003598,10000
+(λ has_suit (drop (rank_val (last $0)) $0) DIAMONDS),20.2577,29.2257,0.1554,15.54,0.003623,10000
+(λ has_suit (drop (rank_val (last $0)) $0) HEARTS),20.2577,29.2257,0.1586,15.86,0.003653,10000
+(λ has_suit (drop (rank_val (last $0)) $0) SPADES),20.2577,29.2257,0.1532,15.32,0.003602,10000
+(λ gt (count_suit (second_half (first_half $0)) CLUBS) 1),20.474,29.5377,0.0623,6.23,0.002417,10000
+(λ gt (count_suit (second_half (first_half $0)) DIAMONDS) 1),20.474,29.5377,0.0552,5.52,0.002284,10000
+(λ gt (count_suit (second_half (first_half $0)) HEARTS) 1),20.474,29.5377,0.0595,5.95,0.002366,10000
+(λ gt (count_suit (second_half (first_half $0)) SPADES) 1),20.474,29.5377,0.0629,6.29,0.002428,10000
+(λ gt (count_suit (second_half (second_half $0)) CLUBS) 1),20.474,29.5377,0.0535,5.35,0.00225,10000
+(λ gt (count_suit (second_half (second_half $0)) DIAMONDS) 1),20.474,29.5377,0.0592,5.92,0.00236,10000
+(λ gt (count_suit (second_half (second_half $0)) HEARTS) 1),20.474,29.5377,0.0611,6.11,0.002395,10000
+(λ gt (count_suit (second_half (second_half $0)) SPADES) 1),20.474,29.5377,0.0622,6.22,0.002415,10000
+(λ gt (count_suit (head (adjacent_pairs $0)) CLUBS) 1),20.554,29.6532,0.0604,6.04,0.002382,10000
+(λ gt (count_suit (head (adjacent_pairs $0)) DIAMONDS) 1),20.554,29.6532,0.0578,5.78,0.002334,10000
+(λ gt (count_suit (head (adjacent_pairs $0)) HEARTS) 1),20.554,29.6532,0.0555,5.55,0.00229,10000
+(λ gt (count_suit (head (adjacent_pairs $0)) SPADES) 1),20.554,29.6532,0.0611,6.11,0.002395,10000
+(λ lt (count_color $0 (get_color (head $0))) 3),20.6996,29.8632,0.1827,18.27,0.003864,10000
+(λ lt (count_color $0 (get_color (last $0))) 3),20.6996,29.8632,0.1872,18.72,0.003901,10000
+(λ gt (count_color $0 (get_color (head $0))) 3),20.6996,29.8632,0.4832,48.32,0.004997,10000
+(λ gt (count_color $0 (get_color (head $0))) 4),20.6996,29.8632,0.1603,16.03,0.003669,10000
+(λ gt (count_color $0 (get_color (last $0))) 3),20.6996,29.8632,0.4787,47.87,0.004995,10000
+(λ gt (count_color $0 (get_color (last $0))) 4),20.6996,29.8632,0.1604,16.04,0.00367,10000
+(λ lt (rank_val (head $0)) (count_color $0 RED)),20.6996,29.8632,0.0832,8.32,0.002762,10000
+(λ lt (rank_val (head $0)) (count_color $0 BLACK)),20.6996,29.8632,0.0854,8.54,0.002795,10000
+(λ lt (rank_val (last $0)) (count_color $0 RED)),20.6996,29.8632,0.0881,8.81,0.002834,10000
+(λ lt (rank_val (last $0)) (count_color $0 BLACK)),20.6996,29.8632,0.0856,8.56,0.002798,10000
+(λ le (rank_val (head $0)) (count_color $0 RED)),20.6996,29.8632,0.1513,15.13,0.003583,10000
+(λ le (rank_val (head $0)) (count_color $0 BLACK)),20.6996,29.8632,0.1533,15.33,0.003603,10000
+(λ le (rank_val (last $0)) (count_color $0 RED)),20.6996,29.8632,0.1604,16.04,0.00367,10000
+(λ le (rank_val (last $0)) (count_color $0 BLACK)),20.6996,29.8632,0.1562,15.62,0.00363,10000
+(λ lt (n_unique_suits (second_half (reverse (second_half $0)))) 2),20.7616,29.9527,0.2397,23.97,0.004269,10000
+(λ lt (n_unique_ranks (second_half (reverse (second_half $0)))) 2),20.7616,29.9527,0.0583,5.83,0.002343,10000
+(λ lt (n_unique_colors (second_half (reverse (second_half $0)))) 2),20.7616,29.9527,0.4883,48.83,0.004999,10000
+(λ lt (max_rank (second_half (reverse (second_half $0)))) 5),20.7616,29.9527,0.0487,4.87,0.002152,10000
+(λ lt (min_rank (second_half (reverse (second_half $0)))) 3),20.7616,29.9527,0.1486,14.86,0.003557,10000
+(λ lt (min_rank (second_half (reverse (second_half $0)))) 4),20.7616,29.9527,0.2816,28.16,0.004498,10000
+(λ lt (min_rank (second_half (reverse (second_half $0)))) 5),20.7616,29.9527,0.4079,40.79,0.004914,10000
+(λ le (max_rank (second_half (reverse (second_half $0)))) 5),20.7616,29.9527,0.0896,8.96,0.002856,10000
+(λ gt (min_rank (second_half (reverse (second_half $0)))) 5),20.7616,29.9527,0.4769,47.69,0.004995,10000
+(λ lt 2 (count_color (take 4 $0) RED)),20.9158,30.1751,0.301,30.1,0.004587,10000
+(λ lt 2 (count_color (take 4 $0) BLACK)),20.9158,30.1751,0.3067,30.67,0.004611,10000
+(λ lt 2 (count_color (take 5 $0) RED)),20.9158,30.1751,0.4981,49.81,0.005,10000
+(λ lt 2 (count_color (drop 1 $0) RED)),20.9158,30.1751,0.4993,49.93,0.005,10000
+(λ lt 2 (count_color (drop 2 $0) RED)),20.9158,30.1751,0.3061,30.61,0.004609,10000
+(λ lt 2 (count_color (drop 2 $0) BLACK)),20.9158,30.1751,0.2995,29.95,0.00458,10000
+(λ lt 3 (count_color (take 5 $0) RED)),20.9158,30.1751,0.1707,17.07,0.003762,10000
+(λ lt 3 (count_color (take 5 $0) BLACK)),20.9158,30.1751,0.1769,17.69,0.003816,10000
+(λ lt 3 (count_color (drop 1 $0) RED)),20.9158,30.1751,0.1739,17.39,0.00379,10000
+(λ lt 3 (count_color (drop 1 $0) BLACK)),20.9158,30.1751,0.1691,16.91,0.003748,10000
+(λ lt (n_unique_suits (head (second_half (adjacent_pairs $0)))) 2),20.9217,30.1837,0.241,24.1,0.004277,10000
+(λ lt (n_unique_ranks (head (second_half (adjacent_pairs $0)))) 2),20.9217,30.1837,0.0573,5.73,0.002324,10000
+(λ lt (n_unique_colors (head (second_half (adjacent_pairs $0)))) 2),20.9217,30.1837,0.4916,49.16,0.004999,10000
+(λ lt (max_rank (head (second_half (adjacent_pairs $0)))) 5),20.9217,30.1837,0.0507,5.07,0.002194,10000
+(λ lt (min_rank (head (second_half (adjacent_pairs $0)))) 3),20.9217,30.1837,0.1487,14.87,0.003558,10000
+(λ lt (min_rank (head (second_half (adjacent_pairs $0)))) 4),20.9217,30.1837,0.288,28.8,0.004528,10000
+(λ lt (min_rank (head (second_half (adjacent_pairs $0)))) 5),20.9217,30.1837,0.4058,40.58,0.00491,10000
+(λ le (max_rank (head (second_half (adjacent_pairs $0)))) 5),20.9217,30.1837,0.0885,8.85,0.00284,10000
+(λ gt (min_rank (head (second_half (adjacent_pairs $0)))) 5),20.9217,30.1837,0.4789,47.89,0.004996,10000
+(λ lt (count_suit $0 (get_suit (head $0))) 2),20.9509,30.2257,0.2422,24.22,0.004284,10000
+(λ lt (count_suit $0 (get_suit (last $0))) 2),20.9509,30.2257,0.2382,23.82,0.00426,10000
+(λ gt (count_suit $0 (get_suit (head $0))) 2),20.9509,30.2257,0.3308,33.08,0.004705,10000
+(λ gt (count_suit $0 (get_suit (head $0))) 3),20.9509,30.2257,0.076,7.6,0.00265,10000
+(λ gt (count_suit $0 (get_suit (last $0))) 2),20.9509,30.2257,0.3408,34.08,0.00474,10000
+(λ gt (count_suit $0 (get_suit (last $0))) 3),20.9509,30.2257,0.0779,7.79,0.00268,10000
+(λ ge (count_suit $0 CLUBS) (rank_val (head $0))),20.9509,30.2257,0.0536,5.36,0.002252,10000
+(λ ge (count_suit $0 CLUBS) (rank_val (last $0))),20.9509,30.2257,0.0523,5.23,0.002226,10000
+(λ ge (count_suit $0 DIAMONDS) (rank_val (head $0))),20.9509,30.2257,0.0487,4.87,0.002152,10000
+(λ ge (count_suit $0 DIAMONDS) (rank_val (last $0))),20.9509,30.2257,0.0493,4.93,0.002165,10000
+(λ ge (count_suit $0 HEARTS) (rank_val (head $0))),20.9509,30.2257,0.0468,4.68,0.002112,10000
+(λ ge (count_suit $0 HEARTS) (rank_val (last $0))),20.9509,30.2257,0.0552,5.52,0.002284,10000
+(λ ge (count_suit $0 SPADES) (rank_val (head $0))),20.9509,30.2257,0.0484,4.84,0.002146,10000
+(λ ge (count_suit $0 SPADES) (rank_val (last $0))),20.9509,30.2257,0.051,5.1,0.0022,10000
+(λ lt (+ 3 5) (rank_val (head $0))),21.0493,30.3678,0.4621,46.21,0.004986,10000
+(λ lt (+ 3 5) (rank_val (last $0))),21.0493,30.3678,0.4588,45.88,0.004983,10000
+(λ lt (+ 4 5) (rank_val (head $0))),21.0493,30.3678,0.3898,38.98,0.004877,10000
+(λ lt (+ 4 5) (rank_val (last $0))),21.0493,30.3678,0.3845,38.45,0.004865,10000
+(λ lt (+ 5 5) (rank_val (head $0))),21.0493,30.3678,0.3122,31.22,0.004634,10000
+(λ lt (+ 5 5) (rank_val (last $0))),21.0493,30.3678,0.3041,30.41,0.0046,10000
+(λ lt (- (rank_val (head $0)) 3) 5),21.0493,30.3678,0.462,46.2,0.004986,10000
+(λ lt (- (rank_val (last $0)) 3) 5),21.0493,30.3678,0.4682,46.82,0.00499,10000
+(λ lt (mod 3 (rank_val (head $0))) 1),21.0493,30.3678,0.0788,7.88,0.002694,10000
+(λ lt (mod 3 (rank_val (last $0))) 1),21.0493,30.3678,0.0775,7.75,0.002674,10000
+(λ lt (mod 4 (rank_val (head $0))) 1),21.0493,30.3678,0.1512,15.12,0.003582,10000
+(λ lt (mod 4 (rank_val (last $0))) 1),21.0493,30.3678,0.1608,16.08,0.003673,10000
+(λ lt (mod 5 (rank_val (head $0))) 1),21.0493,30.3678,0.0754,7.54,0.00264,10000
+(λ lt (mod 5 (rank_val (head $0))) 2),21.0493,30.3678,0.2266,22.66,0.004186,10000
+(λ lt (mod 5 (rank_val (last $0))) 1),21.0493,30.3678,0.0747,7.47,0.002629,10000
+(λ lt (mod 5 (rank_val (last $0))) 2),21.0493,30.3678,0.2355,23.55,0.004243,10000
+(λ lt (mod (rank_val (head $0)) 3) 1),21.0493,30.3678,0.2991,29.91,0.004579,10000
+(λ lt (mod (rank_val (head $0)) 4) 1),21.0493,30.3678,0.225,22.5,0.004176,10000
+(λ lt (mod (rank_val (head $0)) 4) 2),21.0493,30.3678,0.4496,44.96,0.004975,10000
+(λ lt (mod (rank_val (head $0)) 5) 1),21.0493,30.3678,0.153,15.3,0.0036,10000
+(λ lt (mod (rank_val (head $0)) 5) 2),21.0493,30.3678,0.308,30.8,0.004617,10000
+(λ lt (mod (rank_val (last $0)) 3) 1),21.0493,30.3678,0.3006,30.06,0.004585,10000
+(λ lt (mod (rank_val (last $0)) 4) 1),21.0493,30.3678,0.2298,22.98,0.004207,10000
+(λ lt (mod (rank_val (last $0)) 4) 2),21.0493,30.3678,0.4529,45.29,0.004978,10000
+(λ lt (mod (rank_val (last $0)) 5) 1),21.0493,30.3678,0.1551,15.51,0.00362,10000
+(λ lt (mod (rank_val (last $0)) 5) 2),21.0493,30.3678,0.3074,30.74,0.004614,10000
+(λ gt (mod (rank_val (head $0)) 2) 0),21.0493,30.3678,0.4636,46.36,0.004987,10000
+(λ gt (mod (rank_val (head $0)) 3) 1),21.0493,30.3678,0.3887,38.87,0.004875,10000
+(λ gt (mod (rank_val (head $0)) 4) 2),21.0493,30.3678,0.239,23.9,0.004265,10000
+(λ gt (mod (rank_val (head $0)) 5) 2),21.0493,30.3678,0.4644,46.44,0.004987,10000
+(λ gt (mod (rank_val (head $0)) 5) 3),21.0493,30.3678,0.2328,23.28,0.004226,10000
+(λ gt (mod (rank_val (last $0)) 2) 0),21.0493,30.3678,0.4575,45.75,0.004982,10000
+(λ gt (mod (rank_val (last $0)) 3) 1),21.0493,30.3678,0.3817,38.17,0.004858,10000
+(λ gt (mod (rank_val (last $0)) 4) 2),21.0493,30.3678,0.2344,23.44,0.004236,10000
+(λ gt (mod (rank_val (last $0)) 5) 2),21.0493,30.3678,0.4617,46.17,0.004985,10000
+(λ gt (mod (rank_val (last $0)) 5) 3),21.0493,30.3678,0.2371,23.71,0.004253,10000
+(λ has_suit (take (count_suit $0 CLUBS) $0) CLUBS),21.0687,30.3957,0.4037,40.37,0.004906,10000
+(λ has_suit (take (count_suit $0 CLUBS) $0) DIAMONDS),21.0687,30.3957,0.2873,28.73,0.004525,10000
+(λ has_suit (take (count_suit $0 CLUBS) $0) HEARTS),21.0687,30.3957,0.298,29.8,0.004574,10000
+(λ has_suit (take (count_suit $0 CLUBS) $0) SPADES),21.0687,30.3957,0.2941,29.41,0.004556,10000
+(λ has_suit (take (count_suit $0 DIAMONDS) $0) CLUBS),21.0687,30.3957,0.3013,30.13,0.004588,10000
+(λ has_suit (take (count_suit $0 DIAMONDS) $0) DIAMONDS),21.0687,30.3957,0.3932,39.32,0.004885,10000
+(λ has_suit (take (count_suit $0 DIAMONDS) $0) HEARTS),21.0687,30.3957,0.2995,29.95,0.00458,10000
+(λ has_suit (take (count_suit $0 DIAMONDS) $0) SPADES),21.0687,30.3957,0.2942,29.42,0.004557,10000
+(λ has_suit (take (count_suit $0 HEARTS) $0) CLUBS),21.0687,30.3957,0.299,29.9,0.004578,10000
+(λ has_suit (take (count_suit $0 HEARTS) $0) DIAMONDS),21.0687,30.3957,0.2917,29.17,0.004545,10000
+(λ has_suit (take (count_suit $0 HEARTS) $0) HEARTS),21.0687,30.3957,0.4056,40.56,0.00491,10000
+(λ has_suit (take (count_suit $0 HEARTS) $0) SPADES),21.0687,30.3957,0.3007,30.07,0.004586,10000
+(λ has_suit (take (count_suit $0 SPADES) $0) CLUBS),21.0687,30.3957,0.296,29.6,0.004565,10000
+(λ has_suit (take (count_suit $0 SPADES) $0) DIAMONDS),21.0687,30.3957,0.2963,29.63,0.004566,10000
+(λ has_suit (take (count_suit $0 SPADES) $0) HEARTS),21.0687,30.3957,0.2935,29.35,0.004554,10000
+(λ has_suit (take (count_suit $0 SPADES) $0) SPADES),21.0687,30.3957,0.4054,40.54,0.00491,10000
+(λ has_color (drop (n_unique_suits $0) (first_half $0)) RED),21.105,30.4481,0.0326,3.26,0.001776,10000
+(λ has_color (drop (n_unique_suits $0) (second_half $0)) BLACK),21.105,30.4481,0.0373,3.73,0.001895,10000
+(λ has_color (drop (n_unique_ranks $0) (reverse $0)) RED),21.105,30.4481,0.3692,36.92,0.004826,10000
+(λ has_color (drop (n_unique_ranks $0) (reverse $0)) BLACK),21.105,30.4481,0.3716,37.16,0.004832,10000
+(λ has_color (drop (min_rank $0) (first_half $0)) RED),21.105,30.4481,0.1948,19.48,0.00396,10000
+(λ has_color (drop (min_rank $0) (first_half $0)) BLACK),21.105,30.4481,0.2005,20.05,0.004004,10000
+(λ has_color (drop (min_rank $0) (second_half $0)) RED),21.105,30.4481,0.2052,20.52,0.004038,10000
+(λ has_color (drop (min_rank $0) (second_half $0)) BLACK),21.105,30.4481,0.1901,19.01,0.003924,10000
+(λ has_color (first_half (take (n_unique_colors $0) $0)) RED),21.105,30.4481,0.4871,48.71,0.004998,10000
+(λ has_color (first_half (take (n_unique_colors $0) $0)) BLACK),21.105,30.4481,0.4905,49.05,0.004999,10000
+(λ has_color (first_half (drop (n_unique_ranks $0) $0)) RED),21.105,30.4481,0.0844,8.44,0.00278,10000
+(λ has_color (first_half (drop (n_unique_ranks $0) $0)) BLACK),21.105,30.4481,0.0889,8.89,0.002846,10000
+(λ has_color (first_half (drop (min_rank $0) $0)) BLACK),21.105,30.4481,0.4994,49.94,0.005,10000
+(λ has_color (second_half (drop (n_unique_ranks $0) $0)) RED),21.105,30.4481,0.3298,32.98,0.004701,10000
+(λ has_color (second_half (drop (n_unique_ranks $0) $0)) BLACK),21.105,30.4481,0.3231,32.31,0.004677,10000
+(λ gt (count_suit (take 4 $0) CLUBS) 1),21.1671,30.5377,0.2631,26.31,0.004403,10000
+(λ gt (count_suit (take 4 $0) CLUBS) 2),21.1671,30.5377,0.0472,4.72,0.002121,10000
+(λ gt (count_suit (take 4 $0) DIAMONDS) 1),21.1671,30.5377,0.2559,25.59,0.004364,10000
+(λ gt (count_suit (take 4 $0) DIAMONDS) 2),21.1671,30.5377,0.04,4.0,0.00196,10000
+(λ gt (count_suit (take 4 $0) HEARTS) 1),21.1671,30.5377,0.2522,25.22,0.004343,10000
+(λ gt (count_suit (take 4 $0) HEARTS) 2),21.1671,30.5377,0.0441,4.41,0.002053,10000
+(λ gt (count_suit (take 4 $0) SPADES) 1),21.1671,30.5377,0.2638,26.38,0.004407,10000
+(λ gt (count_suit (take 4 $0) SPADES) 2),21.1671,30.5377,0.0443,4.43,0.002058,10000
+(λ gt (count_suit (take 5 $0) CLUBS) 1),21.1671,30.5377,0.3695,36.95,0.004827,10000
+(λ gt (count_suit (take 5 $0) CLUBS) 2),21.1671,30.5377,0.0943,9.43,0.002922,10000
+(λ gt (count_suit (take 5 $0) DIAMONDS) 1),21.1671,30.5377,0.3684,36.84,0.004824,10000
+(λ gt (count_suit (take 5 $0) DIAMONDS) 2),21.1671,30.5377,0.0877,8.77,0.002829,10000
+(λ gt (count_suit (take 5 $0) HEARTS) 1),21.1671,30.5377,0.3623,36.23,0.004807,10000
+(λ gt (count_suit (take 5 $0) HEARTS) 2),21.1671,30.5377,0.0913,9.13,0.00288,10000
+(λ gt (count_suit (take 5 $0) SPADES) 1),21.1671,30.5377,0.3741,37.41,0.004839,10000
+(λ gt (count_suit (take 5 $0) SPADES) 2),21.1671,30.5377,0.0955,9.55,0.002939,10000
+(λ gt (count_suit (drop 1 $0) CLUBS) 1),21.1671,30.5377,0.3617,36.17,0.004805,10000
+(λ gt (count_suit (drop 1 $0) CLUBS) 2),21.1671,30.5377,0.0965,9.65,0.002953,10000
+(λ gt (count_suit (drop 1 $0) DIAMONDS) 1),21.1671,30.5377,0.3635,36.35,0.00481,10000
+(λ gt (count_suit (drop 1 $0) DIAMONDS) 2),21.1671,30.5377,0.0908,9.08,0.002873,10000
+(λ gt (count_suit (drop 1 $0) HEARTS) 1),21.1671,30.5377,0.373,37.3,0.004836,10000
+(λ gt (count_suit (drop 1 $0) HEARTS) 2),21.1671,30.5377,0.0933,9.33,0.002909,10000
+(λ gt (count_suit (drop 1 $0) SPADES) 1),21.1671,30.5377,0.3701,37.01,0.004828,10000
+(λ gt (count_suit (drop 1 $0) SPADES) 2),21.1671,30.5377,0.0963,9.63,0.00295,10000
+(λ gt (count_suit (drop 2 $0) CLUBS) 1),21.1671,30.5377,0.2529,25.29,0.004347,10000
+(λ gt (count_suit (drop 2 $0) CLUBS) 2),21.1671,30.5377,0.0447,4.47,0.002066,10000
+(λ gt (count_suit (drop 2 $0) DIAMONDS) 1),21.1671,30.5377,0.2592,25.92,0.004382,10000
+(λ gt (count_suit (drop 2 $0) DIAMONDS) 2),21.1671,30.5377,0.0439,4.39,0.002049,10000
+(λ gt (count_suit (drop 2 $0) HEARTS) 1),21.1671,30.5377,0.2609,26.09,0.004391,10000
+(λ gt (count_suit (drop 2 $0) HEARTS) 2),21.1671,30.5377,0.045,4.5,0.002073,10000
+(λ gt (count_suit (drop 2 $0) SPADES) 1),21.1671,30.5377,0.2574,25.74,0.004372,10000
+(λ gt (count_suit (drop 2 $0) SPADES) 2),21.1671,30.5377,0.0438,4.38,0.002046,10000
+(λ lt (max_rank (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.2166,21.66,0.004119,10000
+(λ lt (max_rank (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.2255,22.55,0.004179,10000
+(λ le (max_rank (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.3664,36.64,0.004818,10000
+(λ le (max_rank (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.2736,27.36,0.004458,10000
+(λ le (max_rank (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.2848,28.48,0.004513,10000
+(λ le (max_rank (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.3622,36.22,0.004806,10000
+(λ gt (n_unique_suits (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.0307,3.07,0.001725,10000
+(λ gt (n_unique_suits (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.0317,3.17,0.001752,10000
+(λ gt (n_unique_ranks (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.0616,6.16,0.002404,10000
+(λ gt (n_unique_ranks (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.0642,6.42,0.002451,10000
+(λ gt (n_unique_ranks (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.0612,6.12,0.002397,10000
+(λ gt (n_unique_ranks (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.0652,6.52,0.002469,10000
+(λ gt (min_rank (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.2233,22.33,0.004165,10000
+(λ gt (min_rank (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.2216,22.16,0.004153,10000
+(λ ge (n_unique_suits (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.103,10.3,0.00304,10000
+(λ ge (n_unique_suits (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.1049,10.49,0.003064,10000
+(λ ge (n_unique_suits (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.1018,10.18,0.003024,10000
+(λ ge (n_unique_suits (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.1041,10.41,0.003054,10000
+(λ ge (n_unique_ranks (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.1397,13.97,0.003467,10000
+(λ ge (n_unique_ranks (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.1412,14.12,0.003482,10000
+(λ ge (n_unique_ranks (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.1385,13.85,0.003454,10000
+(λ ge (n_unique_ranks (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.1416,14.16,0.003486,10000
+(λ ge (n_unique_colors (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.0561,5.61,0.002301,10000
+(λ ge (n_unique_colors (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.0586,5.86,0.002349,10000
+(λ ge (n_unique_colors (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.0568,5.68,0.002315,10000
+(λ ge (n_unique_colors (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.061,6.1,0.002393,10000
+(λ ge (min_rank (first_half $0)) (rank_val (head $0))),21.2386,30.6408,0.3633,36.33,0.00481,10000
+(λ ge (min_rank (first_half $0)) (rank_val (last $0))),21.2386,30.6408,0.2811,28.11,0.004495,10000
+(λ ge (min_rank (second_half $0)) (rank_val (head $0))),21.2386,30.6408,0.2777,27.77,0.004479,10000
+(λ ge (min_rank (second_half $0)) (rank_val (last $0))),21.2386,30.6408,0.3649,36.49,0.004814,10000

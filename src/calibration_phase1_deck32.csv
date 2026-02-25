@@ -1,0 +1,46 @@
+token,rule_id,family,base_rate,base_rate_se,base_rate_pct,n_true,tree_size,tree_depth,n_primitives,level,name
+r56x,Half_sum_one_side_ge_2x_other,SCORE,1e-05,1e-05,0.0,1,13,5,7,2,One half ≥ 2× the other (sum of ranks)
+r23x,Halves_copy_ranks,COPY,0.00089,9.4e-05,0.09,89,3,3,5,4,Halves have same rank sequence
+r20x,Ranks_palindrome,PAL,0.00098,9.9e-05,0.1,98,2,2,5,4,Ranks read the same forward/back
+r24x,Shift_half_plus_two,SHIFT,0.00114,0.000107,0.11,114,5,4,5,2,Half-shift positions differ by +2 rank
+r38x,Adj_same_rank_or_suit,ADJ,0.00231,0.000152,0.23,231,7,4,6,2,Neighbors share rank or suit
+r1x,Sorted_by_rank,LOCAL,0.00455,0.000213,0.46,455,3,3,3,1,Ranks are in non-decreasing order
+r39x,Skip2_same_rank_or_suit,ADJ,0.00967,0.000309,0.97,967,7,4,6,2,Every 3rd card matches rank or suit
+r18x,Suits_palindrome,PAL,0.01159,0.000338,1.16,1159,2,2,5,4,Suits read the same forward/back
+r21x,Halves_copy_suits,COPY,0.012,0.000344,1.2,1200,3,3,5,4,Halves have same suit sequence
+r3x,Uniform_color,COUNT,0.01678,0.000406,1.68,1678,2,2,4,1,All cards have the same color
+r48x,Uniform_rank_parity,PARITY,0.01709,0.00041,1.71,1709,2,2,2,1,All ranks are same parity
+r50x,Global_radial_no_dominance,CENTER,0.01948,0.000437,1.95,1948,8,4,6,2,No farther-from-center card outranks a nearer one
+r57x,Adj_same_rank_or_color,ADJ,0.04146,0.00063,4.15,4146,7,4,6,2,Neighbors share rank or color
+r49x,Halves_radial_nonincreasing,CENTER,0.04731,0.000671,4.73,4731,5,3,4,2,"Outward from center, ranks don't go up (per half)"
+p7x,Exactly_two_suits,COUNT,0.05209,0.000703,5.21,5209,3,3,3,1,Exactly two suits appear
+r46x,Halves_same_suit_set,COPY,0.07339,0.000825,7.34,7339,9,4,5,2,Both halves contain the same suits (set)
+r47x,Only_one_odd_rank,PARITY,0.07706,0.000843,7.71,7706,5,5,5,1,Exactly one odd rank
+r16x,Even_opens_next_closes,LANG,0.08628,0.000888,8.63,8628,1,1,3,3,"Even opens, next odd closes"
+r17x,Odd_opens_next_closes,LANG,0.08764,0.000894,8.76,8764,1,1,3,3,"Odd opens, next even closes"
+r15x,Well_formed_brackets_by_suit,LANG,0.10605,0.000974,10.61,10605,1,1,1,3,Suits form matched brackets
+r27x,AltColor1_palindrome,ALTCLR,0.11252,0.000999,11.25,11252,2,2,5,4,Pointy/Round pattern is a palindrome
+r19x,Colors_palindrome,PAL,0.11261,0.001,11.26,11261,2,2,5,4,Colors read the same forward/back
+r29x,Halves_copy_altcolor1,COPY,0.11296,0.001001,11.3,11296,3,3,5,4,Right half copies left (Pointy/Round)
+r28x,AltColor2_palindrome,ALTCLR,0.11331,0.001002,11.33,11331,2,2,5,4,SH/DC pattern is a palindrome
+r22x,Halves_copy_colors,COPY,0.11382,0.001004,11.38,11382,3,3,5,4,Halves have same color sequence
+r30x,Halves_copy_altcolor2,COPY,0.11437,0.001006,11.44,11437,3,3,5,4,Right half copies left (SH/DC)
+r52x,AP_len4_step2_anywhere,AP,0.13064,0.001066,13.06,13064,1,1,1,3,4-term rank pattern with step 2
+r40x,Adj_rank_gap_le3,ADJ,0.15434,0.001142,15.43,15434,6,5,6,2,Neighbors differ by ≤3 ranks
+r41x,Shift_half_ge,SHIFT,0.16431,0.001172,16.43,16431,5,3,4,2,Right half ≥ left half (ranks)
+r42x,Half_sum_diff_geN,SCORE,0.17234,0.001194,17.23,17234,7,4,7,2,Left half beats right by at least N points
+r44x,Ends_same_suit,LOCAL,0.22422,0.001319,22.42,22422,2,2,5,4,First and last share the suit
+r43x,Exactly_one_club,COUNT,0.37259,0.001529,37.26,37259,3,3,3,1,Exactly one club (♣)
+r51x,AP_len3_step2_anywhere,AP,0.47145,0.001579,47.14,47145,1,1,1,3,3-term rank pattern with step 2
+r26x,Halves_hearts_presence_equal,HIER,0.48125,0.00158,48.12,48125,9,4,4,2,Both halves either have a ♥ or neither does
+r31x,Ends_same_altcolor1,ALTCLR,0.48248,0.00158,48.25,48248,2,2,5,4,First and last are both Pointy or both Round
+r45x,Ends_same_color,LOCAL,0.48253,0.00158,48.25,48253,2,2,5,4,First and last share the color
+r4x,S_before_H,LOCAL,0.49793,0.001581,49.79,49793,4,2,3,1,Some ♠ appears before some ♥
+r54x,Halves_AP_len2_step1_equal,HIER,0.50021,0.001581,50.02,50021,5,3,3,2,Both halves have some ±1 rank pair (or both don't)
+r55x,At_most_three_suits,COUNT,0.53904,0.001576,53.9,53904,3,3,3,1,At most three suits appear
+r11x,Half_or_more_same_suit,COUNT,0.57379,0.001564,57.38,57379,5,3,5,1,At least half the cards share a suit
+r12x,Halves_uniform_color_equal,HIER,0.65567,0.001503,65.57,65567,7,3,4,2,Both halves are uniform in color (or both not)
+r53x,Halves_AP_len3_any_equal,HIER,0.7282,0.001407,72.82,72820,5,3,3,3,Both halves have a 3-term rank pattern (or both don't)
+r2x,Has_pair_ranks,COUNT,0.87351,0.001051,87.35,87351,4,3,4,1,At least one pair (same rank)
+r5x,AP_len3_anywhere_anyk,AP,0.89458,0.000971,89.46,89458,1,1,1,3,There is a 3-term rank pattern with equal steps (any step)
+r14x,Halves_AP_step1_equal,HIER,0.97472,0.000496,97.47,97472,5,3,3,2,Both halves are runs (+1) or both aren't

@@ -1,0 +1,19 @@
+id,source,family,base_rate,base_rate_pct,base_rate_se,description
+interleaved_colors,llm,STRIDE,0.03422,3.42,0.000813,"Even positions share one color, odd positions share the other"
+skip_same_suit,llm,STRIDE,0.05236,5.24,0.000996,"Positions 1, 3, 5 share the same suit"
+frame_higher,llm,SANDWICH,0.05406,5.41,0.001011,"Edge cards (1,2,5,6) all outrank interior cards (3,4)"
+sandwich_suits,llm,SANDWICH,0.05662,5.66,0.001034,"Pos 1&6 share suit, AND pos 2&5 share suit (sandwich mirror)"
+bridge_suit,llm,SANDWICH,0.08382,8.38,0.001239,Endpoints share a suit that no interior card has
+connected_graph,llm,GRAPH,0.10854,10.85,0.001391,Cards form a connected graph via shared rank or suit
+convex_or_concave,llm,ZIGZAG,0.11126,11.13,0.001406,Ranks form a mountain (up then down) or valley (down then up)
+at_most_one_descent,llm,CONDITIONAL,0.11584,11.58,0.001431,Ranks decrease at most once (almost sorted ascending)
+suit_respects_order,llm,EXTREMAL,0.14052,14.05,0.001554,Same-suit cards appear in ascending rank order by position
+zigzag_ranks,llm,ZIGZAG,0.14264,14.26,0.001564,Ranks alternate direction: up-down-up-down-up (or down-up-down-up-down)
+color_neighbor,llm,GRAPH,0.1522,15.22,0.001606,Every card has an adjacent card of the same color
+suit_change_eq_rank_increase,llm,CROSS_FEAT,0.1524,15.24,0.001607,Number of suit transitions = number of rank increases
+pair_at_distance_3,llm,DISTRIBUTION,0.16904,16.9,0.001676,Same rank appears at positions exactly 3 apart
+suit_run_3,llm,DISTRIBUTION,0.17438,17.44,0.001697,Three consecutive cards share the same suit
+extremes_same_suit,llm,EXTREMAL,0.247,24.7,0.001929,Highest and lowest ranked cards share a suit
+min_rank_at_center,llm,EXTREMAL,0.37984,37.98,0.002171,Lowest-ranked card is at position 3 or 4
+max_rank_at_edge,llm,EXTREMAL,0.381,38.1,0.002172,Highest-ranked card is at position 1 or 6
+rainbow,llm,DISTRIBUTION,0.42406,42.41,0.00221,All four suits are present in the hand

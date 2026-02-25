@@ -1,0 +1,33 @@
+id,source,family,base_rate,base_rate_pct,name,description,selection
+Adj_same_rank_or_color,catalogue,ADJ,0.03661,3.66,Neighbors share rank or color,"For every adjacent pair, either ranks match or colors match.",wide
+Halves_radial_nonincreasing,catalogue,CENTER,0.03959,3.96,"Outward from center, ranks don't go up (per half)","In each half, as you move away from the center, ranks never increase.",wide+deep
+skip_same_suit,llm,STRIDE,0.05236,5.24,"Positions 1, 3, 5 share the same suit","Positions 1, 3, 5 share the same suit",wide
+frame_higher,llm,SANDWICH,0.05406,5.41,"Edge cards (1,2,5,6) all outrank interior cards (3,4)","Edge cards (1,2,5,6) all outrank interior cards (3,4)",wide
+Ends_same_rank_val,template,ENDS,0.05664,5.66,First and last cards have the same rank_val,First and last cards have the same rank_val,wide
+skip2_same_parity,template,ADJACENT,0.05962,5.96,Every pair at offset 2 satisfies same_parity,Every pair at offset 2 satisfies same_parity,wide
+AP_len4_step2_anywhere,catalogue,AP,0.06572,6.57,4-term rank pattern with step 2,"Ignoring order, some four ranks form a step-2 progression (e.g., 4,6,8,10).",wide+deep
+Halves_same_suit_set,catalogue,COPY,0.08019,8.02,Both halves contain the same suits (set),"Ignoring how many of each suit, both halves have the same set of suits.",wide+deep
+Odd_opens_next_closes,catalogue,LANG,0.08177,8.18,"Odd opens, next even closes","Odd ranks push; only the next even closes (e.g., 5 opens; 6 closes).",wide
+Well_formed_brackets_by_suit,catalogue,LANG,0.10654,10.65,Suits form matched brackets,Treat ♠/♥ as openers and ♣/♦ as closers of two bracket types; properly nested.,wide+deep
+Half_sum_one_side_ge_2x_other,catalogue,SCORE,0.10832,10.83,One half ≥ 2× the other (sum of ranks),Split the hand into left and right halves; the sum of ranks in one half is at least double the other.,wide
+Only_one_odd_rank,catalogue,PARITY,0.11466,11.47,Exactly one odd rank,Among all cards there is exactly one whose rank is odd.,wide+deep
+at_most_one_descent,llm,CONDITIONAL,0.11584,11.58,Ranks decrease at most once (almost sorted ascending),Ranks decrease at most once (almost sorted ascending),wide
+AltColor2_palindrome,catalogue,ALTCLR,0.11684,11.68,SH/DC pattern is a palindrome,Group suits into SH (♠♥) and DC (♦♣). That two-group pattern reads the same forward/back.,wide
+AltColor1_palindrome,catalogue,ALTCLR,0.11704,11.7,Pointy/Round pattern is a palindrome,Group suits into Pointy (♠♦) and Round (♥♣). That two-group pattern reads the same forward/back.,wide
+Colors_palindrome,catalogue,PAL,0.11724,11.72,Colors read the same forward/back,The sequence of RED/BLACK repeats symmetrically.,wide+deep
+Halves_copy_altcolor2,catalogue,COPY,0.11819,11.82,Right half copies left (SH/DC),Map suits to SH (♠♥) vs DC (♦♣); the right half matches the left half exactly.,wide
+Palindrome_parity,template,PALINDROME,0.1203,12.03,The sequence of parity values is a palindrome,The sequence of parity values is a palindrome,wide
+Two_pairs_ranks,catalogue,COUNT,0.13293,13.29,Two pairs (different ranks),"Two different ranks each appear at least twice (e.g., two 5s and two Kings).",wide
+Halves_copy_high,template,HALVES_COPY,0.1374,13.74,Right half copies left half in high,Right half copies left half in high,wide
+Halves_both_has_consec2,template,HALVES_PROPERTY,0.14034,14.03,Both halves satisfy has_consec2,Both halves satisfy has_consec2,wide
+suit_respects_order,llm,EXTREMAL,0.14052,14.05,Same-suit cards appear in ascending rank order by position,Same-suit cards appear in ascending rank order by position,wide
+zigzag_ranks,llm,ZIGZAG,0.14264,14.26,Ranks alternate direction: up-down-up-down-up (or down-up-down-up-down),Ranks alternate direction: up-down-up-down-up (or down-up-down-up-down),wide
+Shift_half_ge,catalogue,SHIFT,0.14748,14.75,Right half ≥ left half (ranks),"For each position i, the right-half rank is at least the left-half rank.",wide
+color_neighbor,llm,GRAPH,0.1522,15.22,Every card has an adjacent card of the same color,Every card has an adjacent card of the same color,wide
+suit_change_eq_rank_increase,llm,CROSS_FEAT,0.1524,15.24,Number of suit transitions = number of rank increases,Number of suit transitions = number of rank increases,wide
+pair_at_distance_3,llm,DISTRIBUTION,0.16904,16.9,Same rank appears at positions exactly 3 apart,Same rank appears at positions exactly 3 apart,wide
+All_but_one_same_color,catalogue,GLOBAL,0.1914,19.14,All but one same color,"All cards except at most one are the same color (all red or all black, with at most one exception).",wide
+Ends_same_suit,catalogue,LOCAL,0.2326,23.26,First and last share the suit,The first and last cards have the same suit.,wide+deep
+Half_sum_diff_geN,catalogue,SCORE,0.28452,28.45,Left half beats right by at least N points,Sum ranks left minus right is ≥ the hand size (N).,wide
+Exactly_one_club,catalogue,COUNT,0.36652,36.65,Exactly one club (♣),The hand contains exactly one ♣.,wide+deep
+Halves_AP_len2_step1_equal,catalogue,HIER,0.53225,53.23,Both halves have some ±1 rank pair (or both don't),Within each half there exists a pair of ranks that differ by exactly 1 — either in both halves or in neither.,wide
