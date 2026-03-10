@@ -127,3 +127,65 @@ def test_filter_trivial_removes_constants():
     survivor_names = [s[0] for s in survivors]
     assert "all_red" in survivor_names
     assert "all_spades" in survivor_names
+
+
+# =========================================================================
+# Syntactic filter tests
+# =========================================================================
+
+def test_syntactic_filter_rejects_reverse_reverse():
+    """reverse(reverse(X)) = X, should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    assert is_syntactically_redundant("(λ all ((λ eq (get_suit $0) HEARTS)) (reverse (reverse $0)))") is True
+
+def test_syntactic_filter_rejects_unique_unique():
+    """unique(unique(X)) = unique(X), should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    assert is_syntactically_redundant("(λ all ((λ eq (get_suit $0) HEARTS)) (unique (unique $0)))") is True
+
+def test_syntactic_filter_rejects_double_negation():
+    """not(not(X)) = X, should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    # Actual enumerator format: "not (not " without leading paren on outer not
+    assert is_syntactically_redundant("(λ not (not true))") is True
+    assert is_syntactically_redundant("(λ not (not (has_suit $0 HEARTS)))") is True
+
+def test_syntactic_filter_rejects_take_0():
+    """take 0 X = [], should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    assert is_syntactically_redundant("(λ has_color (take 0 $0) RED)") is True
+
+def test_syntactic_filter_rejects_const_arithmetic():
+    """(lt (+ 2 3) 4) has no hand dependence, should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    # Actual format: "lt (+ 0 0) 0" — curried application, no extra parens
+    assert is_syntactically_redundant("(λ lt (+ 2 3) 4)") is True
+    assert is_syntactically_redundant("(λ lt (+ 0 0) 0)") is True
+
+def test_syntactic_filter_rejects_const_vs_const():
+    """(lt 3 2) has no hand dependence, should be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    # Actual format: "lt 3 2)" — curried application
+    assert is_syntactically_redundant("(λ lt 3 2)") is True
+    assert is_syntactically_redundant("(λ lt 0 0)") is True
+    assert is_syntactically_redundant("(λ eq 1 1)") is True
+
+def test_syntactic_filter_accepts_meaningful_program():
+    """A meaningful program should NOT be rejected."""
+    from gallery_analysis.enumerator import is_syntactically_redundant
+    assert is_syntactically_redundant("(λ eq (n_unique_suits $0) 1)") is False
+    assert is_syntactically_redundant("(λ all ((λ eq (get_suit $0) HEARTS)) $0)") is False
+    assert is_syntactically_redundant("(λ lt (count_suit $0 HEARTS) 3)") is False
+
+def test_gallery_grammar_has_no_bool_constants():
+    """Gallery grammar should exclude true and false."""
+    from gallery_analysis.enumerator import build_gallery_primitives
+    prims = build_gallery_primitives()
+    names = {p.name for p in prims}
+    assert "true" not in names
+    assert "false" not in names
+    # But other primitives should still be present
+    assert "and" in names
+    assert "or" in names
+    assert "not" in names
+    assert "eq" in names
