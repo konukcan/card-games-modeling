@@ -56,6 +56,9 @@ data/*.npy
 src/dreamcoder_core/cython_src/*.c
 src/dreamcoder_core/cython_src/*.html
 
+# Worktrees
+.worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
