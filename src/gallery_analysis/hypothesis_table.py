@@ -1,10 +1,30 @@
 """
 Hypothesis table: fingerprinting, equivalence classes, and hit tracking.
 
-Each enumerated program (hypothesis) is:
-1. Evaluated on a probe set to get a boolean fingerprint
-2. Grouped into equivalence classes by fingerprint
-3. Evaluated on exemplar hands to get a hit vector
+Pipeline (informed by empirical exploration — see explore_trivial_vs_rare.py):
+
+  1. TRIVIAL FILTER: Evaluate each program on all 360 curated exemplar hands
+     (6 per rule × 60 rules). Programs that are constant (all-True or all-False)
+     across ALL 360 hands are discarded as trivially equivalent to `true`/`false`.
+     Empirically, this removes ~96% of enumerated programs.
+
+  2. FINGERPRINT: Evaluate survivors on a probe set of random hands and hash
+     the boolean output vector. Programs with identical fingerprints are grouped
+     into equivalence classes. A modest probe set (1K-5K) suffices since the
+     trivial filter already removed the bulk of collisions.
+
+  3. HIT VECTOR: Evaluate each equivalence class on the target rule's exemplar
+     hands to determine how many it covers (needed for Bayesian scoring).
+
+BIAS DOCUMENTATION:
+  The trivial filter uses curated exemplar hands from the 60 gallery rules.
+  This introduces a bias: a rare hypothesis that is non-trivial but happens
+  not to fire on ANY of the 360 curated exemplars will be incorrectly
+  discarded as trivial. However, such a hypothesis would also receive zero
+  likelihood in the Bayesian analysis (it fails to explain any rule's data),
+  so this bias does not affect posterior computations for the 60 gallery rules.
+  If the analysis were extended to rules beyond the gallery set, the exemplar
+  pool would need to be expanded accordingly.
 
 Equivalence classes track:
 - The canonical (shortest/most probable) program
@@ -22,6 +42,91 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rules.cards import Hand, Card, Suit, Rank
+
+
+def is_trivial(
+    predicate: Callable[[Hand], bool],
+    all_exemplar_hands: List[Hand],
+) -> bool:
+    """
+    Check if a predicate is trivially constant (always-True or always-False)
+    by evaluating it on the curated exemplar hands from all 60 gallery rules.
+
+    A predicate that produces the same boolean on all 360 curated exemplar hands
+    is treated as trivial, since those hands cover a wide range of structural
+    patterns (color, suit, rank, positional, sequential, etc.).
+
+    BIAS: A non-trivial predicate that happens not to fire on any of the 360
+    curated hands will be incorrectly classified as trivial. See module docstring
+    for why this is acceptable for the gallery analysis.
+
+    Args:
+        predicate: The hypothesis function (Hand -> bool)
+        all_exemplar_hands: All curated exemplar hands (typically 360 = 6 × 60 rules)
+
+    Returns:
+        True if the predicate appears trivially constant, False otherwise.
+    """
+    if not all_exemplar_hands:
+        return False
+
+    # Evaluate on first hand to establish baseline
+    try:
+        first_result = predicate(all_exemplar_hands[0])
+    except Exception:
+        return True  # errors on curated hands → treat as trivial
+
+    # Check remaining hands — any disagreement means non-trivial
+    for hand in all_exemplar_hands[1:]:
+        try:
+            if predicate(hand) != first_result:
+                return False
+        except Exception:
+            # An error after a successful evaluation is a form of disagreement
+            return False
+
+    return True
+
+
+def filter_trivial(
+    programs: List[Tuple[str, Callable, float]],
+    all_exemplar_hands: List[Hand],
+) -> Tuple[List[Tuple[str, Callable, float]], Dict[str, int]]:
+    """
+    Remove trivially constant programs using the curated exemplar filter.
+
+    Args:
+        programs: List of (program_str, predicate_fn, log_prior)
+        all_exemplar_hands: All 360 curated exemplar hands
+
+    Returns:
+        (surviving_programs, filter_stats)
+        where filter_stats has keys: total, trivial_true, trivial_false, survivors
+    """
+    survivors = []
+    n_trivial_true = 0
+    n_trivial_false = 0
+
+    for prog_str, pred_fn, log_prior in programs:
+        if is_trivial(pred_fn, all_exemplar_hands):
+            # Classify which kind of trivial
+            try:
+                if pred_fn(all_exemplar_hands[0]):
+                    n_trivial_true += 1
+                else:
+                    n_trivial_false += 1
+            except Exception:
+                n_trivial_false += 1
+        else:
+            survivors.append((prog_str, pred_fn, log_prior))
+
+    stats = {
+        "total": len(programs),
+        "trivial_true": n_trivial_true,
+        "trivial_false": n_trivial_false,
+        "survivors": len(survivors),
+    }
+    return survivors, stats
 
 
 def compute_fingerprint(predicate: Callable[[Hand], bool], probes: List[Hand]) -> str:

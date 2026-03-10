@@ -63,3 +63,67 @@ def test_hit_vector_computation():
     classes = table.get_equivalence_classes()
     assert classes[0]["hit_vector"] == [True, False]
     assert classes[0]["n_hits"] == 1
+
+
+# =========================================================================
+# Trivial filter tests
+# =========================================================================
+
+def _make_diverse_hands():
+    """Create a small set of diverse hands for trivial filter testing."""
+    return [
+        [H("A"), H("K"), D("Q"), D("J"), H("10"), D("9")],  # all red
+        [S("A"), S("K"), S("Q"), S("J"), S("10"), S("9")],   # all spades
+        [H("2"), S("3"), D("4"), C("5"), H("6"), S("7")],    # mixed everything
+        [C("A"), C("K"), C("Q"), C("J"), C("10"), C("9")],   # all clubs
+    ]
+
+def test_is_trivial_always_true():
+    """A predicate that's True on all hands is trivial."""
+    from gallery_analysis.hypothesis_table import is_trivial
+    hands = _make_diverse_hands()
+    pred = lambda h: True
+    assert is_trivial(pred, hands) is True
+
+def test_is_trivial_always_false():
+    """A predicate that's False on all hands is trivial."""
+    from gallery_analysis.hypothesis_table import is_trivial
+    hands = _make_diverse_hands()
+    pred = lambda h: False
+    assert is_trivial(pred, hands) is True
+
+def test_is_trivial_non_trivial():
+    """A predicate that varies across hands is non-trivial."""
+    from gallery_analysis.hypothesis_table import is_trivial
+    hands = _make_diverse_hands()
+    # "all red" — True on first hand, False on second (spades)
+    pred = lambda h: all(h[i].suit in {Suit.HEARTS, Suit.DIAMONDS} for i in range(len(h)))
+    assert is_trivial(pred, hands) is False
+
+def test_is_trivial_rare_but_meaningful():
+    """A rare predicate that fires on at least one curated hand is non-trivial."""
+    from gallery_analysis.hypothesis_table import is_trivial
+    hands = _make_diverse_hands()
+    # "all spades" — False on most, True on the second hand
+    pred = lambda h: all(c.suit == Suit.SPADES for c in h)
+    assert is_trivial(pred, hands) is False
+
+def test_filter_trivial_removes_constants():
+    """filter_trivial should remove always-true and always-false programs."""
+    from gallery_analysis.hypothesis_table import filter_trivial
+    hands = _make_diverse_hands()
+
+    programs = [
+        ("true", lambda h: True, -1.0),
+        ("false", lambda h: False, -1.0),
+        ("all_red", lambda h: all(c.suit in {Suit.HEARTS, Suit.DIAMONDS} for c in h), -5.0),
+        ("all_spades", lambda h: all(c.suit == Suit.SPADES for c in h), -8.0),
+    ]
+
+    survivors, stats = filter_trivial(programs, hands)
+    assert stats["trivial_true"] == 1
+    assert stats["trivial_false"] == 1
+    assert stats["survivors"] == 2
+    survivor_names = [s[0] for s in survivors]
+    assert "all_red" in survivor_names
+    assert "all_spades" in survivor_names
