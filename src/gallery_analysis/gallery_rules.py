@@ -225,11 +225,6 @@ def four_any_suit_anywhere(hand: Hand) -> bool:
     sc = suit_counts(hand)
     return max(sc.values()) >= 4
 
-def right_half_diamonds(hand: Hand) -> bool:
-    """The right half of the hand is all diamonds."""
-    _, right = halves(hand)
-    return all(c.suit == Suit.DIAMONDS for c in right)
-
 def even_pos_red_odd_pos_black(hand: Hand) -> bool:
     """Even positions (2,4,6) are red, odd positions (1,3,5) are black (1-indexed)."""
     for i, c in enumerate(hand):
@@ -425,8 +420,8 @@ def no_adjacent_same_suit(hand: Hand) -> bool:
             return False
     return True
 
-def radial_increasing(hand: Hand) -> bool:
-    """Outer ring (positions 1,6) < middle ring (2,5) < inner ring (3,4)."""
+def radial_decreasing(hand: Hand) -> bool:
+    """Ranks decrease outward from center: center (3,4) > middle (2,5) > outer (1,6)."""
     if len(hand) < 6:
         return False
     outer_max = max(rv(hand[0]), rv(hand[5]))
@@ -556,7 +551,6 @@ _register("four_hearts_adjacent", 2, "Four consecutive hearts", four_hearts_adja
 _register("four_diamonds_anywhere", 2, "At least 4 diamonds", four_diamonds_anywhere)
 _register("four_any_suit_adjacent", 2, "Four consecutive cards share the same suit", four_any_suit_adjacent)
 _register("four_any_suit_anywhere", 2, "At least 4 cards share the same suit", four_any_suit_anywhere)
-_register("right_half_diamonds", 2, "Right half is all diamonds", right_half_diamonds)
 _register("even_pos_red_odd_pos_black", 2, "Even positions red, odd positions black", even_pos_red_odd_pos_black)
 _register("colors_palindrome", 2, "Color sequence is a palindrome", colors_palindrome)
 _register("halves_copy_colors", 2, "Left and right halves share color sequence", halves_copy_colors)
@@ -583,7 +577,7 @@ _register("straight5_same_color", 3, "5-card straight same color", straight5_sam
 _register("ranks_palindrome", 3, "Rank values form a palindrome", ranks_palindrome)
 _register("skip2_same_rank_or_suit", 3, "Every card at distance 2 shares rank or suit", skip2_same_rank_or_suit)
 _register("no_adjacent_same_suit", 3, "No adjacent cards share a suit", no_adjacent_same_suit)
-_register("radial_increasing", 3, "Outer < middle < inner ring ranks", radial_increasing)
+_register("radial_decreasing", 3, "Ranks decrease outward from center", radial_decreasing)
 _register("zigzag_ranks", 3, "Ranks alternate peaks and valleys", zigzag_ranks)
 _register("suit_brackets_no_cross", 3, "Suits form non-crossing nested brackets", suit_brackets_no_cross)
 _register("suit_brackets_nested", 3, "Suits form properly nested brackets", suit_brackets_nested)
