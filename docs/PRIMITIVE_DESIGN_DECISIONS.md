@@ -249,8 +249,8 @@ One rule requires treating suits as ordered values:
 
 ### Options considered
 
-**A. `suit_to_int : suit → int` with conventional ordering**
-- Maps ♠→4, ♥→3, ♦→2, ♣→1 (matching the gallery rule's convention)
+**A. `suit_to_int : suit → int` with gallery ordering**
+- Maps ♦→4, ♠→3, ♣→2, ♥→1 (matching the gallery rule's convention D≥S≥C≥H)
 - Cognitively plausible: card players often have a conventional suit ordering
 
 **B. Express via `running_sum` + suit-specific mappings**
@@ -259,11 +259,12 @@ One rule requires treating suits as ordered values:
 - But still needs the suit→int mapping somewhere
 
 ### Decision
-**Option A: `suit_to_int`** — conventional suit ordering.
+**Option A: `suit_to_int`** — gallery experiment suit ordering.
 
 ### Bias introduced
-The conventional ordering ♠ > ♥ > ♦ > ♣ is the standard bridge convention,
-but it is arbitrary — other orderings exist. By baking in this specific
+The ordering ♦ > ♠ > ♣ > ♥ is the convention used in the gallery experiment's
+`suits_nonincreasing` rule (D≥S≥C≥H). This is arbitrary — other orderings
+exist (e.g., bridge convention ♠ > ♥ > ♦ > ♣). By baking in this specific
 ordering, the model can express `suits_nonincreasing` but would struggle
 with rules using a different suit ordering convention. Since the gallery
 rules use exactly this convention, this is a mild bias — the model is tuned
@@ -354,8 +355,8 @@ When presenting this model, the following caveats should be noted:
    operation, potentially underestimating the difficulty of rules that
    require mental sorting.
 
-5. **Arbitrary suit ordering**: `suit_to_int` bakes in the bridge convention
-   (♠ > ♥ > ♦ > ♣), which is the convention used in the gallery rules.
+5. **Arbitrary suit ordering**: `suit_to_int` bakes in the gallery experiment's
+   convention (♦ > ♠ > ♣ > ♥), which matches the `suits_nonincreasing` rule.
 
 These biases are systematic and predictable — they all point in the same
 direction (making rules appear easier than they might be for humans). The

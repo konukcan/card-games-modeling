@@ -643,10 +643,11 @@ def make_gallery_extensions() -> List[Primitive]:
     ))
 
     # --- Suit to int ---
-    # Maps suits to conventional bridge ordering: ♠=4, ♥=3, ♦=2, ♣=1.
+    # Maps suits to the gallery experiment's ordering: ♦=4, ♠=3, ♣=2, ♥=1.
+    # This matches the suits_nonincreasing rule's convention (D≥S≥C≥H).
     # Unlocks: suits_nonincreasing (via map suit_to_int + monotonicity check).
     # See Decision 5 in PRIMITIVE_DESIGN_DECISIONS.md.
-    _SUIT_TO_INT = {Suit.SPADES: 4, Suit.HEARTS: 3, Suit.DIAMONDS: 2, Suit.CLUBS: 1}
+    _SUIT_TO_INT = {Suit.DIAMONDS: 4, Suit.SPADES: 3, Suit.CLUBS: 2, Suit.HEARTS: 1}
     prims.append(Primitive(
         'suit_to_int',
         arrow(SUIT, INT),

@@ -122,8 +122,10 @@ def triple_3s_adjacent(hand: Hand) -> bool:
     return False
 
 def four_kind_adjacent_any(hand: Hand) -> bool:
-    """Four consecutive cards share the same rank (same as four_of_a_kind_adjacent)."""
-    return four_of_a_kind_adjacent(hand)
+    """Four positions share the same rank (any position, not necessarily adjacent)."""
+    from collections import Counter
+    rank_counts = Counter(c.rank for c in hand)
+    return any(count >= 4 for count in rank_counts.values())
 
 def three_clubs_adjacent(hand: Hand) -> bool:
     """Three consecutive cards are all clubs."""
@@ -192,8 +194,8 @@ def triple_any_adjacent(hand: Hand) -> bool:
     return False
 
 def three_spades(hand: Hand) -> bool:
-    """Exactly 3 cards are spades."""
-    return suit_counts(hand)[Suit.SPADES] == 3
+    """At least three of the six cards are spades."""
+    return suit_counts(hand)[Suit.SPADES] >= 3
 
 def three_any_suit_adjacent(hand: Hand) -> bool:
     """Three consecutive cards share the same suit (any suit)."""
@@ -255,13 +257,10 @@ def two_pairs_ranks(hand: Hand) -> bool:
     return pairs >= 2
 
 def two_pairs_suits(hand: Hand) -> bool:
-    """At least two suits appear exactly twice, and all four suits present per half."""
+    """Two different suits each appear at least twice."""
     sc = suit_counts(hand)
-    pairs = sum(1 for count in sc.values() if count == 2)
-    left, right = halves(hand)
-    left_suits = {c.suit for c in left}
-    right_suits = {c.suit for c in right}
-    return pairs >= 2 and len(left_suits) == 3 and len(right_suits) == 3
+    pairs = sum(1 for count in sc.values() if count >= 2)
+    return pairs >= 2
 
 def ap_len3_step1_anywhere(hand: Hand) -> bool:
     """Contains 3 cards (anywhere) forming an arithmetic progression with step 1."""
@@ -496,12 +495,11 @@ def suit_brackets_interleaved(hand: Hand) -> bool:
     return count_a == 0 and count_b == 0
 
 def suits_nonincreasing(hand: Hand) -> bool:
-    """Suit values (♠=4,♥=3,♦=2,♣=1) are non-increasing, and all four suits present."""
-    suit_val = {Suit.SPADES: 4, Suit.HEARTS: 3, Suit.DIAMONDS: 2, Suit.CLUBS: 1}
+    """Suits follow D≥S≥C≥H from left to right, stepping down by at most one level.
+    Ordering: D=4, S=3, C=2, H=1. Non-increasing AND no jumps (diff >= -1)."""
+    suit_val = {Suit.DIAMONDS: 4, Suit.SPADES: 3, Suit.CLUBS: 2, Suit.HEARTS: 1}
     vals = [suit_val[c.suit] for c in hand]
-    all_four = len(set(c.suit for c in hand)) == 4
-    nonincreasing = all(vals[i] >= vals[i+1] for i in range(len(vals) - 1))
-    return all_four and nonincreasing
+    return all(-1 <= vals[i+1] - vals[i] <= 0 for i in range(len(vals) - 1))
 
 
 # =====================================================================
@@ -532,7 +530,7 @@ _register("three_or_more_same_suit", 1, "At least 3 cards share the same suit", 
 _register("all_same_color", 1, "All cards share the same color", all_same_color)
 _register("pair_jacks_pos45", 1, "Positions 4 and 5 are both Jacks", pair_jacks_pos45)
 _register("triple_3s_adjacent", 1, "Three consecutive cards are all 3s", triple_3s_adjacent)
-_register("four_kind_adjacent_any", 1, "Four consecutive cards share the same rank", four_kind_adjacent_any)
+_register("four_kind_adjacent_any", 1, "Four positions share the same rank (any position)", four_kind_adjacent_any)
 _register("three_clubs_adjacent", 1, "Three consecutive clubs in a row", three_clubs_adjacent)
 _register("every_other_ace", 1, "Positions 1, 3, 5 are all Aces", every_other_ace)
 _register("pos135_same_rank", 1, "Positions 1, 3, 5 share the same rank", pos135_same_rank)
@@ -545,7 +543,7 @@ _register("all_even", 2, "Every card is even (2,4,6,8,10)", all_even)
 _register("all_odd", 2, "Every card is odd (3,5,7,9)", all_odd)
 _register("pair_5s_adjacent", 2, "Two adjacent cards are both 5s", pair_5s_adjacent)
 _register("triple_any_adjacent", 2, "Three consecutive cards share the same rank", triple_any_adjacent)
-_register("three_spades", 2, "Exactly 3 cards are spades", three_spades)
+_register("three_spades", 2, "At least 3 cards are spades", three_spades)
 _register("three_any_suit_adjacent", 2, "Three consecutive cards share the same suit", three_any_suit_adjacent)
 _register("four_hearts_adjacent", 2, "Four consecutive hearts", four_hearts_adjacent)
 _register("four_diamonds_anywhere", 2, "At least 4 diamonds", four_diamonds_anywhere)
@@ -555,7 +553,7 @@ _register("even_pos_red_odd_pos_black", 2, "Even positions red, odd positions bl
 _register("colors_palindrome", 2, "Color sequence is a palindrome", colors_palindrome)
 _register("halves_copy_colors", 2, "Left and right halves share color sequence", halves_copy_colors)
 _register("two_pairs_ranks", 2, "At least two pairs of matching ranks", two_pairs_ranks)
-_register("two_pairs_suits", 2, "At least two suits appear exactly twice, 3 suits per half", two_pairs_suits)
+_register("two_pairs_suits", 2, "Two different suits each appear at least twice", two_pairs_suits)
 _register("ap_len3_step1_anywhere", 2, "Contains 3 cards forming AP with step 1", ap_len3_step1_anywhere)
 _register("halves_copy_ranks", 2, "Left and right halves share rank sequence", halves_copy_ranks)
 _register("halves_copy_suits", 2, "Left and right halves share suit sequence", halves_copy_suits)
@@ -582,4 +580,4 @@ _register("zigzag_ranks", 3, "Ranks alternate peaks and valleys", zigzag_ranks)
 _register("suit_brackets_no_cross", 3, "Suits form non-crossing nested brackets", suit_brackets_no_cross)
 _register("suit_brackets_nested", 3, "Suits form properly nested brackets", suit_brackets_nested)
 _register("suit_brackets_interleaved", 3, "Two bracket types balanced independently", suit_brackets_interleaved)
-_register("suits_nonincreasing", 3, "Suit values non-increasing, all four suits present", suits_nonincreasing)
+_register("suits_nonincreasing", 3, "Suits follow D≥S≥C≥H, stepping down at most one level", suits_nonincreasing)

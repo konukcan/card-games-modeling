@@ -185,18 +185,19 @@ def test_running_sum_interleaved_brackets():
 # =========================================================================
 
 def test_suit_to_int_ordering():
-    """suit_to_int maps to conventional bridge ordering."""
+    """suit_to_int maps to gallery experiment ordering: D=4, S=3, C=2, H=1."""
     sti = _PRIMS['suit_to_int']
-    assert sti(Suit.SPADES) == 4
-    assert sti(Suit.HEARTS) == 3
-    assert sti(Suit.DIAMONDS) == 2
-    assert sti(Suit.CLUBS) == 1
+    assert sti(Suit.DIAMONDS) == 4
+    assert sti(Suit.SPADES) == 3
+    assert sti(Suit.CLUBS) == 2
+    assert sti(Suit.HEARTS) == 1
 
 
 def test_suit_to_int_enables_monotonicity():
-    """Can check suits_nonincreasing via map suit_to_int + adjacent_pairs + all ge."""
-    # ♠♠♥♦♦♣ — nonincreasing: [4,4,3,2,2,1]
-    hand = _hand(('S', 2), ('S', 3), ('H', 4), ('D', 5), ('D', 6), ('C', 7))
+    """Can check suits_nonincreasing via map suit_to_int + adjacent_pairs + all ge.
+    Gallery ordering: D=4, S=3, C=2, H=1."""
+    # ♦♠♠♣♣♥ — nonincreasing: [4,3,3,2,2,1]
+    hand = _hand(('D', 2), ('S', 3), ('S', 4), ('C', 5), ('C', 6), ('H', 7))
     sti = _PRIMS['suit_to_int']
     get_suit = _PRIMS['get_suit']
     suit_vals = _PRIMS['map'](lambda c: sti(get_suit(c)))(hand)
@@ -207,8 +208,8 @@ def test_suit_to_int_enables_monotonicity():
     nonincreasing = _PRIMS['all'](lambda p: ge(head(p))(last(p)))(pairs)
     assert nonincreasing is True
 
-    # ♠♣♥♦♦♣ — NOT nonincreasing (♣=1 then ♥=3 increases)
-    hand2 = _hand(('S', 2), ('C', 3), ('H', 4), ('D', 5), ('D', 6), ('C', 7))
+    # ♦♥♠♣♣♥ — NOT nonincreasing (♥=1 then ♠=3 increases)
+    hand2 = _hand(('D', 2), ('H', 3), ('S', 4), ('C', 5), ('C', 6), ('H', 7))
     suit_vals2 = _PRIMS['map'](lambda c: sti(get_suit(c)))(hand2)
     pairs2 = _PRIMS['adjacent_pairs'](suit_vals2)
     nonincreasing2 = _PRIMS['all'](lambda p: ge(head(p))(last(p)))(pairs2)
