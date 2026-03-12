@@ -1,0 +1,1334 @@
+[
+  {
+    "id": "llm__adjacent_share_rank_or_suit__hyp0",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (max_suit_count $0) 3)",
+    "origin": {
+      "hypothesis_text": "At least one suit has 3 or more cards.",
+      "python_lambda": "rule = lambda hand: any(sum(1 for card in hand if card.suit == s) >= 3 for s in Suit)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "adjacent_share_rank_or_suit"
+    }
+  },
+  {
+    "id": "llm__all_4s_8s_or_9s__hyp1",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (all (\u03bb or (eq (rank_val $0) 4) (or (eq (rank_val $0) (+ 5 3)) (eq (rank_val $0) (+ 5 4)))) $0) (and (any (\u03bb eq (rank_val $0) 4) $0) (and (any (\u03bb eq (rank_val $0) (+ 5 3)) $0) (any (\u03bb eq (rank_val $0) (+ 5 4)) $0))))",
+    "origin": {
+      "hypothesis_text": "Each hand consists exclusively of cards with ranks 4, 8, or 9, and all three of these ranks (4, 8, and 9) must be present in the hand.",
+      "python_lambda": "rule = lambda hand: (\n    all(RANK_VALUES[card.rank] in {4, 8, 9} for card in hand) and\n    {RANK_VALUES[card.rank] for card in hand} == {4, 8, 9}\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_4s_8s_or_9s"
+    }
+  },
+  {
+    "id": "llm__all_4s_or_queens__hyp2",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb and (eq (rank_val $0) 4) (eq (get_suit $0) CLUBS)) $0)",
+    "origin": {
+      "hypothesis_text": "Every hand contains the 4 of Clubs (4\u2663).",
+      "python_lambda": "rule = lambda hand: any(RANK_VALUES[card.rank] == 4 and card.suit.name == \"CLUBS\" for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_4s_or_queens"
+    }
+  },
+  {
+    "id": "llm__all_but_one_same_color__hyp3",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (n_unique_suits $0) 3)",
+    "origin": {
+      "hypothesis_text": "The hand contains cards from exactly three suits.",
+      "python_lambda": "rule = lambda hand: len(set(card.suit for card in hand)) == 3",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_but_one_same_color"
+    }
+  },
+  {
+    "id": "llm__all_clubs_or_hearts__hyp4",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb or (eq (get_suit $0) HEARTS) (eq (get_suit $0) CLUBS)) $0)",
+    "origin": {
+      "hypothesis_text": "All cards in the hand are either Hearts or Clubs.",
+      "python_lambda": "rule = lambda hand: all(card.suit.name == \"HEARTS\" or card.suit.name == \"CLUBS\" for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_clubs_or_hearts"
+    }
+  },
+  {
+    "id": "llm__all_even__hyp5",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb eq (mod (rank_val $0) 2) 0) $0)",
+    "origin": {
+      "hypothesis_text": "All cards in the hand have a rank from the set {2, 4, 6, 8, 10}.",
+      "python_lambda": "rule = lambda hand: all(RANK_VALUES[card.rank] in {2, 4, 6, 8, 10} for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_even"
+    }
+  },
+  {
+    "id": "llm__all_odd__hyp6",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb not (eq (mod (rank_val $0) 2) 0)) $0)",
+    "origin": {
+      "hypothesis_text": "that all cards in the hand must have a rank from the set {3, 5, 7, 9}. Additionally, the distribution of ranks in the hand must be one of two patterns:\n1. One rank appears three times, another rank appears twice, and a third rank appears once (e.g., AAA BB C).\n2. Two ranks appear twice, and two other ranks appear once (e.g., AA BB C D).",
+      "python_lambda": "rule = lambda hand: (\n    all(RANK_VALUES[card.rank] in {3, 5, 7, 9} for card in hand) and\n    (lambda ranks:\n        sorted([ranks.count(r) for r in set(ranks)], reverse=True) in ([3, 2, 1], [2, 2, 1, 1])\n    )([RANK_VALUES[card.rank] for card in hand])\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_odd"
+    }
+  },
+  {
+    "id": "llm__all_red__hyp7",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb eq (get_color $0) RED) $0)",
+    "origin": {
+      "hypothesis_text": "All cards in the hand are either Hearts or Diamonds.",
+      "python_lambda": "rule = lambda hand: all(card.suit.name == \"HEARTS\" or card.suit.name == \"DIAMONDS\" for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_red"
+    }
+  },
+  {
+    "id": "llm__all_same_color__hyp8",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_colors $0) 1) (eq (n_unique_suits $0) 2))",
+    "origin": {
+      "hypothesis_text": "All cards in the hand are of the same color (all red or all black), and the hand contains cards from exactly two suits.",
+      "python_lambda": "rule = lambda hand: (\n    len({\n        \"red\" if card.suit.name in (\"DIAMONDS\", \"HEARTS\") else \"black\"\n        for card in hand\n    }) == 1\n    and\n    len({card.suit for card in hand}) == 2\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_same_color"
+    }
+  },
+  {
+    "id": "llm__all_same_suit__hyp9",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (n_unique_suits $0) 1)",
+    "origin": {
+      "hypothesis_text": "All cards in the hand are of the same suit.",
+      "python_lambda": "rule = lambda hand: all(card.suit == hand[0].suit for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "all_same_suit"
+    }
+  },
+  {
+    "id": "llm__ap_len3_step1_anywhere__hyp10",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (+ (+ (mod (count_suit $0 CLUBS) 2) (mod (count_suit $0 DIAMONDS) 2)) (+ (mod (count_suit $0 HEARTS) 2) (mod (count_suit $0 SPADES) 2))) 2)",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly two suits with an odd number of cards.",
+      "python_lambda": "rule = lambda hand: (\n    (sum(1 for card in hand if card.suit == Suit.CLUBS) % 2 != 0) +\n    (sum(1 for card in hand if card.suit == Suit.DIAMONDS) % 2 != 0) +\n    (sum(1 for card in hand if card.suit == Suit.HEARTS) % 2 != 0) +\n    (sum(1 for card in hand if card.suit == Suit.SPADES) % 2 != 0)\n) == 2",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "ap_len3_step1_anywhere"
+    }
+  },
+  {
+    "id": "llm__ap_step1_len3_adj__hyp11",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (max_suit_count $0) 3) (and (eq (n_repeated_suits $0) 2) (le (max_suit_count $0) 2)))",
+    "origin": {
+      "hypothesis_text": "The hand contains exactly three cards of one suit (and no other suit has three or more cards), OR it contains exactly two cards of one suit and exactly two cards of a different suit (and no other suit has two or more cards).",
+      "python_lambda": "rule = lambda hand: (\n    (lambda suit_counts:\n        list(suit_counts.values()).count(3) == 1 or\n        list(suit_counts.values()).count(2) == 2\n    )(\n        {suit: sum(1 for card in hand if card.suit == suit)\n         for suit in [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES]}\n    )\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "ap_step1_len3_adj"
+    }
+  },
+  {
+    "id": "llm__ap_step2_len4_adj__hyp13",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (length (filter (\u03bb eq (rank_val $0) (+ 5 3)) $0)) 1)",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly one card with the rank 8.",
+      "python_lambda": "rule = lambda hand: sum(RANK_VALUES[card.rank] == 8 for card in hand) == 1",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "ap_step2_len4_adj"
+    }
+  },
+  {
+    "id": "llm__blacks_before_reds__hyp15",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (mod (count_color $0 RED) 2) 0)",
+    "origin": {
+      "hypothesis_text": "The number of red cards and the number of black cards in the hand have the same parity (i.e., both are even or both are odd).",
+      "python_lambda": "rule = lambda hand: (\n    sum(1 for card in hand if card.suit in (Suit.HEARTS, Suit.DIAMONDS)) % 2\n    ==\n    sum(1 for card in hand if card.suit in (Suit.CLUBS, Suit.SPADES)) % 2\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "blacks_before_reds"
+    }
+  },
+  {
+    "id": "llm__both_halves_have_pair_rank__hyp16",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_repeated_ranks $0) 2) (eq (n_unique_ranks $0) 4))",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly two pairs.",
+      "python_lambda": "rule = lambda hand: (\n    lambda ranks: (\n        lambda unique_ranks: (\n            sum(1 for r in unique_ranks if ranks.count(r) == 2) == 2 and\n            sum(1 for r in unique_ranks if ranks.count(r) == 1) == 2\n        )\n    )(set(ranks))\n)([card.rank for card in hand])",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "both_halves_have_pair_rank"
+    }
+  },
+  {
+    "id": "llm__both_halves_uniform_color__hyp17",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb gt (n_unique_ranks $0) (n_unique_suits $0))",
+    "origin": {
+      "hypothesis_text": "The number of distinct ranks in the hand is greater than the number of distinct suits in the hand.",
+      "python_lambda": "rule = lambda hand: len(set(card.rank for card in hand)) > len(set(card.suit for card in hand))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "both_halves_uniform_color"
+    }
+  },
+  {
+    "id": "llm__both_halves_uniform_suit__hyp18",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_suits (first_half $0)) 1) (eq (n_unique_suits (second_half $0)) 1))",
+    "origin": {
+      "hypothesis_text": "The first three cards in the hand are all of the same suit, and the last three cards in the hand are all of the same suit.",
+      "python_lambda": "rule = lambda hand: (hand[0].suit == hand[1].suit == hand[2].suit) and \\\n                    (hand[3].suit == hand[4].suit == hand[5].suit)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "both_halves_uniform_suit"
+    }
+  },
+  {
+    "id": "llm__even_odd_pos_color_split__hyp20",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (count_color $0 RED) 3)",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly three red cards and three black cards.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.suit in (Suit.HEARTS, Suit.DIAMONDS)) == 3",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "even_odd_pos_color_split"
+    }
+  },
+  {
+    "id": "llm__even_pos_red_odd_pos_black__hyp21",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (count_suit $0 CLUBS) 1) (or (eq (count_suit $0 DIAMONDS) 1) (or (eq (count_suit $0 HEARTS) 1) (eq (count_suit $0 SPADES) 1))))",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least one suit of which there is exactly one card in the hand (i.e., at least one singleton suit).",
+      "python_lambda": "rule = lambda hand: any(len([card for card in hand if card.suit == s]) == 1 for s in list(Suit))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "even_pos_red_odd_pos_black"
+    }
+  },
+  {
+    "id": "llm__every_other_ace__hyp22",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (and (eq (rank_val (at $0 0)) (+ 5 (+ 5 4))) (and (eq (rank_val (at $0 2)) (+ 5 (+ 5 4))) (eq (rank_val (at $0 4)) (+ 5 (+ 5 4))))))",
+    "origin": {
+      "hypothesis_text": "The 1st, 3rd, and 5th cards in the hand are all Aces.",
+      "python_lambda": "rule = lambda hand: hand[0].rank == Rank.ACE and hand[2].rank == Rank.ACE and hand[4].rank == Rank.ACE",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "every_other_ace"
+    }
+  },
+  {
+    "id": "llm__four_any_suit_adjacent__hyp23",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (max_suit_count $0) 4)",
+    "origin": {
+      "hypothesis_text": "The hand contains at least four cards of the same suit, and the ranks of these cards are all different.",
+      "python_lambda": "rule = lambda hand: any(\n    len(cards_of_suit) >= 4 and len({RANK_VALUES[card.rank] for card in cards_of_suit}) == len(cards_of_suit)\n    for suit in {card.suit for card in hand}\n    for cards_of_suit in [[c for c in hand if c.suit == suit]]\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "four_any_suit_adjacent"
+    }
+  },
+  {
+    "id": "llm__four_any_suit_anywhere__hyp24",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (max_suit_count $0) 4)",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least four cards of the same suit.",
+      "python_lambda": "rule = lambda hand: any(sum(1 for card in hand if card.suit == s) >= 4 for s in Suit)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "four_any_suit_anywhere"
+    }
+  },
+  {
+    "id": "llm__four_diamonds_anywhere__hyp25",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (count_suit $0 DIAMONDS) 4)",
+    "origin": {
+      "hypothesis_text": "At least four cards in the hand are Diamonds.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.suit.name == \"DIAMONDS\") >= 4",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "four_diamonds_anywhere"
+    }
+  },
+  {
+    "id": "llm__four_hearts_adjacent__hyp26",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (count_suit $0 HEARTS) 4)",
+    "origin": {
+      "hypothesis_text": "The hand contains at least 4 cards of the Heart suit.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.suit.name == \"HEARTS\") >= 4",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "four_hearts_adjacent"
+    }
+  },
+  {
+    "id": "llm__four_kind_adjacent_any__hyp27",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb ge (length (filter (\u03bb eq (get_rank $0) (get_rank $1)) $1)) 4) $0)",
+    "origin": {
+      "hypothesis_text": "The hand contains four cards of the same rank (four of a kind).",
+      "python_lambda": "rule = lambda hand: any([card.rank for card in hand].count(r) == 4 for r in set(card.rank for card in hand))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "four_kind_adjacent_any"
+    }
+  },
+  {
+    "id": "llm__halves_copy_ranks__hyp28",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (and (eq (get_rank (at $0 0)) (get_rank (at $0 3))) (not (eq (get_suit (at $0 0)) (get_suit (at $0 3))))) (and (and (eq (get_rank (at $0 1)) (get_rank (at $0 4))) (not (eq (get_suit (at $0 1)) (get_suit (at $0 4))))) (and (eq (get_rank (at $0 2)) (get_rank (at $0 5))) (not (eq (get_suit (at $0 2)) (get_suit (at $0 5)))))))",
+    "origin": {
+      "hypothesis_text": "The hand consists of three pairs of cards. For each pair, the two cards have the same rank but different suits. The first card of each pair is in positions 1, 2, and 3, respectively, and the second card of each pair is in positions 4, 5, and 6, respectively.",
+      "python_lambda": "rule = lambda hand: (\n    (hand[0].rank == hand[3].rank and hand[0].suit != hand[3].suit) and\n    (hand[1].rank == hand[4].rank and hand[1].suit != hand[4].suit) and\n    (hand[2].rank == hand[5].rank and hand[2].suit != hand[5].suit)\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "halves_copy_ranks"
+    }
+  },
+  {
+    "id": "llm__halves_copy_suits__hyp29",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (and (eq (get_suit (at $0 1)) (get_suit (at $0 4))) (eq (count_suit $0 (get_suit (at $0 1))) 2)) (and (eq (get_suit (at $0 2)) (get_suit (at $0 5))) (eq (count_suit $0 (get_suit (at $0 2))) 2)))",
+    "origin": {
+      "hypothesis_text": "There exists at least one suit such that exactly two cards in the hand are of that suit, AND those two cards are in positions 2 and 5, OR in positions 3 and 6.",
+      "python_lambda": "rule = lambda hand: any(\n    (\n        (hand[1].suit == s and hand[4].suit == s) and\n        sum(1 for card in hand if card.suit == s) == 2\n    )\n    or\n    (\n        (hand[2].suit == s and hand[5].suit == s) and\n        sum(1 for card in hand if card.suit == s) == 2\n    )\n    for s in [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES]\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "halves_copy_suits"
+    }
+  },
+  {
+    "id": "llm__left_red_right_black__hyp30",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (+ (+ (mod (count_suit $0 CLUBS) 2) (mod (count_suit $0 DIAMONDS) 2)) (+ (mod (count_suit $0 HEARTS) 2) (mod (count_suit $0 SPADES) 2))) 2)",
+    "origin": {
+      "hypothesis_text": "Exactly two suits appear an odd number of times in the hand.",
+      "python_lambda": "rule = lambda hand: sum(1 for count in {suit: sum(1 for card in hand if card.suit == suit) for suit in [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES]}.values() if count % 2 != 0) == 2",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "left_red_right_black"
+    }
+  },
+  {
+    "id": "llm__no_adjacent_same_suit__hyp31",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (ge (n_repeated_suits $0) 2) (and (le (max_suit_count $0) 3) (ge (n_unique_suits $0) 3)))",
+    "origin": {
+      "hypothesis_text": "The distribution of suits in the hand, when non-zero counts are sorted in descending order, must be one of the following patterns: (3, 2, 1), (2, 2, 2), or (2, 2, 1, 1).",
+      "python_lambda": "import collections\nfrom rules.cards import Card, Suit, Rank, RANK_VALUES\n\nrule = lambda hand: tuple(sorted(\n    [count for count in [\n        sum(1 for card in hand if card.suit == Suit.CLUBS),\n        sum(1 for card in hand if card.suit == Suit.DIAMONDS),\n        sum(1 for card in hand if card.suit == Suit.HEARTS),\n        sum(1 for card in hand if card.suit == Suit.SPADES)\n    ] if count > 0],\n    reverse=True\n)) in ((3, 2, 1), (2, 2, 2), (2, 2, 1, 1))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "no_adjacent_same_suit"
+    }
+  },
+  {
+    "id": "llm__pair_5s_adjacent__hyp32",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (length (filter (\u03bb eq (rank_val $0) 5) $0)) 2) (any (\u03bb and (eq (rank_val (head $0)) 5) (eq (rank_val (last $0)) 5)) (adjacent_pairs $0)))",
+    "origin": {
+      "hypothesis_text": "The hand contains exactly two cards with the rank 5, and these two cards are adjacent.",
+      "python_lambda": "rule = lambda hand: (\n    (lambda fives_indices:\n        len(fives_indices) == 2 and fives_indices[1] == fives_indices[0] + 1\n    )([i for i, card in enumerate(hand) if RANK_VALUES[card.rank] == 5])\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "pair_5s_adjacent"
+    }
+  },
+  {
+    "id": "llm__pair_jacks_pos45__hyp33",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 3)) (+ 5 (+ 5 1))) (and (eq (rank_val (at $0 4)) (+ 5 (+ 5 1))) (and (not (eq (get_suit (at $0 3)) (get_suit (at $0 4)))) (and (not (eq (rank_val (at $0 0)) (+ 5 (+ 5 1)))) (and (not (eq (rank_val (at $0 1)) (+ 5 (+ 5 1)))) (and (not (eq (rank_val (at $0 2)) (+ 5 (+ 5 1)))) (not (eq (rank_val (at $0 5)) (+ 5 (+ 5 1))))))))))",
+    "origin": {
+      "hypothesis_text": "The 4th and 5th cards in the hand are Jacks of different suits, and there are no other Jacks in the hand.",
+      "python_lambda": "rule = lambda hand: (\n    hand[3].rank == Rank.JACK and\n    hand[4].rank == Rank.JACK and\n    hand[3].suit != hand[4].suit and\n    hand[0].rank != Rank.JACK and\n    hand[1].rank != Rank.JACK and\n    hand[2].rank != Rank.JACK and\n    hand[5].rank != Rank.JACK\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "pair_jacks_pos45"
+    }
+  },
+  {
+    "id": "llm__pos135_same_rank__hyp34",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 0)) (rank_val (at $0 2))) (eq (rank_val (at $0 2)) (rank_val (at $0 4))))",
+    "origin": {
+      "hypothesis_text": "The cards in positions 1, 3, and 5 of the hand all have the same rank.",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[0].rank] == RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[4].rank]",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "pos135_same_rank"
+    }
+  },
+  {
+    "id": "llm__radial_decreasing__hyp35",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (n_unique_ranks $0) 3)",
+    "origin": {
+      "hypothesis_text": "No rank appears more than twice in the hand.",
+      "python_lambda": "rule = lambda hand: all((([card.rank for card in hand]).count(r) <= 2 for r in set(c.rank for c in hand)))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "radial_decreasing"
+    }
+  },
+  {
+    "id": "llm__ranks_palindrome__hyp36",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 0)) (rank_val (at $0 5))) (and (eq (rank_val (at $0 1)) (rank_val (at $0 4))) (eq (rank_val (at $0 2)) (rank_val (at $0 3)))))",
+    "origin": {
+      "hypothesis_text": "The sequence of card ranks in the hand is a palindrome. This means the rank of the first card matches the rank of the sixth card, the rank of the second card matches the rank of the fifth card, and the rank of the third card matches the rank of the fourth card.",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[0].rank] == RANK_VALUES[hand[5].rank] and \\\n                    RANK_VALUES[hand[1].rank] == RANK_VALUES[hand[4].rank] and \\\n                    RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[3].rank]",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "ranks_palindrome"
+    }
+  },
+  {
+    "id": "llm__skip2_same_rank_or_suit__hyp37",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (or (eq (n_unique_suits $0) 2) (eq (n_unique_suits $0) 3)) (or (eq (max_suit_count $0) 3) (eq (max_suit_count $0) 4)))",
+    "origin": {
+      "hypothesis_text": "Each hand contains cards from 2 or 3 suits, and the most frequent suit appears 3 or 4 times.",
+      "python_lambda": "rule = lambda hand: (\n    (lambda all_suits:\n        (lambda unique_suits:\n            (lambda num_unique_suits:\n                (lambda suit_counts:\n                    (lambda max_frequency:\n                        num_unique_suits in (2, 3) and max_frequency in (3, 4)\n                    )(max(suit_counts))\n                )([all_suits.count(s) for s in unique_suits])\n            )(len(unique_suits))\n        )(set(all_suits))\n    )([card.suit for card in hand])\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "skip2_same_rank_or_suit"
+    }
+  },
+  {
+    "id": "llm__some_half_red_other_black__hyp38",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb not (eq (rank_val $0) 5)) $0)",
+    "origin": {
+      "hypothesis_text": "No card in the hand has a rank of 5.",
+      "python_lambda": "rule = lambda hand: all(RANK_VALUES[card.rank] != 5 for card in hand)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "some_half_red_other_black"
+    }
+  },
+  {
+    "id": "llm__straight5__hyp39",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (n_unique_ranks $0) (length $0))",
+    "origin": {
+      "hypothesis_text": "The hand consists of six cards with distinct ranks, and these ranks include a straight of at least five cards.",
+      "python_lambda": "rule = lambda hand: \\\n    (lambda numeric_ranks: \\\n        len(set(numeric_ranks)) == 6 and \\\n        (lambda unique_ranks_set: \\\n            (lambda sorted_ranks_for_straight: \\\n                any(sorted_ranks_for_straight[i+4] == sorted_ranks_for_straight[i] + 4 \\\n                    for i in range(len(sorted_ranks_for_straight) - 4)) \\\n            )(sorted(list(unique_ranks_set | ({1} if 14 in unique_ranks_set else set())))) \\\n        )(set(numeric_ranks)) \\\n    )([RANK_VALUES[card.rank] for card in hand])",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "straight5"
+    }
+  },
+  {
+    "id": "llm__straight5_same_color__hyp40",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (ge (n_unique_ranks $0) 5) (le (- (max_rank $0) (min_rank $0)) 5))",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least one 5-card straight.",
+      "python_lambda": "rule = lambda hand: any(\n    sorted_ranks[i+4] == sorted_ranks[i] + 4\n    for sorted_ranks in [sorted(list(set(RANK_VALUES[card.rank] for card in hand)))]\n    for i in range(len(sorted_ranks) - 4)\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "straight5_same_color"
+    }
+  },
+  {
+    "id": "llm__strict_increasing__hyp42",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_ranks $0) (length $0)) (or (eq (rank_val (head $0)) 2) (eq (rank_val (head $0)) 3)))",
+    "origin": {
+      "hypothesis_text": "The hand contains no pairs (all cards have unique ranks), and the first card in the hand is either a 2 or a 3.",
+      "python_lambda": "rule = lambda hand: (len(set(card.rank for card in hand)) == len(hand)) and \\\n                     (hand[0].rank == Rank.TWO or hand[0].rank == Rank.THREE)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "strict_increasing"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_interleaved__hyp43",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_suits $0) 4) (and (eq (n_repeated_suits $0) 2) (eq (max_suit_count $0) 2)))",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly two suits with two cards each, and two suits with one card each.",
+      "python_lambda": "rule = lambda hand: sorted([sum(1 for c in hand if c.suit.name == s) for s in set(card.suit.name for card in hand)]) == [1, 1, 2, 2]",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "suit_brackets_interleaved"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_nested__hyp44",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (n_repeated_suits $0) 2)",
+    "origin": {
+      "hypothesis_text": "Exactly two suits are represented by more than one card in the hand.",
+      "python_lambda": "rule = lambda hand: len([count for count in [sum(1 for c_inner in hand if c_inner.suit == s) for s in Suit] if count > 1]) == 2",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "suit_brackets_nested"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_no_cross__hyp45",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (+ (+ (mod (count_suit $0 CLUBS) 2) (mod (count_suit $0 DIAMONDS) 2)) (+ (mod (count_suit $0 HEARTS) 2) (mod (count_suit $0 SPADES) 2))) 2)",
+    "origin": {
+      "hypothesis_text": "Exactly two suits appear an odd number of times in the hand.",
+      "python_lambda": "rule = lambda hand: sum(1 for count in {suit: sum(1 for card in hand if card.suit == suit) for suit in [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES]}.values() if count % 2 != 0) == 2",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "suit_brackets_no_cross"
+    }
+  },
+  {
+    "id": "llm__suits_nonincreasing__hyp46",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb not (eq (get_suit (head $0)) (get_suit (last $0))))",
+    "origin": {
+      "hypothesis_text": "The first card and the last card in the hand are of different suits.",
+      "python_lambda": "rule = lambda hand: hand[0].suit != hand[-1].suit",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "suits_nonincreasing"
+    }
+  },
+  {
+    "id": "llm__three_any_suit_adjacent__hyp47",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (n_unique_suits $0) 3)",
+    "origin": {
+      "hypothesis_text": "The hand contains cards from exactly three distinct suits.",
+      "python_lambda": "rule = lambda hand: len(set(card.suit for card in hand)) == 3",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "three_any_suit_adjacent"
+    }
+  },
+  {
+    "id": "llm__three_clubs_adjacent__hyp48",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (count_suit $0 CLUBS) 1) (or (eq (count_suit $0 DIAMONDS) 1) (or (eq (count_suit $0 HEARTS) 1) (eq (count_suit $0 SPADES) 1))))",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least one singleton suit (a suit with exactly one card in the hand).",
+      "python_lambda": "rule = lambda hand: any(sum(1 for card in hand if card.suit == s) == 1 for s in list(Suit))",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "three_clubs_adjacent"
+    }
+  },
+  {
+    "id": "llm__three_or_more_same_suit__hyp49",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (max_suit_count $0) 3)",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least three cards of the same suit.",
+      "python_lambda": "rule = lambda hand: (\n    sum(1 for card in hand if card.suit == Suit.CLUBS) >= 3 or\n    sum(1 for card in hand if card.suit == Suit.DIAMONDS) >= 3 or\n    sum(1 for card in hand if card.suit == Suit.HEARTS) >= 3 or\n    sum(1 for card in hand if card.suit == Suit.SPADES) >= 3\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "three_or_more_same_suit"
+    }
+  },
+  {
+    "id": "llm__three_spades__hyp50",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb lt (n_unique_suits $0) 4)",
+    "origin": {
+      "hypothesis_text": "At least one suit is completely absent from the hand (i.e., the hand contains cards from fewer than 4 suits).",
+      "python_lambda": "rule = lambda hand: len(set(card.suit for card in hand)) < 4",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "three_spades"
+    }
+  },
+  {
+    "id": "llm__triple_2s_pos234__hyp51",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 1)) 2) (and (eq (rank_val (at $0 2)) 2) (eq (rank_val (at $0 3)) 2)))",
+    "origin": {
+      "hypothesis_text": "The second, third, and fourth cards in the hand are all of rank 2.",
+      "python_lambda": "rule = lambda hand: hand[1].rank == Rank.TWO and hand[2].rank == Rank.TWO and hand[3].rank == Rank.TWO",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "triple_2s_pos234"
+    }
+  },
+  {
+    "id": "llm__triple_3s_adjacent__hyp52",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (length (filter (\u03bb eq (rank_val $0) 3) $0)) 3)",
+    "origin": {
+      "hypothesis_text": "The hand contains exactly three cards of rank 3.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if RANK_VALUES[card.rank] == 3) == 3",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "triple_3s_adjacent"
+    }
+  },
+  {
+    "id": "llm__triple_any_adjacent__hyp53",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_repeated_ranks $0) 1) (eq (n_unique_ranks $0) 4))",
+    "origin": {
+      "hypothesis_text": "The hand contains exactly one Three of a Kind and no other pairs.",
+      "python_lambda": "rule = lambda hand: (\n    (lambda rank_counts:\n        list(rank_counts.values()).count(3) == 1 and\n        all(c == 1 for c in list(rank_counts.values()) if c != 3)\n    )({rank: sum(1 for card_in_hand in hand if card_in_hand.rank == rank)\n       for rank in {card.rank for card in hand}})\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "triple_any_adjacent"
+    }
+  },
+  {
+    "id": "llm__triple_any_pos345__hyp54",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 2)) (rank_val (at $0 3))) (eq (rank_val (at $0 3)) (rank_val (at $0 4))))",
+    "origin": {
+      "hypothesis_text": "The 3rd, 4th, and 5th cards in the hand form a three of a kind.",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[3].rank] and \\\n                     RANK_VALUES[hand[3].rank] == RANK_VALUES[hand[4].rank]",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "triple_any_pos345"
+    }
+  },
+  {
+    "id": "llm__two_pairs_ranks__hyp55",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (and (eq (n_unique_ranks $0) 3) (eq (n_repeated_ranks $0) 3)) (and (eq (n_unique_ranks $0) 4) (eq (n_repeated_ranks $0) 2)))",
+    "origin": {
+      "hypothesis_text": "Each hand consists of either three pairs, or two pairs and two singletons.",
+      "python_lambda": "rule = lambda hand: (\n    lambda ranks: (\n        lambda counts: (\n            lambda sorted_counts: (\n                sorted_counts == [2, 2, 2] or sorted_counts == [1, 1, 2, 2]\n            )\n        )(sorted([ranks.count(r) for r in set(ranks)]))\n    )([card.rank for card in hand])\n)",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "two_pairs_ranks"
+    }
+  },
+  {
+    "id": "llm__two_pairs_suits__hyp56",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (length (filter (\u03bb eq (rank_val $0) (+ 5 (+ 5 2))) $0)) 1)",
+    "origin": {
+      "hypothesis_text": "Each hand contains exactly one Queen.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.rank == Rank.QUEEN) == 1",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "two_pairs_suits"
+    }
+  },
+  {
+    "id": "llm__zigzag_ranks__hyp57",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (+ (+ (mod (count_suit $0 CLUBS) 2) (mod (count_suit $0 DIAMONDS) 2)) (+ (mod (count_suit $0 HEARTS) 2) (mod (count_suit $0 SPADES) 2))) 2)",
+    "origin": {
+      "hypothesis_text": "Exactly two suits in the hand have an odd number of cards.",
+      "python_lambda": "rule = lambda hand: sum(\n    1 for suit in [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES]\n    if sum(1 for card in hand if card.suit == suit) % 2 == 1\n) == 2",
+      "source_model": "gemini-2.5-flash",
+      "original_rule_id": "zigzag_ranks"
+    }
+  },
+  {
+    "id": "llm__adjacent_share_rank_or_suit__hyp58",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb or (eq (get_rank (head $0)) (get_rank (last $0))) (eq (get_suit (head $0)) (get_suit (last $0)))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "Each card in the hand shares either the same rank or the same suit as the card immediately preceding it.",
+      "python_lambda": "rule = lambda hand: all(current_card.rank == prev_card.rank or current_card.suit == prev_card.suit for prev_card, current_card in zip(hand, hand[1:]))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "adjacent_share_rank_or_suit"
+    }
+  },
+  {
+    "id": "llm__all_4s_8s_or_9s__hyp59",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (all (\u03bb or (eq (rank_val $0) 4) (or (eq (rank_val $0) (+ 5 3)) (eq (rank_val $0) (+ 5 4)))) $0) (and (any (\u03bb eq (rank_val $0) 4) $0) (and (any (\u03bb eq (rank_val $0) (+ 5 3)) $0) (any (\u03bb eq (rank_val $0) (+ 5 4)) $0))))",
+    "origin": {
+      "hypothesis_text": "The hand is composed entirely of cards with ranks 4, 8, and 9, and contains at least one card of each of these three ranks.",
+      "python_lambda": "rule = lambda hand: (\n    all(RANK_VALUES[card.rank] in {4, 8, 9} for card in hand) and\n    {4, 8, 9}.issubset({RANK_VALUES[card.rank] for card in hand})\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_4s_8s_or_9s"
+    }
+  },
+  {
+    "id": "llm__all_4s_or_queens__hyp60",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_ranks $0) 2) (eq (n_repeated_ranks $0) 2))",
+    "origin": {
+      "hypothesis_text": "The hand is composed of cards of exactly two ranks, forming either two three-of-a-kinds or one four-of-a-kind and a pair.",
+      "python_lambda": "rule = lambda hand: (\n    len({card.rank for card in hand}) == 2  # Ensure exactly two distinct ranks\n    and (\n        # Calculate counts for each of the two distinct ranks, sort them,\n        # and check if they match the required patterns ([3, 3] or [2, 4])\n        sorted([sum(1 for c in hand if c.rank == r) for r in {card.rank for card in hand}])\n        in ([3, 3], [2, 4])\n    )\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_4s_or_queens"
+    }
+  },
+  {
+    "id": "llm__all_but_one_same_color__hyp61",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (count_color $0 RED) 5) (eq (count_color $0 RED) 1))",
+    "origin": {
+      "hypothesis_text": "The hand contains five cards of one color and one card of the other color.",
+      "python_lambda": "rule = lambda hand: (\n    (red_count := sum(1 for card in hand if card.suit.name in [\"HEARTS\", \"DIAMONDS\"])) == 5 or\n    red_count == 1\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_but_one_same_color"
+    }
+  },
+  {
+    "id": "llm__all_clubs_or_hearts__hyp62",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (all (\u03bb or (eq (get_suit $0) HEARTS) (eq (get_suit $0) CLUBS)) $0) (eq (mod (count_suit $0 HEARTS) 2) (mod (count_suit $0 CLUBS) 2)))",
+    "origin": {
+      "hypothesis_text": "All cards in the hand are either Hearts or Clubs, and the number of Hearts and the number of Clubs have the same parity (i.e., they are both even or both odd).",
+      "python_lambda": "rule = lambda hand: all(card.suit in (Suit.HEARTS, Suit.CLUBS) for card in hand) and (sum(1 for card in hand if card.suit == Suit.HEARTS) % 2 == sum(1 for card in hand if card.suit == Suit.CLUBS) % 2)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_clubs_or_hearts"
+    }
+  },
+  {
+    "id": "llm__all_even__hyp63",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb eq (mod (rank_val $0) 2) 0) $0)",
+    "origin": {
+      "hypothesis_text": "All cards in the hand have an even rank.",
+      "python_lambda": "rule = lambda hand: all(RANK_VALUES[card.rank] % 2 == 0 for card in hand)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_even"
+    }
+  },
+  {
+    "id": "llm__all_odd__hyp64",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb not (eq (mod (rank_val $0) 2) 0)) $0)",
+    "origin": {
+      "hypothesis_text": "The rank of every card in the hand is an odd number.",
+      "python_lambda": "rule = lambda hand: all(RANK_VALUES[card.rank] % 2 != 0 for card in hand)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_odd"
+    }
+  },
+  {
+    "id": "llm__all_red__hyp65",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (all (\u03bb eq (get_color $0) RED) $0) (and (ge (count_suit $0 HEARTS) 2) (ge (count_suit $0 DIAMONDS) 2)))",
+    "origin": {
+      "hypothesis_text": "The hand contains only red cards (Hearts and Diamonds), and there are at least two cards of each suit.",
+      "python_lambda": "rule = lambda hand: all(card.suit.name in [\"HEARTS\", \"DIAMONDS\"] for card in hand) and \\\n                    sum(1 for card in hand if card.suit.name == \"HEARTS\") >= 2 and \\\n                    sum(1 for card in hand if card.suit.name == \"DIAMONDS\") >= 2",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_red"
+    }
+  },
+  {
+    "id": "llm__all_same_color__hyp66",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_colors $0) 1) (or (eq (n_unique_suits $0) 1) (le (max_suit_count $0) 4)))",
+    "origin": {
+      "hypothesis_text": "All six cards in the hand are of the same color (either all red or all black), and there are at least two cards of each suit represented.",
+      "python_lambda": "rule = lambda hand: (\n    # Condition 1: All six cards in the hand are of the same color (either all red or all black)\n    (\n        all(card.suit.name in (\"HEARTS\", \"DIAMONDS\") for card in hand)  # All cards are red\n        or\n        all(card.suit.name in (\"CLUBS\", \"SPADES\") for card in hand)    # All cards are black\n    )\n    and\n    # Condition 2: There are at least two cards of each suit represented\n    # This checks that for every unique suit found in the hand, its count is >= 2\n    all(\n        sum(1 for c in hand if c.suit == s) >= 2\n        for s in set(card.suit for card in hand)\n    )\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_same_color"
+    }
+  },
+  {
+    "id": "llm__all_same_suit__hyp67",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_suits $0) 1) (and (any (\u03bb eq (mod (rank_val $0) 2) 0) (first_half $0)) (any (\u03bb eq (mod (rank_val $0) 2) 0) (second_half $0))))",
+    "origin": {
+      "hypothesis_text": "All six cards are of the same suit. Additionally, there is at least one card with an even rank (2, 4, 6, 8, 10, Q, A) among the first three cards, and at least one card with an even rank among the last three cards.",
+      "python_lambda": "rule = lambda hand: (\n    all(card.suit == hand[0].suit for card in hand) and\n    any(RANK_VALUES[card.rank] % 2 == 0 for card in hand[:3]) and\n    any(RANK_VALUES[card.rank] % 2 == 0 for card in hand[3:])\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "all_same_suit"
+    }
+  },
+  {
+    "id": "llm__ap_len3_step1_anywhere__hyp68",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb eq (get_color (head $0)) (get_color (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least one pair of adjacent cards of the same color (i.e., two red cards next to each other or two black cards next to each other).",
+      "python_lambda": "rule = lambda hand: any((card.suit.name in (\"HEARTS\", \"DIAMONDS\")) == (hand[i+1].suit.name in (\"HEARTS\", \"DIAMONDS\")) for i, card in enumerate(hand[:-1]))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "ap_len3_step1_anywhere"
+    }
+  },
+  {
+    "id": "llm__ap_step2_len4_adj__hyp69",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb eq (get_color (head $0)) (get_color (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least one pair of adjacent cards of the same color.",
+      "python_lambda": "rule = lambda hand: any(\n    (hand[i].suit in (Suit.HEARTS, Suit.DIAMONDS)) == (hand[i+1].suit in (Suit.HEARTS, Suit.DIAMONDS))\n    for i in range(len(hand) - 1)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "ap_step2_len4_adj"
+    }
+  },
+  {
+    "id": "llm__ap_step2_len4_adj_ordered__hyp70",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb or (eq (- (rank_val (head $0)) (rank_val (last $0))) 2) (eq (- (rank_val (last $0)) (rank_val (head $0))) 2)) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least one pair of adjacent cards whose ranks differ by 2.",
+      "python_lambda": "rule = lambda hand: any(abs(RANK_VALUES[hand[i].rank] - RANK_VALUES[hand[i+1].rank]) == 2 for i in range(len(hand) - 1))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "ap_step2_len4_adj_ordered"
+    }
+  },
+  {
+    "id": "llm__blacks_before_reds__hyp71",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb or (not (eq (get_color (head $0)) RED)) (eq (get_color (last $0)) RED)) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "All black cards in the hand are placed before all red cards.",
+      "python_lambda": "rule = lambda hand: not any(\n    (hand[i].suit == Suit.CLUBS or hand[i].suit == Suit.SPADES) and\n    (hand[j].suit == Suit.HEARTS or hand[j].suit == Suit.DIAMONDS)\n    for i in range(len(hand))\n    for j in range(i)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "blacks_before_reds"
+    }
+  },
+  {
+    "id": "llm__both_halves_have_pair_rank__hyp72",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (or (eq (get_rank (at (first_half $0) 0)) (get_rank (at (first_half $0) 1))) (or (eq (get_rank (at (first_half $0) 0)) (get_rank (at (first_half $0) 2))) (eq (get_rank (at (first_half $0) 1)) (get_rank (at (first_half $0) 2))))) (or (eq (get_rank (at (second_half $0) 0)) (get_rank (at (second_half $0) 1))) (or (eq (get_rank (at (second_half $0) 0)) (get_rank (at (second_half $0) 2))) (eq (get_rank (at (second_half $0) 1)) (get_rank (at (second_half $0) 2))))))",
+    "origin": {
+      "hypothesis_text": "The hand can be split into two halves of three cards. The first three cards contain a pair, and the last three cards also contain a pair.",
+      "python_lambda": "rule = lambda hand: (hand[0].rank == hand[1].rank or hand[0].rank == hand[2].rank or hand[1].rank == hand[2].rank) and \\\n                    (hand[3].rank == hand[4].rank or hand[3].rank == hand[5].rank or hand[4].rank == hand[5].rank)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "both_halves_have_pair_rank"
+    }
+  },
+  {
+    "id": "llm__both_halves_uniform_color__hyp73",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_colors (first_half $0)) 1) (eq (n_unique_colors (second_half $0)) 1))",
+    "origin": {
+      "hypothesis_text": "The first three cards in the hand are all the same color, and the last three cards in the hand are all the same color.",
+      "python_lambda": "rule = lambda hand: \\\n    len(set([card.suit in (Suit.HEARTS, Suit.DIAMONDS) for card in hand[0:3]])) == 1 and \\\n    len(set([card.suit in (Suit.HEARTS, Suit.DIAMONDS) for card in hand[3:6]])) == 1",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "both_halves_uniform_color"
+    }
+  },
+  {
+    "id": "llm__both_halves_uniform_suit__hyp74",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (n_unique_suits $0) 1) (and (eq (n_unique_suits (first_half $0)) 1) (and (eq (n_unique_suits (second_half $0)) 1) (not (eq (get_suit (head (first_half $0))) (get_suit (head (second_half $0))))))))",
+    "origin": {
+      "hypothesis_text": "Either all six cards are of the same suit, or the first three cards are of one suit and the last three cards are of a different suit.",
+      "python_lambda": "rule = lambda hand: (\n    len(set(card.suit for card in hand)) == 1\n    or (\n        len(set(card.suit for card in hand[:3])) == 1\n        and len(set(card.suit for card in hand[3:])) == 1\n        and hand[0].suit != hand[3].suit\n    )\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "both_halves_uniform_suit"
+    }
+  },
+  {
+    "id": "llm__colors_palindrome__hyp75",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb eq (get_suit (head $0)) (get_suit (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least one pair of adjacent cards of the same suit.",
+      "python_lambda": "rule = lambda hand: any(hand[i].suit == hand[i+1].suit for i in range(len(hand) - 1))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "colors_palindrome"
+    }
+  },
+  {
+    "id": "llm__even_odd_pos_color_split__hyp76",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb not (eq (get_color (head $0)) (get_color (last $0)))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The colors of the cards alternate throughout the hand.",
+      "python_lambda": "rule = lambda hand: all(\n    (card.suit.name in {\"HEARTS\", \"DIAMONDS\"}) != (hand[i-1].suit.name in {\"HEARTS\", \"DIAMONDS\"})\n    for i, card in enumerate(hand) if i > 0\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "even_odd_pos_color_split"
+    }
+  },
+  {
+    "id": "llm__even_pos_red_odd_pos_black__hyp77",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (and (eq (get_color (at $0 0)) BLACK) (and (eq (get_color (at $0 1)) RED) (and (eq (get_color (at $0 2)) BLACK) (and (eq (get_color (at $0 3)) RED) (and (eq (get_color (at $0 4)) BLACK) (eq (get_color (at $0 5)) RED)))))))",
+    "origin": {
+      "hypothesis_text": "The colors of the cards alternate, starting with a black card. The pattern is Black, Red, Black, Red, Black, Red.",
+      "python_lambda": "rule = lambda hand: \\\n    (hand[0].suit in (Suit.CLUBS, Suit.SPADES)) and \\\n    (hand[1].suit in (Suit.HEARTS, Suit.DIAMONDS)) and \\\n    (hand[2].suit in (Suit.CLUBS, Suit.SPADES)) and \\\n    (hand[3].suit in (Suit.HEARTS, Suit.DIAMONDS)) and \\\n    (hand[4].suit in (Suit.CLUBS, Suit.SPADES)) and \\\n    (hand[5].suit in (Suit.HEARTS, Suit.DIAMONDS))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "even_pos_red_odd_pos_black"
+    }
+  },
+  {
+    "id": "llm__every_other_ace__hyp78",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (and (eq (rank_val (at $0 0)) (+ 5 (+ 5 4))) (and (eq (rank_val (at $0 2)) (+ 5 (+ 5 4))) (eq (rank_val (at $0 4)) (+ 5 (+ 5 4))))))",
+    "origin": {
+      "hypothesis_text": "The cards in the first, third, and fifth positions are all Aces.",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[0].rank] == 14 and \\\n                    RANK_VALUES[hand[2].rank] == 14 and \\\n                    RANK_VALUES[hand[4].rank] == 14",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "every_other_ace"
+    }
+  },
+  {
+    "id": "llm__four_any_suit_adjacent__hyp79",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (or (and (eq (get_suit (at $0 0)) (get_suit (at $0 1))) (and (eq (get_suit (at $0 0)) (get_suit (at $0 2))) (eq (get_suit (at $0 0)) (get_suit (at $0 3))))) (or (and (eq (get_suit (at $0 1)) (get_suit (at $0 2))) (and (eq (get_suit (at $0 1)) (get_suit (at $0 3))) (eq (get_suit (at $0 1)) (get_suit (at $0 4))))) (and (eq (get_suit (at $0 2)) (get_suit (at $0 3))) (and (eq (get_suit (at $0 2)) (get_suit (at $0 4))) (eq (get_suit (at $0 2)) (get_suit (at $0 5))))))))",
+    "origin": {
+      "hypothesis_text": "Each hand contains a block of at least four consecutive cards of the same suit.",
+      "python_lambda": "rule = lambda hand: (hand[0].suit == hand[1].suit == hand[2].suit == hand[3].suit) or \\\n                    (hand[1].suit == hand[2].suit == hand[3].suit == hand[4].suit) or \\\n                    (hand[2].suit == hand[3].suit == hand[4].suit == hand[5].suit)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_any_suit_adjacent"
+    }
+  },
+  {
+    "id": "llm__four_any_suit_anywhere__hyp80",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (or (and (eq (get_suit (at $0 0)) (get_suit (at $0 1))) (eq (get_suit (at $0 0)) (get_suit (at $0 2)))) (or (and (eq (get_suit (at $0 1)) (get_suit (at $0 2))) (eq (get_suit (at $0 1)) (get_suit (at $0 3)))) (or (and (eq (get_suit (at $0 2)) (get_suit (at $0 3))) (eq (get_suit (at $0 2)) (get_suit (at $0 4)))) (and (eq (get_suit (at $0 3)) (get_suit (at $0 4))) (eq (get_suit (at $0 3)) (get_suit (at $0 5))))))))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least three consecutive cards of the same suit.",
+      "python_lambda": "rule = lambda hand: any(\n    hand[i].suit == hand[i+1].suit and hand[i+1].suit == hand[i+2].suit\n    for i in range(len(hand) - 2)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_any_suit_anywhere"
+    }
+  },
+  {
+    "id": "llm__four_diamonds_anywhere__hyp81",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (count_suit $0 DIAMONDS) 4)",
+    "origin": {
+      "hypothesis_text": "The hand contains at least four Diamond (\u2666) cards.",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.suit == Suit.DIAMONDS) >= 4",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_diamonds_anywhere"
+    }
+  },
+  {
+    "id": "llm__four_hearts_adjacent__hyp82",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (get_suit (at $0 2)) HEARTS) (and (eq (get_suit (at $0 3)) HEARTS) (ge (count_suit $0 HEARTS) 4)))",
+    "origin": {
+      "hypothesis_text": "The cards in the third and fourth positions are both Hearts, and the hand contains a total of at least four Hearts.",
+      "python_lambda": "rule = lambda hand: (hand[2].suit == Suit.HEARTS and hand[3].suit == Suit.HEARTS) and (sum(1 for card in hand if card.suit == Suit.HEARTS) >= 4)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_hearts_adjacent"
+    }
+  },
+  {
+    "id": "llm__four_kind_adjacent_any__hyp83",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_ranks $0) 3) (eq (n_repeated_ranks $0) 1))",
+    "origin": {
+      "hypothesis_text": "The hand contains four cards of one rank, and the two other cards do not form a pair (i.e., they are of different ranks).",
+      "python_lambda": "rule = lambda hand: (\n    lambda rank_counts_values: (\n        rank_counts_values.count(4) == 1 and\n        rank_counts_values.count(1) == 2 and\n        len(rank_counts_values) == 3\n    )\n)(list({rank: sum(1 for c in hand if c.rank == rank) for rank in set(card.rank for card in hand)}.values()))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_kind_adjacent_any"
+    }
+  },
+  {
+    "id": "llm__four_of_a_kind_adjacent__hyp84",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (or (and (eq (get_rank (at $0 0)) (get_rank (at $0 1))) (and (eq (get_rank (at $0 0)) (get_rank (at $0 2))) (eq (get_rank (at $0 0)) (get_rank (at $0 3))))) (or (and (eq (get_rank (at $0 1)) (get_rank (at $0 2))) (and (eq (get_rank (at $0 1)) (get_rank (at $0 3))) (eq (get_rank (at $0 1)) (get_rank (at $0 4))))) (and (eq (get_rank (at $0 2)) (get_rank (at $0 3))) (and (eq (get_rank (at $0 2)) (get_rank (at $0 4))) (eq (get_rank (at $0 2)) (get_rank (at $0 5))))))))",
+    "origin": {
+      "hypothesis_text": "The hand contains four consecutive cards of the same rank.",
+      "python_lambda": "rule = lambda hand: (\n    (hand[0].rank == hand[1].rank == hand[2].rank == hand[3].rank) or\n    (hand[1].rank == hand[2].rank == hand[3].rank == hand[4].rank) or\n    (hand[2].rank == hand[3].rank == hand[4].rank == hand[5].rank)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "four_of_a_kind_adjacent"
+    }
+  },
+  {
+    "id": "llm__halves_copy_colors__hyp85",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb eq (get_color (head $0)) (get_color (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least one pair of adjacent cards of the same color.",
+      "python_lambda": "rule = lambda hand: any(\n    ('red' if card1.suit in (Suit.HEARTS, Suit.DIAMONDS) else 'black') ==\n    ('red' if card2.suit in (Suit.HEARTS, Suit.DIAMONDS) else 'black')\n    for card1, card2 in zip(hand, hand[1:])\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "halves_copy_colors"
+    }
+  },
+  {
+    "id": "llm__halves_copy_ranks__hyp86",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (and (eq (rank_val (at $0 0)) (rank_val (at $0 3))) (and (eq (rank_val (at $0 1)) (rank_val (at $0 4))) (eq (rank_val (at $0 2)) (rank_val (at $0 5))))))",
+    "origin": {
+      "hypothesis_text": "The rank of the card at any given position `i` (where `i` is 1, 2, or 3) is the same as the rank of the card at position `i+3`. In other words, the sequence of ranks of the first three cards is repeated in the last three cards.",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[0].rank] == RANK_VALUES[hand[3].rank] and \\\n                     RANK_VALUES[hand[1].rank] == RANK_VALUES[hand[4].rank] and \\\n                     RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[5].rank]",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "halves_copy_ranks"
+    }
+  },
+  {
+    "id": "llm__halves_copy_suits__hyp87",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (and (eq (mod (count_suit $0 CLUBS) 2) 0) (and (eq (mod (count_suit $0 DIAMONDS) 2) 0) (and (eq (mod (count_suit $0 HEARTS) 2) 0) (eq (mod (count_suit $0 SPADES) 2) 0)))))",
+    "origin": {
+      "hypothesis_text": "For each of the four suits, the number of cards of that suit in the hand is an even number.",
+      "python_lambda": "rule = lambda hand: all(\n    sum(1 for card in hand if card.suit == s) % 2 == 0\n    for s in Suit\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "halves_copy_suits"
+    }
+  },
+  {
+    "id": "llm__left_red_right_black__hyp88",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (all (\u03bb eq (get_color $0) RED) (first_half $0)) (all (\u03bb eq (get_color $0) BLACK) (second_half $0)))",
+    "origin": {
+      "hypothesis_text": "The first three cards are red (Hearts or Diamonds) and the last three cards are black (Spades or Clubs).",
+      "python_lambda": "rule = lambda hand: all(card.suit.name in (\"HEARTS\", \"DIAMONDS\") for card in hand[0:3]) and \\\n                     all(card.suit.name in (\"CLUBS\", \"SPADES\") for card in hand[3:6])",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "left_red_right_black"
+    }
+  },
+  {
+    "id": "llm__no_adjacent_same_suit__hyp89",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb any (\u03bb or (eq (get_rank $0) (get_rank $1)) (eq (get_suit $0) (get_suit $1))) (second_half $1)) (first_half $0))",
+    "origin": {
+      "hypothesis_text": "At least one card in the first three positions shares either its rank or its suit with a card in the last three positions.",
+      "python_lambda": "rule = lambda hand: any(any(c1.rank == c2.rank or c1.suit == c2.suit for c2 in hand[3:6]) for c1 in hand[0:3])",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "no_adjacent_same_suit"
+    }
+  },
+  {
+    "id": "llm__pair_5s_adjacent__hyp90",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb and (eq (rank_val (head $0)) 5) (eq (rank_val (last $0)) 5)) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The hand contains a pair of 5s in adjacent positions.",
+      "python_lambda": "rule = lambda hand: any(RANK_VALUES[hand[i].rank] == 5 and RANK_VALUES[hand[i+1].rank] == 5 for i in range(len(hand) - 1))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "pair_5s_adjacent"
+    }
+  },
+  {
+    "id": "llm__pair_jacks_pos45__hyp91",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 3)) (+ 5 (+ 5 1))) (eq (rank_val (at $0 4)) (+ 5 (+ 5 1))))",
+    "origin": {
+      "hypothesis_text": "The fourth and fifth cards in the hand are both Jacks.",
+      "python_lambda": "rule = lambda hand: hand[3].rank.value == \"J\" and hand[4].rank.value == \"J\"",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "pair_jacks_pos45"
+    }
+  },
+  {
+    "id": "llm__pos135_same_rank__hyp92",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (get_rank (at $0 0)) (get_rank (at $0 2))) (and (eq (get_rank (at $0 2)) (get_rank (at $0 4))) (and (not (eq (get_suit (at $0 0)) (get_suit (at $0 2)))) (and (not (eq (get_suit (at $0 2)) (get_suit (at $0 4)))) (and (not (eq (get_suit (at $0 0)) (get_suit (at $0 4)))) (and (not (eq (get_rank (at $0 1)) (get_rank (at $0 0)))) (and (not (eq (get_rank (at $0 3)) (get_rank (at $0 0)))) (and (not (eq (get_rank (at $0 5)) (get_rank (at $0 0)))) (and (not (eq (get_rank (at $0 1)) (get_rank (at $0 3)))) (and (not (eq (get_rank (at $0 3)) (get_rank (at $0 5)))) (not (eq (get_rank (at $0 1)) (get_rank (at $0 5))))))))))))))",
+    "origin": {
+      "hypothesis_text": "The cards at odd-numbered positions (1, 3, and 5) all have the same rank and three different suits. The cards at even-numbered positions (2, 4, and 6) all have different ranks from each other and from the rank of the cards in the odd positions.",
+      "python_lambda": "rule = lambda hand: (\n    len(set([hand[0].rank, hand[2].rank, hand[4].rank])) == 1 and\n    len(set([hand[0].suit, hand[2].suit, hand[4].suit])) == 3 and\n    len(set([hand[1].rank, hand[3].rank, hand[5].rank])) == 3 and\n    hand[0].rank not in set([hand[1].rank, hand[3].rank, hand[5].rank])\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "pos135_same_rank"
+    }
+  },
+  {
+    "id": "llm__radial_decreasing__hyp93",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb not (eq (mod (sum_ranks $0) 2) 0))",
+    "origin": {
+      "hypothesis_text": "The sum of the ranks of the six cards is an odd number. (Numerical values: 2-10 are face value, Jack=11, Queen=12, King=13, Ace=1).",
+      "python_lambda": "rule = lambda hand: (sum(1 if card.rank == Rank.ACE else RANK_VALUES[card.rank] for card in hand) % 2) != 0",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "radial_decreasing"
+    }
+  },
+  {
+    "id": "llm__ranks_palindrome__hyp94",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 0)) (rank_val (at $0 5))) (and (eq (rank_val (at $0 1)) (rank_val (at $0 4))) (eq (rank_val (at $0 2)) (rank_val (at $0 3)))))",
+    "origin": {
+      "hypothesis_text": "The sequence of card ranks forms a palindrome. That is, the rank of the first card matches the sixth, the second matches the fifth, and the third matches the fourth.",
+      "python_lambda": "rule = lambda hand: \\\n    RANK_VALUES[hand[0].rank] == RANK_VALUES[hand[5].rank] and \\\n    RANK_VALUES[hand[1].rank] == RANK_VALUES[hand[4].rank] and \\\n    RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[3].rank]",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "ranks_palindrome"
+    }
+  },
+  {
+    "id": "llm__skip2_same_rank_or_suit__hyp95",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb any (\u03bb eq (get_suit $0) (get_suit $1)) (second_half $1)) (first_half $0))",
+    "origin": {
+      "hypothesis_text": "The hand is divided into two halves of three cards each. The first three cards and the last three cards must share at least one suit.",
+      "python_lambda": "rule = lambda hand: bool(set(card.suit for card in hand[0:3]) & set(card.suit for card in hand[3:6]))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "skip2_same_rank_or_suit"
+    }
+  },
+  {
+    "id": "llm__some_half_red_other_black__hyp96",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_colors (first_half $0)) 1) (and (eq (n_unique_colors (second_half $0)) 1) (not (eq (get_color (head (first_half $0))) (get_color (head (second_half $0)))))))",
+    "origin": {
+      "hypothesis_text": "The first three cards in the hand are all of one color (either red or black), and the last three cards are all of the opposite color.",
+      "python_lambda": "rule = lambda hand: (\n    (lambda get_is_red:\n        (lambda first_card_is_red_val:\n            all(get_is_red(card) == first_card_is_red_val for card in hand[0:3]) and\n            all(get_is_red(card) != first_card_is_red_val for card in hand[3:6])\n        )(get_is_red(hand[0]))\n    )(lambda card: card.suit in (Suit.HEARTS, Suit.DIAMONDS))\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "some_half_red_other_black"
+    }
+  },
+  {
+    "id": "llm__straight5__hyp97",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (ge (n_unique_ranks $0) 5) (le (- (max_rank $0) (min_rank $0)) 5))",
+    "origin": {
+      "hypothesis_text": "The hand contains five cards of consecutive rank (a five-card straight).",
+      "python_lambda": "rule = lambda hand: any(s[i+4] == s[i] + 4 for s in [sorted(list(set(RANK_VALUES[c.rank] for c in hand)))] for i in range(len(s) - 4))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "straight5"
+    }
+  },
+  {
+    "id": "llm__straight5_same_color__hyp98",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (ge (count_color $0 RED) 5) (ge (count_color $0 BLACK) 5))",
+    "origin": {
+      "hypothesis_text": "The hand contains at least five cards of the same color.",
+      "python_lambda": "rule = lambda hand: (\n    sum(1 for card in hand if card.suit in (Suit.HEARTS, Suit.DIAMONDS)) >= 5\n    or\n    sum(1 for card in hand if card.suit in (Suit.CLUBS, Suit.SPADES)) >= 5\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "straight5_same_color"
+    }
+  },
+  {
+    "id": "llm__strict_increasing__hyp100",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb all (\u03bb lt (rank_val (head $0)) (rank_val (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "The ranks of the cards in the hand are in strictly increasing order from left to right.",
+      "python_lambda": "rule = lambda hand: all(RANK_VALUES[hand[i].rank] < RANK_VALUES[hand[i+1].rank] for i in range(len(hand) - 1))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "strict_increasing"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_interleaved__hyp101",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (n_unique_suits $0) 4) (and (eq (n_repeated_suits $0) 2) (eq (max_suit_count $0) 2)))",
+    "origin": {
+      "hypothesis_text": "Two suits are represented by two cards each, and the other two suits are represented by one card each.",
+      "python_lambda": "rule = lambda hand: (\n    len({card.suit for card in hand}) == 4 and\n    sorted([sum(1 for c in hand if c.suit == s) for s in {card.suit for card in hand}]) == [1, 1, 2, 2]\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "suit_brackets_interleaved"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_nested__hyp102",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb eq (mod (count_color $0 RED) 2) 0)",
+    "origin": {
+      "hypothesis_text": "The hand contains an even number of red cards.",
+      "python_lambda": "rule = lambda hand: sum(card.suit.name in (\"HEARTS\", \"DIAMONDS\") for card in hand) % 2 == 0",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "suit_brackets_nested"
+    }
+  },
+  {
+    "id": "llm__suit_brackets_no_cross__hyp103",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (get_color (at $0 0)) (get_color (at $0 1))) (and (eq (get_color (at $0 2)) (get_color (at $0 3))) (eq (get_color (at $0 4)) (get_color (at $0 5)))))",
+    "origin": {
+      "hypothesis_text": "The hand is composed of three pairs of adjacent cards (positions 1-2, 3-4, and 5-6). In each of these pairs, both cards have the same color.",
+      "python_lambda": "rule = lambda hand: (\n    ((hand[0].suit == Suit.HEARTS or hand[0].suit == Suit.DIAMONDS) ==\n     (hand[1].suit == Suit.HEARTS or hand[1].suit == Suit.DIAMONDS))\n    and\n    ((hand[2].suit == Suit.HEARTS or hand[2].suit == Suit.DIAMONDS) ==\n     (hand[3].suit == Suit.HEARTS or hand[3].suit == Suit.DIAMONDS))\n    and\n    ((hand[4].suit == Suit.HEARTS or hand[4].suit == Suit.DIAMONDS) ==\n     (hand[5].suit == Suit.HEARTS or hand[5].suit == Suit.DIAMONDS))\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "suit_brackets_no_cross"
+    }
+  },
+  {
+    "id": "llm__suits_nonincreasing__hyp104",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb eq (get_suit (head $0)) (get_suit (last $0))) (adjacent_pairs $0))",
+    "origin": {
+      "hypothesis_text": "There is at least one pair of adjacent cards that have the same suit.",
+      "python_lambda": "rule = lambda hand: any(card1.suit == card2.suit for card1, card2 in zip(hand, hand[1:]))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "suits_nonincreasing"
+    }
+  },
+  {
+    "id": "llm__three_any_suit_adjacent__hyp105",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (eq (n_unique_suits (first_half $0)) 1) (eq (n_unique_suits (second_half $0)) 1))",
+    "origin": {
+      "hypothesis_text": "Either the first three cards or the last three cards are all of the same suit.",
+      "python_lambda": "rule = lambda hand: (hand[0].suit == hand[1].suit == hand[2].suit) or \\\n                    (hand[3].suit == hand[4].suit == hand[5].suit)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "three_any_suit_adjacent"
+    }
+  },
+  {
+    "id": "llm__three_or_more_same_suit__hyp106",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (or (or (eq (get_rank (at $0 0)) (get_rank (at $0 2))) (eq (get_suit (at $0 0)) (get_suit (at $0 2)))) (or (or (eq (get_rank (at $0 1)) (get_rank (at $0 3))) (eq (get_suit (at $0 1)) (get_suit (at $0 3)))) (or (or (eq (get_rank (at $0 2)) (get_rank (at $0 4))) (eq (get_suit (at $0 2)) (get_suit (at $0 4)))) (or (eq (get_rank (at $0 3)) (get_rank (at $0 5))) (eq (get_suit (at $0 3)) (get_suit (at $0 5))))))))",
+    "origin": {
+      "hypothesis_text": "There is at least one pair of cards separated by one card (i.e., at positions `i` and `i+2`) that have either the same rank or the same suit.",
+      "python_lambda": "rule = lambda hand: any(hand[i].rank == hand[i+2].rank or hand[i].suit == hand[i+2].suit for i in range(4))",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "three_or_more_same_suit"
+    }
+  },
+  {
+    "id": "llm__three_spades__hyp107",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (count_suit $0 SPADES) 3)",
+    "origin": {
+      "hypothesis_text": "Each hand contains at least three Spades (\u2660).",
+      "python_lambda": "rule = lambda hand: sum(1 for card in hand if card.suit.name == \"SPADES\") >= 3",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "three_spades"
+    }
+  },
+  {
+    "id": "llm__triple_2s_pos234__hyp108",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 1)) 2) (and (eq (rank_val (at $0 2)) 2) (eq (rank_val (at $0 3)) 2)))",
+    "origin": {
+      "hypothesis_text": "The cards in the second, third, and fourth positions are all of rank 2.",
+      "python_lambda": "rule = lambda hand: hand[1].rank.value == \"2\" and hand[2].rank.value == \"2\" and hand[3].rank.value == \"2\"",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "triple_2s_pos234"
+    }
+  },
+  {
+    "id": "llm__triple_3s_adjacent__hyp109",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb (or (and (eq (rank_val (at $0 0)) 3) (and (eq (rank_val (at $0 1)) 3) (eq (rank_val (at $0 2)) 3))) (or (and (eq (rank_val (at $0 1)) 3) (and (eq (rank_val (at $0 2)) 3) (eq (rank_val (at $0 3)) 3))) (or (and (eq (rank_val (at $0 2)) 3) (and (eq (rank_val (at $0 3)) 3) (eq (rank_val (at $0 4)) 3))) (and (eq (rank_val (at $0 3)) 3) (and (eq (rank_val (at $0 4)) 3) (eq (rank_val (at $0 5)) 3)))))))",
+    "origin": {
+      "hypothesis_text": "The hand contains three 3s that are adjacent to each other.",
+      "python_lambda": "rule = lambda hand: (\n    (RANK_VALUES[hand[0].rank] == 3 and RANK_VALUES[hand[1].rank] == 3 and RANK_VALUES[hand[2].rank] == 3) or\n    (RANK_VALUES[hand[1].rank] == 3 and RANK_VALUES[hand[2].rank] == 3 and RANK_VALUES[hand[3].rank] == 3) or\n    (RANK_VALUES[hand[2].rank] == 3 and RANK_VALUES[hand[3].rank] == 3 and RANK_VALUES[hand[4].rank] == 3) or\n    (RANK_VALUES[hand[3].rank] == 3 and RANK_VALUES[hand[4].rank] == 3 and RANK_VALUES[hand[5].rank] == 3)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "triple_3s_adjacent"
+    }
+  },
+  {
+    "id": "llm__triple_any_adjacent__hyp110",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (or (and (eq (get_rank (at $0 0)) (get_rank (at $0 1))) (eq (get_rank (at $0 1)) (get_rank (at $0 2)))) (or (and (eq (get_rank (at $0 1)) (get_rank (at $0 2))) (eq (get_rank (at $0 2)) (get_rank (at $0 3)))) (or (and (eq (get_rank (at $0 2)) (get_rank (at $0 3))) (eq (get_rank (at $0 3)) (get_rank (at $0 4)))) (and (eq (get_rank (at $0 3)) (get_rank (at $0 4))) (eq (get_rank (at $0 4)) (get_rank (at $0 5))))))) (eq (n_unique_ranks $0) 4))",
+    "origin": {
+      "hypothesis_text": "The hand contains three consecutive cards of the same rank, and the other three cards are all of different ranks.",
+      "python_lambda": "rule = lambda hand: any(\n    (hand[i].rank == hand[i+1].rank == hand[i+2].rank) and\n    (len(set(c.rank for c in hand[:i] + hand[i+3:])) == 3)\n    for i in range(4)\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "triple_any_adjacent"
+    }
+  },
+  {
+    "id": "llm__triple_any_pos345__hyp111",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (eq (rank_val (at $0 2)) (rank_val (at $0 3))) (eq (rank_val (at $0 3)) (rank_val (at $0 4))))",
+    "origin": {
+      "hypothesis_text": "The cards in positions 3, 4, and 5 are a three of a kind (i.e., they all have the same rank).",
+      "python_lambda": "rule = lambda hand: RANK_VALUES[hand[2].rank] == RANK_VALUES[hand[3].rank] == RANK_VALUES[hand[4].rank]",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "triple_any_pos345"
+    }
+  },
+  {
+    "id": "llm__two_pairs_ranks__hyp112",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb any (\u03bb any (\u03bb eq (get_suit $0) (get_suit $1)) (second_half $1)) (first_half $0))",
+    "origin": {
+      "hypothesis_text": "There is at least one suit that appears in both the first three cards and the last three cards of the hand.",
+      "python_lambda": "rule = lambda hand: bool(\n    {card.suit for card in hand[0:3]} &\n    {card.suit for card in hand[3:6]}\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "two_pairs_ranks"
+    }
+  },
+  {
+    "id": "llm__two_pairs_suits__hyp113",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb or (and (or (eq (get_color (at $0 0)) RED) (or (eq (get_color (at $0 2)) RED) (eq (get_color (at $0 4)) RED))) (or (eq (get_color (at $0 0)) BLACK) (or (eq (get_color (at $0 2)) BLACK) (eq (get_color (at $0 4)) BLACK)))) (and (or (eq (get_color (at $0 1)) RED) (or (eq (get_color (at $0 3)) RED) (eq (get_color (at $0 5)) RED))) (or (eq (get_color (at $0 1)) BLACK) (or (eq (get_color (at $0 3)) BLACK) (eq (get_color (at $0 5)) BLACK)))))",
+    "origin": {
+      "hypothesis_text": "The hand is divided into two groups of three cards: those in odd-numbered positions (1, 3, 5) and those in even-numbered positions (2, 4, 6). The rule is that at least one of these two groups must contain both red and black cards.",
+      "python_lambda": "rule = lambda hand: (\n    (any(c.suit in (Suit.HEARTS, Suit.DIAMONDS) for c in [hand[0], hand[2], hand[4]]) and\n     any(c.suit in (Suit.CLUBS, Suit.SPADES) for c in [hand[0], hand[2], hand[4]]))\n    or\n    (any(c.suit in (Suit.HEARTS, Suit.DIAMONDS) for c in [hand[1], hand[3], hand[5]]) and\n     any(c.suit in (Suit.CLUBS, Suit.SPADES) for c in [hand[1], hand[3], hand[5]]))\n)",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "two_pairs_suits"
+    }
+  },
+  {
+    "id": "llm__zigzag_ranks__hyp114",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb and (lt (rank_val (at $0 0)) (rank_val (at $0 1))) (and (lt (rank_val (at $0 2)) (rank_val (at $0 3))) (lt (rank_val (at $0 4)) (rank_val (at $0 5)))))",
+    "origin": {
+      "hypothesis_text": "The hand is divided into three pairs of cards based on their position: (card 1, card 2), (card 3, card 4), and (card 5, card 6). In each of these three pairs, the rank of the second card is higher than the rank of the first card.",
+      "python_lambda": "rule = lambda hand: (RANK_VALUES[hand[1].rank] > RANK_VALUES[hand[0].rank]) and \\\n                    (RANK_VALUES[hand[3].rank] > RANK_VALUES[hand[2].rank]) and \\\n                    (RANK_VALUES[hand[5].rank] > RANK_VALUES[hand[4].rank])",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "zigzag_ranks"
+    }
+  },
+  {
+    "id": "llm__three_clubs_adjacent__hyp116",
+    "source": "llm_foil",
+    "true_for_rule": null,
+    "dsl_program": "(\u03bb ge (count_suit $0 CLUBS) 3)",
+    "origin": {
+      "hypothesis_text": "The hand contains three consecutive cards of the Clubs suit.",
+      "python_lambda": "rule = lambda hand: len([card for card in hand if card.suit.name == \"CLUBS\"]) >= 3",
+      "source_model": "gemini-2.5-pro",
+      "original_rule_id": "three_clubs_adjacent"
+    }
+  }
+]

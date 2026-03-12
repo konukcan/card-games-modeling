@@ -41,7 +41,9 @@ from dreamcoder_core.program import (
     parse_program, Program, Primitive, Application, Abstraction, Index,
 )
 from dreamcoder_core.grammar import Grammar
-from dreamcoder_core.type_system import Arrow, Type, TypeContext, HAND, BOOL
+from dreamcoder_core.type_system import (
+    Arrow, Type, TypeContext, TypeVariable, HAND, BOOL
+)
 
 
 def compute_log_prior(program_str: str, grammar: Grammar) -> float:
@@ -163,6 +165,13 @@ def _compute_cost(
     # Now compute costs for each argument.
     # The instantiated type tells us what types the arguments should be.
     # E.g., has_color: HAND -> color -> BOOL, so args should be [HAND, color]
+    #
+    # POLYMORPHIC TYPE HANDLING:
+    # When the head is polymorphic (e.g., eq: 'a -> 'a -> bool), the
+    # inst_type may contain unresolved type variables. We resolve these
+    # by inferring the concrete type of each argument and unifying with
+    # the expected type. This way, after processing the first arg to `eq`,
+    # we know 'a = INT (for example), and the second arg is also INT.
     total_log_prob = head_log_prob
     remaining_type = head_inst_type
 
@@ -170,8 +179,22 @@ def _compute_cost(
         if not isinstance(remaining_type, Arrow):
             # More args than the type expects
             return float('-inf')
-        arg_target_type = remaining_type.arg
+        arg_target_type = ctx.apply(remaining_type.arg)
         remaining_type = remaining_type.ret
+
+        # If the target type contains unresolved type variables (either
+        # directly like 'a, or nested like 'a -> bool, or list('a)),
+        # infer the concrete type from the argument and unify to resolve.
+        if _contains_type_variable(arg_target_type):
+            concrete_type = _infer_concrete_type(arg, env)
+            if concrete_type is not None:
+                try:
+                    ctx.unify(arg_target_type, concrete_type)
+                    arg_target_type = ctx.apply(arg_target_type)
+                except Exception:
+                    return float('-inf')
+            else:
+                return float('-inf')
 
         arg_log_prob = _compute_cost(arg, arg_target_type, grammar, env)
         if arg_log_prob == float('-inf'):
@@ -207,3 +230,65 @@ def _extract_head_and_args(program: Program) -> Tuple[Program, List[Program]]:
     # args were collected in reverse order (outermost first)
     args.reverse()
     return current, args
+
+
+def _contains_type_variable(tp: Type) -> bool:
+    """Check if a type contains any unresolved type variables."""
+    if isinstance(tp, TypeVariable):
+        return True
+    if isinstance(tp, Arrow):
+        return _contains_type_variable(tp.arg) or _contains_type_variable(tp.ret)
+    # Check ListType
+    if hasattr(tp, 'element'):
+        return _contains_type_variable(tp.element)
+    return False
+
+
+def _infer_concrete_type(program: Program, env: List[Type]) -> Type | None:
+    """
+    Infer the concrete return type of a program expression.
+
+    Used to resolve type variables in polymorphic primitives like `eq`.
+    For example, if the argument is (n_unique_suits $0), this returns INT.
+
+    This is a lightweight type inference that handles common cases:
+    - Primitive: return type from its declared type
+    - Application chain: return type after applying all args
+    - Index: look up in environment
+    - Abstraction: infer via full type inference
+    """
+    if isinstance(program, Primitive):
+        # A bare primitive used as an argument — its full return type
+        tp = program.tp
+        # Unwrap arrows to get the final return type
+        while isinstance(tp, Arrow):
+            tp = tp.ret
+        return tp
+
+    if isinstance(program, Index):
+        if 0 <= program.i < len(env):
+            return env[program.i]
+        return None
+
+    if isinstance(program, Application):
+        # Use full type inference to resolve polymorphic return types.
+        # Simple arrow-peeling fails when the return type contains
+        # type variables (e.g., adjacent_pairs: list('a) -> list(list('a))
+        # applied to a list(card) should return list(list(card)), not list(list('a))).
+        try:
+            ctx = TypeContext()
+            inferred = program.infer_type(ctx, env)
+            return ctx.apply(inferred)
+        except Exception:
+            return None
+
+    if isinstance(program, Abstraction):
+        # Lambda used as argument (e.g., inside all/any/map)
+        try:
+            ctx = TypeContext()
+            inferred = program.infer_type(ctx, env)
+            return ctx.apply(inferred)
+        except Exception:
+            return None
+
+    return None
