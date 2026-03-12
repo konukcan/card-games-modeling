@@ -195,6 +195,7 @@ def estimate_extensions(
     n_samples: int = 100_000,
     seed: int = 123,
     verbose: int = 1,
+    cache_path: str = None,
 ) -> List[Tuple[int, float]]:
     """
     Estimate extension sizes for all equivalence classes.
@@ -202,30 +203,67 @@ def estimate_extensions(
     This is rule-independent (a property of each hypothesis, not the data).
     We compute it once and reuse across all 60 rules.
 
+    If cache_path is provided, loads cached extension sizes by fingerprint
+    and only computes for classes not in the cache. Saves updated cache
+    after computation.
+
     Returns:
         List of (extension_size, base_rate) tuples, parallel to equivalence_classes.
     """
+    # Load cache if available
+    cache: Dict[str, Tuple[int, float]] = {}
+    if cache_path:
+        cache_file = Path(cache_path)
+        if cache_file.exists():
+            with open(cache_file) as f:
+                raw = json.load(f)
+            cache = {k: tuple(v) for k, v in raw.items()}
+            if verbose >= 1:
+                print(f"  Loaded extension cache: {len(cache):,} entries from {cache_path}",
+                      flush=True)
+
+    # Count how many we need to compute
+    n_cached = sum(1 for cls in equivalence_classes if cls["fingerprint"] in cache)
+    n_to_compute = len(equivalence_classes) - n_cached
+
     if verbose >= 1:
         print(f"Step 4: Estimating extension sizes ({n_samples:,} MC samples, "
-              f"{len(equivalence_classes):,} classes)...", flush=True)
+              f"{len(equivalence_classes):,} classes, {n_cached:,} cached, "
+              f"{n_to_compute:,} to compute)...", flush=True)
 
     t0 = time.time()
     extensions = []
+    n_computed = 0
     for i, cls in enumerate(equivalence_classes):
-        ext_size, base_rate = estimate_extension_size(
-            cls["predicate"], n_samples=n_samples, seed=seed
-        )
-        extensions.append((ext_size, base_rate))
+        fp = cls["fingerprint"]
+        if fp in cache:
+            extensions.append(cache[fp])
+        else:
+            ext_size, base_rate = estimate_extension_size(
+                cls["predicate"], n_samples=n_samples, seed=seed
+            )
+            extensions.append((ext_size, base_rate))
+            cache[fp] = (ext_size, base_rate)
+            n_computed += 1
 
-        if verbose >= 2 and (i + 1) % 500 == 0:
-            print(f"  {i+1}/{len(equivalence_classes)} estimated...", flush=True)
+            if verbose >= 2 and n_computed % 500 == 0:
+                print(f"  {n_computed}/{n_to_compute} computed...", flush=True)
 
     t_ext = time.time() - t0
     if verbose >= 1:
-        # Summary statistics
         nonzero = sum(1 for e, _ in extensions if e > 0)
         print(f"  Done in {t_ext:.1f}s. Non-zero extensions: {nonzero:,} / {len(extensions):,}",
               flush=True)
+
+    # Save updated cache
+    if cache_path:
+        cache_file = Path(cache_path)
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, "w") as f:
+            json.dump({k: list(v) for k, v in cache.items()}, f)
+        if verbose >= 1:
+            print(f"  Extension cache saved: {len(cache):,} entries to {cache_path}",
+                  flush=True)
 
     return extensions
 
@@ -427,6 +465,7 @@ def run_analysis(
     epsilon: float = 0.01,
     prior_mode: str = "summed",
     inject_path: str = None,
+    extension_cache: str = None,
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -488,11 +527,12 @@ def run_analysis(
             "n_merged": len(injected) - (n_after - n_before),
         }
 
-    # Estimate extension sizes (shared)
+    # Estimate extension sizes (shared, with optional cache)
     extensions = estimate_extensions(
         equiv_classes,
         n_samples=extension_samples,
         verbose=verbose,
+        cache_path=extension_cache,
     )
 
     # Build true-rule fingerprint lookup from equivalence classes.
@@ -810,6 +850,8 @@ def main():
     parser.add_argument("--inject", type=str, default=None,
                         help="Path to injection JSON file with additional hypotheses")
     parser.add_argument("--output", type=str, default=None, help="Save results JSON to this path")
+    parser.add_argument("--extension-cache", type=str, default=None,
+                        help="Path to cache extension sizes (skips MC estimation on re-runs)")
     args = parser.parse_args()
 
     if args.quick:
@@ -829,6 +871,7 @@ def main():
         epsilon=args.epsilon,
         prior_mode=args.prior,
         inject_path=args.inject,
+        extension_cache=args.extension_cache,
         verbose=args.verbose,
     )
 
