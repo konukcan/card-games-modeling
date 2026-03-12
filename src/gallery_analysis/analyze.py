@@ -596,8 +596,17 @@ def run_analysis(
 # Reporting
 # =========================================================================
 
-def print_difficulty_report(results: Dict[str, Any]):
-    """Print a human-readable difficulty ranking report."""
+def print_difficulty_report(results: Dict[str, Any], verbose: int = 1):
+    """
+    Print a human-readable difficulty ranking report.
+
+    Args:
+        results: Full results dict from run_analysis().
+        verbose: Verbosity level.
+            0 = summary only
+            1 = ranking table + group summary (default)
+            2 = + per-rule confusion profiles and diagnostic exemplars
+    """
     ranking = results["difficulty_ranking"]
     stats = results["pipeline_stats"]
     config = results["config"]
@@ -618,33 +627,53 @@ def print_difficulty_report(results: Dict[str, Any]):
           f"{fp_s.get('n_equivalence_classes',0):,} equivalence classes")
     print(f"Total time: {stats.get('grand_total_seconds',0):.0f}s")
 
-    # Group-level summary
-    group_entropies = {1: [], 2: [], 3: []}
+    # Group-level summary with true-rule tracking
+    group_data = {1: {"entropy": [], "true_rank": [], "true_mass": []},
+                  2: {"entropy": [], "true_rank": [], "true_mass": []},
+                  3: {"entropy": [], "true_rank": [], "true_mass": []}}
     for r in ranking:
-        if r["group"] in group_entropies:
-            group_entropies[r["group"]].append(r["posterior_entropy"])
+        g = r.get("group")
+        if g in group_data:
+            group_data[g]["entropy"].append(r["posterior_entropy"])
+            if r.get("true_rule_rank") is not None:
+                group_data[g]["true_rank"].append(r["true_rule_rank"])
+            if r.get("true_rule_posterior_mass") is not None:
+                group_data[g]["true_mass"].append(r["true_rule_posterior_mass"])
 
-    print(f"\nMean posterior entropy by difficulty group:")
+    print(f"\nMean by group:")
     for g in [1, 2, 3]:
-        ents = group_entropies[g]
+        gd = group_data[g]
         label = {1: "Easy", 2: "Medium", 3: "Hard"}[g]
-        if ents:
-            mean_e = sum(ents) / len(ents)
-            print(f"  Group {g} ({label:>6}, n={len(ents):>2}): mean entropy = {mean_e:.2f}")
+        n = len(gd["entropy"])
+        if not n:
+            continue
+        mean_e = sum(gd["entropy"]) / n
+        parts = [f"entropy={mean_e:.2f}"]
+        if gd["true_rank"]:
+            mean_rank = sum(gd["true_rank"]) / len(gd["true_rank"])
+            parts.append(f"true_rank={mean_rank:.1f}")
+        if gd["true_mass"]:
+            mean_mass = sum(gd["true_mass"]) / len(gd["true_mass"])
+            parts.append(f"true_mass={mean_mass*100:.1f}%")
+        print(f"  Group {g} ({label:>6}, n={n:>2}): {('  ').join(parts)}")
 
-    # Full ranking
+    # Full ranking table with TrueRk and TrueP% columns
     print(f"\n{'Rank':<6} {'Rule':<30} {'Grp':>4} {'Entropy':>8} {'N_eff':>7} "
-          f"{'Top1%':>7} {'AllHit':>7} {'Top hypothesis'}")
-    print(f"{'─'*6} {'─'*30} {'─'*4} {'─'*8} {'─'*7} {'─'*7} {'─'*7} {'─'*40}")
+          f"{'Top1%':>7} {'TrueRk':>7} {'TrueP%':>7} {'Top hypothesis'}")
+    print(f"{'─'*6} {'─'*30} {'─'*4} {'─'*8} {'─'*7} {'─'*7} {'─'*7} {'─'*7} {'─'*40}")
 
     for i, r in enumerate(ranking):
         rule_id = r["rule_id"]
         rule_res = results["rule_results"][rule_id]
         top_prog = rule_res["top_hypotheses"][0]["program"][:40] if rule_res["top_hypotheses"] else "?"
 
+        true_rk_str = f"{r['true_rule_rank']:>7}" if r.get("true_rule_rank") is not None else "      —"
+        true_mass_str = (f"{r['true_rule_posterior_mass']*100:>6.1f}%"
+                         if r.get("true_rule_posterior_mass") is not None else "      —")
+
         print(f"{i+1:<6} {rule_id:<30} {r['group']:>4} "
               f"{r['posterior_entropy']:>8.2f} {r['n_effective_hypotheses']:>7.1f} "
-              f"{r['top1_probability']*100:>6.1f}% {r['n_with_all_hits']:>7} "
+              f"{r['top1_probability']*100:>6.1f}% {true_rk_str} {true_mass_str} "
               f"{top_prog}")
 
     # Easiest and hardest
@@ -658,6 +687,101 @@ def print_difficulty_report(results: Dict[str, Any]):
     for r in ranking[:5]:
         print(f"  {r['rule_id']:<30} entropy={r['posterior_entropy']:.2f}  "
               f"top1={r['top1_probability']*100:.1f}%")
+
+    # --- Cross-rule summary: rules where true rule not in top 10 ---
+    not_in_top10 = [
+        r for r in ranking
+        if r.get("true_rule_rank") is not None and r["true_rule_rank"] > 10
+    ]
+    missing_true = [
+        r for r in ranking
+        if r.get("true_rule_rank") is None
+    ]
+
+    if not_in_top10 or missing_true:
+        print(f"\n{'─'*80}")
+        print("RULES WHERE TRUE RULE NOT IN TOP 10:")
+        for r in sorted(not_in_top10, key=lambda x: -x["true_rule_rank"]):
+            print(f"  {r['rule_id']:<30} (rank={r['true_rule_rank']})")
+        for r in missing_true:
+            print(f"  {r['rule_id']:<30} (not found in hypothesis pool)")
+
+    # --- Entropy vs true-rule mass correlation ---
+    paired = [
+        (r["posterior_entropy"], r["true_rule_posterior_mass"])
+        for r in ranking
+        if r.get("true_rule_posterior_mass") is not None
+    ]
+    if len(paired) >= 3:
+        # Compute Spearman rank correlation (no scipy dependency)
+        n_p = len(paired)
+        ent_vals = [p[0] for p in paired]
+        mass_vals = [p[1] for p in paired]
+
+        def _rank_values(vals):
+            """Assign ranks (1-based, average ties)."""
+            indexed = sorted(enumerate(vals), key=lambda x: x[1])
+            ranks = [0.0] * len(vals)
+            i = 0
+            while i < len(indexed):
+                j = i
+                while j < len(indexed) - 1 and indexed[j + 1][1] == indexed[j][1]:
+                    j += 1
+                avg_rank = (i + j) / 2.0 + 1
+                for k in range(i, j + 1):
+                    ranks[indexed[k][0]] = avg_rank
+                i = j + 1
+            return ranks
+
+        ent_ranks = _rank_values(ent_vals)
+        mass_ranks = _rank_values(mass_vals)
+
+        d_sq_sum = sum((er - mr) ** 2 for er, mr in zip(ent_ranks, mass_ranks))
+        spearman_rho = 1 - (6 * d_sq_sum) / (n_p * (n_p ** 2 - 1))
+
+        print(f"\nEntropy vs true-rule mass: Spearman rho = {spearman_rho:.3f} (n={n_p})")
+
+    # --- Per-rule detail section (verbose >= 2) ---
+    if verbose >= 2:
+        print(f"\n{'='*80}")
+        print("PER-RULE DETAIL: TOP 5 COMPETITORS AND DIAGNOSTIC EXEMPLARS")
+        print(f"{'='*80}")
+
+        for r in ranking:
+            rule_id = r["rule_id"]
+            rule_res = results["rule_results"][rule_id]
+            top_hyps = rule_res.get("top_hypotheses", [])
+            diagnosticity = rule_res.get("exemplar_diagnosticity")
+            true_rank = rule_res.get("true_rule_rank")
+            true_mass = rule_res.get("true_rule_posterior_mass")
+
+            true_rk_str = str(true_rank) if true_rank is not None else "—"
+            true_mass_str = f"{true_mass*100:.1f}%" if true_mass is not None else "—"
+
+            print(f"\n{'─'*70}")
+            print(f"{rule_id}  (group={r['group']}, entropy={r['posterior_entropy']:.2f}, "
+                  f"true_rank={true_rk_str}, true_mass={true_mass_str})")
+
+            # Top 5 competitors with confusion profile
+            for j, hyp in enumerate(top_hyps[:5]):
+                prog = hyp["program"][:55]
+                prob_pct = hyp["probability"] * 100
+                n_hits = hyp["n_hits"]
+                agrees = hyp.get("agrees_on_exemplars")
+                agree_str = ""
+                if agrees is not None:
+                    agree_str = "  agree=[" + "".join("Y" if a else "n" for a in agrees) + "]"
+                print(f"  {j+1}. ({prob_pct:5.1f}%) hits={n_hits} {agree_str}  {prog}")
+
+            # Diagnostic exemplars
+            if diagnosticity:
+                diag_hands = [d for d in diagnosticity if d["diagnostic"]]
+                if diag_hands:
+                    idxs = ", ".join(f"h{d['hand_idx']}({d['agreement_rate']*100:.0f}%)"
+                                     for d in diag_hands)
+                    print(f"  Diagnostic exemplars: {idxs}")
+                else:
+                    print(f"  Diagnostic exemplars: none (all exemplars >90% agreement)")
 
 
 # =========================================================================
@@ -701,7 +825,7 @@ def main():
         verbose=args.verbose,
     )
 
-    print_difficulty_report(results)
+    print_difficulty_report(results, verbose=args.verbose)
 
     # Save results if requested
     if args.output:
