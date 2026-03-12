@@ -14,6 +14,7 @@ translated into DSL) with the Bayesian scoring pipeline. It:
 The main entry point is load_and_validate_injections().
 """
 
+import copy
 import json
 import math
 import sys
@@ -25,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dreamcoder_core.program import parse_program, Primitive, Program
 from gallery_analysis.dsl_prior import compute_log_prior
 from gallery_analysis.enumerator import build_gallery_grammar, _make_evaluator
+from gallery_analysis.hypothesis_table import compute_fingerprint
 
 
 # Fields that every injection entry must have
@@ -166,3 +168,122 @@ def load_and_validate_injections(
         validated.append(validated_entry)
 
     return validated
+
+
+def _log_sum_exp(a: float, b: float) -> float:
+    """
+    Numerically stable log(exp(a) + exp(b)).
+
+    Uses the identity: log(exp(a) + exp(b)) = max(a,b) + log(1 + exp(-|a-b|))
+    to avoid overflow/underflow when a or b are very negative.
+    """
+    mx = max(a, b)
+    return mx + math.log(1 + math.exp(-abs(a - b)))
+
+
+def merge_injected(
+    equivalence_classes: List[Dict],
+    injected: List[Dict],
+    probes: List,
+) -> List[Dict]:
+    """
+    Merge injected hypotheses into enumerated equivalence classes.
+
+    For each injected hypothesis:
+    1. Compute its fingerprint on the same probe hands used for enumeration
+    2. If fingerprint matches an existing class: merge metadata + update prior
+    3. If novel: create a new equivalence class
+
+    This function does NOT modify the input lists. It returns a new list
+    containing deep copies of existing classes (with merged metadata where
+    applicable) plus new classes for novel injected hypotheses.
+
+    Args:
+        equivalence_classes: List of equivalence class dicts from enumeration.
+            Each has keys: canonical_program, canonical_prior, summed_prior,
+            n_expressions, all_programs, fingerprint, predicate.
+        injected: List of validated injection dicts from
+            load_and_validate_injections(). Each has keys: id, source,
+            true_for_rule, dsl_program, predicate, log_prior, program.
+        probes: The same list of probe hands used during enumeration
+            fingerprinting. Required so injected hypotheses get comparable
+            fingerprints.
+
+    Returns:
+        A new list of equivalence class dicts. Classes that absorbed an
+        injected hypothesis gain 'source: "merged"', 'injection_ids', and
+        optionally 'true_for_rule'. Novel injected hypotheses appear as
+        new classes with 'source: "injected"'.
+    """
+    # Deep-copy existing classes so we don't mutate the caller's data.
+    merged = copy.deepcopy(equivalence_classes)
+
+    # Build lookup: fingerprint -> index in merged list.
+    fp_to_idx: Dict[str, int] = {}
+    for i, ec in enumerate(merged):
+        fp_to_idx[ec["fingerprint"]] = i
+
+    n_merged = 0   # injected hypotheses that matched an existing class
+    n_novel = 0    # injected hypotheses that created a new class
+
+    for inj in injected:
+        # Compute fingerprint for the injected predicate on the same probes.
+        fp = compute_fingerprint(inj["predicate"], probes)
+
+        if fp in fp_to_idx:
+            # ---- Merge into existing class ----
+            idx = fp_to_idx[fp]
+            ec = merged[idx]
+
+            # Add program string to the class
+            ec["all_programs"].append(inj["dsl_program"])
+            ec["n_expressions"] += 1
+
+            # Update summed prior: log(exp(old) + exp(new))
+            ec["summed_prior"] = _log_sum_exp(
+                ec["summed_prior"], inj["log_prior"]
+            )
+
+            # Track injection IDs
+            ec.setdefault("injection_ids", []).append(inj.get("id", "unknown"))
+
+            # Track true_for_rule if the injection represents a true rule
+            if inj.get("true_for_rule"):
+                ec["true_for_rule"] = inj["true_for_rule"]
+
+            # Mark source as merged (was enumerated, now has injection too)
+            ec["source"] = "merged"
+
+            n_merged += 1
+
+        else:
+            # ---- Create new equivalence class ----
+            new_class = {
+                "canonical_program": inj["dsl_program"],
+                "canonical_prior": inj["log_prior"],
+                "summed_prior": inj["log_prior"],
+                "n_expressions": 1,
+                "all_programs": [inj["dsl_program"]],
+                "fingerprint": fp,
+                "predicate": inj["predicate"],
+                "source": "injected",
+                "injection_ids": [inj.get("id", "unknown")],
+            }
+            if inj.get("true_for_rule"):
+                new_class["true_for_rule"] = inj["true_for_rule"]
+
+            merged.append(new_class)
+            fp_to_idx[fp] = len(merged) - 1
+
+            n_novel += 1
+
+    # Print merge statistics
+    print(
+        f"Injection merge: {len(injected)} hypotheses → "
+        f"{n_merged} merged into existing classes, "
+        f"{n_novel} novel classes created. "
+        f"Total classes: {len(merged)} "
+        f"(was {len(equivalence_classes)})"
+    )
+
+    return merged

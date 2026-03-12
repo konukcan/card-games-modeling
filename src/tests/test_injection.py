@@ -1,13 +1,19 @@
 """
-Tests for gallery_analysis.injection.load_and_validate_injections().
+Tests for gallery_analysis.injection module.
 
-Validates that:
+Tests for load_and_validate_injections():
 1. Valid injection files produce entries with log_prior and predicate
 2. Missing dsl_program raises ValueError
 3. Unparseable DSL programs raise ValueError
 4. Predicates are callable and return bool
 5. Log-priors are finite and negative
 6. Outlier priors trigger warnings
+
+Tests for merge_injected():
+7. Novel injected hypotheses create new equivalence classes
+8. Duplicate injected hypotheses merge into existing classes
+9. Merge preserves unmatched existing classes
+10. Summed prior is updated correctly on merge
 """
 
 import json
@@ -19,8 +25,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from gallery_analysis.injection import load_and_validate_injections
+from gallery_analysis.injection import load_and_validate_injections, merge_injected
 from gallery_analysis.enumerator import build_gallery_grammar
+from gallery_analysis.hypothesis_table import compute_fingerprint
 from rules.cards import Card, Suit, Rank
 
 
@@ -234,3 +241,140 @@ def test_missing_non_dsl_fields_warns_but_succeeds(tmp_path, grammar, capsys):
     captured = capsys.readouterr()
     assert "WARNING" in captured.err
     assert "missing fields" in captured.err
+
+
+# =========================================================================
+# Tests: merge_injected
+# =========================================================================
+
+# Probe hands used for fingerprinting in merge tests.
+# We use a small fixed set so tests are deterministic.
+_PROBE_HANDS = [
+    # Hand 1: all hearts
+    [Card(Rank.ACE, Suit.HEARTS), Card(Rank.TWO, Suit.HEARTS),
+     Card(Rank.THREE, Suit.HEARTS), Card(Rank.FOUR, Suit.HEARTS),
+     Card(Rank.FIVE, Suit.HEARTS), Card(Rank.SIX, Suit.HEARTS)],
+    # Hand 2: mixed suits
+    [Card(Rank.ACE, Suit.HEARTS), Card(Rank.TWO, Suit.SPADES),
+     Card(Rank.THREE, Suit.DIAMONDS), Card(Rank.FOUR, Suit.CLUBS),
+     Card(Rank.FIVE, Suit.HEARTS), Card(Rank.SIX, Suit.SPADES)],
+    # Hand 3: all spades
+    [Card(Rank.ACE, Suit.SPADES), Card(Rank.TWO, Suit.SPADES),
+     Card(Rank.THREE, Suit.SPADES), Card(Rank.FOUR, Suit.SPADES),
+     Card(Rank.FIVE, Suit.SPADES), Card(Rank.SIX, Suit.SPADES)],
+]
+
+
+def _make_equiv_class(predicate, program_str, log_prior, probes):
+    """Helper to build a synthetic equivalence class dict."""
+    fp = compute_fingerprint(predicate, probes)
+    return {
+        "canonical_program": program_str,
+        "canonical_prior": log_prior,
+        "summed_prior": log_prior,
+        "n_expressions": 1,
+        "all_programs": [program_str],
+        "fingerprint": fp,
+        "predicate": predicate,
+    }
+
+
+def _make_injected(id_str, predicate, log_prior, dsl_str="(injected)",
+                   true_for_rule=None):
+    """Helper to build a synthetic injected hypothesis dict."""
+    return {
+        "id": id_str,
+        "source": "llm",
+        "true_for_rule": true_for_rule,
+        "dsl_program": dsl_str,
+        "predicate": predicate,
+        "log_prior": log_prior,
+    }
+
+
+def test_merge_novel_hypothesis():
+    """An injected hypothesis with a novel fingerprint creates a new class."""
+    # always-True predicate as existing class
+    always_true = lambda hand: True
+    ec = _make_equiv_class(always_true, "(always-true)", -2.0, _PROBE_HANDS)
+
+    # always-False predicate as injected (different fingerprint)
+    always_false = lambda hand: False
+    inj = _make_injected("novel_1", always_false, -3.0)
+
+    result = merge_injected([ec], [inj], _PROBE_HANDS)
+
+    # Should now have 2 classes: original + novel
+    assert len(result) == 2
+    # The novel class should be at the end
+    novel = result[1]
+    assert novel["source"] == "injected"
+    assert novel["injection_ids"] == ["novel_1"]
+    assert novel["canonical_prior"] == -3.0
+    assert novel["n_expressions"] == 1
+
+
+def test_merge_duplicate_hypothesis():
+    """An injected hypothesis matching an existing fingerprint merges."""
+    # Both predicates are always-True -> same fingerprint
+    always_true_1 = lambda hand: True
+    always_true_2 = lambda hand: True
+    ec = _make_equiv_class(always_true_1, "(always-true-1)", -2.0, _PROBE_HANDS)
+
+    inj = _make_injected("dup_1", always_true_2, -3.0,
+                         dsl_str="(always-true-2)", true_for_rule="rule_X")
+
+    result = merge_injected([ec], [inj], _PROBE_HANDS)
+
+    # Should still be 1 class (merged, not duplicated)
+    assert len(result) == 1
+    merged_class = result[0]
+    assert merged_class["source"] == "merged"
+    assert merged_class["n_expressions"] == 2
+    assert "(always-true-2)" in merged_class["all_programs"]
+    assert merged_class["injection_ids"] == ["dup_1"]
+    assert merged_class["true_for_rule"] == "rule_X"
+
+
+def test_merge_preserves_existing_classes():
+    """Merge doesn't modify classes that don't match any injection."""
+    always_true = lambda hand: True
+    always_false = lambda hand: False
+    ec_true = _make_equiv_class(always_true, "(true)", -2.0, _PROBE_HANDS)
+    ec_false = _make_equiv_class(always_false, "(false)", -4.0, _PROBE_HANDS)
+
+    # Inject something that only matches always_true
+    inj = _make_injected("merge_1", lambda hand: True, -5.0)
+
+    original_classes = [ec_true, ec_false]
+    result = merge_injected(original_classes, [inj], _PROBE_HANDS)
+
+    # Original list should be untouched (deep copy)
+    assert len(original_classes) == 2
+    assert original_classes[0]["n_expressions"] == 1  # not modified
+
+    # The always_false class should be unchanged in result
+    false_class = result[1]
+    assert false_class["n_expressions"] == 1
+    assert false_class["canonical_program"] == "(false)"
+    assert "injection_ids" not in false_class
+    assert "source" not in false_class  # original had no source field
+
+
+def test_merge_updates_summed_prior():
+    """When merging, summed_prior is updated correctly via log-sum-exp."""
+    always_true = lambda hand: True
+    ec = _make_equiv_class(always_true, "(true)", -2.0, _PROBE_HANDS)
+    # Override summed_prior to a known value
+    ec["summed_prior"] = -2.0
+
+    inj = _make_injected("sp_1", lambda hand: True, -3.0)
+
+    result = merge_injected([ec], [inj], _PROBE_HANDS)
+
+    # Expected: log(exp(-2) + exp(-3))
+    #         = max(-2,-3) + log(1 + exp(-1))
+    #         = -2 + log(1 + 0.3679)
+    #         ≈ -2 + 0.3133 = -1.6867
+    expected = -2.0 + math.log(1 + math.exp(-1.0))
+    assert math.isclose(result[0]["summed_prior"], expected, rel_tol=1e-9)
