@@ -241,6 +241,7 @@ def score_rule(
     extensions: List[Tuple[int, float]],
     epsilon: float = 0.01,
     prior_mode: str = "summed",
+    true_rule_fingerprint: str = None,
 ) -> Dict[str, Any]:
     """
     Score all hypotheses for a single rule and compute difficulty.
@@ -252,10 +253,14 @@ def score_rule(
         extensions: Shared extension size estimates from estimate_extensions.
         epsilon: Noise parameter for noisy likelihood.
         prior_mode: "canonical" or "summed".
+        true_rule_fingerprint: Fingerprint of the equivalence class containing the
+            true rule for this gallery rule. Used for true-rule tracking, confusion
+            profiles, and diagnosticity analysis.
 
     Returns:
         Dict with: rule_id, difficulty_metrics, top_hypotheses, n_hypotheses_scored,
-        n_with_any_hit, n_with_all_hits.
+        n_with_any_hit, n_with_all_hits, plus true_rule_* fields and
+        exemplar_diagnosticity when true_rule_fingerprint is provided.
     """
     n_exemplars = len(exemplar_hands)
     scored = []
@@ -336,6 +341,60 @@ def score_rule(
             "log_likelihood": round(sh.log_likelihood_noisy, 2),
         })
 
+    # --- True-rule tracking ---
+    # Find the true rule in the posterior ranking by its fingerprint.
+    true_rule_rank = None
+    true_rule_posterior_mass = None
+    true_rule_program = None
+    true_rule_log_prior = None
+    true_rule_hit_vector = None
+
+    if true_rule_fingerprint:
+        for i, (sh, prob) in enumerate(normalized):
+            if sh.fingerprint == true_rule_fingerprint:
+                true_rule_rank = i + 1  # 1-indexed
+                true_rule_posterior_mass = prob
+                true_rule_program = sh.canonical_program
+                true_rule_log_prior = sh.log_prior_summed
+                true_rule_hit_vector = sh.hit_vector
+                break
+
+    # --- Confusion profiles ---
+    # For each top-10 competitor, record per-exemplar agreement with the true rule.
+    # Since the true rule's exemplars are all hits by definition, the agreement
+    # vector is simply whether the competitor also returns True for each exemplar.
+    if true_rule_hit_vector is not None:
+        for idx, hyp_dict in enumerate(top_hyps):
+            sh_top = normalized[idx][0]
+            agrees = [
+                sh_top.hit_vector[j] == true_rule_hit_vector[j]
+                for j in range(n_exemplars)
+            ]
+            hyp_dict["agrees_on_exemplars"] = agrees
+            hyp_dict["n_exemplar_agreements"] = sum(agrees)
+
+    # --- Diagnosticity analysis ---
+    # For each exemplar hand, compute what fraction of the top-10 posterior mass
+    # agrees with the true rule on that hand. Hands where many competitors
+    # disagree are "diagnostic" — they help distinguish the true rule.
+    exemplar_diagnosticity = None
+    if true_rule_hit_vector is not None:
+        exemplar_diagnosticity = []
+        for hand_idx in range(n_exemplars):
+            true_val = true_rule_hit_vector[hand_idx]
+            agree_mass = 0.0
+            total_mass = 0.0
+            for sh, prob in normalized[:10]:
+                total_mass += prob
+                if sh.hit_vector[hand_idx] == true_val:
+                    agree_mass += prob
+            agreement_rate = agree_mass / max(total_mass, 1e-10)
+            exemplar_diagnosticity.append({
+                "hand_idx": hand_idx,
+                "agreement_rate": round(agreement_rate, 4),
+                "diagnostic": agreement_rate < 0.90,
+            })
+
     return {
         "rule_id": rule_id,
         "n_exemplars": n_exemplars,
@@ -344,6 +403,13 @@ def score_rule(
         "n_with_all_hits": n_with_all_hits,
         "difficulty": difficulty,
         "top_hypotheses": top_hyps,
+        # True-rule tracking fields
+        "true_rule_rank": true_rule_rank,
+        "true_rule_posterior_mass": true_rule_posterior_mass,
+        "true_rule_program": true_rule_program,
+        "true_rule_log_prior": true_rule_log_prior,
+        # Diagnosticity (None when no true rule fingerprint provided)
+        "exemplar_diagnosticity": exemplar_diagnosticity,
     }
 
 
@@ -429,6 +495,19 @@ def run_analysis(
         verbose=verbose,
     )
 
+    # Build true-rule fingerprint lookup from equivalence classes.
+    # Each equivalence class that was injected as a true rule has a
+    # "true_for_rule" field mapping it to the gallery rule it represents.
+    true_rule_fps = {}  # rule_id -> fingerprint
+    for cls in equiv_classes:
+        true_for = cls.get("true_for_rule")
+        if true_for:
+            true_rule_fps[true_for] = cls["fingerprint"]
+
+    if verbose >= 1:
+        n_found = len(true_rule_fps)
+        print(f"\n  True-rule fingerprints found: {n_found} / {len(GALLERY_RULES)}", flush=True)
+
     # Score each rule
     if verbose >= 1:
         print(f"\nStep 5: Scoring {len(GALLERY_RULES)} rules...", flush=True)
@@ -450,6 +529,7 @@ def run_analysis(
             extensions=extensions,
             epsilon=epsilon,
             prior_mode=prior_mode,
+            true_rule_fingerprint=true_rule_fps.get(rule_id),
         )
         result["group"] = rule_info["group"]
         result["answer"] = rule_info["answer"]
@@ -458,10 +538,12 @@ def run_analysis(
         if verbose >= 2:
             d = result["difficulty"]
             top = result["top_hypotheses"][0] if result["top_hypotheses"] else {}
+            true_rank_str = (f"  true_rank={result['true_rule_rank']}"
+                             if result.get('true_rule_rank') is not None else "")
             print(f"  {rule_id:<30} entropy={d['posterior_entropy']:.2f}  "
                   f"top1={d['top1_probability']:.3f}  "
                   f"n_eff={d['n_effective_hypotheses']:.1f}  "
-                  f"hits_all={result['n_with_all_hits']}  "
+                  f"hits_all={result['n_with_all_hits']}{true_rank_str}  "
                   f"top: {top.get('program', '?')[:50]}", flush=True)
 
     t_scoring = time.time() - t0
@@ -480,6 +562,8 @@ def run_analysis(
             "top1_probability": result["difficulty"]["top1_probability"],
             "top5_probability": result["difficulty"]["top5_probability"],
             "n_with_all_hits": result["n_with_all_hits"],
+            "true_rule_rank": result.get("true_rule_rank"),
+            "true_rule_posterior_mass": result.get("true_rule_posterior_mass"),
         })
 
     # Sort by entropy (highest = hardest)
@@ -638,6 +722,11 @@ def main():
                 "n_hypotheses_scored": rr["n_hypotheses_scored"],
                 "n_with_any_hit": rr["n_with_any_hit"],
                 "n_with_all_hits": rr["n_with_all_hits"],
+                "true_rule_rank": rr.get("true_rule_rank"),
+                "true_rule_posterior_mass": rr.get("true_rule_posterior_mass"),
+                "true_rule_program": rr.get("true_rule_program"),
+                "true_rule_log_prior": rr.get("true_rule_log_prior"),
+                "exemplar_diagnosticity": rr.get("exemplar_diagnosticity"),
             }
 
         output_path = Path(args.output)
