@@ -277,7 +277,7 @@ def posterior_bars(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
             x=alt.X("probability:Q", title="Posterior Probability"),
             y=alt.Y(
                 "program_short:N",
-                title="Hypothesis",
+                title=None,
                 sort=sorted_programs,
                 axis=alt.Axis(labelLimit=400),
             ),
@@ -357,11 +357,15 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
     """
     threshold = 0.90
 
+    # Convert 0-indexed to 1-indexed for display
+    plot_df = diag_df.copy()
+    plot_df["hand_num"] = plot_df["hand_idx"] + 1
+
     bars = (
-        alt.Chart(diag_df)
+        alt.Chart(plot_df)
         .mark_bar()
         .encode(
-            x=alt.X("hand_idx:O", title="Hand Index"),
+            x=alt.X("hand_num:O", title="Hand"),
             y=alt.Y("agreement_rate:Q", title="Agreement Rate", scale=alt.Scale(domain=[0, 1])),
             color=alt.condition(
                 alt.datum.diagnostic,
@@ -369,7 +373,7 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
                 alt.value("#B0B0B0"),  # grey for non-diagnostic
             ),
             tooltip=[
-                alt.Tooltip("hand_idx:O", title="Hand"),
+                alt.Tooltip("hand_num:O", title="Hand"),
                 alt.Tooltip("agreement_rate:Q", title="Agreement", format=".3f"),
                 alt.Tooltip("diagnostic:N", title="Diagnostic?"),
             ],

@@ -59,9 +59,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--card-images",
-        type=str,
+        type=Path,
         required=True,
-        help="Relative path from output dir to card image PNGs (e.g. ../../../card-games/stim/)",
+        help="Path to the card image PNGs directory (e.g. /path/to/card-games/stim/)",
     )
     parser.add_argument(
         "--output",
@@ -101,11 +101,14 @@ def main() -> None:
     )
 
     # ── Step 6: Generate per-rule detail pages ────────────────────────
-    # Rule pages live in output_dir/rules/, which is one level deeper
-    # than the summary page.  Prepend "../" to the card-images path so
-    # relative paths resolve correctly from that subdirectory.
+    # Rule pages live in output_dir/rules/.  Compute the relative path
+    # from that subdirectory to the card images directory so that
+    # <img src="..."> works when opening the HTML locally.
     rules_dir = output_dir / "rules"
-    rule_card_images = "../" + args.card_images
+    rules_dir_abs = rules_dir.resolve()
+    card_images_abs = args.card_images.resolve()
+    import os
+    rule_card_images = os.path.relpath(card_images_abs, rules_dir_abs)
 
     n_rules = len(sorted_rules)
     for i, rule_id in enumerate(sorted_rules):
