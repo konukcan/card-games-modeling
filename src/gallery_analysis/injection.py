@@ -247,8 +247,12 @@ def merge_injected(
             # Track injection IDs
             ec.setdefault("injection_ids", []).append(inj.get("id", "unknown"))
 
-            # Track true_for_rule if the injection represents a true rule
+            # Track ALL true_for_rule mappings (multiple true rules can
+            # collide into the same fingerprint when they're too rare for
+            # random probes to distinguish them).
             if inj.get("true_for_rule"):
+                ec.setdefault("true_for_rules", []).append(inj["true_for_rule"])
+                # Keep single-value field for backward compat (last wins)
                 ec["true_for_rule"] = inj["true_for_rule"]
 
             # Mark source as merged (was enumerated, now has injection too)
@@ -271,6 +275,7 @@ def merge_injected(
             }
             if inj.get("true_for_rule"):
                 new_class["true_for_rule"] = inj["true_for_rule"]
+                new_class["true_for_rules"] = [inj["true_for_rule"]]
 
             merged.append(new_class)
             fp_to_idx[fp] = len(merged) - 1

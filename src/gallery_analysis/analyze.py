@@ -500,9 +500,16 @@ def run_analysis(
     # "true_for_rule" field mapping it to the gallery rule it represents.
     true_rule_fps = {}  # rule_id -> fingerprint
     for cls in equiv_classes:
-        true_for = cls.get("true_for_rule")
-        if true_for:
-            true_rule_fps[true_for] = cls["fingerprint"]
+        # Use true_for_rules list (handles fingerprint collisions where
+        # multiple true rules map to the same equivalence class).
+        true_for_list = cls.get("true_for_rules", [])
+        if not true_for_list:
+            # Fallback for backward compat with single-value field
+            single = cls.get("true_for_rule")
+            if single:
+                true_for_list = [single]
+        for rule_id in true_for_list:
+            true_rule_fps[rule_id] = cls["fingerprint"]
 
     if verbose >= 1:
         n_found = len(true_rule_fps)

@@ -334,6 +334,31 @@ def test_merge_duplicate_hypothesis():
     assert "(always-true-2)" in merged_class["all_programs"]
     assert merged_class["injection_ids"] == ["dup_1"]
     assert merged_class["true_for_rule"] == "rule_X"
+    assert merged_class["true_for_rules"] == ["rule_X"]
+
+
+def test_merge_multiple_true_rules_same_fingerprint():
+    """Multiple true rules merging into the same class are all tracked."""
+    # All three predicates are always-True -> same fingerprint
+    always_true = lambda hand: True
+    ec = _make_equiv_class(always_true, "(always-true)", -2.0, _PROBE_HANDS)
+
+    inj_a = _make_injected("true_A", lambda hand: True, -3.0,
+                           dsl_str="(true-A)", true_for_rule="rule_A")
+    inj_b = _make_injected("true_B", lambda hand: True, -4.0,
+                           dsl_str="(true-B)", true_for_rule="rule_B")
+    inj_c = _make_injected("true_C", lambda hand: True, -5.0,
+                           dsl_str="(true-C)", true_for_rule="rule_C")
+
+    result = merge_injected([ec], [inj_a, inj_b, inj_c], _PROBE_HANDS)
+
+    assert len(result) == 1
+    merged_class = result[0]
+    # All three true rules should be tracked
+    assert set(merged_class["true_for_rules"]) == {"rule_A", "rule_B", "rule_C"}
+    assert len(merged_class["true_for_rules"]) == 3
+    # Last-wins backward compat field
+    assert merged_class["true_for_rule"] == "rule_C"
 
 
 def test_merge_preserves_existing_classes():
