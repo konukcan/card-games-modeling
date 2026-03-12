@@ -360,6 +360,7 @@ def run_analysis(
     extension_samples: int = 100_000,
     epsilon: float = 0.01,
     prior_mode: str = "summed",
+    inject_path: str = None,
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -379,6 +380,47 @@ def run_analysis(
         n_probes=n_probes,
         verbose=verbose,
     )
+
+    # --- Step 3b: Merge injected hypotheses (if provided) ---
+    if inject_path:
+        from gallery_analysis.injection import load_and_validate_injections, merge_injected
+        from gallery_analysis.enumerator import build_gallery_grammar
+
+        if verbose >= 1:
+            print(f"\nStep 3b: Loading and merging injected hypotheses...", flush=True)
+
+        grammar = build_gallery_grammar()
+
+        # Get the enumerated prior range for calibration warnings
+        if equiv_classes:
+            enum_priors = [c["canonical_prior"] for c in equiv_classes]
+            enumerated_prior_range = (min(enum_priors), max(enum_priors))
+        else:
+            enumerated_prior_range = None
+
+        injected = load_and_validate_injections(
+            inject_path, grammar=grammar,
+            enumerated_prior_range=enumerated_prior_range,
+        )
+
+        # Regenerate the same probes used during fingerprinting (same seed)
+        probes = generate_probe_set(n_probes=n_probes, seed=42)
+
+        n_before = len(equiv_classes)
+        equiv_classes = merge_injected(equiv_classes, injected, probes)
+        n_after = len(equiv_classes)
+
+        if verbose >= 1:
+            print(f"  Loaded {len(injected)} hypotheses, "
+                  f"{n_after - n_before} novel classes added, "
+                  f"{len(injected) - (n_after - n_before)} merged into existing",
+                  flush=True)
+
+        pipeline_stats["injection"] = {
+            "n_injected": len(injected),
+            "n_novel_classes": n_after - n_before,
+            "n_merged": len(injected) - (n_after - n_before),
+        }
 
     # Estimate extension sizes (shared)
     extensions = estimate_extensions(
@@ -550,6 +592,8 @@ def main():
     parser.add_argument("--prior", choices=["canonical", "summed"], default="summed", help="Prior mode")
     parser.add_argument("--verbose", type=int, default=2, help="Verbosity (0-2)")
     parser.add_argument("--quick", action="store_true", help="Quick test (depth 5, 50K programs)")
+    parser.add_argument("--inject", type=str, default=None,
+                        help="Path to injection JSON file with additional hypotheses")
     parser.add_argument("--output", type=str, default=None, help="Save results JSON to this path")
     args = parser.parse_args()
 
@@ -569,6 +613,7 @@ def main():
         extension_samples=args.mc_samples,
         epsilon=args.epsilon,
         prior_mode=args.prior,
+        inject_path=args.inject,
         verbose=args.verbose,
     )
 
