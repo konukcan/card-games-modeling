@@ -84,6 +84,97 @@ def build_gallery_grammar():
 
 
 # =========================================================================
+# 4-Tier weighted grammar for scoring (not enumeration)
+# =========================================================================
+#
+# This grammar assigns non-uniform log-probabilities to primitives based
+# on their cognitive "cost" tier. It is used by dsl_prior.py to re-score
+# hypotheses after enumeration, without changing which programs get
+# generated. See docs/plans/2026-03-13-hypothesis-space-maturation-design.md.
+#
+# Tier rationale:
+#   CHEAP:         Compositional glue (logic, comparison, HOFs) — nearly free
+#   STANDARD:      Accessors, constants, arithmetic, list ops — default
+#   AGGREGATE:     Prepackaged aggregate queries — useful but shouldn't dominate
+#   ULTRA_SHALLOW: Boolean shortcut queries (has_suit, has_color) — heavily penalized
+
+TIER_CHEAP = frozenset({
+    'eq', 'lt', 'le', 'gt', 'ge',
+    'and', 'or', 'not',
+    'all', 'any', 'if',
+})
+
+TIER_AGGREGATE = frozenset({
+    'count_suit', 'count_color',
+    'n_unique_suits', 'n_unique_ranks', 'n_unique_colors',
+    'max_suit_count', 'n_repeated_ranks', 'n_repeated_suits',
+    'sum_ranks', 'max_rank', 'min_rank',
+})
+
+TIER_ULTRA_SHALLOW = frozenset({
+    'has_suit', 'has_color',
+})
+
+# Everything else is STANDARD (accessors, constants, arithmetic, list ops).
+# We define this as a frozenset for documentation and validation, but
+# primitives not in any explicit tier default to STANDARD.
+TIER_STANDARD = frozenset({
+    'rank_val', 'get_suit', 'get_color', 'get_rank',
+    'head', 'last', 'at', 'length', 'half_len',
+    'reverse', 'first_half', 'second_half', 'sort_by_rank', 'unique',
+    'take', 'drop', 'filter', 'adjacent_pairs', 'map', 'zip_with',
+    'running_sum', 'signum', 'suit_to_int',
+    'HEARTS', 'DIAMONDS', 'CLUBS', 'SPADES', 'RED', 'BLACK',
+    '0', '1', '2', '3', '4', '5',
+    '+', '-', 'mod',
+})
+
+
+def build_weighted_gallery_grammar(
+    log_cheap: float = -3.0,
+    log_standard: float = -4.0,
+    log_aggregate: float = -5.5,
+    log_ultra_shallow: float = -9.0,
+    log_variable: float = -1.0,
+) -> 'Grammar':
+    """
+    Build a 4-tier weighted grammar for scoring hypotheses.
+
+    This grammar is used by dsl_prior.py to compute log-priors that
+    penalize ultra-shallow programs (has_suit, has_color) and reward
+    compositional depth (cheap variables and logic operators).
+
+    It does NOT change which programs get enumerated — only how they
+    are scored in the Bayesian posterior.
+
+    Args:
+        log_cheap:         Log-prob for compositional glue (eq, lt, all, any, ...).
+        log_standard:      Log-prob for accessors, constants, arithmetic, list ops.
+        log_aggregate:     Log-prob for prepackaged aggregate queries.
+        log_ultra_shallow: Log-prob for has_suit, has_color.
+        log_variable:      Log-prob for bound variables ($0, $1, ...).
+
+    Returns:
+        A Grammar with non-uniform production weights.
+    """
+    from dreamcoder_core.grammar import Grammar, Production
+
+    prims = build_gallery_primitives()
+    productions = []
+    for p in prims:
+        if p.name in TIER_CHEAP:
+            lp = log_cheap
+        elif p.name in TIER_AGGREGATE:
+            lp = log_aggregate
+        elif p.name in TIER_ULTRA_SHALLOW:
+            lp = log_ultra_shallow
+        else:
+            lp = log_standard
+        productions.append(Production(p, p.tp, lp))
+    return Grammar(productions, log_variable)
+
+
+# =========================================================================
 # List→list composition chain detection (Option B)
 # =========================================================================
 #
