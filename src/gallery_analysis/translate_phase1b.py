@@ -414,24 +414,107 @@ def translate_one(
     return False, dsl_str, f"FAILED after {max_retries} retries: {error}"
 
 
+def translate_batch(
+    hypotheses: List[Dict[str, Any]],
+    translator,
+    grammar,
+    prim_dict: dict,
+    max_retries: int = 2,
+    delay: float = 0.3,
+) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Translate all hypotheses, returning (successes, failures).
+
+    Each successful entry is formatted for injected_hypotheses.json with
+    the standard fields: id, source, true_for_rule, dsl_program, origin.
+    Progress is printed every 10 hypotheses.
+
+    Args:
+        hypotheses: List of Phase 1b hypothesis dicts to translate.
+        translator: A Translator instance with .translate(prompt).
+        grammar: Gallery grammar for validation.
+        prim_dict: Primitive lookup dict for the parser.
+        max_retries: Max retries per failed translation.
+        delay: Seconds between API calls (rate limiting).
+
+    Returns:
+        (successes, failures). Each success matches the injected_hypotheses.json
+        format. Each failure includes the error message for review.
+    """
+    successes = []
+    failures = []
+
+    for i, h in enumerate(hypotheses):
+        if (i + 1) % 10 == 0 or i == 0:
+            print(f"  Translating {i+1}/{len(hypotheses)}...")
+
+        ok, dsl_str, err = translate_one(
+            h, translator, grammar, prim_dict, max_retries
+        )
+
+        if ok:
+            # Format as injected_hypotheses.json entry
+            entry = {
+                "id": f"phase1b__{h['rule_id']}__hyp{h['rank']}",
+                "source": "llm_foil",
+                "true_for_rule": None,
+                "dsl_program": dsl_str,
+                "origin": {
+                    "hypothesis_text": h["nl_description"],
+                    "python_lambda": h["code"],
+                    "source_model": h["source_model"],
+                    "original_rule_id": h["rule_id"],
+                },
+            }
+            successes.append(entry)
+        else:
+            failures.append({
+                "rule_id": h["rule_id"],
+                "nl_description": h["nl_description"],
+                "code": h["code"],
+                "error": err,
+                "last_attempt": dsl_str if dsl_str else None,
+            })
+
+        time.sleep(delay)
+
+    return successes, failures
+
+
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Translate Phase 1b hypotheses to s-expression DSL"
+    )
+    parser.add_argument(
+        "--full", action="store_true",
+        help="Translate all hypotheses (default: dry-run with 3)"
+    )
+    parser.add_argument(
+        "--max-retries", type=int, default=2,
+        help="Max retries per failed translation (default: 2)"
+    )
+    parser.add_argument(
+        "--delay", type=float, default=0.3,
+        help="Seconds between API calls (default: 0.3)"
+    )
+    args = parser.parse_args()
+
+    # Load and deduplicate
     print("Loading Phase 1b DSL-constrained hypotheses...")
     hyps = load_phase1b_hypotheses()
     print(f"  Loaded: {len(hyps)} passed hypotheses")
 
     new_hyps, n_dup = deduplicate_against_existing(hyps)
-    print(f"  Deduplicated: {n_dup} overlaps with existing injected")
+    print(f"  Deduplicated: {n_dup} overlaps with existing")
     print(f"  New hypotheses to translate: {len(new_hyps)}")
 
-    # Show a few examples
-    for h in new_hyps[:3]:
-        print(f"\n  [{h['rule_id']}] {h['nl_description']}")
-        print(f"    Code: {h['code'][:100]}...")
+    if not new_hyps:
+        print("Nothing to translate.")
+        sys.exit(0)
 
-    # --- Dry run: translate 3 hypotheses ---
-    print("\n--- Dry-run translation (3 hypotheses) ---")
-
-    # Import translator from main repo's llm/ directory
+    # Initialize translator from main repo's llm/ directory
     sys.path.insert(0, str(_MAIN_LLM_DIR))
     try:
         from modeling.translators import get_translator
@@ -439,21 +522,60 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Cannot initialize translator: {e}")
         print("Set GOOGLE_API_KEY to enable translation.")
-        sys.exit(0)
+        sys.exit(1)
 
     from gallery_analysis.enumerator import build_gallery_grammar
-    from gallery_analysis.dsl_prior import compute_log_prior
 
     grammar = build_gallery_grammar()
     prim_dict = _build_prim_dict(grammar)
 
-    for h in new_hyps[:3]:
-        print(f"\n[{h['rule_id']}] {h['nl_description']}")
-        print(f"  Input:  {h['code'][:100]}...")
-        ok, dsl, err = translate_one(h, translator, grammar, prim_dict)
-        if ok:
-            print(f"  Output: {dsl}")
-            lp = compute_log_prior(dsl, grammar)
-            print(f"  Prior:  {lp:.2f}")
-        else:
-            print(f"  FAILED: {err}")
+    # Select subset
+    to_translate = new_hyps if args.full else new_hyps[:3]
+    mode = "FULL" if args.full else "DRY-RUN (3 hypotheses)"
+    print(f"\n--- {mode} ---")
+
+    # Translate
+    successes, failures = translate_batch(
+        to_translate, translator, grammar, prim_dict,
+        max_retries=args.max_retries, delay=args.delay,
+    )
+
+    # Report
+    print(f"\n--- Results ---")
+    print(f"  Translated: {len(successes)}/{len(to_translate)}")
+    print(f"  Failed:     {len(failures)}/{len(to_translate)}")
+
+    if failures:
+        print(f"\n  Failed hypotheses:")
+        for f in failures[:10]:
+            print(f"    [{f['rule_id']}] {f['nl_description'][:60]}")
+            print(f"      Error: {f['error'][:100]}")
+
+    # Save results
+    if args.full and successes:
+        # Append to existing injected_hypotheses.json
+        existing = []
+        if _INJECTED_PATH.exists():
+            with open(_INJECTED_PATH) as fh:
+                existing = json.load(fh)
+
+        # Check for ID collisions before appending
+        existing_ids = {e["id"] for e in existing}
+        new_entries = [s for s in successes if s["id"] not in existing_ids]
+
+        merged = existing + new_entries
+        with open(_INJECTED_PATH, "w") as fh:
+            json.dump(merged, fh, indent=2)
+        print(f"\n  Appended {len(new_entries)} new entries to injected_hypotheses.json")
+        print(f"  Total entries: {len(merged)}")
+
+        # Save failures for manual review
+        if failures:
+            fail_path = _THIS_DIR / "data" / "phase1b_translation_failures.json"
+            with open(fail_path, "w") as fh:
+                json.dump(failures, fh, indent=2)
+            print(f"  Saved {len(failures)} failures to {fail_path.name}")
+    elif successes:
+        print("\n  (Dry-run — results not saved. Use --full to save.)")
+        for s in successes:
+            print(f"    [{s['origin']['original_rule_id']}] {s['dsl_program'][:80]}")
