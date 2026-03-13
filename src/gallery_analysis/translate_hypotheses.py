@@ -708,6 +708,49 @@ def _or_consecutive_same(accessor, count):
 
 
 # ===================================================================
+# Translation verification
+# ===================================================================
+
+def verify_translation(python_fn, dsl_fn, n_test=1000, seed=99):
+    """Compare a Python lambda and DSL predicate on random hands.
+
+    Evaluates both functions on n_test random 6-card hands and returns
+    a list of hands where they disagree. Empty list = perfect match.
+
+    Args:
+        python_fn: The original Python lambda (callable: Hand -> bool).
+        dsl_fn: The translated DSL predicate (callable: Hand -> bool).
+        n_test: Number of random hands to test.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        List of (hand, python_result, dsl_result) tuples for disagreements.
+    """
+    import random
+    from rules.cards import Card, Suit, Rank
+
+    rng = random.Random(seed)
+    deck = [Card(suit, rank) for suit in Suit for rank in Rank]
+    disagreements = []
+
+    for _ in range(n_test):
+        hand = rng.sample(deck, 6)
+        try:
+            py_result = bool(python_fn(hand))
+        except Exception:
+            py_result = None
+        try:
+            dsl_result = bool(dsl_fn(hand))
+        except Exception:
+            dsl_result = None
+
+        if py_result != dsl_result:
+            disagreements.append((hand, py_result, dsl_result))
+
+    return disagreements
+
+
+# ===================================================================
 # Validation
 # ===================================================================
 
