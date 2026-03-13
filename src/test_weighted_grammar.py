@@ -102,6 +102,24 @@ class TestTierCosts:
         pytest.fail("rank_val not found in productions")
 
 
+class TestAnalyzeCLIFlag:
+    """Verify that analyze.py accepts --grammar flag."""
+
+    def test_grammar_flag_is_recognized(self):
+        """The --grammar flag should be recognized by the argument parser."""
+        import gallery_analysis.analyze as analyze_mod
+        parser = analyze_mod.build_argument_parser()
+        args = parser.parse_args(["--grammar", "weighted", "--quick"])
+        assert args.grammar == "weighted"
+
+    def test_grammar_flag_defaults_to_uniform(self):
+        """Default grammar should be 'uniform' for backward compatibility."""
+        import gallery_analysis.analyze as analyze_mod
+        parser = analyze_mod.build_argument_parser()
+        args = parser.parse_args([])
+        assert args.grammar == "uniform"
+
+
 class TestPriorEffect:
     """Verify that weighted grammar changes priors in the expected direction."""
 

@@ -315,6 +315,34 @@ def estimate_extensions(
 # Step 6: Per-rule scoring
 # =========================================================================
 
+def _recompute_class_prior(cls: Dict[str, Any], grammar) -> float:
+    """
+    Recompute the summed log-prior for an equivalence class under a new grammar.
+
+    Sums exp(log_prior) across all programs in the class (log-sum-exp),
+    matching the summed_prior semantics used by the default pipeline.
+    """
+    from gallery_analysis.dsl_prior import compute_log_prior
+
+    log_probs = []
+    for prog_str in cls["all_programs"]:
+        try:
+            lp = compute_log_prior(prog_str, grammar)
+            log_probs.append(lp)
+        except Exception:
+            pass
+
+    if not log_probs:
+        # Fallback: try canonical only
+        try:
+            return compute_log_prior(cls["canonical_program"], grammar)
+        except Exception:
+            return float('-inf')
+
+    max_lp = max(log_probs)
+    return max_lp + math.log(sum(math.exp(lp - max_lp) for lp in log_probs))
+
+
 def score_rule(
     rule_id: str,
     exemplar_hands: List[Hand],
@@ -323,6 +351,7 @@ def score_rule(
     epsilon: float = 0.01,
     prior_mode: str = "summed",
     true_rule_fingerprint: str = None,
+    grammar=None,
 ) -> Dict[str, Any]:
     """
     Score all hypotheses for a single rule and compute difficulty.
@@ -373,7 +402,10 @@ def score_rule(
         log_lik_noisy = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size, epsilon)
 
         # Select prior
-        if prior_mode == "canonical":
+        if grammar is not None:
+            # Recompute prior under the provided (weighted) grammar
+            log_prior = _recompute_class_prior(cls, grammar)
+        elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
         else:
             log_prior = cls["summed_prior"]
@@ -523,6 +555,7 @@ def run_analysis(
     inject_path: str = None,
     extension_cache: str = None,
     max_list_chain: int = 2,
+    scoring_grammar: str = "uniform",
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -623,6 +656,14 @@ def run_analysis(
         n_found = len(true_rule_fps)
         print(f"\n  True-rule fingerprints found: {n_found} / {len(GALLERY_RULES)}", flush=True)
 
+    # Build scoring grammar object if weighted
+    scoring_grammar_obj = None
+    if scoring_grammar == "weighted":
+        from gallery_analysis.enumerator import build_weighted_gallery_grammar
+        scoring_grammar_obj = build_weighted_gallery_grammar()
+        if verbose >= 1:
+            print(f"\nUsing WEIGHTED scoring grammar (4-tier)", flush=True)
+
     # Score each rule
     if verbose >= 1:
         print(f"\nStep 5: Scoring {len(GALLERY_RULES)} rules...", flush=True)
@@ -645,6 +686,7 @@ def run_analysis(
             epsilon=epsilon,
             prior_mode=prior_mode,
             true_rule_fingerprint=true_rule_fps.get(rule_id),
+            grammar=scoring_grammar_obj,
         )
         result["group"] = rule_info["group"]
         result["answer"] = rule_info["answer"]
@@ -904,7 +946,8 @@ def print_difficulty_report(results: Dict[str, Any], verbose: int = 1):
 # CLI
 # =========================================================================
 
-def main():
+def build_argument_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser (extracted for testability)."""
     parser = argparse.ArgumentParser(description="Bayesian rule induction analysis")
     parser.add_argument("--depth", type=int, default=7, help="Max AST depth")
     parser.add_argument("--max-programs", type=int, default=300_000, help="Max programs to enumerate")
@@ -925,6 +968,13 @@ def main():
                         help="Max consecutive list→list transforms (default 2, None to disable)")
     parser.add_argument("--no-list-chain-limit", action="store_true",
                         help="Disable list→list chain limit (enumerate all programs)")
+    parser.add_argument("--grammar", choices=["uniform", "weighted"], default="uniform",
+                        help="Scoring grammar: 'uniform' (baseline) or 'weighted' (4-tier)")
+    return parser
+
+
+def main():
+    parser = build_argument_parser()
     args = parser.parse_args()
 
     # Handle list chain limit
@@ -949,6 +999,7 @@ def main():
         inject_path=args.inject,
         extension_cache=args.extension_cache,
         max_list_chain=max_list_chain,
+        scoring_grammar=args.grammar,
         verbose=args.verbose,
     )
 
