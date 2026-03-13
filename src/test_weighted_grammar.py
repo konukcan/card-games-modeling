@@ -139,3 +139,56 @@ class TestPriorEffect:
         prior_weighted = compute_log_prior(prog, weighted_grammar)
         # Weighted should be less negative (cheaper) due to cheap vars + cheap eq
         assert prior_weighted > prior_uniform
+
+
+class TestWeightedPipelineIntegration:
+    """
+    Integration test: run a small analysis with --grammar weighted and
+    verify that the output structure is correct and priors differ from uniform.
+    """
+
+    def test_run_analysis_with_weighted_grammar(self):
+        """run_analysis() with scoring_grammar='weighted' should complete without error."""
+        from gallery_analysis.analyze import run_analysis
+        results = run_analysis(
+            max_depth=4,
+            max_programs=1000,
+            max_cost=20.0,
+            timeout=30.0,
+            n_probes=50,
+            extension_samples=1000,
+            scoring_grammar="weighted",
+            verbose=0,
+        )
+        assert "rule_results" in results
+        assert "difficulty_ranking" in results
+        assert len(results["rule_results"]) > 0
+
+    def test_weighted_changes_ranking(self):
+        """
+        Weighted grammar should produce different top-1 programs for at least
+        some rules compared to uniform.
+        """
+        from gallery_analysis.analyze import run_analysis
+
+        r_uniform = run_analysis(
+            max_depth=4, max_programs=1000, max_cost=20.0,
+            timeout=30.0, n_probes=50, extension_samples=1000,
+            scoring_grammar="uniform", verbose=0,
+        )
+        r_weighted = run_analysis(
+            max_depth=4, max_programs=1000, max_cost=20.0,
+            timeout=30.0, n_probes=50, extension_samples=1000,
+            scoring_grammar="weighted", verbose=0,
+        )
+
+        # Check at least one rule has a different top-1
+        n_different = 0
+        for rule_id in r_uniform["rule_results"]:
+            if rule_id not in r_weighted["rule_results"]:
+                continue
+            u_top = r_uniform["rule_results"][rule_id]["top_hypotheses"]
+            w_top = r_weighted["rule_results"][rule_id]["top_hypotheses"]
+            if u_top and w_top and u_top[0]["program"] != w_top[0]["program"]:
+                n_different += 1
+        assert n_different > 0, "Weighted grammar should change at least one top-1 ranking"
