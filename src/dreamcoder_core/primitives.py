@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Cognitive Primitive Library for Card Game Learning (v4)
+Cognitive Primitive Library for Card Game Learning (v5)
 
-Current count: 57 primitives
+Current count: 64 primitives
 
 Philosophy:
 This library is designed for COGNITIVE REALISM - it contains primitives that
@@ -40,10 +40,19 @@ v3 (List Operations):
   ADDED: adjacent_pairs (for sorted checks)
   REMOVED: neq (not equal) - use 'not (eq x y)' instead
 
-v4 (Current - Redundancy Removal):
+v4 (Redundancy Removal):
   REMOVED: all_same_suit, all_same_color
     Reason: Redundant with (lt (n_unique_suits hand) 2)
     See experiments/run_targeted_ablation_study.py for empirical validation
+
+v5 (Current - Gallery Analysis Extensions):
+  ADDED: sort_by_rank (sorting cards by rank for straight/AP detection)
+  ADDED: max_suit_count (most frequent suit count for "any suit ≥ N" rules)
+  ADDED: n_repeated_ranks, n_repeated_suits (duplicate detection)
+  ADDED: running_sum (constrained sequential accumulation for bracket rules)
+  ADDED: suit_to_int (conventional suit ordering for monotonicity rules)
+  ADDED: signum (sign function for alternation detection)
+  See docs/PRIMITIVE_DESIGN_DECISIONS.md for full justification and bias analysis.
 """
 
 import sys
@@ -541,7 +550,121 @@ def make_arithmetic() -> List[Primitive]:
     prims.append(Primitive('-', arrow(INT, INT, INT), lambda x: lambda y: x - y))
     prims.append(Primitive('mod', arrow(INT, INT, INT), lambda x: lambda y: x % y if y != 0 else 0))
 
+    # Signum: returns -1, 0, or +1 for negative, zero, positive integers
+    # Enables sign-based pattern detection (e.g., zigzag = alternating signs
+    # of rank differences). See docs/PRIMITIVE_DESIGN_DECISIONS.md Decision 6.
+    prims.append(Primitive(
+        'signum',
+        arrow(INT, INT),
+        lambda x: (1 if x > 0 else (-1 if x < 0 else 0))
+    ))
+
     return prims
+
+
+# ============================================================================
+# LEVEL 9: GALLERY ANALYSIS EXTENSIONS (v5)
+# ============================================================================
+
+def make_gallery_extensions() -> List[Primitive]:
+    """
+    Primitives added to ensure all 60 gallery rules are expressible.
+
+    Added in v5 for the Bayesian rule induction analysis. Each primitive
+    is justified in docs/PRIMITIVE_DESIGN_DECISIONS.md with full discussion
+    of alternatives considered and biases introduced.
+
+    These primitives fall into four categories:
+    1. Sorting: sort_by_rank (unlocks straight/AP rules)
+    2. Aggregate queries: max_suit_count, n_repeated_ranks/suits (unlocks
+       counting rules that need "max over" or "count of counts")
+    3. Sequential: running_sum (unlocks bracket-matching rules)
+    4. Mapping: suit_to_int (unlocks suit-ordering rules)
+    """
+    prims = []
+
+    # --- Sort by rank ---
+    # Sorts cards by rank value (ascending).
+    # Unlocks 6 rules: straight5, straight5_same_suit, straight5_same_color,
+    # ap_len3_step1_anywhere, ap_step1_len3_adj, ap_step2_len4_adj.
+    # See Decision 1 in PRIMITIVE_DESIGN_DECISIONS.md.
+    prims.append(Primitive(
+        'sort_by_rank',
+        arrow(ListType(CARD), ListType(CARD)),
+        lambda hand: sorted(hand, key=lambda c: RANK_VALUES[c.rank])
+    ))
+
+    # --- Max suit count ---
+    # Returns the count of the most frequent suit.
+    # Unlocks: three_or_more_same_suit, four_any_suit_anywhere.
+    # See Decision 2 in PRIMITIVE_DESIGN_DECISIONS.md.
+    prims.append(Primitive(
+        'max_suit_count',
+        arrow(ListType(CARD), INT),
+        lambda hand: max((sum(1 for c in hand if c.suit == s) for s in Suit), default=0)
+    ))
+
+    # --- N repeated ranks ---
+    # Returns the number of ranks that appear more than once.
+    # Unlocks: two_pairs_ranks (via ge (n_repeated_ranks $0) 2).
+    # See Decision 3 in PRIMITIVE_DESIGN_DECISIONS.md.
+    prims.append(Primitive(
+        'n_repeated_ranks',
+        arrow(ListType(CARD), INT),
+        lambda hand: sum(
+            1 for r in set(c.rank for c in hand)
+            if sum(1 for c in hand if c.rank == r) >= 2
+        )
+    ))
+
+    # --- N repeated suits ---
+    # Returns the number of suits that appear more than once.
+    # Parallel to n_repeated_ranks for symmetry.
+    # Helps with: two_pairs_suits (via suit-counting constraints).
+    prims.append(Primitive(
+        'n_repeated_suits',
+        arrow(ListType(CARD), INT),
+        lambda hand: sum(
+            1 for s in Suit
+            if sum(1 for c in hand if c.suit == s) >= 2
+        )
+    ))
+
+    # --- Running sum ---
+    # Computes cumulative sums of a card→int mapping.
+    # running_sum(f, [c1,c2,c3]) = [f(c1), f(c1)+f(c2), f(c1)+f(c2)+f(c3)]
+    # Unlocks bracket-matching rules via: map each suit to +1/-1, check
+    # running sum never goes negative and ends at 0.
+    # See Decision 4 in PRIMITIVE_DESIGN_DECISIONS.md.
+    prims.append(Primitive(
+        'running_sum',
+        arrow(arrow(CARD, INT), ListType(CARD), LIST_INT),
+        lambda f: lambda xs: _running_sum(f, xs)
+    ))
+
+    # --- Suit to int ---
+    # Maps suits to the gallery experiment's ordering: ♦=4, ♠=3, ♣=2, ♥=1.
+    # This matches the suits_nonincreasing rule's convention (D≥S≥C≥H).
+    # Unlocks: suits_nonincreasing (via map suit_to_int + monotonicity check).
+    # See Decision 5 in PRIMITIVE_DESIGN_DECISIONS.md.
+    _SUIT_TO_INT = {Suit.DIAMONDS: 4, Suit.SPADES: 3, Suit.CLUBS: 2, Suit.HEARTS: 1}
+    prims.append(Primitive(
+        'suit_to_int',
+        arrow(SUIT, INT),
+        lambda s: _SUIT_TO_INT.get(s, 0)
+    ))
+
+    return prims
+
+
+def _running_sum(f, xs):
+    """Helper for running_sum primitive."""
+    result = []
+    total = 0
+    for x in xs:
+        total += f(x)
+        result.append(total)
+    return result
 
 
 # ============================================================================
@@ -550,9 +673,9 @@ def make_arithmetic() -> List[Primitive]:
 
 def build_primitives() -> List[Primitive]:
     """
-    Build the cognitively realistic primitive library v4.
+    Build the cognitively realistic primitive library v5.
 
-    Returns 57 primitives organized by cognitive naturalness:
+    Returns 64 primitives organized by cognitive naturalness:
     - Constants (14): Suits, colors, numbers 0-5, booleans
     - Card accessors (4): get_suit, get_rank, rank_val, get_color
     - Position access (5): head, last, at, length, reverse
@@ -562,21 +685,24 @@ def build_primitives() -> List[Primitive]:
     - Comparisons (5): eq, lt, le, gt, ge
     - Boolean (4): and, or, not, if
     - Higher-order (5): map, filter, all, any, unique
-    - Arithmetic (3): +, -, mod
+    - Arithmetic (4): +, -, mod, signum
+    - Gallery extensions (6): sort_by_rank, max_suit_count, n_repeated_ranks/suits,
+                              running_sum, suit_to_int
     """
     prims = []
 
-    prims.extend(make_constants())       # 14: 4 suits + 2 colors + 6 numbers (0-5) + 2 bools
-    prims.extend(make_card_accessors())  # 4: get_suit, get_rank, rank_val, get_color
-    prims.extend(make_position_ops())    # 5: head, last, at, length, reverse
-    prims.extend(make_list_slicing())    # 7: take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half
-    prims.extend(make_direct_queries())  # 7: has_suit/color, count_suit/color, n_unique_suits/ranks/colors
-    prims.extend(make_aggregates())      # 3: sum_ranks, max_rank, min_rank
-    prims.extend(make_comparisons())     # 5: eq, lt, le, gt, ge
-    prims.extend(make_boolean_ops())     # 4: and, or, not, if
-    prims.extend(make_higher_order())    # 5: map, filter, all, any, unique
-    prims.extend(make_arithmetic())      # 3: +, -, mod
-    # TOTAL: 57 primitives
+    prims.extend(make_constants())           # 14: 4 suits + 2 colors + 6 numbers (0-5) + 2 bools
+    prims.extend(make_card_accessors())      # 4: get_suit, get_rank, rank_val, get_color
+    prims.extend(make_position_ops())        # 5: head, last, at, length, reverse
+    prims.extend(make_list_slicing())        # 7: take, drop, zip_with, adjacent_pairs, half_len, first_half, second_half
+    prims.extend(make_direct_queries())      # 7: has_suit/color, count_suit/color, n_unique_suits/ranks/colors
+    prims.extend(make_aggregates())          # 3: sum_ranks, max_rank, min_rank
+    prims.extend(make_comparisons())         # 5: eq, lt, le, gt, ge
+    prims.extend(make_boolean_ops())         # 4: and, or, not, if
+    prims.extend(make_higher_order())        # 5: map, filter, all, any, unique
+    prims.extend(make_arithmetic())          # 4: +, -, mod, signum
+    prims.extend(make_gallery_extensions())  # 6: sort_by_rank, max_suit_count, n_repeated_ranks/suits, running_sum, suit_to_int
+    # TOTAL: 64 primitives
 
     return prims
 

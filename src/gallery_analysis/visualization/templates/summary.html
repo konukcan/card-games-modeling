@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bayesian Rule Induction — Gallery Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      color: #1a1a1a;
+      background: #fafafa;
+      line-height: 1.5;
+    }
+    h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.2rem; margin-top: 2rem; margin-bottom: 0.8rem; color: #333; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1.5rem 0;
+    }
+    .stat-card {
+      flex: 1 1 180px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    .stat-card .label {
+      font-size: 0.82rem;
+      color: #777;
+      margin-top: 0.2rem;
+    }
+
+    /* Charts */
+    .chart-full { margin: 1.5rem 0; }
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 800px) {
+      .chart-row { grid-template-columns: 1fr; }
+    }
+    .chart-container {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.9rem;
+    }
+    th, td { padding: 0.6rem 0.8rem; text-align: left; }
+    th {
+      background: #f5f5f5;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      border-bottom: 2px solid #ddd;
+    }
+    th:hover { background: #e8e8e8; }
+    th .sort-arrow { font-size: 0.7rem; margin-left: 0.3rem; color: #999; }
+    td { border-bottom: 1px solid #eee; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9f9f9; }
+    td a { color: #2c6fbb; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .group-easy   { background: #4A90D9; }
+    .group-medium { background: #D4A029; }
+    .group-hard   { background: #C44E52; }
+
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      font-size: 0.8rem;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Bayesian Rule Induction — Gallery Analysis</h1>
+
+  {# ── Stats bar ── #}
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="value">{{ stats.enumeration.total_yielded | format_number }}</div>
+      <div class="label">Programs Enumerated</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ stats.fingerprinting.n_equivalence_classes | format_number }}</div>
+      <div class="label">Equivalence Classes</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ stats.trivial_filter.survivors | format_number }}</div>
+      <div class="label">Non-Trivial Programs</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">{{ "%.1f" | format(stats.grand_total_seconds) }}s</div>
+      <div class="label">Total Time</div>
+    </div>
+  </div>
+
+  {# ── Difficulty strip plot (full-width) ── #}
+  <h2>Difficulty Overview</h2>
+  <div class="chart-full chart-container">
+    <div id="chart-strip"></div>
+  </div>
+
+  {# ── Side-by-side: scatter + recovery ── #}
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-scatter"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-recovery"></div>
+    </div>
+  </div>
+
+  {# ── Equivalence class chart (full-width) ── #}
+  <h2>Equivalence Classes</h2>
+  <div class="chart-full chart-container">
+    <div id="chart-equiv"></div>
+  </div>
+
+  {% if has_depth %}
+  {# ── Depth decomposition section ── #}
+  <h2>Depth Decomposition</h2>
+  <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
+    How the hypothesis space and posterior mass distribute across AST depth levels.
+    Deeper programs are penalized by the PCFG prior but may be needed for complex rules.
+  </p>
+
+  {# ── Side-by-side: population + prior penalty ── #}
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-depth-pop"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-depth-prior"></div>
+    </div>
+  </div>
+
+  {# ── Side-by-side: depth vs difficulty + heatmap ── #}
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-depth-vs-diff"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-depth-heatmap"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if has_diag %}
+  {# ── Diagnosticity overview section ── #}
+  <h2>Diagnosticity</h2>
+  <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
+    How confidently the posterior distribution classifies random test hands.
+    Rules with high ambiguity have competing hypotheses that disagree on many hands.
+  </p>
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-diag-overview"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-confusability"></div>
+    </div>
+  </div>
+  <p style="color:#888; font-size:0.8rem; margin-top:0.5rem;">
+    <strong>Note on exemplar diagnosticity:</strong> The per-rule "exemplar diagnosticity" bars
+    on rule detail pages always read 1.0 because training exemplars are selected so that
+    <em>all</em> surviving hypotheses agree on them by construction. The real discriminative signal
+    comes from the <em>test hands</em> above — novel random hands where hypotheses can disagree.
+  </p>
+  {% endif %}
+
+  {# ── Rule index table ── #}
+  <h2>Rule Index</h2>
+  <table id="rule-table">
+    <thead>
+      <tr>
+        <th data-type="string">Rule <span class="sort-arrow"></span></th>
+        <th data-type="string">Group <span class="sort-arrow"></span></th>
+        <th data-type="number">Entropy <span class="sort-arrow"></span></th>
+        <th data-type="number">N_eff <span class="sort-arrow"></span></th>
+        <th data-type="number">Top-1% <span class="sort-arrow"></span></th>
+        <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
+        {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
+        {% if has_diag %}
+        <th data-type="number">MeanConf <span class="sort-arrow"></span></th>
+        <th data-type="number">Ambig% <span class="sort-arrow"></span></th>
+        <th data-type="number">Accuracy <span class="sort-arrow"></span></th>
+        {% endif %}
+        <th data-type="string">Answer <span class="sort-arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rules %}
+      <tr>
+        <td><a href="rules/{{ r.rule_id }}.html">{{ r.rule_id }}</a></td>
+        <td>
+          <span class="badge group-{{ r.group_label | lower }}">{{ r.group_label }}</span>
+        </td>
+        <td>{{ "%.3f" | format(r.posterior_entropy) }}</td>
+        <td>{{ "%.1f" | format(r.n_effective) }}</td>
+        <td>{{ "%.1f" | format(r.top1_probability * 100) }}%</td>
+        <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
+        {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
+        {% if has_diag %}
+        <td>{{ "%.3f" | format(r.mean_confidence) if r.mean_confidence is not none else "—" }}</td>
+        <td>{{ "%.1f" | format(r.fraction_ambiguous * 100) if r.fraction_ambiguous is not none else "—" }}{% if r.fraction_ambiguous is not none %}%{% endif %}</td>
+        <td>{{ "%.1f" | format(r.accuracy * 100) if r.accuracy is not none else "—" }}{% if r.accuracy is not none %}%{% endif %}</td>
+        {% endif %}
+        <td>{{ r.answer }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Generated by Bayesian Rule Induction Gallery Analysis
+  </div>
+
+  <script>
+    // ── Embed Vega-Lite charts ──
+    vegaEmbed('#chart-strip',   {{ chart_strip | safe }},   {actions: false});
+    vegaEmbed('#chart-scatter', {{ chart_scatter | safe }},  {actions: false});
+    vegaEmbed('#chart-recovery',{{ chart_recovery | safe }}, {actions: false});
+    vegaEmbed('#chart-equiv',   {{ chart_equiv | safe }},    {actions: false});
+
+    {% if has_depth %}
+    vegaEmbed('#chart-depth-pop',      {{ chart_depth_pop | safe }},      {actions: false});
+    vegaEmbed('#chart-depth-prior',    {{ chart_depth_prior | safe }},    {actions: false});
+    vegaEmbed('#chart-depth-vs-diff',  {{ chart_depth_vs_diff | safe }},  {actions: false});
+    vegaEmbed('#chart-depth-heatmap',  {{ chart_depth_heatmap | safe }},  {actions: false});
+    {% endif %}
+
+    {% if has_diag %}
+    vegaEmbed('#chart-diag-overview',  {{ chart_diag_overview | safe }},  {actions: false});
+    {% if chart_confusability is defined %}
+    vegaEmbed('#chart-confusability',  {{ chart_confusability | safe }},  {actions: false});
+    {% endif %}
+    {% endif %}
+
+    // ── Simple table sorting ──
+    // Uses each th's actual DOM index rather than a hardcoded data-col,
+    // so sorting works correctly regardless of conditional columns.
+    (function() {
+      var table = document.getElementById('rule-table');
+      var headers = table.querySelectorAll('th');
+      var sortState = {};  // col -> 'asc' | 'desc'
+
+      headers.forEach(function(th, idx) {
+        th.addEventListener('click', function() {
+          var col = idx;
+          var type = th.getAttribute('data-type');
+          var dir = sortState[col] === 'asc' ? 'desc' : 'asc';
+          sortState = {};
+          sortState[col] = dir;
+
+          // Update arrows
+          headers.forEach(function(h) {
+            h.querySelector('.sort-arrow').textContent = '';
+          });
+          th.querySelector('.sort-arrow').textContent = dir === 'asc' ? ' \u25B2' : ' \u25BC';
+
+          var tbody = table.querySelector('tbody');
+          var rows = Array.from(tbody.querySelectorAll('tr'));
+
+          rows.sort(function(a, b) {
+            var aVal = a.children[col].textContent.trim();
+            var bVal = b.children[col].textContent.trim();
+
+            if (type === 'number') {
+              // Strip % sign and parse; treat "—" as Infinity
+              aVal = aVal === '\u2014' ? Infinity : parseFloat(aVal.replace('%', ''));
+              bVal = bVal === '\u2014' ? Infinity : parseFloat(bVal.replace('%', ''));
+            } else {
+              aVal = aVal.toLowerCase();
+              bVal = bVal.toLowerCase();
+            }
+
+            if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+            if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+            return 0;
+          });
+
+          rows.forEach(function(row) { tbody.appendChild(row); });
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
