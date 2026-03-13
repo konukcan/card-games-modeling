@@ -21,11 +21,18 @@ This script:
 import json
 import glob
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-# Paths relative to this file
+# Ensure src/ is on sys.path so sibling packages (dreamcoder_core, etc.) resolve
+# when the script is run directly (python3 gallery_analysis/translate_phase1b.py).
 _THIS_DIR = Path(__file__).parent
+_SRC_DIR = _THIS_DIR.parent
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+# Paths relative to this file
 _INJECTED_PATH = _THIS_DIR / "data" / "injected_hypotheses.json"
 
 # Phase 1b results live in the main repo (not this worktree), so we
@@ -266,6 +273,147 @@ Reminder:
 - Output ONLY the corrected s-expression, nothing else."""
 
 
+# ─── Translation + validation pipeline ───────────────────────────────
+# These imports are deferred because they require running from the src/ directory
+# (or having src/ on sys.path). They're imported at function call time.
+
+
+def _build_prim_dict(grammar):
+    """
+    Build primitive name → Primitive lookup from grammar.
+
+    The parser needs this dict to resolve primitive names (like 'all', 'eq',
+    'rank_val') into Primitive objects during parsing.
+    """
+    from dreamcoder_core.program import Primitive
+    prim_dict = {}
+    for prod in grammar.productions:
+        if isinstance(prod.program, Primitive):
+            prim_dict[prod.program.name] = prod.program
+    return prim_dict
+
+
+def _clean_llm_output(raw: str) -> str:
+    """Strip common LLM artifacts (backticks, markdown fences) from output."""
+    s = raw.strip().strip("`").strip()
+    if s.startswith("```"):
+        s = s.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+    return s
+
+
+def validate_translation(
+    dsl_str: str,
+    grammar,
+    prim_dict: dict,
+) -> tuple[bool, str]:
+    """
+    Validate a translated s-expression by parsing and computing its log-prior.
+
+    Three checks:
+    1. parse_program() succeeds (syntax is valid)
+    2. compute_log_prior() returns a finite negative value (type-checks as
+       Hand→Bool under the grammar)
+    3. _make_evaluator() produces a callable predicate (can be executed)
+
+    Args:
+        dsl_str: The s-expression string to validate.
+        grammar: Gallery grammar for prior computation.
+        prim_dict: Primitive name → Primitive mapping for the parser.
+
+    Returns:
+        (is_valid, error_message). error_message is "" if valid.
+    """
+    dsl_str = _clean_llm_output(dsl_str)
+
+    from dreamcoder_core.program import parse_program
+    from gallery_analysis.enumerator import _make_evaluator
+    from gallery_analysis.dsl_prior import compute_log_prior
+
+    # Step 1: Parse — catches unknown primitives, malformed s-expressions
+    try:
+        program = parse_program(dsl_str, prim_dict)
+    except (ValueError, KeyError) as e:
+        return False, f"PARSE ERROR: {e}"
+
+    # Step 2: Log-prior — catches type errors (returns -inf for ill-typed)
+    try:
+        lp = compute_log_prior(dsl_str, grammar)
+        if lp == float('-inf') or lp != lp:
+            return False, f"TYPE ERROR: log_prior is {lp} (program doesn't type-check as Hand→Bool)"
+        if not (-200 < lp < 0):
+            return False, f"PRIOR OUT OF RANGE: log_prior={lp:.2f} (expected between -200 and 0)"
+    except Exception as e:
+        return False, f"PRIOR ERROR: {e}"
+
+    # Step 3: Evaluator — creates callable predicate from AST
+    try:
+        _make_evaluator(program)
+    except Exception as e:
+        return False, f"EVALUATOR ERROR: {e}"
+
+    return True, ""
+
+
+def translate_one(
+    hypothesis: Dict[str, Any],
+    translator,
+    grammar,
+    prim_dict: dict,
+    max_retries: int = 2,
+) -> tuple[bool, str, str]:
+    """
+    Translate a single curried DSL hypothesis to s-expression format.
+
+    Calls Gemini Flash with the few-shot prompt, validates the output,
+    and retries with error feedback up to max_retries times.
+
+    Args:
+        hypothesis: Dict with 'code', 'rule_id', 'nl_description' keys.
+        translator: A Translator instance with a .translate(prompt) method.
+        grammar: Gallery grammar for validation.
+        prim_dict: Primitive lookup dict for the parser.
+        max_retries: Maximum number of retry attempts after initial failure.
+
+    Returns:
+        (success, dsl_str, error_msg).
+        If success=True, dsl_str is the validated s-expression.
+        If success=False, error_msg describes the final failure.
+    """
+    curried_dsl = hypothesis["code"]
+
+    # Initial translation
+    prompt = build_translation_prompt(curried_dsl)
+    try:
+        raw_output = translator.translate(prompt)
+    except Exception as e:
+        return False, "", f"API ERROR: {e}"
+
+    dsl_str = _clean_llm_output(raw_output)
+
+    # Validate
+    is_valid, error = validate_translation(dsl_str, grammar, prim_dict)
+    if is_valid:
+        return True, dsl_str, ""
+
+    # Retry loop — send back the error so the model can self-correct
+    for attempt in range(max_retries):
+        retry_prompt = build_retry_prompt(curried_dsl, dsl_str, error)
+        try:
+            raw_output = translator.translate(retry_prompt)
+        except Exception as e:
+            return False, "", f"API ERROR on retry {attempt+1}: {e}"
+
+        dsl_str = _clean_llm_output(raw_output)
+
+        is_valid, error = validate_translation(dsl_str, grammar, prim_dict)
+        if is_valid:
+            return True, dsl_str, ""
+
+        time.sleep(0.5)  # Rate limit courtesy between retries
+
+    return False, dsl_str, f"FAILED after {max_retries} retries: {error}"
+
+
 if __name__ == "__main__":
     print("Loading Phase 1b DSL-constrained hypotheses...")
     hyps = load_phase1b_hypotheses()
@@ -280,9 +428,32 @@ if __name__ == "__main__":
         print(f"\n  [{h['rule_id']}] {h['nl_description']}")
         print(f"    Code: {h['code'][:100]}...")
 
-    # Test prompt generation
-    test_input = "rule = lambda hand: all(lambda card: eq(mod(rank_val(card))(2))(0))(hand)"
-    prompt = build_translation_prompt(test_input)
-    print(f"\n--- Sample prompt ({len(prompt)} chars) ---")
-    print(prompt[:500])
-    print("...")
+    # --- Dry run: translate 3 hypotheses ---
+    print("\n--- Dry-run translation (3 hypotheses) ---")
+
+    # Import translator from main repo's llm/ directory
+    sys.path.insert(0, str(_MAIN_LLM_DIR))
+    try:
+        from modeling.translators import get_translator
+        translator = get_translator("gemini-flash")
+    except Exception as e:
+        print(f"Cannot initialize translator: {e}")
+        print("Set GOOGLE_API_KEY to enable translation.")
+        sys.exit(0)
+
+    from gallery_analysis.enumerator import build_gallery_grammar
+    from gallery_analysis.dsl_prior import compute_log_prior
+
+    grammar = build_gallery_grammar()
+    prim_dict = _build_prim_dict(grammar)
+
+    for h in new_hyps[:3]:
+        print(f"\n[{h['rule_id']}] {h['nl_description']}")
+        print(f"  Input:  {h['code'][:100]}...")
+        ok, dsl, err = translate_one(h, translator, grammar, prim_dict)
+        if ok:
+            print(f"  Output: {dsl}")
+            lp = compute_log_prior(dsl, grammar)
+            print(f"  Prior:  {lp:.2f}")
+        else:
+            print(f"  FAILED: {err}")
