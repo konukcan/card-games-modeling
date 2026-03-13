@@ -64,6 +64,7 @@ def build_hypothesis_pool(
     timeout: float = 600.0,
     n_probes: int = 500,
     probe_seed: int = 42,
+    max_list_chain: int = 2,
     verbose: int = 1,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
@@ -78,6 +79,9 @@ def build_hypothesis_pool(
         timeout: Enumeration timeout in seconds.
         n_probes: Number of random probe hands for fingerprinting.
         probe_seed: Random seed for probe generation.
+        max_list_chain: Maximum consecutive list→list transforms (default 2).
+            Set to None to disable. Eliminates "deeply wrapped shallow
+            predicates" that carry negligible posterior mass.
         verbose: 0=silent, 1=summary, 2=detailed.
 
     Returns:
@@ -90,7 +94,8 @@ def build_hypothesis_pool(
 
     # --- Step 1+2: Enumerate with syntactic filter ---
     if verbose >= 1:
-        print(f"Step 1: Enumerating programs (depth={max_depth}, max={max_programs:,})...",
+        chain_str = f", max_list_chain={max_list_chain}" if max_list_chain is not None else ""
+        print(f"Step 1: Enumerating programs (depth={max_depth}, max={max_programs:,}{chain_str})...",
               flush=True)
 
     t0 = time.time()
@@ -99,6 +104,7 @@ def build_hypothesis_pool(
         max_programs=max_programs,
         max_cost=max_cost,
         timeout=timeout,
+        max_list_chain=max_list_chain,
     )
     t_enum = time.time() - t0
 
@@ -466,6 +472,7 @@ def run_analysis(
     prior_mode: str = "summed",
     inject_path: str = None,
     extension_cache: str = None,
+    max_list_chain: int = 2,
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -483,6 +490,7 @@ def run_analysis(
         max_cost=max_cost,
         timeout=timeout,
         n_probes=n_probes,
+        max_list_chain=max_list_chain,
         verbose=verbose,
     )
 
@@ -852,7 +860,14 @@ def main():
     parser.add_argument("--output", type=str, default=None, help="Save results JSON to this path")
     parser.add_argument("--extension-cache", type=str, default=None,
                         help="Path to cache extension sizes (skips MC estimation on re-runs)")
+    parser.add_argument("--max-list-chain", type=int, default=2,
+                        help="Max consecutive list→list transforms (default 2, None to disable)")
+    parser.add_argument("--no-list-chain-limit", action="store_true",
+                        help="Disable list→list chain limit (enumerate all programs)")
     args = parser.parse_args()
+
+    # Handle list chain limit
+    max_list_chain = None if args.no_list_chain_limit else args.max_list_chain
 
     if args.quick:
         args.depth = 5
@@ -872,6 +887,7 @@ def main():
         prior_mode=args.prior,
         inject_path=args.inject,
         extension_cache=args.extension_cache,
+        max_list_chain=max_list_chain,
         verbose=args.verbose,
     )
 

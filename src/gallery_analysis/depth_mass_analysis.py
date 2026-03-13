@@ -316,7 +316,13 @@ def main():
     parser.add_argument("--extension-cache", type=str, default=None)
     parser.add_argument("--output", type=str, default=None)
     parser.add_argument("--verbose", type=int, default=1)
+    parser.add_argument("--max-list-chain", type=int, default=2,
+                        help="Max consecutive list→list transforms (default 2)")
+    parser.add_argument("--no-list-chain-limit", action="store_true",
+                        help="Disable list→list chain limit")
     args = parser.parse_args()
+
+    max_list_chain = None if args.no_list_chain_limit else args.max_list_chain
 
     print("=" * 70)
     print("DEPTH-STRATIFIED POSTERIOR MASS ANALYSIS")
@@ -326,6 +332,7 @@ def main():
     equiv_classes, pipeline_stats = build_hypothesis_pool(
         max_depth=args.depth,
         max_programs=args.max_programs,
+        max_list_chain=max_list_chain,
         verbose=args.verbose,
     )
     print(f"  {len(equiv_classes):,} equivalence classes", flush=True)

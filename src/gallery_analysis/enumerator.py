@@ -84,6 +84,162 @@ def build_gallery_grammar():
 
 
 # =========================================================================
+# List→list composition chain detection (Option B)
+# =========================================================================
+#
+# The grammar allows list→list transforms (reverse, first_half, second_half,
+# sort_by_rank, unique, take, drop, filter) to compose freely. At depth 5-6,
+# this creates hundreds of "deeply wrapped shallow predicates" like:
+#
+#   (has_color (first_half (reverse (first_half (sort_by_rank (reverse $0))))) RED)
+#
+# These carry <0.01% posterior mass but consume significant enumeration time.
+# We limit consecutive list→list compositions to MAX_LIST_CHAIN (default 2),
+# which allows useful patterns like `first_half (sort_by_rank $0)` but blocks
+# 3+ layers of wrapping.
+#
+# This filter runs on the program string BEFORE _make_evaluator() and the
+# trivial filter, so the expensive downstream steps are avoided entirely.
+# It does not prune at enumeration time (which would require fragmenting the
+# memoization cache by chain depth), but achieves >95% of the efficiency gain
+# since the per-program enumeration cost is ~microseconds while the downstream
+# evaluation cost is ~2ms per program.
+
+# Unary list→list primitives: each takes a list and returns a list of the
+# same element type, without any non-list arguments.
+_UNARY_LIST_TRANSFORMS = frozenset({
+    'reverse', 'first_half', 'second_half', 'unique', 'sort_by_rank',
+})
+
+# Binary list→list primitives: take extra args + a list, return a list.
+# In program strings these appear as e.g. "take 3 (reverse $0)" or
+# "filter (λ ...) (first_half $0)". The list arg is the last positional arg.
+_BINARY_LIST_TRANSFORMS = frozenset({
+    'take', 'drop', 'filter',
+})
+
+_ALL_LIST_TRANSFORMS = _UNARY_LIST_TRANSFORMS | _BINARY_LIST_TRANSFORMS
+
+# Default maximum consecutive list→list compositions allowed.
+# K=2 allows "first_half (sort_by_rank $0)" but blocks 3+ layers.
+# None of the 60 true gallery rules need more than 2 consecutive transforms.
+MAX_LIST_CHAIN = 2
+
+# Pre-compiled regex: matches "(transform_name " at the start of a nested
+# list→list application. Used by _max_list_chain_depth().
+_RE_LIST_TRANSFORM = re.compile(
+    r'\((?:' + '|'.join(re.escape(t) for t in sorted(_ALL_LIST_TRANSFORMS)) + r') '
+)
+
+
+def _max_list_chain_depth(prog_str: str) -> int:
+    """
+    Find the maximum consecutive list→list composition chain in a program.
+
+    Scans the program string for nested patterns like:
+        (first_half (reverse (sort_by_rank $0)))
+    and returns the chain length (3 in this example).
+
+    This works by finding each list transform and walking inward to count
+    how many consecutive transforms follow.
+
+    For efficiency, we only look at unary list transforms for chain counting
+    since they are the main source of the composition explosion. Binary
+    transforms like (take 3 (reverse $0)) count as 1 link in the chain
+    when their list argument is another transform.
+    """
+    max_chain = 0
+
+    # Find all positions where a list transform starts
+    for match in _RE_LIST_TRANSFORM.finditer(prog_str):
+        chain = 1
+        # Walk forward from after this match to see if the argument is
+        # another list transform. We need to find the list argument,
+        # which for unary transforms is immediately after the name,
+        # and for binary transforms is after their first argument(s).
+        pos = match.end()
+
+        # For unary transforms, the next token should be the list arg.
+        # For binary transforms (take, drop, filter), we need to skip
+        # past the non-list argument(s) to find the list arg.
+        transform_name = prog_str[match.start()+1:match.end()-1]
+
+        if transform_name in _BINARY_LIST_TRANSFORMS:
+            # Skip past the first argument(s) to find the list argument.
+            # For "take N (list_expr)" / "drop N (list_expr)": skip the int
+            # For "filter (λ ...) (list_expr)": skip the lambda
+            # We find the list arg by counting balanced parens.
+            depth = 0
+            # Skip first argument
+            while pos < len(prog_str):
+                if prog_str[pos] == '(':
+                    depth += 1
+                elif prog_str[pos] == ')':
+                    depth -= 1
+                    if depth == 0:
+                        pos += 1
+                        break
+                elif depth == 0 and prog_str[pos] == ' ':
+                    # Simple (non-parenthesized) first arg like a digit
+                    pos += 1
+                    break
+                pos += 1
+            # Now pos should be at the start of the list argument
+            # (possibly after a space)
+            while pos < len(prog_str) and prog_str[pos] == ' ':
+                pos += 1
+
+        # Now check if the argument at `pos` is another list transform
+        while pos < len(prog_str):
+            # Check if we're looking at "(transform_name "
+            found_next = False
+            if prog_str[pos] == '(':
+                for t in _ALL_LIST_TRANSFORMS:
+                    prefix = '(' + t + ' '
+                    if prog_str[pos:pos+len(prefix)] == prefix:
+                        chain += 1
+                        pos += len(prefix)
+                        # If this is a binary transform, skip its first arg
+                        if t in _BINARY_LIST_TRANSFORMS:
+                            depth = 0
+                            while pos < len(prog_str):
+                                if prog_str[pos] == '(':
+                                    depth += 1
+                                elif prog_str[pos] == ')':
+                                    depth -= 1
+                                    if depth == 0:
+                                        pos += 1
+                                        break
+                                elif depth == 0 and prog_str[pos] == ' ':
+                                    pos += 1
+                                    break
+                                pos += 1
+                            while pos < len(prog_str) and prog_str[pos] == ' ':
+                                pos += 1
+                        found_next = True
+                        break
+            if not found_next:
+                break
+
+        max_chain = max(max_chain, chain)
+
+    return max_chain
+
+
+def exceeds_list_chain_limit(prog_str: str, max_chain: int = MAX_LIST_CHAIN) -> bool:
+    """
+    Check if a program exceeds the maximum allowed list→list composition chain.
+
+    Returns True if the program should be rejected.
+
+    Args:
+        prog_str: The program string to check.
+        max_chain: Maximum allowed chain length (default MAX_LIST_CHAIN=2).
+    """
+    return _max_list_chain_depth(prog_str) > max_chain
+
+
+# =========================================================================
 # Syntactic redundancy checks
 # =========================================================================
 
@@ -108,7 +264,7 @@ _RE_CONST_ARITH_CMP = re.compile(
 )
 
 
-def is_syntactically_redundant(prog_str: str) -> bool:
+def is_syntactically_redundant(prog_str: str, max_list_chain: int = MAX_LIST_CHAIN) -> bool:
     """
     Fast syntactic check for programs guaranteed to be trivial or redundant.
 
@@ -117,8 +273,18 @@ def is_syntactically_redundant(prog_str: str) -> bool:
     The goal is to avoid the expensive exemplar-based trivial filter
     (~0.7ms per program) for programs we can reject by inspection.
 
+    Also enforces the list→list composition chain limit (Option B).
+
+    Args:
+        prog_str: The program string to check.
+        max_list_chain: Maximum allowed consecutive list→list transforms.
+            Set to None to disable chain checking.
+
     Returns True if the program should be discarded.
     """
+    # Option B: Reject programs with excessive list→list composition chains
+    if max_list_chain is not None and exceeds_list_chain_limit(prog_str, max_list_chain):
+        return True
     # Identity compositions: f(f⁻¹(X)) = X or f(f(X)) = f(X)
     if 'reverse (reverse' in prog_str:
         return True
@@ -188,6 +354,7 @@ def enumerate_hypotheses(
     timeout: float = 300.0,
     grammar=None,
     syntactic_filter: bool = True,
+    max_list_chain: int = MAX_LIST_CHAIN,
 ) -> List[Tuple[str, Callable[[Hand], bool], float]]:
     """
     Enumerate hand -> bool programs from the DSL.
@@ -207,6 +374,8 @@ def enumerate_hypotheses(
                  (no true/false). Pass a custom grammar to override.
         syntactic_filter: If True (default), reject syntactically redundant
                          programs before adding them to results.
+        max_list_chain: Maximum consecutive list→list transforms allowed.
+                       Set to None to disable. Default MAX_LIST_CHAIN (2).
     """
     if grammar is None:
         grammar = build_gallery_grammar()
@@ -231,7 +400,7 @@ def enumerate_hypotheses(
         prog_str = str(program)
 
         # Fast syntactic check — skip before creating the evaluator
-        if syntactic_filter and is_syntactically_redundant(prog_str):
+        if syntactic_filter and is_syntactically_redundant(prog_str, max_list_chain):
             n_syntactic_rejected += 1
             continue
 
@@ -251,6 +420,7 @@ def enumerate_hypotheses_with_stats(
     timeout: float = 300.0,
     grammar=None,
     syntactic_filter: bool = True,
+    max_list_chain: int = MAX_LIST_CHAIN,
 ) -> Tuple[List[Tuple[str, Callable[[Hand], bool], float]], Dict[str, int]]:
     """
     Like enumerate_hypotheses but also returns enumeration statistics.
@@ -259,6 +429,7 @@ def enumerate_hypotheses_with_stats(
         (programs, stats) where stats includes:
         - total_yielded: programs yielded by the enumerator (before syntactic filter)
         - syntactic_rejected: programs rejected by syntactic filter
+        - list_chain_rejected: programs rejected by list→list chain limit
         - accepted: programs in the final results list
     """
     if grammar is None:
@@ -275,6 +446,7 @@ def enumerate_hypotheses_with_stats(
     results = []
     n_total = 0
     n_rejected = 0
+    n_chain_rejected = 0
     start = time.time()
 
     for program, log_prob in enumerator.enumerate(
@@ -285,7 +457,13 @@ def enumerate_hypotheses_with_stats(
         n_total += 1
         prog_str = str(program)
 
-        if syntactic_filter and is_syntactically_redundant(prog_str):
+        # Check list chain limit separately for stats
+        if syntactic_filter and max_list_chain is not None and exceeds_list_chain_limit(prog_str, max_list_chain):
+            n_chain_rejected += 1
+            n_rejected += 1
+            continue
+
+        if syntactic_filter and is_syntactically_redundant(prog_str, max_list_chain=None):
             n_rejected += 1
             continue
 
@@ -298,6 +476,7 @@ def enumerate_hypotheses_with_stats(
     stats = {
         "total_yielded": n_total,
         "syntactic_rejected": n_rejected,
+        "list_chain_rejected": n_chain_rejected,
         "accepted": len(results),
     }
     return results, stats
