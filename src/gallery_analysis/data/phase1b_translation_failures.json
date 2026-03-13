@@ -1,0 +1,128 @@
+[
+  {
+    "rule_id": "ap_step1_len3_adj_ordered",
+    "nl_description": "The first three cards and the last three cards share at least one common rank or at least one common suit.",
+    "code": "lambda hand: or(any(lambda r1: any(lambda r2: eq(r1)(r2))(map(get_rank)(second_half(hand))))(map(get_rank)(first_half(hand))))(any(lambda s1: any(lambda s2: eq(s1)(s2))(map(get_suit)(second_half(hand))))(map(get_suit)(first_half(hand))))",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb (or (any (\u03bb (any (\u03bb (eq $1 $0)) (map get_rank (second_half $0)))) (map get_rank (first_half $0))) (any (\u03bb (any (\u03bb (eq $1 $0)) (map get_suit (second_half $0)))) (map get_suit (first_half $0)))))"
+  },
+  {
+    "rule_id": "ap_step1_len3_adj_ordered",
+    "nl_description": "At least one pair of cards at symmetric positions (e.g., the first and last) shares a rank, suit, or color.",
+    "code": "lambda hand: or(or(eq(get_rank(at(hand)(0)))(get_rank(at(hand)(5))))(or(eq(get_suit(at(hand)(0)))(get_suit(at(hand)(5))))(eq(get_color(at(hand)(0)))(get_color(at(hand)(5))))))(or(or(eq(get_rank(at(hand)(1)))(get_rank(at(hand)(4))))(or(eq(get_suit(at(hand)(1)))(get_suit(at(hand)(4))))(eq(get_color(at(hand)(1)))(get_color(at(hand)(4))))))(or(eq(get_rank(at(hand)(2)))(get_rank(at(hand)(3))))(or(eq(get_suit(at(hand)(2)))(get_suit(at(hand)(3))))(eq(get_color(at(hand)(2)))(get_color(at(hand)(3)))))))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: The",
+    "last_attempt": "The previous translation assumed `or` is a binary function taking two arguments, translating `or(A)(B)` to `(or A B)`. However, the input syntax `or(A)(B)` implies a curried function application, where `or` takes one argument `A` and returns a function, which is then applied to `B`. In Lisp-like s-expressions, this translates to `((or A) B)`.\n\nThe type error `log_prior is -inf (program doesn't type-check as Hand\u2192Bool)` suggests that the type system expects `or` to be curried, i.e., `Bool -> (Bool -> Bool)`. If `or` were `Bool -> Bool -> Bool`, the previous output would type-check.\n\nThe corrected translation will use the curried form `((or A) B)` for every instance of `or(A)(B)` in the input.\n\nOriginal input structure:\n`lambda hand: or(X)(Y)`\nwhere `X` and `Y` are themselves nested `or` expressions.\n\nCorrected translation structure:\n`(\u03bb $0 ((or X_translated) Y_translated))`\n\nLet's break down and translate each part:\n\n1.  **Outermost `or`**: `or(ARG1)(ARG2)`\n    Translates to: `((or ARG1_translated) ARG2_translated)`\n\n2.  **`ARG1`**: `or(SUB_ARG1)(SUB_ARG2)`\n    Translates to: `((or SUB_ARG1_translated) SUB_ARG2_translated)`\n\n    *   **`SUB_ARG1`**: `eq(get_rank(at(hand)(0)))(get_rank(at(hand)(5)))`\n        Translates to: `(eq (get_rank (at $0 0)) (get_rank (at $0 5)))`\n\n    *   **`SUB_ARG2`**: `or(SUB_SUB_ARG1)(SUB_SUB_ARG2)`\n        Translates to: `((or SUB_SUB_ARG1_translated) SUB_SUB_ARG2_translated)`\n\n        *   **`SUB_SUB_ARG1`**: `eq(get_suit(at(hand)(0)))(get_suit(at(hand)(5)))`\n            Translates to: `(eq (get_suit (at $0 0)) (get_suit (at $0 5)))`\n        *   **`SUB_SUB_ARG2`**: `eq(get_color(at(hand)(0)))(get_color(at(hand)(5)))`\n            Translates to: `(eq (get_color (at $0 0)) (get_color (at $0 5)))`\n\n3.  **`ARG2`**: `or(SUB_ARG3)(SUB_ARG4)`\n    Translates to: `((or SUB_ARG3_translated) SUB_ARG4_translated)`\n\n    *   **`SUB_ARG3`**: `or(SUB_SUB_ARG3)(SUB_SUB_ARG4)`\n        Translates to: `((or SUB_SUB_ARG3_translated) SUB_SUB_ARG4_translated)`\n\n        *   **`SUB_SUB_ARG3`**: `eq(get_rank(at(hand)(1)))(get_rank(at(hand)(4)))`\n            Translates to: `(eq (get_rank (at $0 1)) (get_rank (at $0 4)))`\n        *   **`SUB_SUB_ARG4`**: `or(SUB_SUB_SUB_ARG1)(SUB_SUB_SUB_ARG2)`\n            Translates to: `((or SUB_SUB_SUB_ARG1_translated) SUB_SUB_SUB_ARG2_translated)`\n\n            *   **`SUB_SUB_SUB_ARG1`**: `eq(get_suit(at(hand)(1)))(get_suit(at(hand)(4)))`\n                Translates to: `(eq (get_suit (at $0 1)) (get_suit (at $0 4)))`\n            *   **`SUB_SUB_SUB_ARG2`**: `eq(get_color(at(hand)(1)))(get_color(at(hand)(4)))`\n                Translates to: `(eq (get_color (at $0 1)) (get_color (at $0 4)))`\n\n    *   **`SUB_ARG4`**: `or(SUB_SUB_ARG5)(SUB_SUB_ARG6)`\n        Translates to: `((or SUB_SUB_ARG5_translated) SUB_SUB_ARG6_translated)`\n\n        *   **`SUB_SUB_ARG5`**: `eq(get_rank(at(hand)(2)))(get_rank(at(hand)(3)))`\n            Translates to: `(eq (get_rank (at $0 2)) (get_rank (at $0 3)))`\n        *   **`SUB_SUB_ARG6`**: `or(SUB_SUB_SUB_ARG3)(SUB_SUB_SUB_ARG4)`\n            Translates to: `((or SUB_SUB_SUB_ARG3_translated) SUB_SUB_SUB_ARG4_translated)`\n\n            *   **`SUB_SUB_SUB_ARG3`**: `eq(get_suit(at(hand)(2)))(get_suit(at(hand)(3)))`\n                Translates to: `(eq (get_suit (at $0 2)) (get_suit (at $0 3)))`\n            *   **`SUB_SUB_SUB_ARG4`**: `eq(get_color(at(hand)(2)))(get_color(at(hand)(3)))`\n                Translates to: `(eq (get_color (at $0 2)) (get_color (at $0 3)))`\n\n```lisp\n(\u03bb $0\n  ((or\n    ((or\n      (eq (get_rank (at $0 0)) (get_rank (at $0 5))))\n     ((or\n       (eq (get_suit (at $0 0)) (get_suit (at $0 5))))\n      (eq (get_color (at $0 0)) (get_color (at $0 5))))))\n   ((or\n     ((or\n       (eq (get_rank (at $0 1)) (get_rank (at $0 4))))\n      ((or\n        (eq (get_suit (at $0 1)) (get_suit (at $0 4))))\n       (eq (get_color (at $0 1)) (get_color (at $0 4))))))\n    ((or\n      (eq (get_rank (at $0 2)) (get_rank (at $0 3))))\n     ((or\n       (eq (get_suit (at $0 2)) (get_suit (at $0 3))))\n      (eq (get_color (at $0 2)) (get_color (at $0 3))))))))"
+  },
+  {
+    "rule_id": "both_halves_have_pair_rank",
+    "nl_description": "At least one rank appears on cards of both red and black colors.",
+    "code": "lambda hand: any(lambda r: eq(n_unique_colors(filter(lambda c: eq(get_rank(c))(r))(hand)))(2))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb any (\u03bb eq (n_unique_colors (filter (\u03bb eq (get_rank $0) $1) $0)) 2) (unique (map get_rank $0)))"
+  },
+  {
+    "rule_id": "even_pos_red_odd_pos_black",
+    "nl_description": "The first half of the hand and the second half of the hand share at least one suit.",
+    "code": "lambda hand: any(lambda s: has_suit(second_half(hand))(s))(unique(map(get_suit)(first_half(hand))))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda $0 (any (lambda $0 (has_suit (second_half $1) $0)) (unique (map get_suit (first_half $0)))))"
+  },
+  {
+    "rule_id": "every_other_ace",
+    "nl_description": "The hand contains exactly three Aces.",
+    "code": "lambda hand: eq(length(filter(eq(14))(map(rank_val)(hand))))(3)",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb (eq (length (filter (\u03bb (eq (+ 5 (+ 5 4)) $0)) (map rank_val $0))) 3))"
+  },
+  {
+    "rule_id": "four_kind_adjacent_any",
+    "nl_description": "The hand contains exactly 3 unique ranks, and one of those ranks appears four times.",
+    "code": "lambda hand: and(eq(n_unique_ranks(hand))(3))(any(lambda r: eq(length(filter(lambda c: eq(get_rank(c))(r))(hand)))(4))(unique(map(get_rank)(hand))))",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb (and (eq (n_unique_ranks $0) 3) (any (\u03bb (eq (length (filter (\u03bb (eq (get_rank $0) $2)) $1)) 4)) (unique (map get_rank $0)))))"
+  },
+  {
+    "rule_id": "four_kind_adjacent_any",
+    "nl_description": "The hand contains four cards of the same rank (a four-of-a-kind).",
+    "code": "lambda hand: any(lambda r: eq(length(filter(lambda c: eq(get_rank(c))(r))(hand)))(4))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda $0 (any (lambda $0 (eq (length (filter (lambda $0 (eq (get_rank $0) $1)) $2)) 4)) (unique (map get_rank $0))))"
+  },
+  {
+    "rule_id": "four_of_a_kind_adjacent",
+    "nl_description": "The hand contains four cards of the same rank.",
+    "code": "lambda hand: any(lambda r: eq(length(filter(lambda c: eq(get_rank(c))(r))(hand)))(4))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda $0 (any (lambda $0 (eq (length (filter (lambda $0 (eq (get_rank $0) $1)) $1)) 4)) (unique (map get_rank $0))))"
+  },
+  {
+    "rule_id": "halves_copy_ranks",
+    "nl_description": "The hand consists of three pairs of cards with matching ranks.",
+    "code": "lambda hand: all(lambda r: eq(length(filter(lambda c: eq(get_rank(c))(r))(hand)))(2))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda $0 (all (lambda $0 (eq (length (filter (lambda $0 (eq (get_rank $0) $1)) $1)) 2)) (unique (map get_rank $0))))"
+  },
+  {
+    "rule_id": "halves_copy_ranks",
+    "nl_description": "The first three cards in the hand all have different ranks.",
+    "code": "lambda hand: eq(length(unique(map(get_rank)(first_half(hand)))))(3)",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda ($0) (eq (length (unique (map get_rank (first_half $0)))) 3))"
+  },
+  {
+    "rule_id": "ranks_palindrome",
+    "nl_description": "The sequence of card ranks is a palindrome.",
+    "code": "lambda hand: all(lambda b: eq(b)(true))(zip_with(lambda c1, c2: eq(get_rank(c1))(get_rank(c2)))(hand)(reverse(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: #t",
+    "last_attempt": "(\u03bb (all (\u03bb (eq $0 #t)) (zip_with (\u03bb (eq (get_rank $1) (get_rank $0))) $0 (reverse $0))))"
+  },
+  {
+    "rule_id": "ranks_palindrome",
+    "nl_description": "The sequence of ranks is a palindrome and the hand contains exactly 3 unique ranks.",
+    "code": "lambda hand: and(all(lambda b: eq(b)(true))(zip_with(lambda c1, c2: eq(get_rank(c1))(get_rank(c2)))(hand)(reverse(hand))))(eq(n_unique_ranks(hand))(3))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: #t",
+    "last_attempt": "(\u03bb (and (all (\u03bb (eq $0 #t)) (zip_with (\u03bb (eq (get_rank $0) (get_rank $1))) $0 (reverse $0))) (eq (n_unique_ranks $0) 3)))"
+  },
+  {
+    "rule_id": "straight5_same_suit",
+    "nl_description": "At least 5 cards share a suit, and the difference between the highest and lowest rank is less than or equal to the number of unique ranks.",
+    "code": "lambda hand: and(any(lambda s: ge(count_suit(hand)(s))(5))(unique(map(get_suit)(hand))))(le(-(max_rank(hand))(min_rank(hand)))(n_unique_ranks(hand)))",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb (and (any (\u03bb (ge ((count_suit $1) $0) 5)) (unique (map get_suit $0))) (le (- (max_rank $0) (min_rank $0)) (n_unique_ranks $0))))"
+  },
+  {
+    "rule_id": "straight5_same_suit",
+    "nl_description": "At least 5 cards share the same suit.",
+    "code": "lambda hand: any(lambda s: ge(count_suit(hand)(s))(5))(unique(map(get_suit)(hand)))",
+    "error": "FAILED after 2 retries: TYPE ERROR: log_prior is -inf (program doesn't type-check as Hand\u2192Bool)",
+    "last_attempt": "(\u03bb any (\u03bb ge (count_suit $1 $0) 5) (unique (map get_suit $0)))"
+  },
+  {
+    "rule_id": "triple_2s_pos234",
+    "nl_description": "The cards at indices 1, 2, and 3 are all of rank 2, and all cards of rank 2 in the hand have distinct suits.",
+    "code": "lambda hand: and(all(lambda card: eq(rank_val(card))(2))(take(3)(drop(1)(hand))))(eq(length(filter(lambda card: eq(rank_val(card))(2))(hand)))(length(unique(map(get_suit)(filter(lambda card: eq(rank_val(card))(2))(hand)))))))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lisp",
+    "last_attempt": "lisp\n(lambda ($0) (and (all (lambda ($0) (eq (rank_val $0) 2)) (take 3 (drop 1 $0))) (eq (length (filter (lambda ($0) (eq (rank_val $0) 2)) $0)) (length (unique (map get_suit (filter (lambda ($0) (eq (rank_val $0) 2)) $0)))))))"
+  },
+  {
+    "rule_id": "triple_2s_pos234",
+    "nl_description": "The hand contains at least three cards of rank 2, and all of the 2s have different suits.",
+    "code": "lambda hand: and(ge(length(filter(lambda card: eq(rank_val(card))(2))(hand)))(3))(eq(length(filter(lambda card: eq(rank_val(card))(2))(hand)))(length(unique(map(get_suit)(filter(lambda card: eq(rank_val(card))(2))(hand)))))))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lisp",
+    "last_attempt": "lisp\n(lambda ($0)\n  (and\n    (ge (length (filter (lambda ($0) (eq (rank_val $0) 2)) $0)) 3)\n    (eq (length (filter (lambda ($0) (eq (rank_val $0) 2)) $0))\n        (length (unique (map get_suit (filter (lambda ($0) (eq (rank_val $0) 2)) $0)))))))"
+  },
+  {
+    "rule_id": "triple_any_adjacent",
+    "nl_description": "The hand contains a three-of-a-kind (a rank that appears three times).",
+    "code": "lambda hand: any(lambda r: eq(length(filter(lambda card: eq(get_rank(card))(r))(hand)))(3))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lambda",
+    "last_attempt": "(lambda $0 (any (lambda $0 (eq (length (filter (lambda $0 (eq (get_rank $0) $2)) $2)) 3)) (unique (map get_rank $0))))"
+  },
+  {
+    "rule_id": "triple_any_pos345",
+    "nl_description": "The hand contains a three-of-a-kind.",
+    "code": "lambda hand: any(lambda r: ge(length(filter(lambda c: eq(get_rank(c))(r))(hand)))(3))(unique(map(get_rank)(hand)))",
+    "error": "FAILED after 2 retries: PARSE ERROR: Unexpected token: lisp",
+    "last_attempt": "lisp\n(\u03bb (any (\u03bb (ge (length (filter (\u03bb (eq (get_rank $0) $1)) $1)) 3)) (unique (map get_rank $0))))"
+  }
+]
