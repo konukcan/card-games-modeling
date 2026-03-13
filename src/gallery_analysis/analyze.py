@@ -745,6 +745,7 @@ def run_analysis(
             "extension_samples": extension_samples,
             "epsilon": epsilon,
             "prior_mode": prior_mode,
+            "scoring_grammar": scoring_grammar,
         },
         "provenance": provenance,
     }
@@ -775,7 +776,8 @@ def print_difficulty_report(results: Dict[str, Any], verbose: int = 1):
 
     print(f"\nConfig: depth={config['max_depth']}, programs={config['max_programs']:,}, "
           f"probes={config['n_probes']}, MC_samples={config['extension_samples']:,}, "
-          f"ε={config['epsilon']}, prior={config['prior_mode']}")
+          f"ε={config['epsilon']}, prior={config['prior_mode']}, "
+          f"grammar={config.get('scoring_grammar', 'uniform')}")
 
     enum_s = stats.get("enumeration", {})
     triv_s = stats.get("trivial_filter", {})
