@@ -206,6 +206,10 @@ def main():
         "--seed", type=int, default=42,
         help="Random seed for candidate hand generation (default: 42)"
     )
+    parser.add_argument(
+        "--grammar", choices=["uniform", "weighted"], default="uniform",
+        help="Scoring grammar: 'uniform' (baseline) or 'weighted' (4-tier)"
+    )
     args = parser.parse_args()
 
     # Determine which rules to analyze
@@ -266,6 +270,13 @@ def main():
         n_equiv_classes=len(equiv_classes),
     )
 
+    # Build scoring grammar object if weighted
+    scoring_grammar_obj = None
+    if args.grammar == "weighted":
+        from gallery_analysis.enumerator import build_weighted_gallery_grammar
+        scoring_grammar_obj = build_weighted_gallery_grammar()
+        print(f"\nUsing WEIGHTED scoring grammar (4-tier)", flush=True)
+
     # Step 4: Load exemplars
     exemplars = load_exemplars()
 
@@ -287,6 +298,7 @@ def main():
             equiv_classes, extensions, exemplar_hands,
             epsilon=0.01,
             mass_threshold=args.mass_threshold,
+            grammar=scoring_grammar_obj,
         )
 
         if args.verbose >= 2:
