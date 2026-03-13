@@ -302,3 +302,118 @@ class HypothesisTable:
             "total_deduplicated": self._total_deduplicated,
             "n_equivalence_classes": len(self._classes),
         }
+
+
+def _safe_eval(predicate: Callable[[Hand], bool], hand: Hand) -> bool:
+    """Evaluate predicate, returning False on any exception."""
+    try:
+        return bool(predicate(hand))
+    except Exception:
+        return False
+
+
+def refine_rare_classes(
+    equivalence_classes: List[Dict[str, Any]],
+    main_probes: List[Hand],
+    hit_threshold: int = 5,
+    n_refinement_probes: int = 2000,
+    refinement_seed: int = 4242,
+) -> List[Dict[str, Any]]:
+    """Second-pass refinement for rare equivalence classes.
+
+    Classes whose canonical predicate fires on <= hit_threshold of the
+    main probes are re-fingerprinted with additional refinement probes.
+    If members diverge, the class is split.
+
+    Args:
+        equivalence_classes: Output of HypothesisTable.get_equivalence_classes()
+            or a prior refinement pass.  Each dict must have at least:
+            canonical_program, canonical_prior, summed_prior, n_expressions,
+            all_programs, fingerprint, predicate.
+            For splitting to work on multi-program classes, the dict should
+            also carry _all_predicates and _all_priors.
+        main_probes: The probe hands used for the original fingerprinting.
+        hit_threshold: Classes whose canonical predicate fires on at most
+            this many main probes are considered "rare" and eligible for
+            refinement.
+        n_refinement_probes: How many extra random hands to generate for
+            the second-pass fingerprinting.
+        refinement_seed: RNG seed for the refinement probe set (must differ
+            from the main probe seed to add information).
+
+    Returns:
+        A new list of equivalence-class dicts.  Non-rare and single-program
+        classes are passed through unchanged; rare multi-program classes may
+        be split into several sub-classes.
+    """
+    from gallery_analysis.exemplars import generate_probe_set
+
+    refinement_probes = generate_probe_set(n_refinement_probes, seed=refinement_seed)
+
+    result: List[Dict[str, Any]] = []
+    n_split = 0
+
+    for cls in equivalence_classes:
+        pred = cls["predicate"]
+        hits = sum(1 for p in main_probes if _safe_eval(pred, p))
+
+        # Non-rare classes or single-program classes cannot be split
+        if hits > hit_threshold or cls["n_expressions"] <= 1:
+            result.append(cls)
+            continue
+
+        all_predicates = cls.get("_all_predicates")
+        all_priors = cls.get("_all_priors")
+        if not all_predicates or len(all_predicates) <= 1:
+            result.append(cls)
+            continue
+
+        # Re-fingerprint each member on the refinement probes
+        sub_groups: Dict[str, List[int]] = {}
+        for prog_idx, prog_pred in enumerate(all_predicates):
+            refined_fp = compute_fingerprint(prog_pred, refinement_probes)
+            sub_groups.setdefault(refined_fp, []).append(prog_idx)
+
+        if len(sub_groups) <= 1:
+            # All members still agree — no split needed
+            result.append(cls)
+            continue
+
+        # Split into sub-classes
+        all_programs = cls["all_programs"]
+        for refined_fp, indices in sub_groups.items():
+            sub_priors = [all_priors[i] for i in indices]
+            best_idx = indices[sub_priors.index(max(sub_priors))]
+            summed = math.log(sum(math.exp(all_priors[i]) for i in indices))
+
+            # Combined fingerprint uses both main and refinement probes
+            combined_fp = compute_fingerprint(
+                all_predicates[best_idx],
+                main_probes + refinement_probes,
+            )
+
+            sub_class: Dict[str, Any] = {
+                "canonical_program": all_programs[best_idx],
+                "canonical_prior": all_priors[best_idx],
+                "summed_prior": summed,
+                "n_expressions": len(indices),
+                "all_programs": [all_programs[i] for i in indices],
+                "fingerprint": combined_fp,
+                "predicate": all_predicates[best_idx],
+            }
+            # Carry through any extra keys from the original class
+            for key in cls:
+                if key not in sub_class and key not in ("_all_predicates", "_all_priors"):
+                    sub_class[key] = cls[key]
+
+            result.append(sub_class)
+        n_split += 1
+
+    if n_split > 0:
+        print(
+            f"  Fingerprint refinement: {n_split} rare classes split, "
+            f"total classes: {len(result)} (was {len(equivalence_classes)})",
+            flush=True,
+        )
+
+    return result
