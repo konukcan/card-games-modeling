@@ -22,7 +22,11 @@ from pathlib import Path
 
 # ── Imports with sys.path fallback (same pattern as sibling modules) ──
 try:
-    from gallery_analysis.visualization.data import load_results
+    from gallery_analysis.visualization.data import (
+        load_results,
+        load_depth_decomposition,
+        load_diagnosticity_spectrums,
+    )
     from gallery_analysis.visualization.cards import load_exemplars
     from gallery_analysis.visualization.report_summary import generate_summary
     from gallery_analysis.visualization.report_rule import generate_rule_page
@@ -33,7 +37,11 @@ except ImportError:
     if str(_src_dir) not in sys.path:
         sys.path.insert(0, str(_src_dir))
 
-    from gallery_analysis.visualization.data import load_results
+    from gallery_analysis.visualization.data import (
+        load_results,
+        load_depth_decomposition,
+        load_diagnosticity_spectrums,
+    )
     from gallery_analysis.visualization.cards import load_exemplars
     from gallery_analysis.visualization.report_summary import generate_summary
     from gallery_analysis.visualization.report_rule import generate_rule_page
@@ -64,6 +72,18 @@ def main() -> None:
         help="Path to the card image PNGs directory (e.g. /path/to/card-games/stim/)",
     )
     parser.add_argument(
+        "--depth-decomposition",
+        type=Path,
+        default=None,
+        help="Path to depth_decomposition_data.json (optional, adds depth analysis panels)",
+    )
+    parser.add_argument(
+        "--diagnosticity",
+        type=Path,
+        default=None,
+        help="Path to diagnosticity_*.json (optional, adds test hands and P(accept) histograms)",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("gallery_analysis/results/reports/"),
@@ -87,9 +107,29 @@ def main() -> None:
     cards_js = cards_js_path.read_text(encoding="utf-8")
     print(f"Loaded cards.js ({len(cards_js)} chars).")
 
+    # ── Step 3b: Load depth decomposition (optional) ──────────────────
+    depth_results = None
+    if args.depth_decomposition and args.depth_decomposition.exists():
+        depth_results = load_depth_decomposition(args.depth_decomposition)
+        print(f"Loaded depth decomposition: {len(depth_results.rule_summary_df)} rules.")
+    elif args.depth_decomposition:
+        print(f"Warning: depth decomposition file not found: {args.depth_decomposition}")
+
+    # ── Step 3c: Load diagnosticity spectrums (optional) ──────────────
+    diag_results = None
+    if args.diagnosticity and args.diagnosticity.exists():
+        diag_results = load_diagnosticity_spectrums(args.diagnosticity)
+        print(f"Loaded diagnosticity: {len(diag_results.spectrum_df)} rules.")
+    elif args.diagnosticity:
+        print(f"Warning: diagnosticity file not found: {args.diagnosticity}")
+
     # ── Step 4: Generate summary page ─────────────────────────────────
     output_dir = args.output
-    summary_path = generate_summary(results, output_dir)
+    summary_path = generate_summary(
+        results, output_dir,
+        depth_results=depth_results,
+        diag_results=diag_results,
+    )
     print(f"Generated summary: {summary_path}")
 
     # ── Step 5: Build sorted rule list (by entropy, hardest first) ────
@@ -124,6 +164,7 @@ def main() -> None:
             output_dir=rules_dir,
             prev_rule=prev_rule,
             next_rule=next_rule,
+            diag_results=diag_results,
         )
         print(f"  [{i + 1}/{n_rules}] {rule_id}")
 

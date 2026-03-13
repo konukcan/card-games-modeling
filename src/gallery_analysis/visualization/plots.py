@@ -244,6 +244,298 @@ def equiv_class_bars(df: pd.DataFrame) -> alt.Chart:
 
 
 # ══════════════════════════════════════════════════════════════════════
+# Depth decomposition charts (take DataFrames from load_depth_decomposition)
+# ══════════════════════════════════════════════════════════════════════
+
+
+def depth_population(df: pd.DataFrame) -> alt.Chart:
+    """Bar chart of equivalence class counts by AST depth.
+
+    Shows how many distinct equivalence classes exist at each depth level
+    in the grammar.  Gives a sense of where the hypothesis space "lives"
+    — most classes cluster at depth 3-4 with a rapid drop-off.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        ``depth_population_df`` from :func:`data.load_depth_decomposition`.
+    """
+    return (
+        alt.Chart(df)
+        .mark_bar(color="#5B8DB8")
+        .encode(
+            x=alt.X("depth:O", title="AST Depth"),
+            y=alt.Y("count:Q", title="Equivalence Classes"),
+            tooltip=[
+                alt.Tooltip("depth:O", title="Depth"),
+                alt.Tooltip("count:Q", title="Classes", format=","),
+                alt.Tooltip("prior_mean:Q", title="Mean Log Prior", format=".1f"),
+            ],
+        )
+        .properties(
+            width=400,
+            height=300,
+            title="Hypothesis Space by AST Depth",
+        )
+    )
+
+
+def depth_vs_difficulty(rule_df: pd.DataFrame) -> alt.Chart:
+    """Scatter of true-rule AST depth vs posterior entropy.
+
+    Each point is one rule.  X-axis is the depth of the ground-truth
+    program, y-axis is posterior entropy (higher = harder).  Colored by
+    difficulty group.  Reveals whether deeper true rules are harder for
+    the Bayesian learner to recover.
+
+    Parameters
+    ----------
+    rule_df : pd.DataFrame
+        A merge of ``rule_summary_df`` (for true_rule_depth) and
+        ``difficulty_df`` (for posterior_entropy).
+    """
+    return (
+        alt.Chart(rule_df)
+        .mark_circle(size=70, opacity=0.8)
+        .encode(
+            x=alt.X(
+                "true_rule_depth:Q",
+                title="True Rule AST Depth",
+                scale=alt.Scale(domain=[1, 11]),
+                axis=alt.Axis(tickMinStep=1),
+            ),
+            y=alt.Y("posterior_entropy:Q", title="Posterior Entropy (bits)"),
+            color=alt.Color(
+                "group_label:N",
+                title="Difficulty",
+                scale=difficulty_color_scale(),
+            ),
+            tooltip=[
+                alt.Tooltip("rule_id:N", title="Rule"),
+                alt.Tooltip("true_rule_depth:Q", title="True Depth"),
+                alt.Tooltip("posterior_entropy:Q", title="Entropy", format=".3f"),
+                alt.Tooltip("true_rule_mass:Q", title="True Rule Mass", format=".2e"),
+                alt.Tooltip("group_label:N", title="Group"),
+            ],
+        )
+        .properties(
+            width=400,
+            height=350,
+            title="Depth × Difficulty",
+        )
+    )
+
+
+def depth_posterior_heatmap(depth_rule_df: pd.DataFrame,
+                           rule_summary_df: pd.DataFrame) -> alt.Chart:
+    """Heatmap of posterior mass by rule × depth.
+
+    Rules on y-axis (sorted by true-rule depth then rule_id), depths on
+    x-axis, cell color = log10(posterior mass).  Shows where each rule's
+    posterior concentrates across depths.
+
+    Parameters
+    ----------
+    depth_rule_df : pd.DataFrame
+        ``depth_rule_df`` from :func:`data.load_depth_decomposition`.
+    rule_summary_df : pd.DataFrame
+        ``rule_summary_df`` for sorting order.
+    """
+    import numpy as np
+
+    # Filter to depths 1-6 (where meaningful mass exists) and positive mass.
+    plot_df = depth_rule_df[
+        (depth_rule_df["depth"] <= 6) & (depth_rule_df["posterior_mass"] > 0)
+    ].copy()
+    plot_df["log10_mass"] = np.log10(plot_df["posterior_mass"])
+
+    # Sort rules by true_rule_depth (ascending) then rule_id.
+    sort_order = (
+        rule_summary_df
+        .sort_values(["true_rule_depth", "rule_id"], ascending=[True, True])
+        ["rule_id"].tolist()
+    )
+
+    return (
+        alt.Chart(plot_df)
+        .mark_rect()
+        .encode(
+            x=alt.X("depth:O", title="AST Depth"),
+            y=alt.Y(
+                "rule_id:N",
+                title="Rule",
+                sort=sort_order,
+                axis=alt.Axis(labelLimit=200),
+            ),
+            color=alt.Color(
+                "log10_mass:Q",
+                title="log₁₀(mass)",
+                scale=alt.Scale(scheme="viridis"),
+            ),
+            tooltip=[
+                alt.Tooltip("rule_id:N", title="Rule"),
+                alt.Tooltip("depth:O", title="Depth"),
+                alt.Tooltip("posterior_mass:Q", title="Posterior Mass", format=".2e"),
+                alt.Tooltip("n_all_hits:Q", title="All-Hit Classes"),
+                alt.Tooltip("n_total:Q", title="Total Classes"),
+            ],
+        )
+        .properties(
+            width=350,
+            height=800,
+            title="Posterior Mass by Rule × Depth",
+        )
+    )
+
+
+def depth_prior_range(df: pd.DataFrame) -> alt.LayerChart:
+    """Range plot of log-prior distributions by AST depth.
+
+    For each depth, shows the min–max range as a bar and the mean as a
+    point.  Reveals how the PCFG prior penalizes deeper programs.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        ``depth_population_df`` from :func:`data.load_depth_decomposition`.
+    """
+    # Filter to depths that have prior range data.
+    plot_df = df.dropna(subset=["prior_min"]).copy()
+
+    bars = (
+        alt.Chart(plot_df)
+        .mark_bar(color="#B0C4DE", opacity=0.6, size=20)
+        .encode(
+            x=alt.X("depth:O", title="AST Depth"),
+            y=alt.Y("prior_min:Q", title="Log Prior"),
+            y2=alt.Y2("prior_max:Q"),
+            tooltip=[
+                alt.Tooltip("depth:O", title="Depth"),
+                alt.Tooltip("prior_min:Q", title="Min", format=".1f"),
+                alt.Tooltip("prior_max:Q", title="Max", format=".1f"),
+                alt.Tooltip("prior_mean:Q", title="Mean", format=".1f"),
+            ],
+        )
+    )
+
+    points = (
+        alt.Chart(plot_df)
+        .mark_circle(color="#2c3e50", size=50)
+        .encode(
+            x=alt.X("depth:O"),
+            y=alt.Y("prior_mean:Q"),
+        )
+    )
+
+    return (
+        (bars + points)
+        .properties(
+            width=400,
+            height=300,
+            title="PCFG Prior Penalty by Depth",
+        )
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Diagnosticity spectrum charts
+# ══════════════════════════════════════════════════════════════════════
+
+
+def p_accept_histogram(histogram_data: list, rule_id: str) -> alt.Chart:
+    """Horizontal bar chart of P(accept) distribution across 10 bins.
+
+    Shows how random hands distribute across P(accept) bins for a single
+    rule.  Hands clustered near 0 and 1 indicate a confident model; mass
+    in the middle indicates ambiguity.
+
+    Parameters
+    ----------
+    histogram_data : list of dict
+        List of ``{"bin": "0.0-0.1", "count": 9902}`` entries for one rule.
+    rule_id : str
+        Rule identifier (used in chart title).
+    """
+    df = pd.DataFrame(histogram_data)
+
+    # Ensure bins are ordered correctly (0.0-0.1 at bottom, 0.9-1.0 at top).
+    bin_order = [
+        "0.0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+        "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1.0",
+    ]
+
+    return (
+        alt.Chart(df)
+        .mark_bar(color="#5B8DB8")
+        .encode(
+            x=alt.X("count:Q", title="Number of Hands"),
+            y=alt.Y(
+                "bin:N",
+                title="P(accept)",
+                sort=bin_order,
+            ),
+            tooltip=[
+                alt.Tooltip("bin:N", title="P(accept) bin"),
+                alt.Tooltip("count:Q", title="Count", format=","),
+            ],
+        )
+        .properties(
+            width=400,
+            height=250,
+            title=f"P(accept) Distribution — {rule_id}",
+        )
+    )
+
+
+def diagnosticity_overview_scatter(spectrum_df: pd.DataFrame) -> alt.Chart:
+    """Scatter of mean confidence vs fraction ambiguous across rules.
+
+    Each point is one rule.  X-axis is mean confidence (higher = more
+    decisive), y-axis is fraction of ambiguous hands (higher = more
+    confused).  Colored by difficulty group.  Rules in the top-left are
+    problematic (low confidence, many ambiguous hands).
+
+    Parameters
+    ----------
+    spectrum_df : pd.DataFrame
+        ``spectrum_df`` from :func:`data.load_diagnosticity_spectrums`.
+    """
+    return (
+        alt.Chart(spectrum_df)
+        .mark_circle(size=80, opacity=0.8)
+        .encode(
+            x=alt.X(
+                "mean_confidence:Q",
+                title="Mean Confidence",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            y=alt.Y(
+                "fraction_ambiguous:Q",
+                title="Fraction Ambiguous",
+                scale=alt.Scale(domain=[-0.01, max(0.1, spectrum_df["fraction_ambiguous"].max() * 1.2)]),
+            ),
+            color=alt.Color(
+                "group_label:N",
+                title="Difficulty",
+                scale=difficulty_color_scale(),
+            ),
+            tooltip=[
+                alt.Tooltip("rule_id:N", title="Rule"),
+                alt.Tooltip("mean_confidence:Q", title="Mean Conf.", format=".3f"),
+                alt.Tooltip("fraction_ambiguous:Q", title="Ambiguous %", format=".3f"),
+                alt.Tooltip("accuracy:Q", title="Accuracy", format=".3f"),
+                alt.Tooltip("group_label:N", title="Group"),
+            ],
+        )
+        .properties(
+            width=450,
+            height=350,
+            title="Diagnosticity Overview",
+        )
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════
 # Per-rule charts (take a filtered slice of hypotheses_df / diagnosticity_df)
 # ══════════════════════════════════════════════════════════════════════
 
@@ -392,5 +684,56 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
             width=500,
             height=300,
             title="Exemplar Diagnosticity",
+        )
+    )
+
+
+def confusability_vs_entropy(merged_df: pd.DataFrame) -> alt.Chart:
+    """Scatter of posterior entropy vs test-hand confusability across rules.
+
+    X-axis is posterior entropy (our Bayesian difficulty measure),
+    y-axis is fraction of ambiguous test hands (confusability from
+    the diagnosticity analysis).  This shows how the two difficulty
+    signals correlate — rules that are hard for the Bayesian model
+    should also produce more ambiguous classifications on novel hands.
+
+    Parameters
+    ----------
+    merged_df : pd.DataFrame
+        Must contain columns: rule_id, posterior_entropy,
+        fraction_ambiguous, group_label, accuracy.
+    """
+    return (
+        alt.Chart(merged_df)
+        .mark_circle(size=80, opacity=0.8)
+        .encode(
+            x=alt.X(
+                "posterior_entropy:Q",
+                title="Posterior Entropy (Bayesian Difficulty)",
+            ),
+            y=alt.Y(
+                "fraction_ambiguous:Q",
+                title="Fraction Ambiguous Test Hands",
+                scale=alt.Scale(
+                    domain=[-0.01, max(0.1, merged_df["fraction_ambiguous"].max() * 1.2)]
+                ),
+            ),
+            color=alt.Color(
+                "group_label:N",
+                title="Difficulty",
+                scale=difficulty_color_scale(),
+            ),
+            tooltip=[
+                alt.Tooltip("rule_id:N", title="Rule"),
+                alt.Tooltip("posterior_entropy:Q", title="Entropy", format=".3f"),
+                alt.Tooltip("fraction_ambiguous:Q", title="Ambig%", format=".3f"),
+                alt.Tooltip("accuracy:Q", title="Accuracy", format=".3f"),
+                alt.Tooltip("group_label:N", title="Group"),
+            ],
+        )
+        .properties(
+            width=450,
+            height=350,
+            title="Confusability vs Bayesian Difficulty",
         )
     )

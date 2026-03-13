@@ -121,3 +121,52 @@ def hands_to_json(hands: List[List[Dict[str, str]]], card_images_path: str) -> s
         enriched_hands.append(enriched_cards)
 
     return json.dumps({"hands": enriched_hands})
+
+
+def test_hands_to_json(
+    representative_hands: Dict[str, List[Dict[str, Any]]],
+    card_images_path: str,
+) -> str:
+    """Serialize representative test hands as JSON with image paths.
+
+    Takes a dict with keys ``easy_accept``, ``easy_reject``,
+    ``ambiguous``, each containing a list of hand entries with card
+    data and metrics.  Each card gets an ``image_path`` field.
+
+    Args:
+        representative_hands: Dict from DiagnosticityResults.representative_hands
+            for a single rule.
+        card_images_path: Base path prefix for card images.
+
+    Returns:
+        JSON string with structure::
+
+            {
+              "easy_accept": [{"hand": [{card with image_path}, ...], "p_accept": ..., ...}],
+              "easy_reject": [...],
+              "ambiguous": [...]
+            }
+    """
+    result: Dict[str, List[Dict[str, Any]]] = {}
+    for category in ("easy_accept", "easy_reject", "ambiguous"):
+        entries = representative_hands.get(category, [])
+        enriched_entries = []
+        for entry in entries:
+            enriched_cards = []
+            for card in entry["hand"]:
+                filename = rank_to_filename(card["rank"], card["suit"])
+                enriched_cards.append({
+                    "suit": card["suit"],
+                    "rank": card["rank"],
+                    "image_path": f"{card_images_path}/{filename}",
+                })
+            enriched_entry = {
+                "hand": enriched_cards,
+                "p_accept": entry.get("p_accept"),
+                "confidence": entry.get("confidence"),
+                "ground_truth": entry.get("ground_truth"),
+                "correct_prediction": entry.get("correct_prediction"),
+            }
+            enriched_entries.append(enriched_entry)
+        result[category] = enriched_entries
+    return json.dumps(result)

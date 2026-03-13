@@ -26,13 +26,18 @@ from jinja2 import Environment, FileSystemLoader
 # Local visualization imports — follow the same try/except pattern used
 # by the sibling modules (data.py, plots.py, cards.py).
 try:
-    from gallery_analysis.visualization.data import BayesianResults
+    from gallery_analysis.visualization.data import BayesianResults, DiagnosticityResults
     from gallery_analysis.visualization.plots import (
         posterior_bars,
         prior_vs_likelihood,
         diagnosticity_bars,
+        p_accept_histogram,
     )
-    from gallery_analysis.visualization.cards import get_rule_hands, hands_to_json
+    from gallery_analysis.visualization.cards import (
+        get_rule_hands,
+        hands_to_json,
+        test_hands_to_json,
+    )
 except ImportError:
     # Fallback for direct execution: add parent packages to sys.path.
     import sys
@@ -42,13 +47,18 @@ except ImportError:
     if str(_src_dir) not in sys.path:
         sys.path.insert(0, str(_src_dir))
 
-    from gallery_analysis.visualization.data import BayesianResults
+    from gallery_analysis.visualization.data import BayesianResults, DiagnosticityResults
     from gallery_analysis.visualization.plots import (
         posterior_bars,
         prior_vs_likelihood,
         diagnosticity_bars,
+        p_accept_histogram,
     )
-    from gallery_analysis.visualization.cards import get_rule_hands, hands_to_json
+    from gallery_analysis.visualization.cards import (
+        get_rule_hands,
+        hands_to_json,
+        test_hands_to_json,
+    )
 
 
 # ── Template directory ───────────────────────────────────────────────
@@ -68,12 +78,14 @@ def generate_rule_page(
     output_dir: Path,
     prev_rule: Optional[str] = None,
     next_rule: Optional[str] = None,
+    diag_results: Optional[DiagnosticityResults] = None,
 ) -> Path:
     """Generate a detail HTML page for a single rule.
 
     Combines card exemplar images, Altair charts (posterior bars,
-    prior-vs-likelihood scatter, optional diagnosticity), and a
-    hypotheses table into a self-contained HTML file.
+    prior-vs-likelihood scatter, optional diagnosticity), optional
+    test hands with P(accept) histogram, and a hypotheses table
+    into a self-contained HTML file.
 
     Parameters
     ----------
@@ -95,6 +107,9 @@ def generate_rule_page(
         Rule ID of the previous rule (for navigation links).
     next_rule : str, optional
         Rule ID of the next rule (for navigation links).
+    diag_results : DiagnosticityResults, optional
+        Diagnosticity spectrum data.  When provided and this rule has
+        data, the test hands panel and P(accept) histogram are included.
 
     Returns
     -------
@@ -109,8 +124,6 @@ def generate_rule_page(
     template = env.get_template("rule_detail.html")
 
     # ── Extract rule metadata ────────────────────────────────────────
-    # Filter difficulty_df for this rule and convert the single row to
-    # a dict for easy template access.
     rule_row = results.difficulty_df[
         results.difficulty_df["rule_id"] == rule_id
     ]
@@ -129,13 +142,9 @@ def generate_rule_page(
     hands_json = hands_to_json(hands, card_images_path)
 
     # ── Build Altair chart specs ─────────────────────────────────────
-    # Posterior bar chart (always present).
     chart_posterior = json.dumps(posterior_bars(rule_hyps, rule_id).to_dict())
-
-    # Prior vs likelihood scatter (always present).
     chart_prior_lik = json.dumps(prior_vs_likelihood(rule_hyps).to_dict())
 
-    # Diagnosticity bars (only if data is available for this rule).
     has_diagnosticity = len(rule_diag) > 0
     chart_diag = (
         json.dumps(diagnosticity_bars(rule_diag).to_dict())
@@ -143,8 +152,22 @@ def generate_rule_page(
         else None
     )
 
+    # ── Test hands + P(accept) histogram (optional) ──────────────────
+    has_test_hands = (
+        diag_results is not None
+        and rule_id in diag_results.representative_hands
+    )
+    test_hands_json_str = None
+    chart_p_accept_hist = None
+    if has_test_hands:
+        rep_hands = diag_results.representative_hands[rule_id]
+        test_hands_json_str = test_hands_to_json(rep_hands, card_images_path)
+        hist_data = diag_results.histogram_data[rule_id]
+        chart_p_accept_hist = json.dumps(
+            p_accept_histogram(hist_data, rule_id).to_dict()
+        )
+
     # ── Build hypotheses list ────────────────────────────────────────
-    # Sorted by rank (ascending) so rank-1 appears first in the table.
     hypotheses = (
         rule_hyps.sort_values("rank", ascending=True)
         .to_dict("records")
@@ -164,6 +187,9 @@ def generate_rule_page(
         chart_prior_lik=chart_prior_lik,
         has_diagnosticity=has_diagnosticity,
         chart_diag=chart_diag,
+        has_test_hands=has_test_hands,
+        test_hands_json=test_hands_json_str,
+        chart_p_accept_hist=chart_p_accept_hist,
         hypotheses=hypotheses,
     )
 

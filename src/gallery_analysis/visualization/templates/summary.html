@@ -160,18 +160,76 @@
     <div id="chart-equiv"></div>
   </div>
 
+  {% if has_depth %}
+  {# ── Depth decomposition section ── #}
+  <h2>Depth Decomposition</h2>
+  <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
+    How the hypothesis space and posterior mass distribute across AST depth levels.
+    Deeper programs are penalized by the PCFG prior but may be needed for complex rules.
+  </p>
+
+  {# ── Side-by-side: population + prior penalty ── #}
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-depth-pop"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-depth-prior"></div>
+    </div>
+  </div>
+
+  {# ── Side-by-side: depth vs difficulty + heatmap ── #}
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-depth-vs-diff"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-depth-heatmap"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if has_diag %}
+  {# ── Diagnosticity overview section ── #}
+  <h2>Diagnosticity</h2>
+  <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
+    How confidently the posterior distribution classifies random test hands.
+    Rules with high ambiguity have competing hypotheses that disagree on many hands.
+  </p>
+  <div class="chart-row">
+    <div class="chart-container">
+      <div id="chart-diag-overview"></div>
+    </div>
+    <div class="chart-container">
+      <div id="chart-confusability"></div>
+    </div>
+  </div>
+  <p style="color:#888; font-size:0.8rem; margin-top:0.5rem;">
+    <strong>Note on exemplar diagnosticity:</strong> The per-rule "exemplar diagnosticity" bars
+    on rule detail pages always read 1.0 because training exemplars are selected so that
+    <em>all</em> surviving hypotheses agree on them by construction. The real discriminative signal
+    comes from the <em>test hands</em> above — novel random hands where hypotheses can disagree.
+  </p>
+  {% endif %}
+
   {# ── Rule index table ── #}
   <h2>Rule Index</h2>
   <table id="rule-table">
     <thead>
       <tr>
-        <th data-col="0" data-type="string">Rule <span class="sort-arrow"></span></th>
-        <th data-col="1" data-type="string">Group <span class="sort-arrow"></span></th>
-        <th data-col="2" data-type="number">Entropy <span class="sort-arrow"></span></th>
-        <th data-col="3" data-type="number">N_eff <span class="sort-arrow"></span></th>
-        <th data-col="4" data-type="number">Top-1% <span class="sort-arrow"></span></th>
-        <th data-col="5" data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
-        <th data-col="6" data-type="string">Answer <span class="sort-arrow"></span></th>
+        <th data-type="string">Rule <span class="sort-arrow"></span></th>
+        <th data-type="string">Group <span class="sort-arrow"></span></th>
+        <th data-type="number">Entropy <span class="sort-arrow"></span></th>
+        <th data-type="number">N_eff <span class="sort-arrow"></span></th>
+        <th data-type="number">Top-1% <span class="sort-arrow"></span></th>
+        <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
+        {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
+        {% if has_diag %}
+        <th data-type="number">MeanConf <span class="sort-arrow"></span></th>
+        <th data-type="number">Ambig% <span class="sort-arrow"></span></th>
+        <th data-type="number">Accuracy <span class="sort-arrow"></span></th>
+        {% endif %}
+        <th data-type="string">Answer <span class="sort-arrow"></span></th>
       </tr>
     </thead>
     <tbody>
@@ -185,6 +243,12 @@
         <td>{{ "%.1f" | format(r.n_effective) }}</td>
         <td>{{ "%.1f" | format(r.top1_probability * 100) }}%</td>
         <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
+        {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
+        {% if has_diag %}
+        <td>{{ "%.3f" | format(r.mean_confidence) if r.mean_confidence is not none else "—" }}</td>
+        <td>{{ "%.1f" | format(r.fraction_ambiguous * 100) if r.fraction_ambiguous is not none else "—" }}{% if r.fraction_ambiguous is not none %}%{% endif %}</td>
+        <td>{{ "%.1f" | format(r.accuracy * 100) if r.accuracy is not none else "—" }}{% if r.accuracy is not none %}%{% endif %}</td>
+        {% endif %}
         <td>{{ r.answer }}</td>
       </tr>
       {% endfor %}
@@ -202,15 +266,31 @@
     vegaEmbed('#chart-recovery',{{ chart_recovery | safe }}, {actions: false});
     vegaEmbed('#chart-equiv',   {{ chart_equiv | safe }},    {actions: false});
 
+    {% if has_depth %}
+    vegaEmbed('#chart-depth-pop',      {{ chart_depth_pop | safe }},      {actions: false});
+    vegaEmbed('#chart-depth-prior',    {{ chart_depth_prior | safe }},    {actions: false});
+    vegaEmbed('#chart-depth-vs-diff',  {{ chart_depth_vs_diff | safe }},  {actions: false});
+    vegaEmbed('#chart-depth-heatmap',  {{ chart_depth_heatmap | safe }},  {actions: false});
+    {% endif %}
+
+    {% if has_diag %}
+    vegaEmbed('#chart-diag-overview',  {{ chart_diag_overview | safe }},  {actions: false});
+    {% if chart_confusability is defined %}
+    vegaEmbed('#chart-confusability',  {{ chart_confusability | safe }},  {actions: false});
+    {% endif %}
+    {% endif %}
+
     // ── Simple table sorting ──
+    // Uses each th's actual DOM index rather than a hardcoded data-col,
+    // so sorting works correctly regardless of conditional columns.
     (function() {
       var table = document.getElementById('rule-table');
       var headers = table.querySelectorAll('th');
       var sortState = {};  // col -> 'asc' | 'desc'
 
-      headers.forEach(function(th) {
+      headers.forEach(function(th, idx) {
         th.addEventListener('click', function() {
-          var col = parseInt(th.getAttribute('data-col'));
+          var col = idx;
           var type = th.getAttribute('data-type');
           var dir = sortState[col] === 'asc' ? 'desc' : 'asc';
           sortState = {};

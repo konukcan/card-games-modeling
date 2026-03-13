@@ -205,12 +205,19 @@
         <h3>Card Hands</h3>
         <div id="card-hands-panel"></div>
       </div>
+      {% if has_test_hands %}
+      <div class="panel" style="margin-top: 1rem;">
+        <h3>Test Hands</h3>
+        <div id="test-hands-panel"></div>
+      </div>
+      {% else %}
       <div class="panel" style="margin-top: 1rem;">
         <h3>Test Hands</h3>
         <div id="test-hands-panel">
           <p style="color: #999; font-size: 0.85rem;">Coming soon</p>
         </div>
       </div>
+      {% endif %}
     </div>
 
     {# Right column: charts #}
@@ -229,6 +236,12 @@
         <div id="chart-diag"></div>
       </div>
       {% endif %}
+      {% if has_test_hands %}
+      <div class="panel" style="margin-top: 1rem;">
+        <h3>P(accept) Distribution</h3>
+        <div id="chart-p-accept"></div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -239,6 +252,7 @@
       <tr>
         <th>Rank</th>
         <th>Program</th>
+        <th>Depth</th>
         <th>Posterior</th>
         <th>Extension Size</th>
         <th>Expressions</th>
@@ -251,6 +265,7 @@
       <tr{% if h.is_true_rule %} class="true-rule"{% endif %}>
         <td>{{ h.rank }}</td>
         <td class="mono">{{ h.program }}</td>
+        <td>{{ h.program_depth }}</td>
         <td>{{ "%.4f" | format(h.probability) }}</td>
         <td>{{ h.extension_size }}</td>
         <td>{{ h.n_expressions }}</td>
@@ -295,12 +310,26 @@
     CardRenderer.renderRuleHands(handsData, document.getElementById('card-hands-panel'));
   </script>
 
+  {# ── Render test hands (if available) ── #}
+  {% if has_test_hands %}
+  <script>
+    var testHandsData = {{ test_hands_json | safe }};
+    var testPanel = document.getElementById('test-hands-panel');
+    CardRenderer.renderTestHandCategory('Easy ACCEPT', '#2CA02C', testHandsData.easy_accept, testPanel);
+    CardRenderer.renderTestHandCategory('Easy REJECT', '#C44E52', testHandsData.easy_reject, testPanel);
+    CardRenderer.renderTestHandCategory('Ambiguous', '#D4A029', testHandsData.ambiguous, testPanel);
+  </script>
+  {% endif %}
+
   {# ── Embed Vega-Lite charts ── #}
   <script>
     vegaEmbed('#chart-posterior', {{ chart_posterior | safe }}, {actions: false});
     vegaEmbed('#chart-prior-lik', {{ chart_prior_lik | safe }}, {actions: false});
     {% if has_diagnosticity %}
     vegaEmbed('#chart-diag', {{ chart_diag | safe }}, {actions: false});
+    {% endif %}
+    {% if has_test_hands %}
+    vegaEmbed('#chart-p-accept', {{ chart_p_accept_hist | safe }}, {actions: false});
     {% endif %}
   </script>
 
