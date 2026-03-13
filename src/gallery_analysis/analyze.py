@@ -202,6 +202,7 @@ def estimate_extensions(
     seed: int = 123,
     verbose: int = 1,
     cache_path: str = None,
+    _probe_hash: str = None,
 ) -> List[Tuple[int, float]]:
     """
     Estimate extension sizes for all equivalence classes.
@@ -213,18 +214,47 @@ def estimate_extensions(
     and only computes for classes not in the cache. Saves updated cache
     after computation.
 
+    Args:
+        equivalence_classes: List of equivalence class dicts with fingerprint and predicate.
+        n_samples: Number of Monte Carlo samples for extension estimation.
+        seed: Random seed for MC sampling.
+        verbose: 0=silent, 1=summary, 2=detailed.
+        cache_path: Path to JSON cache file for extension sizes.
+        _probe_hash: SHA256 hash of the probe set used for fingerprinting.
+            When provided, the cache is validated against this hash: if the
+            cache was built with a different probe configuration, it is
+            discarded to prevent silently returning wrong extension sizes.
+
     Returns:
         List of (extension_size, base_rate) tuples, parallel to equivalence_classes.
     """
     # Load cache if available
     cache: Dict[str, Tuple[int, float]] = {}
+    cache_meta: Dict[str, Any] = {}
     if cache_path:
         cache_file = Path(cache_path)
         if cache_file.exists():
             with open(cache_file) as f:
                 raw = json.load(f)
+
+            # Extract and validate _meta block
+            cache_meta = raw.pop("_meta", {})
+            if cache_meta and _probe_hash is not None:
+                cached_hash = cache_meta.get("probe_hash")
+                if cached_hash != _probe_hash:
+                    if verbose >= 1:
+                        print(f"  WARNING: Extension cache probe hash mismatch "
+                              f"(cached={cached_hash[:12]}... vs current={_probe_hash[:12]}...). "
+                              f"Discarding cache.", flush=True)
+                    raw = {}
+                    cache_meta = {}
+            elif not cache_meta and _probe_hash is not None:
+                if verbose >= 1:
+                    print(f"  WARNING: Extension cache has no _meta block (old format). "
+                          f"Treating as valid.", flush=True)
+
             cache = {k: tuple(v) for k, v in raw.items()}
-            if verbose >= 1:
+            if verbose >= 1 and cache:
                 print(f"  Loaded extension cache: {len(cache):,} entries from {cache_path}",
                       flush=True)
 
@@ -265,8 +295,14 @@ def estimate_extensions(
     if cache_path:
         cache_file = Path(cache_path)
         cache_file.parent.mkdir(parents=True, exist_ok=True)
+        save_data = {k: list(v) for k, v in cache.items()}
+        # Inject _meta block with probe hash for future validation
+        if _probe_hash is not None:
+            save_data["_meta"] = {
+                "probe_hash": _probe_hash,
+            }
         with open(cache_file, "w") as f:
-            json.dump({k: list(v) for k, v in cache.items()}, f)
+            json.dump(save_data, f)
         if verbose >= 1:
             print(f"  Extension cache saved: {len(cache):,} entries to {cache_path}",
                   flush=True)
@@ -403,6 +439,18 @@ def score_rule(
                 true_rule_hit_vector = sh.hit_vector
                 break
 
+    # --- Approximate true rule flag ---
+    # Two rules (suit_brackets_no_cross, suit_brackets_nested) have DSL
+    # translations that are supersets of the true rule, marked with
+    # source="true_rule_approximate".  Propagate this so downstream
+    # analysis can surface the caveat.
+    true_rule_approximate = None
+    if true_rule_fingerprint and true_rule_rank is not None:
+        for cls in equivalence_classes:
+            if cls["fingerprint"] == true_rule_fingerprint:
+                true_rule_approximate = (cls.get("source") == "true_rule_approximate")
+                break
+
     # --- Confusion profiles ---
     # For each top-10 competitor, record per-exemplar agreement with the true rule.
     # Since the true rule's exemplars are all hits by definition, the agreement
@@ -452,6 +500,7 @@ def score_rule(
         "true_rule_posterior_mass": true_rule_posterior_mass,
         "true_rule_program": true_rule_program,
         "true_rule_log_prior": true_rule_log_prior,
+        "true_rule_approximate": true_rule_approximate,
         # Diagnosticity (None when no true rule fingerprint provided)
         "exemplar_diagnosticity": exemplar_diagnosticity,
     }
