@@ -43,6 +43,7 @@ from gallery_analysis.hypothesis_table import (
     filter_trivial, compute_fingerprint, estimate_extension_size,
 )
 from gallery_analysis.gallery_rules import GALLERY_RULES
+from gallery_analysis.provenance import compute_provenance
 from gallery_analysis.bayesian_scorer import (
     compute_log_likelihood_strict,
     compute_log_likelihood_noisy,
@@ -592,6 +593,16 @@ def run_analysis(
         cache_path=extension_cache,
     )
 
+    # Compute provenance metadata
+    probes = generate_probe_set(n_probes=n_probes, seed=42)
+    provenance = compute_provenance(
+        probe_seed=42,
+        n_probes=n_probes,
+        probes=probes,
+        inject_path=inject_path if inject_path else None,
+        n_equiv_classes=len(equiv_classes),
+    )
+
     # Build true-rule fingerprint lookup from equivalence classes.
     # Each equivalence class that was injected as a true rule has a
     # "true_for_rule" field mapping it to the gallery rule it represents.
@@ -693,6 +704,7 @@ def run_analysis(
             "epsilon": epsilon,
             "prior_mode": prior_mode,
         },
+        "provenance": provenance,
     }
 
 
@@ -948,6 +960,7 @@ def main():
         save_results = {
             "pipeline_stats": results["pipeline_stats"],
             "config": results["config"],
+            "provenance": results["provenance"],
             "difficulty_ranking": results["difficulty_ranking"],
             "rule_details": {},
         }

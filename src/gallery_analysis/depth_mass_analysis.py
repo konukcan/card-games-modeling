@@ -37,6 +37,7 @@ from gallery_analysis.analyze import (
 from gallery_analysis.enumerator import build_gallery_grammar
 from gallery_analysis.injection import load_and_validate_injections, merge_injected
 from gallery_analysis.exemplars import generate_probe_set
+from gallery_analysis.provenance import compute_provenance
 
 
 def ast_depth(program_str: str) -> int:
@@ -351,6 +352,16 @@ def main():
         equiv_classes, verbose=args.verbose, cache_path=args.extension_cache,
     )
 
+    # Compute provenance metadata
+    probes = generate_probe_set(n_probes=500, seed=42)
+    provenance = compute_provenance(
+        probe_seed=42,
+        n_probes=500,
+        probes=probes,
+        inject_path=args.inject if args.inject else None,
+        n_equiv_classes=len(equiv_classes),
+    )
+
     # Step 4: Depth-mass analysis
     print(f"\nStep 4: Computing depth-stratified posteriors...", flush=True)
     exemplars = load_exemplars()
@@ -379,8 +390,12 @@ def main():
                     for comp in r["top_competitors"]
                 ],
             }
+        save_data = {
+            "provenance": provenance,
+            "rules": out,
+        }
         with open(args.output, "w") as f:
-            json.dump(out, f, indent=2, default=str)
+            json.dump(save_data, f, indent=2, default=str)
         print(f"\nResults saved to {args.output}")
 
 
