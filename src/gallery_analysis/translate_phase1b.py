@@ -112,6 +112,160 @@ def deduplicate_against_existing(
     return new, n_dup
 
 
+# ─── Few-shot translation prompt ─────────────────────────────────────
+
+# Translation pairs: (input curried DSL, output s-expression)
+# Extracted from existing verified translations in injected_hypotheses.json
+# and translate_hypotheses.py. These cover all major pattern types.
+_FEW_SHOT_PAIRS = [
+    # Simple aggregate — no inner lambda
+    (
+        "rule = lambda hand: ge(max_suit_count(hand))(3)",
+        "(λ ge (max_suit_count $0) 3)",
+    ),
+    # HOF: all with inner lambda, hand = $0 outside, card = $0 inside
+    (
+        "rule = lambda hand: all(lambda card: eq(get_color(card))(RED))(hand)",
+        "(λ all (λ eq (get_color $0) RED) $0)",
+    ),
+    # HOF: all on adjacent_pairs — pair accessed via head/last
+    (
+        "rule = lambda hand: all(lambda pair: or(eq(get_rank(head(pair)))(get_rank(last(pair))))(eq(get_suit(head(pair)))(get_suit(last(pair)))))(adjacent_pairs(hand))",
+        "(λ all (λ or (eq (get_rank (head $0)) (get_rank (last $0))) (eq (get_suit (head $0)) (get_suit (last $0)))) (adjacent_pairs $0))",
+    ),
+    # filter + length — filter's lambda uses $0=card, hand=$0 outside
+    (
+        "rule = lambda hand: eq(length(filter(lambda card: eq(rank_val(card))(3))(hand)))(3)",
+        "(λ eq (length (filter (λ eq (rank_val $0) 3) $0)) 3)",
+    ),
+    # Constants > 5: 8 = (+ 5 3), 9 = (+ 5 4)
+    (
+        "rule = lambda hand: all(lambda card: or(eq(rank_val(card))(4))(or(eq(rank_val(card))(8))(eq(rank_val(card))(9))))(hand)",
+        "(λ all (λ or (eq (rank_val $0) 4) (or (eq (rank_val $0) (+ 5 3)) (eq (rank_val $0) (+ 5 4)))) $0)",
+    ),
+    # Simple comparison
+    (
+        "rule = lambda hand: eq(n_unique_suits(hand))(1)",
+        "(λ eq (n_unique_suits $0) 1)",
+    ),
+    # Boolean and + or combinators
+    (
+        "rule = lambda hand: and(eq(n_unique_colors(hand))(1))(eq(n_unique_suits(hand))(2))",
+        "(λ and (eq (n_unique_colors $0) 1) (eq (n_unique_suits $0) 2))",
+    ),
+    # not wrapping modulo check
+    (
+        "rule = lambda hand: all(lambda card: not(eq(mod(rank_val(card))(2))(0)))(hand)",
+        "(λ all (λ not (eq (mod (rank_val $0) 2) 0)) $0)",
+    ),
+    # Nested HOF: any inside any — $0=inner, $1=outer, hand=$1 outside inner
+    (
+        "rule = lambda hand: any(lambda c1: any(lambda c2: eq(get_suit(c2))(get_suit(c1)))(second_half(hand)))(first_half(hand))",
+        "(λ any (λ any (λ eq (get_suit $0) (get_suit $1)) (second_half $1)) (first_half $0))",
+    ),
+    # ge with count_suit
+    (
+        "rule = lambda hand: ge(count_suit(hand)(DIAMONDS))(4)",
+        "(λ ge (count_suit $0 DIAMONDS) 4)",
+    ),
+    # Position access with at, constants > 5: 11 = (+ 5 (+ 5 1))
+    (
+        "rule = lambda hand: and(eq(rank_val(at(hand)(3)))(11))(eq(rank_val(at(hand)(4)))(11))",
+        "(λ and (eq (rank_val (at $0 3)) (+ 5 (+ 5 1))) (eq (rank_val (at $0 4)) (+ 5 (+ 5 1))))",
+    ),
+    # any with and inside lambda
+    (
+        "rule = lambda hand: any(lambda card: and(eq(rank_val(card))(4))(eq(get_suit(card))(CLUBS)))(hand)",
+        "(λ any (λ and (eq (rank_val $0) 4) (eq (get_suit $0) CLUBS)) $0)",
+    ),
+]
+
+
+def build_translation_prompt(curried_dsl: str) -> str:
+    """
+    Build a prompt for Gemini 2.5 Flash to translate curried DSL → s-expression.
+
+    The prompt contains:
+    1. Precise conversion rules (application flattening, de Bruijn indices,
+       integer constant building)
+    2. 12 worked examples covering all major patterns (simple aggregates,
+       HOFs, nested HOFs, filter+length, constants >5, boolean combinators)
+    3. The input to translate
+
+    Args:
+        curried_dsl: The curried Python-like DSL string to translate.
+                     e.g., "rule = lambda hand: all(lambda card: ...)(hand)"
+
+    Returns:
+        The full prompt string to send to Gemini.
+    """
+    examples_block = ""
+    for i, (inp, out) in enumerate(_FEW_SHOT_PAIRS, 1):
+        examples_block += f"Example {i}:\n"
+        examples_block += f"  Input:  {inp}\n"
+        examples_block += f"  Output: {out}\n\n"
+
+    prompt = f"""Convert the following curried Python-like DSL expression into s-expression format with de Bruijn indices.
+
+## Conversion Rules
+
+1. **Application**: `f(a)(b)` becomes `(f a b)`. Nested: `eq(get_color(card))(RED)` → `(eq (get_color $VAR) RED)`.
+2. **Named variables → de Bruijn indices**:
+   - The outermost `lambda hand:` becomes `(λ ...)` with hand = `$0`
+   - Inside a HOF's lambda (e.g., `all(lambda card: BODY)(hand)`): card = `$0`, hand = `$1` in BODY. But `hand` in the LIST argument (outside the inner lambda) is still `$0`.
+   - Inside nested HOFs: inner element = `$0`, outer element = `$1`, hand = `$2` in innermost body.
+3. **Integer constants > 5** must use arithmetic:
+   - 6=(+ 5 1), 7=(+ 5 2), 8=(+ 5 3), 9=(+ 5 4), 10=(+ 5 5)
+   - 11=(+ 5 (+ 5 1)), 12=(+ 5 (+ 5 2)), 13=(+ 5 (+ 5 3)), 14=(+ 5 (+ 5 4))
+4. **HOF list argument**: In `all(lambda card: BODY)(LIST)`, the LIST is OUTSIDE the inner lambda, so `hand` there is `$0` (from the outermost lambda), NOT `$1`.
+5. **Output format**: Always wrap in a single outermost `(λ ...)` for the hand parameter.
+
+## Worked Examples
+
+{examples_block}
+
+## Your Task
+
+Convert this expression. Output ONLY the s-expression, nothing else. No explanation, no markdown, no backticks.
+
+Input: {curried_dsl}
+Output:"""
+
+    return prompt
+
+
+def build_retry_prompt(
+    curried_dsl: str,
+    previous_attempt: str,
+    error_message: str,
+) -> str:
+    """
+    Build a retry prompt when a translation failed validation.
+
+    Includes the original input, the failed attempt, and the specific error
+    so the model can correct its mistake.
+
+    Args:
+        curried_dsl: The original input DSL string.
+        previous_attempt: The model's previous (incorrect) output.
+        error_message: Description of why the attempt failed.
+
+    Returns:
+        The retry prompt string.
+    """
+    return f"""Your previous translation was incorrect. Fix it.
+
+Input: {curried_dsl}
+Your previous output: {previous_attempt}
+Error: {error_message}
+
+Reminder:
+- De Bruijn indices: outermost hand=$0. Inside HOF lambda: element=$0, hand=$1.
+  BUT the list argument to the HOF (outside the inner lambda) uses hand=$0.
+- Constants > 5 need arithmetic: 8=(+ 5 3), 11=(+ 5 (+ 5 1)), etc.
+- Output ONLY the corrected s-expression, nothing else."""
+
+
 if __name__ == "__main__":
     print("Loading Phase 1b DSL-constrained hypotheses...")
     hyps = load_phase1b_hypotheses()
@@ -125,3 +279,10 @@ if __name__ == "__main__":
     for h in new_hyps[:3]:
         print(f"\n  [{h['rule_id']}] {h['nl_description']}")
         print(f"    Code: {h['code'][:100]}...")
+
+    # Test prompt generation
+    test_input = "rule = lambda hand: all(lambda card: eq(mod(rank_val(card))(2))(0))(hand)"
+    prompt = build_translation_prompt(test_input)
+    print(f"\n--- Sample prompt ({len(prompt)} chars) ---")
+    print(prompt[:500])
+    print("...")
