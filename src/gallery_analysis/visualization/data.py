@@ -267,6 +267,16 @@ class DepthDecompositionResults:
 def load_depth_decomposition(path: Union[str, Path]) -> DepthDecompositionResults:
     """Load and normalize a depth decomposition JSON.
 
+    Supports two JSON formats:
+
+    **Old format** (has a ``metadata`` key):
+        Uses ``metadata.depth_population`` for population counts and
+        ``rule.depth_decomposition`` with detailed per-depth stats.
+
+    **New format** (has a ``provenance`` key, no ``metadata``):
+        Uses ``rule.depth_mass`` (depth → posterior mass) and derives
+        population counts by aggregating across rules.
+
     Parameters
     ----------
     path : str or Path
@@ -280,12 +290,22 @@ def load_depth_decomposition(path: Union[str, Path]) -> DepthDecompositionResult
     with open(path) as f:
         raw: Dict[str, Any] = json.load(f)
 
-    metadata = raw["metadata"]
     rules = raw["rules"]
 
+    # Detect format: old format has "metadata", new format has "provenance".
+    if "metadata" in raw:
+        return _load_depth_decomposition_old(raw, rules)
+    else:
+        return _load_depth_decomposition_new(raw, rules)
+
+
+def _load_depth_decomposition_old(
+    raw: Dict[str, Any], rules: Dict[str, Any]
+) -> DepthDecompositionResults:
+    """Load depth decomposition from the old JSON format (has ``metadata``)."""
+    metadata = raw["metadata"]
+
     # ── depth_population_df ───────────────────────────────────────────
-    # One row per depth from metadata.depth_population, enriched with
-    # prior range stats from metadata.depth_prior_ranges.
     pop_rows: List[Dict[str, Any]] = []
     prior_ranges = metadata.get("depth_prior_ranges", {})
     for depth_str, count in metadata["depth_population"].items():
@@ -301,7 +321,6 @@ def load_depth_decomposition(path: Union[str, Path]) -> DepthDecompositionResult
     depth_population_df = pd.DataFrame(pop_rows).sort_values("depth")
 
     # ── depth_rule_df ─────────────────────────────────────────────────
-    # One row per (rule, depth) pair with decomposition stats.
     dr_rows: List[Dict[str, Any]] = []
     for rule_id, rule in rules.items():
         for depth_str, dd in rule["depth_decomposition"].items():
@@ -322,7 +341,6 @@ def load_depth_decomposition(path: Union[str, Path]) -> DepthDecompositionResult
     depth_rule_df = pd.DataFrame(dr_rows)
 
     # ── rule_summary_df ───────────────────────────────────────────────
-    # One row per rule with true-rule depth and recovery info.
     rs_rows: List[Dict[str, Any]] = []
     for rule_id, rule in rules.items():
         rs_rows.append({
@@ -332,6 +350,96 @@ def load_depth_decomposition(path: Union[str, Path]) -> DepthDecompositionResult
             "true_rule_depth": rule["true_rule_depth"],
             "true_rule_rank": rule["true_rule_rank"],
             "true_rule_mass": rule["true_rule_mass"],
+        })
+    rule_summary_df = pd.DataFrame(rs_rows)
+
+    return DepthDecompositionResults(
+        depth_population_df=depth_population_df,
+        depth_rule_df=depth_rule_df,
+        rule_summary_df=rule_summary_df,
+        metadata=metadata,
+    )
+
+
+def _load_depth_decomposition_new(
+    raw: Dict[str, Any], rules: Dict[str, Any]
+) -> DepthDecompositionResults:
+    """Load depth decomposition from the new JSON format (has ``provenance``).
+
+    The new format stores ``depth_mass`` (depth → posterior mass) per rule
+    instead of the richer ``depth_decomposition`` dict.  Fields that don't
+    exist in the new format (n_total, n_all_hits, etc.) are filled with 0.
+
+    ``true_rule_depth`` is derived as the depth carrying the highest mass.
+    ``group_label`` is derived from the group number via GROUP_LABELS.
+    """
+    metadata = raw.get("provenance", {})
+
+    # ── depth_rule_df ─────────────────────────────────────────────────
+    # One row per (rule, depth) pair.  Only depth_mass is available in
+    # the new format; fill missing detail columns with 0.
+    dr_rows: List[Dict[str, Any]] = []
+    for rule_id, rule in rules.items():
+        group = rule["group"]
+        group_label = GROUP_LABELS.get(group, f"Group {group}")
+        for depth_str, mass in rule.get("depth_mass", {}).items():
+            dr_rows.append({
+                "rule_id": rule_id,
+                "group": group,
+                "group_label": group_label,
+                "depth": int(depth_str),
+                "n_total": 0,
+                "n_all_hits": 0,
+                "n_any_hits": 0,
+                "posterior_mass": mass,
+                "posterior_mass_allhit_only": 0.0,
+                "mean_log_prior_allhit": 0.0,
+                "mean_log_lik_allhit": 0.0,
+                "mean_ext_size_allhit": 0.0,
+            })
+    depth_rule_df = pd.DataFrame(dr_rows)
+
+    # ── depth_population_df ───────────────────────────────────────────
+    # Derive population by counting how many rules have non-negligible
+    # mass (> 1e-12) at each depth.  Prior range stats are unavailable
+    # in the new format, so they are set to None.
+    depth_counts: Dict[int, int] = {}
+    for rule_id, rule in rules.items():
+        for depth_str, mass in rule.get("depth_mass", {}).items():
+            d = int(depth_str)
+            if mass > 1e-12:
+                depth_counts[d] = depth_counts.get(d, 0) + 1
+    pop_rows: List[Dict[str, Any]] = []
+    for d, count in sorted(depth_counts.items()):
+        pop_rows.append({
+            "depth": d,
+            "count": count,
+            "prior_min": None,
+            "prior_max": None,
+            "prior_mean": None,
+        })
+    depth_population_df = pd.DataFrame(pop_rows).sort_values("depth")
+
+    # ── rule_summary_df ───────────────────────────────────────────────
+    # Derive true_rule_depth as the depth with the highest mass.
+    rs_rows: List[Dict[str, Any]] = []
+    for rule_id, rule in rules.items():
+        group = rule["group"]
+        group_label = GROUP_LABELS.get(group, f"Group {group}")
+        # Find depth with highest mass to use as true_rule_depth.
+        depth_mass = rule.get("depth_mass", {})
+        if depth_mass:
+            best_depth_str = max(depth_mass, key=lambda k: depth_mass[k])
+            true_rule_depth = int(best_depth_str)
+        else:
+            true_rule_depth = None
+        rs_rows.append({
+            "rule_id": rule_id,
+            "group": group,
+            "group_label": group_label,
+            "true_rule_depth": true_rule_depth,
+            "true_rule_rank": rule.get("true_rule_rank"),
+            "true_rule_mass": rule.get("true_rule_mass"),
         })
     rule_summary_df = pd.DataFrame(rs_rows)
 
