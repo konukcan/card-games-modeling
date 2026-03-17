@@ -48,19 +48,21 @@ _TRUE_RULE_COLOR = "#2CA02C"  # distinguishable green
 # ══════════════════════════════════════════════════════════════════════
 
 
-def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
-    """Scatter of posterior entropy vs true-rule posterior mass.
+def difficulty_scatter(df: pd.DataFrame) -> alt.LayerChart:
+    """Scatter of posterior entropy vs true-rule posterior mass with trend line.
 
     Shows how much probability the correct rule captures as a function of
-    overall posterior uncertainty.  Points sized by effective number of
-    hypotheses and colored by difficulty group.  Rules where the true rule
-    was not found are excluded.
+    overall posterior uncertainty.  Colored by difficulty group.  A loess
+    trend line shows the empirical relationship — outliers above the trend
+    recover the true rule better than expected; below, worse.
 
     Parameters
     ----------
     df : pd.DataFrame
         ``difficulty_df`` from :func:`data.load_results`.
     """
+    import numpy as np
+
     # Filter out rules with zero or missing true-rule mass.
     plot_df = df.dropna(subset=["true_rule_posterior_mass"]).copy()
     plot_df = plot_df[plot_df["true_rule_posterior_mass"] > 0].copy()
@@ -69,7 +71,7 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
     min_mass = plot_df["true_rule_posterior_mass"].min()
     floor = min_mass * 0.1  # one decade below the smallest value
 
-    return (
+    points = (
         alt.Chart(plot_df)
         .mark_circle(size=60, opacity=0.8)
         .encode(
@@ -91,6 +93,31 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("true_rule_rank:Q", title="True Rule Rank"),
             ],
         )
+    )
+
+    # Loess trend line on log-transformed mass.
+    # Altair's transform_loess works on the raw values, so we add a
+    # log10 column, fit loess on that, then exponentiate back.
+    plot_df["log10_mass"] = np.log10(plot_df["true_rule_posterior_mass"])
+
+    trend = (
+        alt.Chart(plot_df)
+        .transform_loess(
+            "posterior_entropy", "log10_mass",
+            bandwidth=0.5,
+        )
+        .transform_calculate(
+            mass_fitted="pow(10, datum.log10_mass)"
+        )
+        .mark_line(strokeDash=[6, 3], color="#666", strokeWidth=1.5)
+        .encode(
+            x=alt.X("posterior_entropy:Q"),
+            y=alt.Y("mass_fitted:Q", scale=alt.Scale(type="log", domain=[floor, 2])),
+        )
+    )
+
+    return (
+        (points + trend)
         .properties(
             width=500,
             height=400,
