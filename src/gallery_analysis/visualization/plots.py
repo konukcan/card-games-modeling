@@ -98,22 +98,36 @@ def difficulty_strip(df: pd.DataFrame) -> alt.Chart:
 
 
 def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
-    """Scatter of posterior entropy vs top-1 probability.
+    """Scatter of posterior entropy vs true-rule posterior mass.
 
-    Points sized by effective number of hypotheses and colored by difficulty
-    group.
+    Shows how much probability the correct rule captures as a function of
+    overall posterior uncertainty.  Points sized by effective number of
+    hypotheses and colored by difficulty group.  Rules where the true rule
+    was not found are excluded.
 
     Parameters
     ----------
     df : pd.DataFrame
         ``difficulty_df`` from :func:`data.load_results`.
     """
+    # Filter out rules with zero or missing true-rule mass.
+    plot_df = df.dropna(subset=["true_rule_posterior_mass"]).copy()
+    plot_df = plot_df[plot_df["true_rule_posterior_mass"] > 0].copy()
+
+    # Floor for log scale: smallest nonzero value, or 1e-10 fallback.
+    min_mass = plot_df["true_rule_posterior_mass"].min()
+    floor = max(min_mass * 0.5, 1e-50)
+
     return (
-        alt.Chart(df)
+        alt.Chart(plot_df)
         .mark_circle()
         .encode(
             x=alt.X("posterior_entropy:Q", title="Posterior Entropy (bits)"),
-            y=alt.Y("top1_probability:Q", title="Top-1 Probability"),
+            y=alt.Y(
+                "true_rule_posterior_mass:Q",
+                title="True Rule Posterior Mass (log scale)",
+                scale=alt.Scale(type="log", domain=[floor, 1]),
+            ),
             size=alt.Size(
                 "n_effective:Q",
                 title="N_eff",
@@ -127,14 +141,15 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
             tooltip=[
                 alt.Tooltip("rule_id:N", title="Rule"),
                 alt.Tooltip("posterior_entropy:Q", title="Entropy", format=".3f"),
-                alt.Tooltip("top1_probability:Q", title="Top-1 %", format=".3f"),
+                alt.Tooltip("true_rule_posterior_mass:Q", title="True Rule Mass", format=".2e"),
+                alt.Tooltip("true_rule_rank:Q", title="True Rule Rank"),
                 alt.Tooltip("n_effective:Q", title="N_eff", format=".1f"),
             ],
         )
         .properties(
             width=500,
             height=400,
-            title="Entropy vs Top-1 Probability",
+            title="Entropy vs True Rule Posterior Mass",
         )
     )
 
@@ -688,20 +703,19 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
     )
 
 
-def confusability_vs_entropy(merged_df: pd.DataFrame) -> alt.Chart:
-    """Scatter of posterior entropy vs test-hand confusability across rules.
+def entropy_vs_accuracy(merged_df: pd.DataFrame) -> alt.Chart:
+    """Scatter of posterior entropy vs weighted-vote classification accuracy.
 
-    X-axis is posterior entropy (our Bayesian difficulty measure),
-    y-axis is fraction of ambiguous test hands (confusability from
-    the diagnosticity analysis).  This shows how the two difficulty
-    signals correlate — rules that are hard for the Bayesian model
-    should also produce more ambiguous classifications on novel hands.
+    X-axis is posterior entropy (Bayesian difficulty measure), y-axis is
+    accuracy — the fraction of random test hands correctly classified by
+    the posterior majority vote.  Rules in the bottom-right are both hard
+    to identify AND poorly classified on novel hands.
 
     Parameters
     ----------
     merged_df : pd.DataFrame
         Must contain columns: rule_id, posterior_entropy,
-        fraction_ambiguous, group_label, accuracy.
+        accuracy, group_label.
     """
     return (
         alt.Chart(merged_df)
@@ -709,14 +723,12 @@ def confusability_vs_entropy(merged_df: pd.DataFrame) -> alt.Chart:
         .encode(
             x=alt.X(
                 "posterior_entropy:Q",
-                title="Posterior Entropy (Bayesian Difficulty)",
+                title="Posterior Entropy (bits)",
             ),
             y=alt.Y(
-                "fraction_ambiguous:Q",
-                title="Fraction Ambiguous Test Hands",
-                scale=alt.Scale(
-                    domain=[-0.01, max(0.1, merged_df["fraction_ambiguous"].max() * 1.2)]
-                ),
+                "accuracy:Q",
+                title="Classification Accuracy",
+                scale=alt.Scale(domain=[0, 1.05]),
             ),
             color=alt.Color(
                 "group_label:N",
@@ -726,14 +738,13 @@ def confusability_vs_entropy(merged_df: pd.DataFrame) -> alt.Chart:
             tooltip=[
                 alt.Tooltip("rule_id:N", title="Rule"),
                 alt.Tooltip("posterior_entropy:Q", title="Entropy", format=".3f"),
-                alt.Tooltip("fraction_ambiguous:Q", title="Ambig%", format=".3f"),
-                alt.Tooltip("accuracy:Q", title="Accuracy", format=".3f"),
+                alt.Tooltip("accuracy:Q", title="Accuracy", format=".1%"),
                 alt.Tooltip("group_label:N", title="Group"),
             ],
         )
         .properties(
             width=450,
             height=350,
-            title="Confusability vs Bayesian Difficulty",
+            title="Entropy vs Classification Accuracy",
         )
     )

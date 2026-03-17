@@ -37,7 +37,7 @@ try:
         depth_posterior_heatmap,
         depth_prior_range,
         diagnosticity_overview_scatter,
-        confusability_vs_entropy,
+        entropy_vs_accuracy,
     )
 except ImportError:
     # Fallback for direct execution: add parent packages to sys.path.
@@ -63,7 +63,7 @@ except ImportError:
         depth_posterior_heatmap,
         depth_prior_range,
         diagnosticity_overview_scatter,
-        confusability_vs_entropy,
+        entropy_vs_accuracy,
     )
 
 
@@ -80,6 +80,7 @@ def generate_summary(
     output_dir: Path,
     depth_results: DepthDecompositionResults | None = None,
     diag_results: DiagnosticityResults | None = None,
+    variant_info: dict | None = None,
 ) -> Path:
     """Generate the summary index.html from Bayesian analysis results.
 
@@ -97,6 +98,10 @@ def generate_summary(
         Depth decomposition data.
     diag_results : DiagnosticityResults, optional
         Diagnosticity spectrum data.
+    variant_info : dict, optional
+        Variant metadata for the dropdown switcher.  Keys:
+        ``variant_name``, ``variant_label``, ``all_variants`` (list of
+        dicts with ``name``, ``label``, ``path``, ``has_diag``).
 
     Returns
     -------
@@ -151,14 +156,14 @@ def generate_summary(
         diag_charts["chart_diag_overview"] = json.dumps(
             diagnosticity_overview_scatter(diag_results.spectrum_df).to_dict()
         )
-        # Confusability vs entropy correlation scatter — merge
-        # diagnosticity metrics with difficulty metrics.
+        # Entropy vs accuracy scatter — merge diagnosticity metrics
+        # with difficulty metrics.
         diag_merged = diag_results.spectrum_df.merge(
             df[["rule_id", "posterior_entropy"]], on="rule_id", how="inner"
         )
         if len(diag_merged) > 0:
-            diag_charts["chart_confusability"] = json.dumps(
-                confusability_vs_entropy(diag_merged).to_dict()
+            diag_charts["chart_accuracy"] = json.dumps(
+                entropy_vs_accuracy(diag_merged).to_dict()
             )
 
     # ── Build the rules list for the index table ─────────────────────
@@ -188,6 +193,14 @@ def generate_summary(
     )
 
     # ── Render the template ──────────────────────────────────────────
+    variant_ctx = {}
+    if variant_info:
+        variant_ctx = {
+            "variant_name": variant_info.get("variant_name", ""),
+            "variant_label": variant_info.get("variant_label", ""),
+            "all_variants": variant_info.get("all_variants", []),
+        }
+
     html = template.render(
         stats=results.pipeline_stats,
         chart_strip=chart_strip,
@@ -199,6 +212,7 @@ def generate_summary(
         rules=rules,
         **depth_charts,
         **diag_charts,
+        **variant_ctx,
     )
 
     # ── Write to disk ────────────────────────────────────────────────

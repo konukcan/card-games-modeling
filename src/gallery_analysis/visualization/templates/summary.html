@@ -118,6 +118,23 @@
 
   <h1>Bayesian Rule Induction — Gallery Analysis</h1>
 
+  {% if variant_label is defined and variant_label %}
+  <div style="display:flex; align-items:center; gap:12px; margin:0.5rem 0 0.3rem;">
+    <span style="font-size:0.85rem; color:#555;">Variant:</span>
+    <select id="variant-switcher" style="font-size:0.85rem; padding:3px 8px; border:1px solid #ccc; border-radius:4px; background:#fff;">
+      {% for v in all_variants %}
+      <option value="{{ v.path }}" {{ "selected" if v.name == variant_name else "" }}>{{ v.label }}{{ " (+diag)" if v.has_diag else "" }}</option>
+      {% endfor %}
+    </select>
+    <a href="../switcher.html" style="font-size:0.78rem; color:#4A90D9;">All variants</a>
+  </div>
+  <script>
+    document.getElementById('variant-switcher').addEventListener('change', function() {
+      window.location.href = this.value;
+    });
+  </script>
+  {% endif %}
+
   {# ── Stats bar ── #}
   <div class="stats-bar">
     <div class="stat-card">
@@ -190,18 +207,17 @@
   {% endif %}
 
   {% if has_diag %}
-  {# ── Diagnosticity overview section ── #}
-  <h2>Diagnosticity</h2>
+  {# ── Classification quality section ── #}
+  <h2>Classification Quality</h2>
   <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
-    How confidently the posterior distribution classifies random test hands.
-    Rules with high ambiguity have competing hypotheses that disagree on many hands.
+    How well the posterior majority vote classifies novel random test hands.
   </p>
   <div class="chart-row">
     <div class="chart-container">
       <div id="chart-diag-overview"></div>
     </div>
     <div class="chart-container">
-      <div id="chart-confusability"></div>
+      <div id="chart-accuracy"></div>
     </div>
   </div>
   <p style="color:#888; font-size:0.8rem; margin-top:0.5rem;">
@@ -223,6 +239,7 @@
         <th data-type="number">N_eff <span class="sort-arrow"></span></th>
         <th data-type="number">Top-1% <span class="sort-arrow"></span></th>
         <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
+        <th data-type="number">True Rule Mass <span class="sort-arrow"></span></th>
         {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
         {% if has_diag %}
         <th data-type="number">MeanConf <span class="sort-arrow"></span></th>
@@ -243,6 +260,7 @@
         <td>{{ "%.1f" | format(r.n_effective) }}</td>
         <td>{{ "%.1f" | format(r.top1_probability * 100) }}%</td>
         <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
+        <td>{{ "%.4f" | format(r.true_rule_posterior_mass) if r.true_rule_posterior_mass is not none else "—" }}</td>
         {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
         {% if has_diag %}
         <td>{{ "%.3f" | format(r.mean_confidence) if r.mean_confidence is not none else "—" }}</td>
@@ -275,8 +293,8 @@
 
     {% if has_diag %}
     vegaEmbed('#chart-diag-overview',  {{ chart_diag_overview | safe }},  {actions: false});
-    {% if chart_confusability is defined %}
-    vegaEmbed('#chart-confusability',  {{ chart_confusability | safe }},  {actions: false});
+    {% if chart_accuracy is defined %}
+    vegaEmbed('#chart-accuracy',  {{ chart_accuracy | safe }},  {actions: false});
     {% endif %}
     {% endif %}
 
