@@ -11,12 +11,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
+import math
+
 from dreamcoder_core.type_system import (
-    Arrow, BOOL, HAND, INT, CARD, SUIT, RANK, TypeContext,
+    Arrow, BOOL, HAND, INT, CARD, SUIT, RANK, TypeContext, Type,
 )
-from dreamcoder_core.program import has_holes, Hole
+from dreamcoder_core.program import has_holes, Hole, Program
 from gallery_analysis.enumerator import build_gallery_grammar
-from gallery_analysis.mcmc_search import sample_program
+from gallery_analysis.mcmc_search import (
+    sample_program, collect_subtree_sites, propose_regeneration,
+    replace_subtree, SubtreeSite,
+)
 
 
 @pytest.fixture
@@ -133,3 +138,99 @@ def test_deterministic_with_seed(grammar):
         assert str(p1) == str(p2), (
             f"seed={seed} not deterministic: {p1} vs {p2}"
         )
+
+
+# =========================================================================== #
+# Tests for collect_subtree_sites
+# =========================================================================== #
+
+def test_collect_subtree_sites_finds_nodes(grammar):
+    """Should find multiple subtree sites in a non-trivial program."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=4, seed=42)
+    sites = collect_subtree_sites(prog, Arrow(HAND, BOOL))
+    assert len(sites) > 0, (
+        f"Expected at least 1 subtree site, got 0 for program: {prog}"
+    )
+
+
+def test_subtree_sites_have_types_and_env(grammar):
+    """Each site should have type, env, path, and subtree."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=4, seed=42)
+    sites = collect_subtree_sites(prog, Arrow(HAND, BOOL))
+    for site in sites:
+        assert isinstance(site.type, Type), (
+            f"site.type should be a Type, got {type(site.type)}"
+        )
+        assert isinstance(site.env, list), (
+            f"site.env should be a list, got {type(site.env)}"
+        )
+        assert isinstance(site.path, tuple), (
+            f"site.path should be a tuple, got {type(site.path)}"
+        )
+        assert isinstance(site.subtree, Program), (
+            f"site.subtree should be a Program, got {type(site.subtree)}"
+        )
+
+
+def test_subtree_sites_skip_root(grammar):
+    """Root should not be in the site list."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=4, seed=42)
+    sites = collect_subtree_sites(prog, Arrow(HAND, BOOL))
+    for site in sites:
+        assert len(site.path) > 0, "Root node should not be a subtree site"
+
+
+# =========================================================================== #
+# Tests for replace_subtree
+# =========================================================================== #
+
+def test_replace_subtree_identity(grammar):
+    """Replacing a subtree with itself should produce the same program."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=4, seed=42)
+    sites = collect_subtree_sites(prog, Arrow(HAND, BOOL))
+    if sites:
+        site = sites[0]
+        replaced = replace_subtree(prog, site.path, site.subtree)
+        assert str(replaced) == str(prog), (
+            f"Identity replacement changed the program:\n"
+            f"  original: {prog}\n"
+            f"  replaced: {replaced}\n"
+            f"  path: {site.path}"
+        )
+
+
+# =========================================================================== #
+# Tests for propose_regeneration
+# =========================================================================== #
+
+def test_propose_regeneration_returns_valid(grammar):
+    """Proposal should return a complete program and finite log probs."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=42)
+    new_prog, log_q_fwd, log_q_rev = propose_regeneration(
+        grammar, prog, Arrow(HAND, BOOL), max_depth=5, seed=100
+    )
+    assert not has_holes(new_prog), (
+        f"Proposed program has holes: {new_prog}"
+    )
+    # Log probs should be finite or -inf (valid probability values).
+    assert math.isfinite(log_q_fwd) or log_q_fwd == float('-inf'), (
+        f"Forward log prob is not a valid number: {log_q_fwd}"
+    )
+    assert math.isfinite(log_q_rev) or log_q_rev == float('-inf'), (
+        f"Reverse log prob is not a valid number: {log_q_rev}"
+    )
+
+
+def test_propose_regeneration_changes_program(grammar):
+    """At least some proposals should produce different programs."""
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=42)
+    different_count = 0
+    for seed in range(20):
+        new_prog, _, _ = propose_regeneration(
+            grammar, prog, Arrow(HAND, BOOL), max_depth=5, seed=seed
+        )
+        if str(new_prog) != str(prog):
+            different_count += 1
+    assert different_count > 0, (
+        f"All 20 proposals produced the same program as the original: {prog}"
+    )

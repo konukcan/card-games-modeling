@@ -22,20 +22,25 @@ MCMC search captures all three properties:
   - The *subtree-regeneration proposal* explores local variants (2).
   - The *chain's current state* acts as an anchor (3).
 
-This module provides the foundational building block: sampling a complete,
-type-correct program from the grammar prior. This is used both for chain
-initialization and for generating replacement subtrees in proposals.
+This module provides:
+  - sample_program()           : sample a complete program from the grammar prior
+  - collect_subtree_sites()    : find all AST positions eligible for regeneration
+  - replace_subtree()          : swap a subtree at a given path
+  - propose_regeneration()     : the core MCMC subtree-regeneration proposal
 
 ARCHITECTURE
 ------------
-  sample_program()        <- THIS FILE: sample from grammar prior
-  propose_subtree()       <- future: select subtree + regenerate
-  mcmc_step()             <- future: MH accept/reject
-  run_chain()             <- future: full MCMC chain
+  sample_program()             <- sample from grammar prior
+  collect_subtree_sites()      <- walk AST, collect regeneration sites
+  replace_subtree()            <- structural replacement at a path
+  propose_regeneration()       <- select site + regenerate + compute proposal ratio
+  mcmc_step()                  <- future: MH accept/reject
+  run_chain()                  <- future: full MCMC chain
 """
 import sys
 import math
 import random
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -572,3 +577,296 @@ def _sample(
         node = Application(node, arg_program)
 
     return node
+
+
+# =========================================================================== #
+# SUBTREE SITE COLLECTION
+# =========================================================================== #
+
+
+@dataclass
+class SubtreeSite:
+    """
+    Records a position in the AST where a subtree can be regenerated.
+
+    This is the unit of locality for the MCMC proposal: we pick one site
+    uniformly at random, then resample the subtree at that position from
+    the grammar prior.
+
+    Attributes:
+        path:    Sequence of steps from root to this node. Each step is one
+                 of 'body' (enter Abstraction), 'f' (Application function),
+                 or 'x' (Application argument).
+        type:    The type that this subtree must produce.
+        env:     The type environment at this position (bound variables in
+                 scope). env[i] is the type of de Bruijn index $i.
+        subtree: The current subtree rooted at this position.
+    """
+    path: Tuple[str, ...]
+    type: Type
+    env: List[Type]
+    subtree: Program
+
+
+def collect_subtree_sites(
+    program: Program,
+    request_type: Type,
+) -> List[SubtreeSite]:
+    """
+    Walk the AST and collect all positions where a subtree can be regenerated.
+
+    Every non-root node in the AST is a candidate site. For each site we
+    record the path from root, the type expected at that position, and
+    the type environment (which bound variables are in scope).
+
+    The root is excluded because regenerating the entire program is equivalent
+    to sampling a new chain start, not a local proposal.
+
+    Args:
+        program:      The program AST to walk.
+        request_type: The type of the whole program (e.g., Arrow(HAND, BOOL)).
+
+    Returns:
+        A list of SubtreeSite objects, one per non-root AST node.
+
+    How type tracking works:
+        - Abstraction (lambda): If current type is Arrow(A, B), the body has
+          type B and the environment extends with A as $0.
+        - Application (f x): The function f has type Arrow(arg_type, current_type),
+          and argument x has type arg_type. We infer f's type to determine arg_type.
+        - Primitives and Indices are leaf nodes — they are sites but have no children.
+    """
+    sites: List[SubtreeSite] = []
+
+    def _walk(
+        node: Program,
+        current_type: Type,
+        env: List[Type],
+        path: Tuple[str, ...],
+        is_root: bool,
+    ) -> None:
+        """
+        Recursive walker that collects subtree sites.
+
+        Args:
+            node:         Current AST node.
+            current_type: The type this node must produce.
+            env:          Type environment (bound variables in scope).
+            path:         Path from root to this node.
+            is_root:      True only for the top-level call (skip collecting).
+        """
+        # Collect this node as a site (unless it's the root).
+        if not is_root:
+            sites.append(SubtreeSite(
+                path=path,
+                type=current_type,
+                env=list(env),  # defensive copy
+                subtree=node,
+            ))
+
+        # Recurse into children based on node type.
+        if isinstance(node, Abstraction):
+            # Abstraction: current_type should be Arrow(A, B).
+            # Body has type B, environment extends with A.
+            if isinstance(current_type, Arrow):
+                new_env = [current_type.arg] + env
+                _walk(node.body, current_type.ret, new_env, path + ('body',), False)
+            # If current_type is not Arrow (shouldn't happen in well-typed program),
+            # we skip recursing — can't determine child types safely.
+
+        elif isinstance(node, Application):
+            # Application (f x): infer f's type to get arg_type.
+            # f has type Arrow(arg_type, current_type), x has type arg_type.
+            try:
+                ctx = TypeContext()
+                # Build env_types for type inference (just the types, not SubtreeSites).
+                f_type = node.f.infer_type(ctx, env)
+                f_type = ctx.apply(f_type)
+
+                if isinstance(f_type, Arrow):
+                    arg_type = f_type.arg
+                    # Recurse into f with its full type (Arrow(arg_type, current_type)).
+                    _walk(node.f, f_type, env, path + ('f',), False)
+                    # Recurse into x with the argument type.
+                    _walk(node.x, arg_type, env, path + ('x',), False)
+                else:
+                    # f's type isn't an arrow — shouldn't happen in well-typed programs.
+                    # Fall back: collect f and x as sites but don't recurse deeper.
+                    _walk(node.f, f_type, env, path + ('f',), False)
+            except Exception:
+                # Type inference failed (e.g., polymorphic edge case).
+                # Still collect immediate children as sites with best-effort types.
+                # Use a fresh type variable as a placeholder for unknown types.
+                pass
+
+        # Primitives and Indices are leaves — no children to recurse into.
+
+    _walk(program, request_type, [], (), True)
+    return sites
+
+
+# =========================================================================== #
+# SUBTREE REPLACEMENT
+# =========================================================================== #
+
+
+def replace_subtree(
+    program: Program,
+    path: Tuple[str, ...],
+    replacement: Program,
+) -> Program:
+    """
+    Replace the subtree at the given path with a new subtree.
+
+    The path is a sequence of steps from the root:
+      - 'body' : enter an Abstraction's body
+      - 'f'    : enter an Application's function position
+      - 'x'    : enter an Application's argument position
+
+    An empty path means "replace the root itself" (returns replacement directly).
+
+    Args:
+        program:     The original program AST.
+        path:        Tuple of steps to the target subtree.
+        replacement: The new subtree to insert.
+
+    Returns:
+        A new Program with the subtree at path replaced. The original
+        program is not mutated.
+
+    Raises:
+        ValueError: If a path step doesn't match the node type (e.g., 'body'
+                    on a non-Abstraction, or 'f'/'x' on a non-Application).
+    """
+    if len(path) == 0:
+        return replacement
+
+    step = path[0]
+    rest = path[1:]
+
+    if step == 'body':
+        if not isinstance(program, Abstraction):
+            raise ValueError(
+                f"Path step 'body' requires Abstraction, got {type(program).__name__}"
+            )
+        new_body = replace_subtree(program.body, rest, replacement)
+        return Abstraction(new_body)
+
+    elif step == 'f':
+        if not isinstance(program, Application):
+            raise ValueError(
+                f"Path step 'f' requires Application, got {type(program).__name__}"
+            )
+        new_f = replace_subtree(program.f, rest, replacement)
+        return Application(new_f, program.x)
+
+    elif step == 'x':
+        if not isinstance(program, Application):
+            raise ValueError(
+                f"Path step 'x' requires Application, got {type(program).__name__}"
+            )
+        new_x = replace_subtree(program.x, rest, replacement)
+        return Application(program.f, new_x)
+
+    else:
+        raise ValueError(f"Unknown path step: {step!r} (expected 'body', 'f', or 'x')")
+
+
+# =========================================================================== #
+# MCMC SUBTREE-REGENERATION PROPOSAL
+# =========================================================================== #
+
+
+def propose_regeneration(
+    grammar: Grammar,
+    program: Program,
+    request_type: Type,
+    max_depth: int = 6,
+    seed: Optional[int] = None,
+) -> Tuple[Program, float, float]:
+    """
+    Propose a new program by regenerating a randomly chosen subtree.
+
+    This is the core MCMC proposal mechanism. It:
+      1. Collects all non-root subtree sites in the current program.
+      2. Picks one site uniformly at random.
+      3. Regenerates that subtree by sampling from the grammar prior
+         (using _sample with the site's type and environment).
+      4. Replaces the old subtree with the new one.
+      5. Computes the forward and reverse proposal log-probabilities
+         for the Metropolis-Hastings acceptance ratio.
+
+    The proposal probability Q(new | old) factors as:
+      Q(new | old) = P(pick site) * P(generate new subtree | grammar, site type)
+                   = (1 / n_sites_old) * grammar.program_log_likelihood(new_subtree, ...)
+
+    The reverse probability Q(old | new) is:
+      Q(old | new) = (1 / n_sites_new) * grammar.program_log_likelihood(old_subtree, ...)
+
+    Args:
+        grammar:      The PCFG grammar.
+        program:      The current program in the MCMC chain.
+        request_type: The type of the whole program (e.g., Arrow(HAND, BOOL)).
+        max_depth:    Max depth budget for regenerated subtrees (adjusted by
+                      site depth to give reasonable budget).
+        seed:         Random seed for reproducibility.
+
+    Returns:
+        A tuple (new_program, log_q_forward, log_q_reverse) where:
+          - new_program: The proposed program with one subtree replaced.
+          - log_q_forward: log Q(new_program | old_program)
+          - log_q_reverse: log Q(old_program | new_program)
+
+    Raises:
+        RuntimeError: If the program has no non-root subtree sites (e.g.,
+                      program is a single variable or primitive with no
+                      wrapping lambda).
+    """
+    rng = random.Random(seed)
+
+    # Step 1: Collect all subtree sites in the current program.
+    sites = collect_subtree_sites(program, request_type)
+    if not sites:
+        raise RuntimeError(
+            f"No subtree sites found in program {program}. "
+            f"Cannot propose regeneration for a program with no non-root nodes."
+        )
+
+    n_sites_old = len(sites)
+
+    # Step 2: Pick a site uniformly at random.
+    site = rng.choice(sites)
+
+    # Step 3: Regenerate the subtree at that site.
+    # Give the regenerated subtree a depth budget that accounts for how
+    # deep in the tree we already are. Use at least 3 to allow non-trivial
+    # subtrees even deep in the program.
+    regen_depth = max(3, max_depth - len(site.path))
+
+    # Sample a new subtree of the appropriate type, using the site's
+    # environment so that bound variables are available.
+    new_subtree = sample_program(
+        grammar, site.type, max_depth=regen_depth, seed=rng.randint(0, 2**31),
+        env=site.env,
+    )
+
+    # Step 4: Replace the old subtree with the new one.
+    new_program = replace_subtree(program, site.path, new_subtree)
+
+    # Step 5: Compute forward and reverse proposal probabilities.
+    old_subtree = site.subtree
+
+    # Forward: log P(pick this site) + log P(generate new subtree)
+    log_pick_fwd = -math.log(n_sites_old)
+    log_gen_fwd = grammar.program_log_likelihood(new_subtree, site.type, site.env)
+    log_q_forward = log_pick_fwd + log_gen_fwd
+
+    # Reverse: count sites in the new program, then compute
+    # log P(pick the same site in new program) + log P(generate old subtree)
+    new_sites = collect_subtree_sites(new_program, request_type)
+    n_sites_new = len(new_sites) if new_sites else 1  # guard against 0
+    log_pick_rev = -math.log(n_sites_new)
+    log_gen_rev = grammar.program_log_likelihood(old_subtree, site.type, site.env)
+    log_q_reverse = log_pick_rev + log_gen_rev
+
+    return new_program, log_q_forward, log_q_reverse
