@@ -502,6 +502,85 @@ def p_accept_histogram(histogram_data: list, rule_id: str) -> alt.Chart:
     )
 
 
+def p_accept_ground_truth(
+    gt_hist: dict,
+    rule_id: str,
+    title: str = "",
+) -> alt.Chart:
+    """Stacked bar chart of P(accept) bins split by ground truth.
+
+    Each bin is split into green (true accept) and red (true reject)
+    segments, revealing whether the model is overly permissive or
+    restrictive at each confidence level.
+
+    Parameters
+    ----------
+    gt_hist : dict
+        Mapping of bin label (e.g. "0.0-0.1") to
+        ``{"true_accept": count, "true_reject": count}``.
+    rule_id : str
+        Rule identifier (used in chart title if *title* is empty).
+    title : str, optional
+        Override chart title.  Defaults to
+        "P(accept) Ground Truth -- <rule_id>".
+    """
+    if not gt_hist:
+        # Return an empty chart when data is missing.
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    bin_order = [
+        "0.0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
+        "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1.0",
+    ]
+
+    # Build long-form DataFrame: two rows per bin (Accept + Reject).
+    rows = []
+    for bin_label in bin_order:
+        counts = gt_hist.get(bin_label, {"true_accept": 0, "true_reject": 0})
+        rows.append({
+            "bin": bin_label,
+            "component": "Accept",
+            "count": counts.get("true_accept", 0),
+        })
+        rows.append({
+            "bin": bin_label,
+            "component": "Reject",
+            "count": counts.get("true_reject", 0),
+        })
+    df = pd.DataFrame(rows)
+
+    gt_scale = alt.Scale(
+        domain=["Accept", "Reject"],
+        range=["#2CA02C", "#C44E52"],
+    )
+
+    chart_title = title or f"P(accept) Ground Truth — {rule_id}"
+
+    return (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("count:Q", title="Number of Hands", stack="zero"),
+            y=alt.Y("bin:N", title="P(accept)", sort=bin_order),
+            color=alt.Color(
+                "component:N",
+                title="Ground Truth",
+                scale=gt_scale,
+            ),
+            tooltip=[
+                alt.Tooltip("bin:N", title="P(accept) bin"),
+                alt.Tooltip("component:N", title="Ground Truth"),
+                alt.Tooltip("count:Q", title="Count", format=","),
+            ],
+        )
+        .properties(
+            width=300,
+            height=250,
+            title=chart_title,
+        )
+    )
+
+
 def diagnosticity_overview_scatter(spectrum_df: pd.DataFrame) -> alt.Chart:
     """Scatter of mean confidence vs fraction ambiguous across rules.
 

@@ -67,6 +67,9 @@ class DiagnosticSpectrum:
     easy_accept_hands: List[DiagnosticityReport]   # high confidence, accept
     easy_reject_hands: List[DiagnosticityReport]    # high confidence, reject
     ambiguous_hands: List[DiagnosticityReport]      # low confidence
+    # Ground-truth-split histograms: bin_label → {"true_accept": count, "true_reject": count}
+    gt_histogram: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    balanced_gt_histogram: Dict[str, Dict[str, int]] = field(default_factory=dict)
     # Balanced sampling (accept + reject hands in equal numbers)
     balanced_reports: List[DiagnosticityReport] = field(default_factory=list)
     balanced_n: int = 0
@@ -415,6 +418,26 @@ def generate_diagnostic_spectrum(
         )
         actual_balanced_n = balanced_n
 
+    # --- Ground-truth-split histogram (uniform sampling) ---
+    gt_histogram: Dict[str, Dict[str, int]] = {
+        label: {"true_accept": 0, "true_reject": 0} for label in bin_labels
+    }
+    for r in reports:
+        bin_idx = min(int(r.p_accept * 10), 9)
+        key = "true_accept" if r.ground_truth else "true_reject"
+        gt_histogram[bin_labels[bin_idx]][key] += 1
+
+    # --- Ground-truth-split histogram (balanced sampling) ---
+    balanced_gt_histogram: Dict[str, Dict[str, int]] = {}
+    if balanced_reports:
+        balanced_gt_histogram = {
+            label: {"true_accept": 0, "true_reject": 0} for label in bin_labels
+        }
+        for r in balanced_reports:
+            bin_idx = min(int(r.p_accept * 10), 9)
+            key = "true_accept" if r.ground_truth else "true_reject"
+            balanced_gt_histogram[bin_labels[bin_idx]][key] += 1
+
     return DiagnosticSpectrum(
         rule_id=rule_id,
         group=group,
@@ -426,6 +449,8 @@ def generate_diagnostic_spectrum(
         fraction_ambiguous=n_ambiguous / n_candidates,
         accuracy=n_correct / n_candidates,
         p_accept_histogram=histogram,
+        gt_histogram=gt_histogram,
+        balanced_gt_histogram=balanced_gt_histogram,
         easy_accept_hands=easy_accept,
         easy_reject_hands=easy_reject,
         ambiguous_hands=ambiguous,

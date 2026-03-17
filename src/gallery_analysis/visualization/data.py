@@ -479,6 +479,8 @@ class DiagnosticityResults:
 
     spectrum_df: pd.DataFrame
     histogram_data: Dict[str, List[Dict[str, Any]]]
+    gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]]
+    balanced_gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]]
     representative_hands: Dict[str, Dict[str, List[Dict[str, Any]]]]
     config: Dict[str, Any]
 
@@ -529,6 +531,14 @@ def load_diagnosticity_spectrums(path: Union[str, Path]) -> DiagnosticityResults
             hist_list.append({"bin": bin_label, "count": count})
         histogram_data[rule_id] = hist_list
 
+    # ── gt_histogram_data ─────────────────────────────────────────────
+    # Ground-truth-split histograms: bin_label -> {"true_accept": N, "true_reject": N}
+    gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]] = {}
+    balanced_gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]] = {}
+    for rule_id, spec in spectrums.items():
+        gt_histogram_data[rule_id] = spec.get("gt_histogram", {})
+        balanced_gt_histogram_data[rule_id] = spec.get("balanced_gt_histogram", {})
+
     # ── representative_hands ──────────────────────────────────────────
     # Extract the three categories of representative hands per rule.
     representative_hands: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
@@ -542,6 +552,8 @@ def load_diagnosticity_spectrums(path: Union[str, Path]) -> DiagnosticityResults
     return DiagnosticityResults(
         spectrum_df=spectrum_df,
         histogram_data=histogram_data,
+        gt_histogram_data=gt_histogram_data,
+        balanced_gt_histogram_data=balanced_gt_histogram_data,
         representative_hands=representative_hands,
         config=config,
     )

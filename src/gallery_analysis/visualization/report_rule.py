@@ -31,6 +31,7 @@ try:
         posterior_decomposition,
         diagnosticity_bars,
         p_accept_histogram,
+        p_accept_ground_truth,
     )
     from gallery_analysis.visualization.cards import (
         get_rule_hands,
@@ -51,6 +52,7 @@ except ImportError:
         posterior_decomposition,
         diagnosticity_bars,
         p_accept_histogram,
+        p_accept_ground_truth,
     )
     from gallery_analysis.visualization.cards import (
         get_rule_hands,
@@ -158,13 +160,33 @@ def generate_rule_page(
     )
     test_hands_json_str = None
     chart_p_accept_hist = None
+    # Ground-truth-split histogram panels (uniform + balanced)
+    chart_p_accept_uniform = None
+    chart_p_accept_balanced = None
+    has_gt_histogram = False
     if has_test_hands:
         rep_hands = diag_results.representative_hands[rule_id]
         test_hands_json_str = test_hands_to_json(rep_hands, card_images_path)
-        hist_data = diag_results.histogram_data[rule_id]
-        chart_p_accept_hist = json.dumps(
-            p_accept_histogram(hist_data, rule_id).to_dict()
-        )
+
+        # Try ground-truth-split histograms first (new format)
+        gt_hist = diag_results.gt_histogram_data.get(rule_id, {})
+        balanced_gt_hist = diag_results.balanced_gt_histogram_data.get(rule_id, {})
+        if gt_hist:
+            has_gt_histogram = True
+            chart_p_accept_uniform = json.dumps(
+                p_accept_ground_truth(gt_hist, rule_id, title="Uniform Sampling").to_dict()
+            )
+            if balanced_gt_hist:
+                chart_p_accept_balanced = json.dumps(
+                    p_accept_ground_truth(balanced_gt_hist, rule_id, title="Balanced Sampling").to_dict()
+                )
+
+        # Fall back to old single-panel histogram when gt data is missing
+        if not has_gt_histogram:
+            hist_data = diag_results.histogram_data[rule_id]
+            chart_p_accept_hist = json.dumps(
+                p_accept_histogram(hist_data, rule_id).to_dict()
+            )
 
     # ── Build hypotheses list ────────────────────────────────────────
     hypotheses = (
@@ -206,6 +228,9 @@ def generate_rule_page(
         has_test_hands=has_test_hands,
         test_hands_json=test_hands_json_str,
         chart_p_accept_hist=chart_p_accept_hist,
+        has_gt_histogram=has_gt_histogram,
+        chart_p_accept_uniform=chart_p_accept_uniform,
+        chart_p_accept_balanced=chart_p_accept_balanced,
         hypotheses=hypotheses,
         true_rule_hypothesis=true_rule_hypothesis,
         true_rule_in_top=true_rule_in_top,

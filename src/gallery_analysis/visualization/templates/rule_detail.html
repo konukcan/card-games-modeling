@@ -232,7 +232,21 @@
         <div id="chart-diag"></div>
       </div>
       {% endif %}
-      {% if has_test_hands %}
+      {% if has_gt_histogram %}
+      <div class="panel" style="margin-top: 1rem;">
+        <h3>P(accept) Distribution</h3>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 280px;">
+            <div id="chart-p-accept-uniform"></div>
+          </div>
+          {% if chart_p_accept_balanced %}
+          <div style="flex: 1; min-width: 280px;">
+            <div id="chart-p-accept-balanced"></div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% elif has_test_hands %}
       <div class="panel" style="margin-top: 1rem;">
         <h3>P(accept) Distribution</h3>
         <div id="chart-p-accept"></div>
@@ -335,7 +349,12 @@
     {% if has_diagnosticity %}
     vegaEmbed('#chart-diag', {{ chart_diag | safe }}, {actions: false});
     {% endif %}
-    {% if has_test_hands %}
+    {% if has_gt_histogram %}
+    vegaEmbed('#chart-p-accept-uniform', {{ chart_p_accept_uniform | safe }}, {actions: false});
+    {% if chart_p_accept_balanced %}
+    vegaEmbed('#chart-p-accept-balanced', {{ chart_p_accept_balanced | safe }}, {actions: false});
+    {% endif %}
+    {% elif has_test_hands %}
     vegaEmbed('#chart-p-accept', {{ chart_p_accept_hist | safe }}, {actions: false});
     {% endif %}
   </script>

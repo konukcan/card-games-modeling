@@ -104,6 +104,8 @@ def _spectrum_to_dict(spectrum: DiagnosticSpectrum) -> Dict[str, Any]:
         "fraction_ambiguous": round(spectrum.fraction_ambiguous, 6),
         "accuracy": round(spectrum.accuracy, 6),
         "p_accept_histogram": spectrum.p_accept_histogram,
+        "gt_histogram": spectrum.gt_histogram,
+        "balanced_gt_histogram": spectrum.balanced_gt_histogram,
         "easy_accept_hands": [_report_to_dict(r) for r in spectrum.easy_accept_hands],
         "easy_reject_hands": [_report_to_dict(r) for r in spectrum.easy_reject_hands],
         "ambiguous_hands": [_report_to_dict(r) for r in spectrum.ambiguous_hands],
