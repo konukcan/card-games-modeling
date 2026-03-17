@@ -209,24 +209,9 @@
     Deeper programs are penalized by the PCFG prior but may be needed for complex rules.
   </p>
 
-  {# ── Side-by-side: population + prior penalty ── #}
-  <div class="chart-row">
-    <div class="chart-container">
-      <div id="chart-depth-pop"></div>
-    </div>
-    <div class="chart-container">
-      <div id="chart-depth-prior"></div>
-    </div>
-  </div>
-
-  {# ── Side-by-side: depth vs difficulty + heatmap ── #}
-  <div class="chart-row">
-    <div class="chart-container">
-      <div id="chart-depth-vs-diff"></div>
-    </div>
-    <div class="chart-container">
-      <div id="chart-depth-heatmap"></div>
-    </div>
+  {# ── Depth heatmap ── #}
+  <div class="chart-full chart-container">
+    <div id="chart-depth-heatmap"></div>
   </div>
   {% endif %}
 
@@ -236,25 +221,14 @@
   <p style="color:#555; font-size:0.9rem; margin-bottom:1rem;">
     How well the posterior majority vote classifies novel random test hands.
   </p>
-  <div class="chart-row">
-    <div class="chart-container">
-      <div id="chart-diag-overview"></div>
-    </div>
-    <div class="chart-container">
-      <div id="chart-accuracy"></div>
-    </div>
+  <div class="chart-full chart-container">
+    <div id="chart-accuracy"></div>
   </div>
   {% if chart_calibration is defined %}
   <div class="chart-full chart-container">
     <div id="chart-calibration"></div>
   </div>
   {% endif %}
-  <p style="color:#888; font-size:0.8rem; margin-top:0.5rem;">
-    <strong>Note on exemplar diagnosticity:</strong> The per-rule "exemplar diagnosticity" bars
-    on rule detail pages always read 1.0 because training exemplars are selected so that
-    <em>all</em> surviving hypotheses agree on them by construction. The real discriminative signal
-    comes from the <em>test hands</em> above — novel random hands where hypotheses can disagree.
-  </p>
   {% endif %}
 
 
@@ -267,14 +241,10 @@
     vegaEmbed('#chart-scatter', {{ chart_scatter | safe }},  {actions: false});
 
     {% if has_depth %}
-    vegaEmbed('#chart-depth-pop',      {{ chart_depth_pop | safe }},      {actions: false});
-    vegaEmbed('#chart-depth-prior',    {{ chart_depth_prior | safe }},    {actions: false});
-    vegaEmbed('#chart-depth-vs-diff',  {{ chart_depth_vs_diff | safe }},  {actions: false});
     vegaEmbed('#chart-depth-heatmap',  {{ chart_depth_heatmap | safe }},  {actions: false});
     {% endif %}
 
     {% if has_diag %}
-    vegaEmbed('#chart-diag-overview',  {{ chart_diag_overview | safe }},  {actions: false});
     {% if chart_accuracy is defined %}
     vegaEmbed('#chart-accuracy',  {{ chart_accuracy | safe }},  {actions: false});
     {% endif %}

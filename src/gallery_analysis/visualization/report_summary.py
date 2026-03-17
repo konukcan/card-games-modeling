@@ -30,11 +30,7 @@ try:
     )
     from gallery_analysis.visualization.plots import (
         difficulty_scatter,
-        depth_population,
-        depth_vs_difficulty,
         depth_posterior_heatmap,
-        depth_prior_range,
-        diagnosticity_overview_scatter,
         entropy_vs_accuracy,
         calibration_plot,
     )
@@ -55,11 +51,7 @@ except ImportError:
     )
     from gallery_analysis.visualization.plots import (
         difficulty_scatter,
-        depth_population,
-        depth_vs_difficulty,
         depth_posterior_heatmap,
-        depth_prior_range,
-        diagnosticity_overview_scatter,
         entropy_vs_accuracy,
         calibration_plot,
     )
@@ -126,19 +118,6 @@ def generate_summary(
     # ── Depth decomposition charts (optional) ────────────────────────
     depth_charts = {}
     if depth_results is not None:
-        depth_charts["chart_depth_pop"] = json.dumps(
-            depth_population(depth_results.depth_population_df).to_dict()
-        )
-        depth_charts["chart_depth_prior"] = json.dumps(
-            depth_prior_range(depth_results.depth_population_df).to_dict()
-        )
-        # Merge rule_summary_df with difficulty_df to get entropy + depth.
-        merged = depth_results.rule_summary_df.merge(
-            df[["rule_id", "posterior_entropy"]], on="rule_id", how="left"
-        )
-        depth_charts["chart_depth_vs_diff"] = json.dumps(
-            depth_vs_difficulty(merged).to_dict()
-        )
         depth_charts["chart_depth_heatmap"] = json.dumps(
             depth_posterior_heatmap(
                 depth_results.depth_rule_df, depth_results.rule_summary_df
@@ -148,9 +127,6 @@ def generate_summary(
     # ── Diagnosticity charts (optional) ─────────────────────────────
     diag_charts = {}
     if diag_results is not None:
-        diag_charts["chart_diag_overview"] = json.dumps(
-            diagnosticity_overview_scatter(diag_results.spectrum_df).to_dict()
-        )
         # Entropy vs accuracy scatter — merge diagnosticity metrics
         # with difficulty metrics.
         diag_merged = diag_results.spectrum_df.merge(
