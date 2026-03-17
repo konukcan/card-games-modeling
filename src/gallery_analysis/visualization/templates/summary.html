@@ -171,25 +171,21 @@
       <tr>
         <th data-type="string">Rule <span class="sort-arrow"></span></th>
         <th data-type="string">Group <span class="sort-arrow"></span></th>
-        <th data-type="string">Answer <span class="sort-arrow"></span></th>
         <th data-type="number" data-heatmap="entropy">Entropy <span class="sort-arrow"></span></th>
         <th data-type="number" data-heatmap="mass">True Rule Mass <span class="sort-arrow"></span></th>
         <th data-type="number" data-heatmap="hits">N All-Hits <span class="sort-arrow"></span></th>
-        <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
-        {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
+        <th data-type="number" data-heatmap="rank">True Rule Rank <span class="sort-arrow"></span></th>
       </tr>
     </thead>
     <tbody>
       {% for r in rules %}
       <tr>
-        <td><a href="rules/{{ r.rule_id }}.html">{{ r.rule_id }}</a></td>
+        <td><a href="rules/{{ r.rule_id }}.html" title="{{ r.answer }}">{{ r.rule_id }}</a></td>
         <td><span class="badge group-{{ r.group_label | lower }}">{{ r.group_label }}</span></td>
-        <td>{{ r.answer }}</td>
         <td data-val="{{ r.posterior_entropy }}">{{ "%.3f" | format(r.posterior_entropy) }}</td>
         <td data-val="{{ r.true_rule_posterior_mass if r.true_rule_posterior_mass is not none else '' }}">{{ "%.4f" | format(r.true_rule_posterior_mass) if r.true_rule_posterior_mass is not none else "—" }}</td>
         <td data-val="{{ r.n_with_all_hits }}">{{ r.n_with_all_hits }}</td>
-        <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
-        {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
+        <td data-val="{{ r.true_rule_rank if r.true_rule_rank is not none else '' }}">{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -304,10 +300,13 @@
 
     // ── Heatmap cell coloring ──
     function applyHeatmapColors() {
+      // Unified heatmap: blue (#4A90D9) = good/easy, red (#C44E52) = bad/hard
+      // "low" and "high" refer to the cell value, not goodness.
       var scales = {
-        entropy: { low: [74, 144, 217], high: [196, 78, 82] },
-        mass:    { low: [196, 78, 82],  high: [44, 160, 44] },
-        hits:    { low: [255, 255, 255], high: [123, 79, 191] }
+        entropy: { low: [74, 144, 217], high: [196, 78, 82] },     // low entropy = blue (easy), high = red (hard)
+        mass:    { low: [196, 78, 82],  high: [74, 144, 217] },     // low mass = red (bad), high = blue (good)
+        hits:    { low: [74, 144, 217], high: [196, 78, 82] },      // few hits = blue (easy), many = red (harder)
+        rank:    { low: [74, 144, 217], high: [196, 78, 82] },      // rank 1 = blue (good), high rank = red (bad)
       };
       var headers = document.querySelectorAll('#rule-table th[data-heatmap]');
       headers.forEach(function(th) {
