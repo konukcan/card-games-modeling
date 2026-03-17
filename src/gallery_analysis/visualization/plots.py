@@ -62,20 +62,31 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.LayerChart:
         ``difficulty_df`` from :func:`data.load_results`.
     """
     import numpy as np
+    from scipy.stats import spearmanr
 
     # Filter out rules with zero or missing true-rule mass.
     plot_df = df.dropna(subset=["true_rule_posterior_mass"]).copy()
     plot_df = plot_df[plot_df["true_rule_posterior_mass"] > 0].copy()
 
-    # Floor for log scale: use actual minimum with a small margin.
+    # Spearman rank correlation between entropy and log10(mass).
+    plot_df["log10_mass"] = np.log10(plot_df["true_rule_posterior_mass"])
+    rho, pval = spearmanr(plot_df["posterior_entropy"], plot_df["log10_mass"])
+
+    # Floor/ceiling for log scale with padding.
     min_mass = plot_df["true_rule_posterior_mass"].min()
-    floor = min_mass * 0.1  # one decade below the smallest value
+    max_entropy = plot_df["posterior_entropy"].max()
+    floor = min_mass * 0.05   # ~1.3 decades below the smallest value
+    x_pad = max_entropy * 0.05
 
     points = (
         alt.Chart(plot_df)
         .mark_circle(size=60, opacity=0.8)
         .encode(
-            x=alt.X("posterior_entropy:Q", title="Posterior Entropy (bits)"),
+            x=alt.X(
+                "posterior_entropy:Q",
+                title="Posterior Entropy (bits)",
+                scale=alt.Scale(domain=[-x_pad, max_entropy + x_pad]),
+            ),
             y=alt.Y(
                 "true_rule_posterior_mass:Q",
                 title="True Rule Posterior Mass (log scale)",
@@ -96,10 +107,6 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.LayerChart:
     )
 
     # Loess trend line on log-transformed mass.
-    # Altair's transform_loess works on the raw values, so we add a
-    # log10 column, fit loess on that, then exponentiate back.
-    plot_df["log10_mass"] = np.log10(plot_df["true_rule_posterior_mass"])
-
     trend = (
         alt.Chart(plot_df)
         .transform_loess(
@@ -116,8 +123,20 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.LayerChart:
         )
     )
 
+    # Annotation: Spearman rho and p-value.
+    pval_str = f"p < 0.001" if pval < 0.001 else f"p = {pval:.3f}"
+    annotation = (
+        alt.Chart(pd.DataFrame({
+            "x": [max_entropy * 0.95],
+            "y": [1.0],
+            "text": [f"Spearman ρ = {rho:.2f}, {pval_str}"],
+        }))
+        .mark_text(align="right", fontSize=11, color="#555")
+        .encode(x="x:Q", y="y:Q", text="text:N")
+    )
+
     return (
-        (points + trend)
+        (points + trend + annotation)
         .properties(
             width=500,
             height=400,
