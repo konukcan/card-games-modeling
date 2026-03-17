@@ -29,10 +29,7 @@ try:
         build_calibration_df,
     )
     from gallery_analysis.visualization.plots import (
-        difficulty_strip,
         difficulty_scatter,
-        true_rule_recovery,
-        equiv_class_bars,
         depth_population,
         depth_vs_difficulty,
         depth_posterior_heatmap,
@@ -57,10 +54,7 @@ except ImportError:
         build_calibration_df,
     )
     from gallery_analysis.visualization.plots import (
-        difficulty_strip,
         difficulty_scatter,
-        true_rule_recovery,
-        equiv_class_bars,
         depth_population,
         depth_vs_difficulty,
         depth_posterior_heatmap,
@@ -88,9 +82,9 @@ def generate_summary(
 ) -> Path:
     """Generate the summary index.html from Bayesian analysis results.
 
-    Builds four Altair charts (strip, scatter, recovery, equivalence-class),
-    plus optional depth decomposition and diagnosticity charts, serializes
-    them as Vega-Lite JSON specs, and renders the summary.html template.
+    Builds the scatter chart plus optional depth decomposition and
+    diagnosticity charts, serializes them as Vega-Lite JSON specs, and
+    renders the summary.html template with a heatmap index table.
 
     Parameters
     ----------
@@ -127,10 +121,7 @@ def generate_summary(
     # ── Build Altair chart specs as JSON strings ─────────────────────
     df = results.difficulty_df
 
-    chart_strip = json.dumps(difficulty_strip(df).to_dict())
     chart_scatter = json.dumps(difficulty_scatter(df).to_dict())
-    chart_recovery = json.dumps(true_rule_recovery(df).to_dict())
-    chart_equiv = json.dumps(equiv_class_bars(df).to_dict())
 
     # ── Depth decomposition charts (optional) ────────────────────────
     depth_charts = {}
@@ -213,10 +204,7 @@ def generate_summary(
 
     html = template.render(
         stats=results.pipeline_stats,
-        chart_strip=chart_strip,
         chart_scatter=chart_scatter,
-        chart_recovery=chart_recovery,
-        chart_equiv=chart_equiv,
         has_depth=depth_results is not None,
         has_diag=diag_results is not None,
         rules=rules,

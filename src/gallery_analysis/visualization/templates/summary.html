@@ -65,32 +65,41 @@
       padding: 1rem;
     }
 
-    /* Table */
-    table {
+    /* Heatmap table */
+    .heatmap-table {
       width: 100%;
       border-collapse: collapse;
       background: #fff;
       border: 1px solid #e0e0e0;
       border-radius: 8px;
       overflow: hidden;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
-    th, td { padding: 0.6rem 0.8rem; text-align: left; }
-    th {
+    .heatmap-table th, .heatmap-table td {
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .heatmap-table th {
       background: #f5f5f5;
       font-weight: 600;
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
       border-bottom: 2px solid #ddd;
+      position: sticky;
+      top: 0;
     }
-    th:hover { background: #e8e8e8; }
-    th .sort-arrow { font-size: 0.7rem; margin-left: 0.3rem; color: #999; }
-    td { border-bottom: 1px solid #eee; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9f9f9; }
-    td a { color: #2c6fbb; text-decoration: none; }
-    td a:hover { text-decoration: underline; }
+    .heatmap-table th:hover { background: #e8e8e8; }
+    .heatmap-table th .sort-arrow { font-size: 0.7rem; margin-left: 0.3rem; color: #999; }
+    .heatmap-table td { border-bottom: 1px solid #eee; }
+    .heatmap-table tr:last-child td { border-bottom: none; }
+    .heatmap-table tr:hover td { background: rgba(0,0,0,0.03); }
+    .heatmap-table td a { color: #2c6fbb; text-decoration: none; }
+    .heatmap-table td a:hover { text-decoration: underline; }
+    .heatmap-table td[data-val] {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
 
     /* Badges */
     .badge {
@@ -155,26 +164,41 @@
     </div>
   </div>
 
-  {# ── Difficulty strip plot (full-width) ── #}
-  <h2>Difficulty Overview</h2>
-  <div class="chart-full chart-container">
-    <div id="chart-strip"></div>
-  </div>
+  {# ── Heatmap table ── #}
+  <h2>Rule Overview</h2>
+  <table id="rule-table" class="heatmap-table">
+    <thead>
+      <tr>
+        <th data-type="string">Rule <span class="sort-arrow"></span></th>
+        <th data-type="string">Group <span class="sort-arrow"></span></th>
+        <th data-type="string">Answer <span class="sort-arrow"></span></th>
+        <th data-type="number" data-heatmap="entropy">Entropy <span class="sort-arrow"></span></th>
+        <th data-type="number" data-heatmap="mass">True Rule Mass <span class="sort-arrow"></span></th>
+        <th data-type="number" data-heatmap="hits">N All-Hits <span class="sort-arrow"></span></th>
+        <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
+        {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rules %}
+      <tr>
+        <td><a href="rules/{{ r.rule_id }}.html">{{ r.rule_id }}</a></td>
+        <td><span class="badge group-{{ r.group_label | lower }}">{{ r.group_label }}</span></td>
+        <td>{{ r.answer }}</td>
+        <td data-val="{{ r.posterior_entropy }}">{{ "%.3f" | format(r.posterior_entropy) }}</td>
+        <td data-val="{{ r.true_rule_posterior_mass if r.true_rule_posterior_mass is not none else '' }}">{{ "%.4f" | format(r.true_rule_posterior_mass) if r.true_rule_posterior_mass is not none else "—" }}</td>
+        <td data-val="{{ r.n_with_all_hits }}">{{ r.n_with_all_hits }}</td>
+        <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
+        {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-  {# ── Side-by-side: scatter + recovery ── #}
-  <div class="chart-row">
-    <div class="chart-container">
-      <div id="chart-scatter"></div>
-    </div>
-    <div class="chart-container">
-      <div id="chart-recovery"></div>
-    </div>
-  </div>
-
-  {# ── Equivalence class chart (full-width) ── #}
-  <h2>Equivalence Classes</h2>
+  {# ── Scatter chart (full-width) ── #}
+  <h2>Difficulty Scatter</h2>
   <div class="chart-full chart-container">
-    <div id="chart-equiv"></div>
+    <div id="chart-scatter"></div>
   </div>
 
   {% if has_depth %}
@@ -233,50 +257,6 @@
   </p>
   {% endif %}
 
-  {# ── Rule index table ── #}
-  <h2>Rule Index</h2>
-  <table id="rule-table">
-    <thead>
-      <tr>
-        <th data-type="string">Rule <span class="sort-arrow"></span></th>
-        <th data-type="string">Group <span class="sort-arrow"></span></th>
-        <th data-type="number">Entropy <span class="sort-arrow"></span></th>
-        <th data-type="number">N_eff <span class="sort-arrow"></span></th>
-        <th data-type="number">Top-1% <span class="sort-arrow"></span></th>
-        <th data-type="number">True Rule Rank <span class="sort-arrow"></span></th>
-        <th data-type="number">True Rule Mass <span class="sort-arrow"></span></th>
-        {% if has_depth %}<th data-type="number">True Depth <span class="sort-arrow"></span></th>{% endif %}
-        {% if has_diag %}
-        <th data-type="number">MeanConf <span class="sort-arrow"></span></th>
-        <th data-type="number">Ambig% <span class="sort-arrow"></span></th>
-        <th data-type="number">Accuracy <span class="sort-arrow"></span></th>
-        {% endif %}
-        <th data-type="string">Answer <span class="sort-arrow"></span></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in rules %}
-      <tr>
-        <td><a href="rules/{{ r.rule_id }}.html">{{ r.rule_id }}</a></td>
-        <td>
-          <span class="badge group-{{ r.group_label | lower }}">{{ r.group_label }}</span>
-        </td>
-        <td>{{ "%.3f" | format(r.posterior_entropy) }}</td>
-        <td>{{ "%.1f" | format(r.n_effective) }}</td>
-        <td>{{ "%.1f" | format(r.top1_probability * 100) }}%</td>
-        <td>{{ r.true_rule_rank if r.true_rule_rank is not none else "—" }}</td>
-        <td>{{ "%.4f" | format(r.true_rule_posterior_mass) if r.true_rule_posterior_mass is not none else "—" }}</td>
-        {% if has_depth %}<td>{{ r.true_rule_depth if r.true_rule_depth is not none else "—" }}</td>{% endif %}
-        {% if has_diag %}
-        <td>{{ "%.3f" | format(r.mean_confidence) if r.mean_confidence is not none else "—" }}</td>
-        <td>{{ "%.1f" | format(r.fraction_ambiguous * 100) if r.fraction_ambiguous is not none else "—" }}{% if r.fraction_ambiguous is not none %}%{% endif %}</td>
-        <td>{{ "%.1f" | format(r.accuracy * 100) if r.accuracy is not none else "—" }}{% if r.accuracy is not none %}%{% endif %}</td>
-        {% endif %}
-        <td>{{ r.answer }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 
   <div class="footer">
     Generated by Bayesian Rule Induction Gallery Analysis
@@ -284,10 +264,7 @@
 
   <script>
     // ── Embed Vega-Lite charts ──
-    vegaEmbed('#chart-strip',   {{ chart_strip | safe }},   {actions: false});
     vegaEmbed('#chart-scatter', {{ chart_scatter | safe }},  {actions: false});
-    vegaEmbed('#chart-recovery',{{ chart_recovery | safe }}, {actions: false});
-    vegaEmbed('#chart-equiv',   {{ chart_equiv | safe }},    {actions: false});
 
     {% if has_depth %}
     vegaEmbed('#chart-depth-pop',      {{ chart_depth_pop | safe }},      {actions: false});
@@ -350,9 +327,47 @@
           });
 
           rows.forEach(function(row) { tbody.appendChild(row); });
+          applyHeatmapColors();
         });
       });
     })();
+
+    // ── Heatmap cell coloring ──
+    function applyHeatmapColors() {
+      var scales = {
+        entropy: { low: [74, 144, 217], high: [196, 78, 82] },
+        mass:    { low: [196, 78, 82],  high: [44, 160, 44] },
+        hits:    { low: [255, 255, 255], high: [123, 79, 191] }
+      };
+      var headers = document.querySelectorAll('#rule-table th[data-heatmap]');
+      headers.forEach(function(th) {
+        var key = th.getAttribute('data-heatmap');
+        if (!scales[key]) return;
+        var colIdx = Array.from(th.parentNode.children).indexOf(th);
+        var rows = document.querySelectorAll('#rule-table tbody tr');
+        var vals = [];
+        rows.forEach(function(row) {
+          var v = parseFloat(row.children[colIdx].getAttribute('data-val'));
+          if (!isNaN(v)) vals.push(v);
+        });
+        if (vals.length === 0) return;
+        var min = Math.min.apply(null, vals);
+        var max = Math.max.apply(null, vals);
+        var range = max - min || 1;
+        var scale = scales[key];
+        rows.forEach(function(row) {
+          var cell = row.children[colIdx];
+          var v = parseFloat(cell.getAttribute('data-val'));
+          if (isNaN(v)) return;
+          var t = (v - min) / range;
+          var r = Math.round(scale.low[0] + t * (scale.high[0] - scale.low[0]));
+          var g = Math.round(scale.low[1] + t * (scale.high[1] - scale.low[1]));
+          var b = Math.round(scale.low[2] + t * (scale.high[2] - scale.low[2]));
+          cell.style.backgroundColor = 'rgba(' + r + ',' + g + ',' + b + ',0.25)';
+        });
+      });
+    }
+    applyHeatmapColors();
   </script>
 
 </body>
