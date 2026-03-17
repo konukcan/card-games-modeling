@@ -23,6 +23,8 @@ const CardRenderer = (function () {
     // (playing cards have roughly a 5:7 aspect ratio)
     img.style.height = "110px";
     img.style.width = Math.round(110 * (2.5 / 3.5)) + "px";
+    img.style.boxShadow = "0 1px 3px rgba(0,0,0,0.12)";
+    img.style.borderRadius = "3px";
 
     return img;
   }
@@ -36,10 +38,11 @@ const CardRenderer = (function () {
   function renderHand(handData, containerEl) {
     const row = document.createElement("div");
     row.style.display = "flex";
-    row.style.gap = "6px";
+    row.style.gap = "4px";
     row.style.padding = "6px";
-    row.style.backgroundColor = "#f5f5f5";
+    row.style.backgroundColor = "#fff";
     row.style.borderRadius = "4px";
+    row.style.border = "1px solid #e8e8e8";
 
     handData.forEach(function (card) {
       row.appendChild(renderCard(card));
@@ -90,7 +93,7 @@ const CardRenderer = (function () {
 
     // Metrics line below the cards
     var info = document.createElement("div");
-    info.style.fontSize = "0.78rem";
+    info.style.fontSize = "0.72rem";
     info.style.color = "#555";
     info.style.marginTop = "3px";
     info.style.paddingLeft = "6px";

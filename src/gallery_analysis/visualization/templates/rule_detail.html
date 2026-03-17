@@ -184,10 +184,6 @@
       <div class="label">Posterior Entropy</div>
     </div>
     <div class="metric">
-      <div class="value">{{ "%.1f" | format(difficulty.n_effective) }}</div>
-      <div class="label">N_eff</div>
-    </div>
-    <div class="metric">
       <div class="value">{{ "%.1f" | format(difficulty.top1_probability * 100) }}%</div>
       <div class="label">Top-1 Probability</div>
     </div>
@@ -273,6 +269,18 @@
         <td>{{ "%.2f" | format(h.log_likelihood) }}</td>
       </tr>
       {% endfor %}
+      {% if true_rule_hypothesis and not true_rule_in_top %}
+      <tr class="true-rule" style="border-top: 2px solid #2CA02C;">
+        <td>{{ true_rule_hypothesis.rank }}</td>
+        <td class="mono">{{ true_rule_hypothesis.program }}</td>
+        <td>{{ true_rule_hypothesis.program_depth }}</td>
+        <td>{{ "%.4f" | format(true_rule_hypothesis.probability) }}</td>
+        <td>{{ true_rule_hypothesis.extension_size }}</td>
+        <td>{{ true_rule_hypothesis.n_expressions }}</td>
+        <td>{{ "%.2f" | format(true_rule_hypothesis.log_prior) }}</td>
+        <td>{{ "%.2f" | format(true_rule_hypothesis.log_likelihood) }}</td>
+      </tr>
+      {% endif %}
     </tbody>
   </table>
 

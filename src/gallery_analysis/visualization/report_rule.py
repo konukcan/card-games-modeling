@@ -172,6 +172,24 @@ def generate_rule_page(
         .to_dict("records")
     )
 
+    # ── True rule hypothesis (for table — show even if not in top 10) ─
+    true_rule_in_top = any(h["is_true_rule"] for h in hypotheses)
+    true_rule_hypothesis = None
+    if not true_rule_in_top and difficulty.get("true_rule_rank") is not None:
+        # Build a minimal hypothesis dict from difficulty metrics.
+        # The full hypothesis data isn't available here (only top-10 are
+        # in hypotheses_df), so we show what we can.
+        true_rule_hypothesis = {
+            "rank": difficulty["true_rule_rank"],
+            "program": difficulty.get("answer", "—"),
+            "program_depth": "—",
+            "probability": difficulty.get("true_rule_posterior_mass", 0) or 0,
+            "extension_size": "—",
+            "n_expressions": "—",
+            "log_prior": 0,
+            "log_likelihood": 0,
+        }
+
     # ── Render template ──────────────────────────────────────────────
     html = template.render(
         rule_id=rule_id,
@@ -189,6 +207,8 @@ def generate_rule_page(
         test_hands_json=test_hands_json_str,
         chart_p_accept_hist=chart_p_accept_hist,
         hypotheses=hypotheses,
+        true_rule_hypothesis=true_rule_hypothesis,
+        true_rule_in_top=true_rule_in_top,
     )
 
     # ── Write to disk ────────────────────────────────────────────────
