@@ -195,6 +195,10 @@
       <div class="value">{{ difficulty.true_rule_rank if difficulty.true_rule_rank is not none else "\u2014" }}</div>
       <div class="label">True Rule Rank</div>
     </div>
+    <div class="metric">
+      <div class="value">{{ "%.4f" | format(difficulty.true_rule_posterior_mass) if difficulty.true_rule_posterior_mass is not none else "\u2014" }}</div>
+      <div class="label">True Rule Posterior</div>
+    </div>
   </div>
 
   {# ── Two-column layout: cards + charts ── #}
@@ -223,12 +227,8 @@
     {# Right column: charts #}
     <div>
       <div class="panel">
-        <h3>Posterior Distribution</h3>
-        <div id="chart-posterior"></div>
-      </div>
-      <div class="panel" style="margin-top: 1rem;">
-        <h3>Prior vs Likelihood</h3>
-        <div id="chart-prior-lik"></div>
+        <h3>Posterior Decomposition</h3>
+        <div id="chart-decomposition"></div>
       </div>
       {% if has_diagnosticity %}
       <div class="panel" style="margin-top: 1rem;">
@@ -323,8 +323,7 @@
 
   {# ── Embed Vega-Lite charts ── #}
   <script>
-    vegaEmbed('#chart-posterior', {{ chart_posterior | safe }}, {actions: false});
-    vegaEmbed('#chart-prior-lik', {{ chart_prior_lik | safe }}, {actions: false});
+    vegaEmbed('#chart-decomposition', {{ chart_decomposition | safe }}, {actions: false});
     {% if has_diagnosticity %}
     vegaEmbed('#chart-diag', {{ chart_diag | safe }}, {actions: false});
     {% endif %}

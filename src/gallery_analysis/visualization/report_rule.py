@@ -28,8 +28,7 @@ from jinja2 import Environment, FileSystemLoader
 try:
     from gallery_analysis.visualization.data import BayesianResults, DiagnosticityResults
     from gallery_analysis.visualization.plots import (
-        posterior_bars,
-        prior_vs_likelihood,
+        posterior_decomposition,
         diagnosticity_bars,
         p_accept_histogram,
     )
@@ -49,8 +48,7 @@ except ImportError:
 
     from gallery_analysis.visualization.data import BayesianResults, DiagnosticityResults
     from gallery_analysis.visualization.plots import (
-        posterior_bars,
-        prior_vs_likelihood,
+        posterior_decomposition,
         diagnosticity_bars,
         p_accept_histogram,
     )
@@ -142,8 +140,9 @@ def generate_rule_page(
     hands_json = hands_to_json(hands, card_images_path)
 
     # ── Build Altair chart specs ─────────────────────────────────────
-    chart_posterior = json.dumps(posterior_bars(rule_hyps, rule_id).to_dict())
-    chart_prior_lik = json.dumps(prior_vs_likelihood(rule_hyps).to_dict())
+    chart_decomposition = json.dumps(
+        posterior_decomposition(rule_hyps, rule_id).to_dict()
+    )
 
     has_diagnosticity = len(rule_diag) > 0
     chart_diag = (
@@ -183,8 +182,7 @@ def generate_rule_page(
         next_rule=next_rule,
         hands_json=hands_json,
         cards_js=cards_js,
-        chart_posterior=chart_posterior,
-        chart_prior_lik=chart_prior_lik,
+        chart_decomposition=chart_decomposition,
         has_diagnosticity=has_diagnosticity,
         chart_diag=chart_diag,
         has_test_hands=has_test_hands,

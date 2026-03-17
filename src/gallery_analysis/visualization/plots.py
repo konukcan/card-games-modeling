@@ -650,6 +650,157 @@ def prior_vs_likelihood(hyp_df: pd.DataFrame) -> alt.Chart:
     )
 
 
+def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
+    """Stacked horizontal bars showing posterior = prior + likelihood contributions.
+
+    Each hypothesis gets one bar with total width = posterior probability,
+    split into prior contribution (blue) and likelihood contribution (amber).
+    The true rule bar gets a green border.  Y-axis labels are natural language
+    translations of the DSL programs.
+
+    Parameters
+    ----------
+    hyp_df : pd.DataFrame
+        Filtered slice of ``hypotheses_df`` for a single rule.
+    rule_id : str
+        The rule identifier (used in the chart title).
+    """
+    from gallery_analysis.visualization.dsl_translator import translate_dsl
+
+    plot_df = hyp_df.copy()
+
+    # Compute prior/likelihood share of each hypothesis's posterior.
+    # |log_prior| and |log_likelihood| measure how much each factor
+    # "contributes" to the unnormalised log-posterior.  We turn those into
+    # proportional widths of the posterior bar.
+    abs_lp = plot_df["log_prior"].abs()
+    abs_ll = plot_df["log_likelihood"].abs()
+    denom = abs_lp + abs_ll
+    # Guard against division by zero (both logs are 0 -- extremely unlikely
+    # but handle gracefully by splitting 50/50).
+    denom = denom.replace(0, 1)
+
+    prior_share = abs_lp / denom
+    likelihood_share = 1 - prior_share
+
+    plot_df["prior_width"] = plot_df["probability"] * prior_share
+    plot_df["likelihood_width"] = plot_df["probability"] * likelihood_share
+
+    # Translate DSL programs to English, truncate for y-axis labels.
+    plot_df["program_label"] = plot_df["program"].apply(
+        lambda p: translate_dsl(p)[:40]
+    )
+
+    # De-duplicate labels that map to the same English string by appending
+    # the rank so Altair can distinguish rows.
+    seen: dict[str, int] = {}
+    labels: list[str] = []
+    for _, row in plot_df.iterrows():
+        lbl = row["program_label"]
+        if lbl in seen:
+            seen[lbl] += 1
+            lbl = f"{lbl} ({seen[lbl]})"
+        else:
+            seen[lbl] = 1
+        labels.append(lbl)
+    plot_df["program_label"] = labels
+
+    # Build long-form DataFrame: two rows per hypothesis (Prior + Likelihood).
+    rows = []
+    for _, row in plot_df.iterrows():
+        base = {
+            "program_label": row["program_label"],
+            "is_true_rule": row["is_true_rule"],
+            "probability": row["probability"],
+        }
+        rows.append({
+            **base,
+            "component": "Prior",
+            "start": 0,
+            "end": row["prior_width"],
+        })
+        rows.append({
+            **base,
+            "component": "Likelihood",
+            "start": row["prior_width"],
+            "end": row["probability"],
+        })
+    long_df = pd.DataFrame(rows)
+
+    # Sort order: highest posterior at top.
+    sorted_labels = (
+        plot_df.sort_values("probability", ascending=False)["program_label"].tolist()
+    )
+
+    component_scale = alt.Scale(
+        domain=["Prior", "Likelihood"],
+        range=["#4A90D9", "#D4A029"],
+    )
+
+    bars = (
+        alt.Chart(long_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("start:Q", title="Posterior Probability"),
+            x2=alt.X2("end:Q"),
+            y=alt.Y(
+                "program_label:N",
+                title=None,
+                sort=sorted_labels,
+                axis=alt.Axis(labelLimit=300),
+            ),
+            color=alt.Color(
+                "component:N",
+                title="Component",
+                scale=component_scale,
+            ),
+            stroke=alt.condition(
+                alt.datum.is_true_rule,
+                alt.value(_TRUE_RULE_COLOR),
+                alt.value("transparent"),
+            ),
+            strokeWidth=alt.condition(
+                alt.datum.is_true_rule,
+                alt.value(2),
+                alt.value(0),
+            ),
+            tooltip=[
+                alt.Tooltip("program_label:N", title="Hypothesis"),
+                alt.Tooltip("component:N", title="Component"),
+                alt.Tooltip("probability:Q", title="Posterior", format=".4f"),
+                alt.Tooltip("start:Q", title="Segment Start", format=".4f"),
+                alt.Tooltip("end:Q", title="Segment End", format=".4f"),
+            ],
+        )
+    )
+
+    # Text labels showing exact posterior at the end of each bar.
+    # Use one row per hypothesis (not per component) to avoid duplicate labels.
+    label_df = long_df[long_df["component"] == "Likelihood"].copy()
+    # Ensure tiny bars still get a visible label position.
+    label_df["label_x"] = label_df["end"].clip(lower=0.002)
+
+    text = (
+        alt.Chart(label_df)
+        .mark_text(align="left", dx=4, fontSize=10)
+        .encode(
+            x=alt.X("label_x:Q"),
+            y=alt.Y("program_label:N", sort=sorted_labels),
+            text=alt.Text("probability:Q", format=".4f"),
+        )
+    )
+
+    n_hyps = len(plot_df)
+    return (
+        (bars + text)
+        .properties(
+            width=550,
+            height=max(200, n_hyps * 25),
+            title=f"Posterior Decomposition — {rule_id}",
+        )
+    )
+
+
 def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
     """Bar chart of exemplar agreement rate with a diagnostic threshold line.
 
