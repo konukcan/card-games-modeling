@@ -545,3 +545,81 @@ def load_diagnosticity_spectrums(path: Union[str, Path]) -> DiagnosticityResults
         representative_hands=representative_hands,
         config=config,
     )
+
+
+def build_calibration_df(
+    diag_results: DiagnosticityResults,
+    difficulty_df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Build calibration data from representative hands.
+
+    Pools representative hands (easy_accept, easy_reject, ambiguous) across
+    all rules, bins them by P(accept), and computes the observed acceptance
+    rate within each (bin, difficulty-group) combination.
+
+    Parameters
+    ----------
+    diag_results : DiagnosticityResults
+        Loaded diagnosticity results containing ``representative_hands``
+        and ``spectrum_df``.
+    difficulty_df : pd.DataFrame
+        Rule-level difficulty DataFrame (needs ``rule_id`` and
+        ``group_label`` columns).
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ``bin_center``, ``observed_rate``, ``group_label``,
+        ``n_hands``.  Empty DataFrame (with those columns) when no
+        representative hands are available.
+    """
+    import numpy as np
+
+    # Map rule_id -> group_label from difficulty_df.
+    group_map = difficulty_df.set_index("rule_id")["group_label"].to_dict()
+
+    # Collect all representative hands across all rules.
+    rows: List[Dict[str, Any]] = []
+    for rule_id, categories in diag_results.representative_hands.items():
+        label = group_map.get(rule_id)
+        if label is None:
+            continue
+        for cat_name in ("easy_accept", "easy_reject", "ambiguous"):
+            for hand in categories.get(cat_name, []):
+                p_accept = hand.get("p_accept")
+                gt = hand.get("ground_truth")
+                if p_accept is None or gt is None:
+                    continue
+                rows.append({
+                    "p_accept": p_accept,
+                    "ground_truth": bool(gt),
+                    "group_label": label,
+                })
+
+    empty = pd.DataFrame(columns=["bin_center", "observed_rate", "group_label", "n_hands"])
+    if not rows:
+        return empty
+
+    hands_df = pd.DataFrame(rows)
+
+    # Bin P(accept) into 10 equal-width bins [0, 0.1), [0.1, 0.2), ..., [0.9, 1.0].
+    bins = np.linspace(0, 1, 11)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    hands_df["bin_idx"] = np.clip(
+        np.digitize(hands_df["p_accept"], bins) - 1, 0, 9
+    )
+    hands_df["bin_center"] = hands_df["bin_idx"].map(
+        lambda i: bin_centers[i]
+    )
+
+    # Aggregate: observed acceptance rate per (bin, group).
+    agg = (
+        hands_df.groupby(["bin_center", "group_label"])
+        .agg(
+            observed_rate=("ground_truth", "mean"),
+            n_hands=("ground_truth", "count"),
+        )
+        .reset_index()
+    )
+
+    return agg

@@ -26,6 +26,7 @@ try:
         BayesianResults,
         DepthDecompositionResults,
         DiagnosticityResults,
+        build_calibration_df,
     )
     from gallery_analysis.visualization.plots import (
         difficulty_strip,
@@ -38,6 +39,7 @@ try:
         depth_prior_range,
         diagnosticity_overview_scatter,
         entropy_vs_accuracy,
+        calibration_plot,
     )
 except ImportError:
     # Fallback for direct execution: add parent packages to sys.path.
@@ -52,6 +54,7 @@ except ImportError:
         BayesianResults,
         DepthDecompositionResults,
         DiagnosticityResults,
+        build_calibration_df,
     )
     from gallery_analysis.visualization.plots import (
         difficulty_strip,
@@ -64,6 +67,7 @@ except ImportError:
         depth_prior_range,
         diagnosticity_overview_scatter,
         entropy_vs_accuracy,
+        calibration_plot,
     )
 
 
@@ -164,6 +168,12 @@ def generate_summary(
         if len(diag_merged) > 0:
             diag_charts["chart_accuracy"] = json.dumps(
                 entropy_vs_accuracy(diag_merged).to_dict()
+            )
+        # Calibration plot from representative hands.
+        cal_df = build_calibration_df(diag_results, df)
+        if len(cal_df) > 0:
+            diag_charts["chart_calibration"] = json.dumps(
+                calibration_plot(cal_df).to_dict()
             )
 
     # ── Build the rules list for the index table ─────────────────────

@@ -220,6 +220,11 @@
       <div id="chart-accuracy"></div>
     </div>
   </div>
+  {% if chart_calibration is defined %}
+  <div class="chart-full chart-container">
+    <div id="chart-calibration"></div>
+  </div>
+  {% endif %}
   <p style="color:#888; font-size:0.8rem; margin-top:0.5rem;">
     <strong>Note on exemplar diagnosticity:</strong> The per-rule "exemplar diagnosticity" bars
     on rule detail pages always read 1.0 because training exemplars are selected so that
@@ -295,6 +300,9 @@
     vegaEmbed('#chart-diag-overview',  {{ chart_diag_overview | safe }},  {actions: false});
     {% if chart_accuracy is defined %}
     vegaEmbed('#chart-accuracy',  {{ chart_accuracy | safe }},  {actions: false});
+    {% endif %}
+    {% if chart_calibration is defined %}
+    vegaEmbed('#chart-calibration',  {{ chart_calibration | safe }},  {actions: false});
     {% endif %}
     {% endif %}
 

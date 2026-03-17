@@ -703,6 +703,72 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
     )
 
 
+def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
+    """Calibration curves by difficulty group with a diagonal reference line.
+
+    Each difficulty group gets a colored line with points at each P(accept)
+    bin center.  Point size encodes the number of hands in that bin
+    (more data = bigger dot).  A dashed diagonal from (0,0) to (1,1)
+    represents perfect calibration.
+
+    Parameters
+    ----------
+    cal_df : pd.DataFrame
+        Output of :func:`data.build_calibration_df`.  Must contain columns
+        ``bin_center``, ``observed_rate``, ``group_label``, ``n_hands``.
+    """
+    # Diagonal reference line (perfect calibration).
+    diag_data = pd.DataFrame({"x": [0, 1], "y": [0, 1]})
+    diagonal = (
+        alt.Chart(diag_data)
+        .mark_line(strokeDash=[4, 4], color="#999", strokeWidth=1)
+        .encode(x="x:Q", y="y:Q")
+    )
+
+    # Calibration lines with points per difficulty group.
+    lines = (
+        alt.Chart(cal_df)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X(
+                "bin_center:Q",
+                title="Predicted P(accept)",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            y=alt.Y(
+                "observed_rate:Q",
+                title="Observed Acceptance Rate",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            color=alt.Color(
+                "group_label:N",
+                title="Difficulty",
+                scale=difficulty_color_scale(),
+            ),
+            size=alt.Size(
+                "n_hands:Q",
+                title="N hands",
+                scale=alt.Scale(range=[30, 300]),
+            ),
+            tooltip=[
+                alt.Tooltip("group_label:N", title="Group"),
+                alt.Tooltip("bin_center:Q", title="Bin Center", format=".2f"),
+                alt.Tooltip("observed_rate:Q", title="Obs. Rate", format=".2f"),
+                alt.Tooltip("n_hands:Q", title="N Hands"),
+            ],
+        )
+    )
+
+    return (
+        (diagonal + lines)
+        .properties(
+            width=450,
+            height=350,
+            title="Calibration: P(accept) vs Observed Acceptance",
+        )
+    )
+
+
 def entropy_vs_accuracy(merged_df: pd.DataFrame) -> alt.Chart:
     """Scatter of posterior entropy vs weighted-vote classification accuracy.
 
