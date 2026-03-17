@@ -58,7 +58,8 @@ def _build_dsl_lookup(injected_path: Path) -> dict[tuple[str, str], str]:
     lookup: dict[tuple[str, str], str] = {}
     for entry in data:
         # Only LLM foil entries have origin.original_rule_id and hypothesis_text
-        if not entry["id"].startswith("llm__"):
+        # Phase 1b entries start with "phase1b__", earlier ones with "llm__"
+        if not (entry["id"].startswith("llm__") or entry["id"].startswith("phase1b__")):
             continue
         origin = entry.get("origin", {})
         rule_id = origin.get("original_rule_id")
@@ -80,7 +81,7 @@ def _normalise(text: str) -> str:
 def load_phase1b_hypotheses(
     *,
     phase1b_dir: Optional[Path] = None,
-    injected_path: Optional[Path] = None,
+    injected_path: Optional[Path] = _DEFAULT_INJECTED_PATH,
     format_filter: str = "dsl-constrained",
     passed_only: bool = True,
 ) -> list[dict]:
