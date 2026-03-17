@@ -481,6 +481,8 @@ class DiagnosticityResults:
     histogram_data: Dict[str, List[Dict[str, Any]]]
     gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]]
     balanced_gt_histogram_data: Dict[str, Dict[str, Dict[str, int]]]
+    hand_summaries: Dict[str, List[Dict[str, Any]]]
+    balanced_hand_summaries: Dict[str, List[Dict[str, Any]]]
     representative_hands: Dict[str, Dict[str, List[Dict[str, Any]]]]
     config: Dict[str, Any]
 
@@ -539,6 +541,14 @@ def load_diagnosticity_spectrums(path: Union[str, Path]) -> DiagnosticityResults
         gt_histogram_data[rule_id] = spec.get("gt_histogram", {})
         balanced_gt_histogram_data[rule_id] = spec.get("balanced_gt_histogram", {})
 
+    # ── hand_summaries ────────────────────────────────────────────────
+    # Per-hand (p_accept, ground_truth) pairs — full resolution data.
+    hand_summaries_data: Dict[str, List[Dict[str, Any]]] = {}
+    balanced_hand_summaries_data: Dict[str, List[Dict[str, Any]]] = {}
+    for rule_id, spec in spectrums.items():
+        hand_summaries_data[rule_id] = spec.get("hand_summaries", [])
+        balanced_hand_summaries_data[rule_id] = spec.get("balanced_hand_summaries", [])
+
     # ── representative_hands ──────────────────────────────────────────
     # Extract the three categories of representative hands per rule.
     representative_hands: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
@@ -554,6 +564,8 @@ def load_diagnosticity_spectrums(path: Union[str, Path]) -> DiagnosticityResults
         histogram_data=histogram_data,
         gt_histogram_data=gt_histogram_data,
         balanced_gt_histogram_data=balanced_gt_histogram_data,
+        hand_summaries=hand_summaries_data,
+        balanced_hand_summaries=balanced_hand_summaries_data,
         representative_hands=representative_hands,
         config=config,
     )
@@ -563,17 +575,17 @@ def build_calibration_df(
     diag_results: DiagnosticityResults,
     difficulty_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Build calibration data from representative hands.
+    """Build calibration data from per-hand summaries (or representative hands as fallback).
 
-    Pools representative hands (easy_accept, easy_reject, ambiguous) across
-    all rules, bins them by P(accept), and computes the observed acceptance
-    rate within each (bin, difficulty-group) combination.
+    Uses full per-hand (p_accept, ground_truth) data when available (10,000+
+    hands per rule), falling back to the ~15 representative hands per rule
+    for older diagnosticity files.  Bins by P(accept) and computes observed
+    acceptance rate per (bin, rule).
 
     Parameters
     ----------
     diag_results : DiagnosticityResults
-        Loaded diagnosticity results containing ``representative_hands``
-        and ``spectrum_df``.
+        Loaded diagnosticity results.
     difficulty_df : pd.DataFrame
         Rule-level difficulty DataFrame (needs ``rule_id`` and
         ``group_label`` columns).
@@ -582,32 +594,50 @@ def build_calibration_df(
     -------
     pd.DataFrame
         Columns: ``bin_center``, ``observed_rate``, ``group_label``,
-        ``n_hands``.  Empty DataFrame (with those columns) when no
-        representative hands are available.
+        ``rule_id``, ``n_hands``.
     """
     import numpy as np
 
     # Map rule_id -> group_label from difficulty_df.
     group_map = difficulty_df.set_index("rule_id")["group_label"].to_dict()
 
-    # Collect all representative hands across all rules.
     rows: List[Dict[str, Any]] = []
-    for rule_id, categories in diag_results.representative_hands.items():
-        label = group_map.get(rule_id)
-        if label is None:
-            continue
-        for cat_name in ("easy_accept", "easy_reject", "ambiguous"):
-            for hand in categories.get(cat_name, []):
-                p_accept = hand.get("p_accept")
-                gt = hand.get("ground_truth")
-                if p_accept is None or gt is None:
-                    continue
+
+    # Prefer full hand_summaries when available.
+    has_summaries = any(
+        len(v) > 0 for v in diag_results.hand_summaries.values()
+    )
+
+    if has_summaries:
+        for rule_id, summaries in diag_results.hand_summaries.items():
+            label = group_map.get(rule_id)
+            if label is None or not summaries:
+                continue
+            for h in summaries:
                 rows.append({
                     "rule_id": rule_id,
-                    "p_accept": p_accept,
-                    "ground_truth": bool(gt),
+                    "p_accept": h["p_accept"],
+                    "ground_truth": bool(h["ground_truth"]),
                     "group_label": label,
                 })
+    else:
+        # Fallback: use representative hands (~15 per rule).
+        for rule_id, categories in diag_results.representative_hands.items():
+            label = group_map.get(rule_id)
+            if label is None:
+                continue
+            for cat_name in ("easy_accept", "easy_reject", "ambiguous"):
+                for hand in categories.get(cat_name, []):
+                    p_accept = hand.get("p_accept")
+                    gt = hand.get("ground_truth")
+                    if p_accept is None or gt is None:
+                        continue
+                    rows.append({
+                        "rule_id": rule_id,
+                        "p_accept": p_accept,
+                        "ground_truth": bool(gt),
+                        "group_label": label,
+                    })
 
     empty = pd.DataFrame(columns=[
         "bin_center", "observed_rate", "group_label", "rule_id", "n_hands",

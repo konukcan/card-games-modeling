@@ -70,6 +70,9 @@ class DiagnosticSpectrum:
     # Ground-truth-split histograms: bin_label → {"true_accept": count, "true_reject": count}
     gt_histogram: Dict[str, Dict[str, int]] = field(default_factory=dict)
     balanced_gt_histogram: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    # Per-hand summaries: lightweight (p_accept, ground_truth) pairs for all hands
+    hand_summaries: List[Dict[str, Any]] = field(default_factory=list)
+    balanced_hand_summaries: List[Dict[str, Any]] = field(default_factory=list)
     # Balanced sampling (accept + reject hands in equal numbers)
     balanced_reports: List[DiagnosticityReport] = field(default_factory=list)
     balanced_n: int = 0
@@ -438,6 +441,16 @@ def generate_diagnostic_spectrum(
             key = "true_accept" if r.ground_truth else "true_reject"
             balanced_gt_histogram[bin_labels[bin_idx]][key] += 1
 
+    # Per-hand summaries: lightweight (p_accept, ground_truth) for all hands.
+    hand_summaries = [
+        {"p_accept": round(r.p_accept, 6), "ground_truth": r.ground_truth}
+        for r in reports
+    ]
+    balanced_hand_summaries = [
+        {"p_accept": round(r.p_accept, 6), "ground_truth": r.ground_truth}
+        for r in balanced_reports
+    ]
+
     return DiagnosticSpectrum(
         rule_id=rule_id,
         group=group,
@@ -451,6 +464,8 @@ def generate_diagnostic_spectrum(
         p_accept_histogram=histogram,
         gt_histogram=gt_histogram,
         balanced_gt_histogram=balanced_gt_histogram,
+        hand_summaries=hand_summaries,
+        balanced_hand_summaries=balanced_hand_summaries,
         easy_accept_hands=easy_accept,
         easy_reject_hands=easy_reject,
         ambiguous_hands=ambiguous,
