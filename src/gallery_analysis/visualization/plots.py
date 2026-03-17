@@ -551,18 +551,19 @@ def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
 
 
 def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
-    """Calibration curves by difficulty group with a diagonal reference line.
+    """Calibration curves per rule with a diagonal reference line.
 
-    Each difficulty group gets a colored line with points at each P(accept)
-    bin center.  Point size encodes the number of hands in that bin
-    (more data = bigger dot).  A dashed diagonal from (0,0) to (1,1)
-    represents perfect calibration.
+    Each rule gets a thin colored line (colored by difficulty group)
+    connecting its P(accept) bins to observed acceptance rates.  Points
+    are sized by the number of hands in each bin.  A dashed diagonal
+    from (0,0) to (1,1) represents perfect calibration.
 
     Parameters
     ----------
     cal_df : pd.DataFrame
         Output of :func:`data.build_calibration_df`.  Must contain columns
-        ``bin_center``, ``observed_rate``, ``group_label``, ``n_hands``.
+        ``bin_center``, ``observed_rate``, ``group_label``, ``rule_id``,
+        ``n_hands``.
     """
     # Diagonal reference line (perfect calibration).
     diag_data = pd.DataFrame({"x": [0, 1], "y": [0, 1]})
@@ -572,10 +573,10 @@ def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
         .encode(x="x:Q", y="y:Q")
     )
 
-    # Calibration lines with points per difficulty group.
+    # One line per rule, colored by difficulty group.
     lines = (
         alt.Chart(cal_df)
-        .mark_line(point=True)
+        .mark_line(opacity=0.4, strokeWidth=1)
         .encode(
             x=alt.X(
                 "bin_center:Q",
@@ -592,12 +593,29 @@ def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
                 title="Difficulty",
                 scale=difficulty_color_scale(),
             ),
+            detail=alt.Detail("rule_id:N"),
+        )
+    )
+
+    # Points at each (rule, bin) with size = n_hands.
+    points = (
+        alt.Chart(cal_df)
+        .mark_circle(opacity=0.6)
+        .encode(
+            x=alt.X("bin_center:Q"),
+            y=alt.Y("observed_rate:Q"),
+            color=alt.Color(
+                "group_label:N",
+                title="Difficulty",
+                scale=difficulty_color_scale(),
+            ),
             size=alt.Size(
                 "n_hands:Q",
                 title="N hands",
-                scale=alt.Scale(range=[30, 300]),
+                scale=alt.Scale(range=[15, 150]),
             ),
             tooltip=[
+                alt.Tooltip("rule_id:N", title="Rule"),
                 alt.Tooltip("group_label:N", title="Group"),
                 alt.Tooltip("bin_center:Q", title="Bin Center", format=".2f"),
                 alt.Tooltip("observed_rate:Q", title="Obs. Rate", format=".2f"),
@@ -607,7 +625,7 @@ def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
     )
 
     return (
-        (diagonal + lines)
+        (diagonal + lines + points)
         .properties(
             width=450,
             height=350,

@@ -603,12 +603,15 @@ def build_calibration_df(
                 if p_accept is None or gt is None:
                     continue
                 rows.append({
+                    "rule_id": rule_id,
                     "p_accept": p_accept,
                     "ground_truth": bool(gt),
                     "group_label": label,
                 })
 
-    empty = pd.DataFrame(columns=["bin_center", "observed_rate", "group_label", "n_hands"])
+    empty = pd.DataFrame(columns=[
+        "bin_center", "observed_rate", "group_label", "rule_id", "n_hands",
+    ])
     if not rows:
         return empty
 
@@ -624,9 +627,9 @@ def build_calibration_df(
         lambda i: bin_centers[i]
     )
 
-    # Aggregate: observed acceptance rate per (bin, group).
+    # Aggregate: observed acceptance rate per (bin, rule).
     agg = (
-        hands_df.groupby(["bin_center", "group_label"])
+        hands_df.groupby(["bin_center", "rule_id", "group_label"])
         .agg(
             observed_rate=("ground_truth", "mean"),
             n_hands=("ground_truth", "count"),
