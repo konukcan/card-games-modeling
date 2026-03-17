@@ -239,9 +239,18 @@ def merge_injected(
             ec["all_programs"].append(inj["dsl_program"])
             ec["n_expressions"] += 1
 
-            # Update summed prior: log(exp(old) + exp(new))
-            ec["summed_prior"] = _log_sum_exp(
-                ec["summed_prior"], inj["log_prior"]
+            # DO NOT add injected programs' priors into summed_prior.
+            # summed_prior should reflect only enumerated programs
+            # (grammar expressibility), not LLM agreement. Injected
+            # programs still contribute novel equivalence classes and
+            # enrich all_programs for inspection, but they must not
+            # inflate the prior of existing classes.
+            #
+            # Track the full sum (including injections) separately
+            # for diagnostic purposes only.
+            ec["summed_prior_with_injections"] = _log_sum_exp(
+                ec.get("summed_prior_with_injections", ec["summed_prior"]),
+                inj["log_prior"],
             )
 
             # Track injection IDs

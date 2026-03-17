@@ -352,6 +352,8 @@ def score_rule(
     prior_mode: str = "summed",
     true_rule_fingerprint: str = None,
     grammar=None,
+    likelihood_exponent: float = 1.0,
+    likelihood_mode: str = "noisy",
 ) -> Dict[str, Any]:
     """
     Score all hypotheses for a single rule and compute difficulty.
@@ -366,6 +368,9 @@ def score_rule(
         true_rule_fingerprint: Fingerprint of the equivalence class containing the
             true rule for this gallery rule. Used for true-rule tracking, confusion
             profiles, and diagnosticity analysis.
+        likelihood_exponent: Exponent k applied to the likelihood term.
+            P(D|h)^k — k>1 inflates the size principle, penalising hypotheses
+            with large extensions more aggressively. k=1 is standard Bayes.
 
     Returns:
         Dict with: rule_id, difficulty_metrics, top_hypotheses, n_hypotheses_scored,
@@ -410,8 +415,10 @@ def score_rule(
         else:
             log_prior = cls["summed_prior"]
 
-        log_post_strict = log_prior + log_lik_strict
-        log_post_noisy = log_prior + log_lik_noisy
+        # Apply likelihood exponent: log P(D|h)^k = k * log P(D|h)
+        # k > 1 inflates the size principle, penalising large-extension hypotheses
+        log_post_strict = log_prior + likelihood_exponent * log_lik_strict
+        log_post_noisy = log_prior + likelihood_exponent * log_lik_noisy
 
         scored.append(ScoredHypothesis(
             canonical_program=cls["canonical_program"],
@@ -431,11 +438,14 @@ def score_rule(
             all_programs=cls["all_programs"],
         ))
 
-    # Sort by noisy posterior (best first)
-    scored.sort(key=lambda s: -s.log_posterior_noisy)
+    # Sort by chosen likelihood mode posterior (best first)
+    if likelihood_mode == "strict":
+        scored.sort(key=lambda s: -s.log_posterior_strict)
+    else:
+        scored.sort(key=lambda s: -s.log_posterior_noisy)
 
     # Normalize posteriors
-    normalized = normalize_posteriors(scored, mode="noisy")
+    normalized = normalize_posteriors(scored, mode=likelihood_mode)
 
     # Compute difficulty
     difficulty = compute_rule_difficulty(normalized)
@@ -451,7 +461,9 @@ def score_rule(
             "extension_size": sh.extension_size,
             "base_rate": round(sh.base_rate, 6),
             "log_prior": round(sh.log_prior_summed, 2),
-            "log_likelihood": round(sh.log_likelihood_noisy, 2),
+            "log_likelihood": round(
+                sh.log_likelihood_strict if likelihood_mode == "strict"
+                else sh.log_likelihood_noisy, 2),
         })
 
     # --- True-rule tracking ---
@@ -556,6 +568,8 @@ def run_analysis(
     extension_cache: str = None,
     max_list_chain: int = 2,
     scoring_grammar: str = "uniform",
+    likelihood_exponent: float = 1.0,
+    likelihood_mode: str = "noisy",
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -664,6 +678,12 @@ def run_analysis(
         if verbose >= 1:
             print(f"\nUsing WEIGHTED scoring grammar (4-tier)", flush=True)
 
+    if likelihood_mode == "strict" and verbose >= 1:
+        print(f"Using STRICT likelihood (zero tolerance for misses)", flush=True)
+
+    if likelihood_exponent != 1.0 and verbose >= 1:
+        print(f"Using likelihood exponent k={likelihood_exponent} (inflated size principle)", flush=True)
+
     # Score each rule
     if verbose >= 1:
         print(f"\nStep 5: Scoring {len(GALLERY_RULES)} rules...", flush=True)
@@ -687,6 +707,8 @@ def run_analysis(
             prior_mode=prior_mode,
             true_rule_fingerprint=true_rule_fps.get(rule_id),
             grammar=scoring_grammar_obj,
+            likelihood_exponent=likelihood_exponent,
+            likelihood_mode=likelihood_mode,
         )
         result["group"] = rule_info["group"]
         result["answer"] = rule_info["answer"]
@@ -746,6 +768,8 @@ def run_analysis(
             "epsilon": epsilon,
             "prior_mode": prior_mode,
             "scoring_grammar": scoring_grammar,
+            "likelihood_exponent": likelihood_exponent,
+            "likelihood_mode": likelihood_mode,
         },
         "provenance": provenance,
     }
@@ -777,7 +801,9 @@ def print_difficulty_report(results: Dict[str, Any], verbose: int = 1):
     print(f"\nConfig: depth={config['max_depth']}, programs={config['max_programs']:,}, "
           f"probes={config['n_probes']}, MC_samples={config['extension_samples']:,}, "
           f"ε={config['epsilon']}, prior={config['prior_mode']}, "
-          f"grammar={config.get('scoring_grammar', 'uniform')}")
+          f"grammar={config.get('scoring_grammar', 'uniform')}, "
+          f"k={config.get('likelihood_exponent', 1.0)}, "
+          f"likelihood={config.get('likelihood_mode', 'noisy')}")
 
     enum_s = stats.get("enumeration", {})
     triv_s = stats.get("trivial_filter", {})
@@ -972,6 +998,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
                         help="Disable list→list chain limit (enumerate all programs)")
     parser.add_argument("--grammar", choices=["uniform", "weighted"], default="uniform",
                         help="Scoring grammar: 'uniform' (baseline) or 'weighted' (4-tier)")
+    parser.add_argument("--likelihood-exponent", type=float, default=1.0,
+                        help="Exponent k on P(D|h)^k. k>1 inflates size principle (default 1.0)")
+    parser.add_argument("--likelihood-mode", choices=["noisy", "strict"], default="noisy",
+                        help="Likelihood model: 'noisy' (default, soft penalty for misses) or "
+                             "'strict' (zero posterior for any miss)")
     return parser
 
 
@@ -1002,6 +1033,8 @@ def main():
         extension_cache=args.extension_cache,
         max_list_chain=max_list_chain,
         scoring_grammar=args.grammar,
+        likelihood_exponent=args.likelihood_exponent,
+        likelihood_mode=args.likelihood_mode,
         verbose=args.verbose,
     )
 
