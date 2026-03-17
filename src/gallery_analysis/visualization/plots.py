@@ -65,24 +65,19 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
     plot_df = df.dropna(subset=["true_rule_posterior_mass"]).copy()
     plot_df = plot_df[plot_df["true_rule_posterior_mass"] > 0].copy()
 
-    # Floor for log scale: smallest nonzero value, or 1e-10 fallback.
+    # Floor for log scale: use actual minimum with a small margin.
     min_mass = plot_df["true_rule_posterior_mass"].min()
-    floor = max(min_mass * 0.5, 1e-50)
+    floor = min_mass * 0.1  # one decade below the smallest value
 
     return (
         alt.Chart(plot_df)
-        .mark_circle()
+        .mark_circle(size=60, opacity=0.8)
         .encode(
             x=alt.X("posterior_entropy:Q", title="Posterior Entropy (bits)"),
             y=alt.Y(
                 "true_rule_posterior_mass:Q",
                 title="True Rule Posterior Mass (log scale)",
-                scale=alt.Scale(type="log", domain=[floor, 1]),
-            ),
-            size=alt.Size(
-                "n_effective:Q",
-                title="N_eff",
-                scale=alt.Scale(range=[30, 400]),
+                scale=alt.Scale(type="log", domain=[floor, 2]),
             ),
             color=alt.Color(
                 "group_label:N",
@@ -94,7 +89,6 @@ def difficulty_scatter(df: pd.DataFrame) -> alt.Chart:
                 alt.Tooltip("posterior_entropy:Q", title="Entropy", format=".3f"),
                 alt.Tooltip("true_rule_posterior_mass:Q", title="True Rule Mass", format=".2e"),
                 alt.Tooltip("true_rule_rank:Q", title="True Rule Rank"),
-                alt.Tooltip("n_effective:Q", title="N_eff", format=".1f"),
             ],
         )
         .properties(
