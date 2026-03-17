@@ -67,6 +67,9 @@ class DiagnosticSpectrum:
     easy_accept_hands: List[DiagnosticityReport]   # high confidence, accept
     easy_reject_hands: List[DiagnosticityReport]    # high confidence, reject
     ambiguous_hands: List[DiagnosticityReport]      # low confidence
+    # Balanced sampling (accept + reject hands in equal numbers)
+    balanced_reports: List[DiagnosticityReport] = field(default_factory=list)
+    balanced_n: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +84,7 @@ def compute_posteriors_for_rule(
     prior_mode: str = "summed",
     mass_threshold: float = 0.001,
     grammar=None,
+    likelihood_exponent: float = 1.0,
 ) -> List[Tuple[float, int, List[bool]]]:
     """
     Compute normalized posteriors for all equivalence classes given exemplar hands.
@@ -101,6 +105,7 @@ def compute_posteriors_for_rule(
         grammar: Optional grammar object for re-scoring priors. When provided,
             priors are recomputed under this grammar (e.g. weighted 4-tier)
             instead of using the stored uniform priors.
+        likelihood_exponent: Exponent k on P(D|h)^k. k>1 inflates size principle.
 
     Returns:
         List of (probability, cls_idx, hit_vector) tuples, sorted by probability
@@ -133,14 +138,22 @@ def compute_posteriors_for_rule(
         log_lik = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size, epsilon)
 
         # Prior: recompute under provided grammar, or use stored prior
-        if grammar is not None:
+        if grammar is not None and prior_mode == "canonical":
+            # Canonical under new grammar: use only the single cheapest program
+            from gallery_analysis.dsl_prior import compute_log_prior
+            try:
+                log_prior = compute_log_prior(cls["canonical_program"], grammar)
+            except Exception:
+                log_prior = float('-inf')
+        elif grammar is not None:
+            # Summed under new grammar: log-sum-exp across all programs
             log_prior = _recompute_class_prior(cls, grammar)
         elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
         else:
             log_prior = cls["summed_prior"]
 
-        log_post = log_prior + log_lik
+        log_post = log_prior + likelihood_exponent * log_lik
         scored.append((log_post, i, hit_vector))
 
     # Normalize to get P(h_j | D)
@@ -280,6 +293,8 @@ def generate_diagnostic_spectrum(
     seed: int = 42,
     group: int = 0,
     n_representative: int = 5,
+    balanced_n: int = 0,
+    verbose: int = 0,
 ) -> DiagnosticSpectrum:
     """
     Sample random hands and rate them to produce a diagnosticity spectrum.
@@ -296,6 +311,10 @@ def generate_diagnostic_spectrum(
         seed: Random seed for reproducibility.
         group: Difficulty group (1=easy, 2=medium, 3=hard) for metadata.
         n_representative: Number of representative hands per category.
+        balanced_n: When > 0, additionally generate this many accept + this many
+            reject hands via rejection sampling, then rate them. Stored in
+            ``balanced_reports`` on the returned spectrum.
+        verbose: Verbosity level (0=silent, 2=progress for balanced sampling).
 
     Returns:
         DiagnosticSpectrum with distribution statistics and representative hands.
@@ -350,6 +369,52 @@ def generate_diagnostic_spectrum(
         key=lambda r: r.confidence,
     )[:n_representative]
 
+    # --- Balanced sampling (rejection sampling for accept + reject hands) ---
+    balanced_reports: List[DiagnosticityReport] = []
+    actual_balanced_n = 0
+
+    if balanced_n > 0:
+        MAX_ATTEMPTS = 1_000_000
+        balanced_rng = random.Random(seed + 999)  # separate seed stream
+        accept_hands: List[Hand] = []
+        reject_hands: List[Hand] = []
+        attempts = 0
+
+        if verbose >= 2:
+            print(f"    Balanced sampling: targeting {balanced_n} accept + "
+                  f"{balanced_n} reject hands...", flush=True)
+
+        while (len(accept_hands) < balanced_n or len(reject_hands) < balanced_n) \
+                and attempts < MAX_ATTEMPTS:
+            hand = balanced_rng.sample(deck, 6)
+            attempts += 1
+            try:
+                accepts = bool(ground_truth_pred(hand))
+            except Exception:
+                continue
+
+            if accepts and len(accept_hands) < balanced_n:
+                accept_hands.append(hand)
+            elif not accepts and len(reject_hands) < balanced_n:
+                reject_hands.append(hand)
+
+            # Progress reporting every 100k attempts
+            if verbose >= 2 and attempts % 100_000 == 0:
+                print(f"      {attempts:,} attempts: "
+                      f"{len(accept_hands)}/{balanced_n} accept, "
+                      f"{len(reject_hands)}/{balanced_n} reject", flush=True)
+
+        if verbose >= 2:
+            print(f"      Done: {len(accept_hands)} accept + {len(reject_hands)} reject "
+                  f"in {attempts:,} attempts", flush=True)
+
+        # Rate all balanced hands
+        balanced_hands = accept_hands + reject_hands
+        balanced_reports = rate_hand_set(
+            rule_id, balanced_hands, posteriors, equiv_classes, ground_truth_pred,
+        )
+        actual_balanced_n = balanced_n
+
     return DiagnosticSpectrum(
         rule_id=rule_id,
         group=group,
@@ -364,4 +429,6 @@ def generate_diagnostic_spectrum(
         easy_accept_hands=easy_accept,
         easy_reject_hands=easy_reject,
         ambiguous_hands=ambiguous,
+        balanced_reports=balanced_reports,
+        balanced_n=actual_balanced_n,
     )

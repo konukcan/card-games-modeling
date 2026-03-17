@@ -107,6 +107,8 @@ def _spectrum_to_dict(spectrum: DiagnosticSpectrum) -> Dict[str, Any]:
         "easy_accept_hands": [_report_to_dict(r) for r in spectrum.easy_accept_hands],
         "easy_reject_hands": [_report_to_dict(r) for r in spectrum.easy_reject_hands],
         "ambiguous_hands": [_report_to_dict(r) for r in spectrum.ambiguous_hands],
+        "balanced_reports": [_report_to_dict(r) for r in spectrum.balanced_reports],
+        "balanced_n": spectrum.balanced_n,
     }
 
 
@@ -207,8 +209,21 @@ def main():
         help="Random seed for candidate hand generation (default: 42)"
     )
     parser.add_argument(
+        "--balanced", type=int, default=500,
+        help="Balanced sampling: generate this many accept + this many reject "
+             "hands per rule via rejection sampling (default: 500, 0 to disable)"
+    )
+    parser.add_argument(
         "--grammar", choices=["uniform", "weighted"], default="uniform",
         help="Scoring grammar: 'uniform' (baseline) or 'weighted' (4-tier)"
+    )
+    parser.add_argument(
+        "--prior", choices=["canonical", "summed"], default="summed",
+        help="Prior mode: 'canonical' (single cheapest) or 'summed' (log-sum-exp)"
+    )
+    parser.add_argument(
+        "--likelihood-exponent", type=float, default=1.0,
+        help="Exponent k on P(D|h)^k. k>1 inflates size principle (default 1.0)"
     )
     args = parser.parse_args()
 
@@ -233,8 +248,9 @@ def main():
     print("=" * 70)
     print("HAND DIAGNOSTICITY ANALYSIS")
     print("=" * 70)
+    balanced_info = f", Balanced: {args.balanced}+{args.balanced}" if args.balanced > 0 else ""
     print(f"Rules: {len(rule_ids)}, Candidates/rule: {args.n_candidates:,}, "
-          f"Mass threshold: {args.mass_threshold}", flush=True)
+          f"Mass threshold: {args.mass_threshold}{balanced_info}", flush=True)
 
     # Step 1: Build hypothesis pool
     equiv_classes, pipeline_stats = build_hypothesis_pool(
@@ -297,8 +313,10 @@ def main():
         posteriors = compute_posteriors_for_rule(
             equiv_classes, extensions, exemplar_hands,
             epsilon=0.01,
+            prior_mode=args.prior,
             mass_threshold=args.mass_threshold,
             grammar=scoring_grammar_obj,
+            likelihood_exponent=args.likelihood_exponent,
         )
 
         if args.verbose >= 2:
@@ -314,6 +332,8 @@ def main():
             n_candidates=args.n_candidates,
             seed=args.seed,
             group=rule_info["group"],
+            balanced_n=args.balanced,
+            verbose=args.verbose,
         )
 
         all_spectrums[rule_id] = spectrum
@@ -370,6 +390,7 @@ def main():
                 "depth": args.depth,
                 "seed": args.seed,
                 "n_equiv_classes": len(equiv_classes),
+                "balanced_n": args.balanced,
             },
             "provenance": provenance,
             "spectrums": {
