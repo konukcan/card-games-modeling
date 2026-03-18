@@ -463,3 +463,21 @@ class TestMCMCIntegration:
         assert len(result.first_passage) > 0
         for prog_str, step in result.first_passage.items():
             assert step >= 0, f"First passage step should be non-negative, got {step}"
+
+
+# --------------------------------------------------------------------------- #
+# Test: init_max_depth produces small programs
+# --------------------------------------------------------------------------- #
+
+def test_init_max_depth_produces_small_programs(grammar):
+    """With init_max_depth=3, initial programs should be manageable size."""
+    from gallery_analysis.mcmc_search import sample_program
+    from dreamcoder_core.type_system import Arrow, HAND, BOOL
+    sizes = []
+    for seed in range(20):
+        prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=3, seed=seed)
+        sizes.append(prog.size())
+    avg = sum(sizes) / len(sizes)
+    assert avg < 50, f"Average size {avg} too large for max_depth=3"
+    assert max(sizes) < 100, f"Max size {max(sizes)} too large"
+

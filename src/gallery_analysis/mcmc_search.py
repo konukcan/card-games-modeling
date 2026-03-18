@@ -919,6 +919,7 @@ class MCMCConfig:
     top_k: int = 250
     seed: Optional[int] = None
     verbose: int = 0  # 0=silent, 1=chain progress, 2=accept/reject, 3=proposal details
+    init_max_depth: int = 3   # Max depth for initial program sample (small to avoid dead chains)
 
 
 @dataclass
@@ -1111,7 +1112,7 @@ class MCMCChain:
         V = config.verbose  # shorthand
 
         current = sample_program(
-            grammar, request_type, max_depth=config.max_depth,
+            grammar, request_type, max_depth=config.init_max_depth,
             seed=rng.randint(0, 2**31),
         )
         current_log_prior = grammar.program_log_likelihood(
@@ -1362,6 +1363,7 @@ def run_parallel_chains(
             top_k=config.top_k,
             seed=chain_seed,
             verbose=config.verbose,
+            init_max_depth=config.init_max_depth,
         )
         if config.verbose >= 1:
             print(f"\n  --- Chain {i+1}/{n_chains} (seed={chain_seed}) ---")
