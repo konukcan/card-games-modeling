@@ -266,12 +266,14 @@ def p_accept_ground_truth(
     gt_hist: dict,
     rule_id: str,
     title: str = "",
-) -> alt.Chart:
+    show_legend: bool = True,
+) -> alt.LayerChart:
     """Stacked bar chart of P(accept) bins split by ground truth.
 
     Each bin is split into green (true accept) and red (true reject)
-    segments, revealing whether the model is overly permissive or
-    restrictive at each confidence level.
+    segments.  A diamond marker shows the "calibrated" accept count
+    for each bin (bin_center × total hands in bin) — deviations from
+    the diamond reveal over/under-confidence.
 
     Parameters
     ----------
@@ -281,33 +283,45 @@ def p_accept_ground_truth(
     rule_id : str
         Rule identifier (used in chart title if *title* is empty).
     title : str, optional
-        Override chart title.  Defaults to
-        "P(accept) Ground Truth -- <rule_id>".
+        Override chart title.
+    show_legend : bool
+        Whether to show the color legend (set False for the second panel).
     """
     if not gt_hist:
-        # Return an empty chart when data is missing.
         return alt.Chart(pd.DataFrame({"x": []})).mark_point()
 
     bin_order = [
         "0.0-0.1", "0.1-0.2", "0.2-0.3", "0.3-0.4", "0.4-0.5",
         "0.5-0.6", "0.6-0.7", "0.7-0.8", "0.8-0.9", "0.9-1.0",
     ]
+    bin_centers = {b: (i + 0.5) / 10 for i, b in enumerate(bin_order)}
 
     # Build long-form DataFrame: two rows per bin (Accept + Reject).
     rows = []
+    cal_rows = []
     for bin_label in bin_order:
         counts = gt_hist.get(bin_label, {"true_accept": 0, "true_reject": 0})
+        n_accept = counts.get("true_accept", 0)
+        n_reject = counts.get("true_reject", 0)
+        total = n_accept + n_reject
         rows.append({
             "bin": bin_label,
             "component": "Accept",
-            "count": counts.get("true_accept", 0),
+            "count": n_accept,
         })
         rows.append({
             "bin": bin_label,
             "component": "Reject",
-            "count": counts.get("true_reject", 0),
+            "count": n_reject,
         })
+        # Calibration reference: expected accept count if perfectly calibrated.
+        if total > 0:
+            cal_rows.append({
+                "bin": bin_label,
+                "expected_accept": bin_centers[bin_label] * total,
+            })
     df = pd.DataFrame(rows)
+    cal_df = pd.DataFrame(cal_rows)
 
     gt_scale = alt.Scale(
         domain=["Accept", "Reject"],
@@ -316,7 +330,7 @@ def p_accept_ground_truth(
 
     chart_title = title or f"P(accept) Ground Truth — {rule_id}"
 
-    return (
+    bars = (
         alt.Chart(df)
         .mark_bar()
         .encode(
@@ -326,6 +340,7 @@ def p_accept_ground_truth(
                 "component:N",
                 title="Ground Truth",
                 scale=gt_scale,
+                legend=alt.Legend(orient="top", direction="horizontal") if show_legend else None,
             ),
             tooltip=[
                 alt.Tooltip("bin:N", title="P(accept) bin"),
@@ -333,6 +348,25 @@ def p_accept_ground_truth(
                 alt.Tooltip("count:Q", title="Count", format=","),
             ],
         )
+    )
+
+    # Calibration diamonds: where the green/red boundary would be
+    # if the model were perfectly calibrated.
+    cal_marks = (
+        alt.Chart(cal_df)
+        .mark_point(shape="diamond", size=40, color="#333", filled=True)
+        .encode(
+            x=alt.X("expected_accept:Q"),
+            y=alt.Y("bin:N", sort=bin_order),
+            tooltip=[
+                alt.Tooltip("bin:N", title="Bin"),
+                alt.Tooltip("expected_accept:Q", title="Calibrated Accept", format=".0f"),
+            ],
+        )
+    )
+
+    return (
+        (bars + cal_marks)
         .properties(
             width=300,
             height=250,
