@@ -38,7 +38,7 @@ USAGE:
 import logging
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 # ---------------------------------------------------------------------------
 # Path setup: allow importing from the main src/ tree
@@ -48,9 +48,11 @@ if _SRC_DIR not in sys.path:
     sys.path.insert(0, _SRC_DIR)
 
 from dreamcoder_core.grammar import Grammar
+from dreamcoder_core.program import Program
 from dreamcoder_core.type_system import HAND, BOOL, arrow
 
 from llm.grammar_comparison.translation.sexpr_parser import parse_hypothesis_sexpr
+from llm.grammar_comparison.translation.python_parser import python_to_ast
 from llm.grammar_comparison.grammars.grammar_factory import (
     build_grammar,
     CostStructure,
@@ -62,6 +64,47 @@ logger = logging.getLogger(__name__)
 # The request type for all hypotheses: a function from a hand to a boolean.
 # Every hypothesis is λ hand. body, where hand : list(card) and body : bool.
 REQUEST_TYPE = arrow(HAND, BOOL)
+
+
+
+def parse_hypothesis(hypothesis: Dict) -> Optional[Program]:
+    """Parse a hypothesis dict into a Program AST, trying available representations.
+
+    Attempts parsing in priority order:
+        1. dsl_code (s-expression) via parse_hypothesis_sexpr()
+        2. python_code (Python lambda) via python_to_ast()
+
+    This fallback ensures that hypotheses without s-expression translations
+    (19 of 271 in Phase 1b) can still be scored, as long as they have a
+    Python representation.
+
+    Args:
+        hypothesis: A dict with optional 'dsl_code' and 'python_code' keys.
+
+    Returns:
+        A Program AST, or None if neither representation can be parsed.
+    """
+    dsl_code = hypothesis.get("dsl_code")
+    python_code = hypothesis.get("python_code")
+
+    # Priority 1: s-expression
+    if dsl_code is not None:
+        try:
+            return parse_hypothesis_sexpr(dsl_code)
+        except (ValueError, Exception) as e:
+            logger.debug("S-expr parse error for %r: %s", dsl_code, e)
+            return None
+
+    # Priority 2: Python lambda
+    if python_code is not None:
+        try:
+            return python_to_ast(python_code)
+        except (ValueError, NotImplementedError, Exception) as e:
+            logger.debug("Python parse error for %r: %s", python_code, e)
+            return None
+
+    # Neither representation available
+    return None
 
 
 def score_hypothesis(sexpr: str, grammar: Grammar) -> float:
@@ -103,6 +146,27 @@ def score_hypothesis(sexpr: str, grammar: Grammar) -> float:
     return ll
 
 
+def score_program(program: Program, grammar: Grammar) -> float:
+    """Score a pre-parsed Program AST under a grammar.
+
+    Like score_hypothesis() but takes an already-parsed Program instead
+    of an s-expression string. Useful when the Program was obtained via
+    parse_hypothesis() (which may have used the Python fallback path).
+
+    Args:
+        program: A Program AST node.
+        grammar: A Grammar object.
+
+    Returns:
+        The log-probability, or -inf on error.
+    """
+    try:
+        return grammar.program_log_likelihood(program, REQUEST_TYPE)
+    except Exception as e:
+        logger.debug("Scoring error for program %s: %s", program, e)
+        return float('-inf')
+
+
 def score_all_hypotheses(
     grammar_name: str,
     cost_structure: CostStructure,
@@ -137,8 +201,9 @@ def score_all_hypotheses(
            referencing with injected_hypotheses.json.
         2. build_grammar() constructs a Grammar with the chosen primitives
            and log-probability assignments.
-        3. For each hypothesis with a dsl_code, score_hypothesis() computes
-           the log-probability. Hypotheses without dsl_code get -inf.
+        3. For each hypothesis, parse_hypothesis() tries the s-expression
+           first and falls back to python_to_ast() if dsl_code is missing.
+           Hypotheses with neither representation get -inf.
     """
     # Load hypotheses from Phase 1b data files
     hypotheses = load_phase1b_hypotheses()
@@ -152,12 +217,14 @@ def score_all_hypotheses(
 
     results = []
     for hyp in hypotheses:
-        dsl_code = hyp.get("dsl_code")
+        # Try to parse the hypothesis using the fallback chain:
+        # dsl_code (s-expression) first, then python_code if needed.
+        program = parse_hypothesis(hyp)
 
-        if dsl_code:
-            log_prob = score_hypothesis(dsl_code, grammar)
+        if program is not None:
+            log_prob = score_program(program, grammar)
         else:
-            # No DSL translation available — cannot score
+            # Neither representation could be parsed — cannot score
             log_prob = float('-inf')
 
         results.append({

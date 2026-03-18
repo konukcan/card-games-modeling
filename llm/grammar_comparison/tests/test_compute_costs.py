@@ -24,6 +24,8 @@ import pytest
 from llm.grammar_comparison.evaluation.compute_costs import (
     score_hypothesis,
     score_all_hypotheses,
+    parse_hypothesis,
+    score_program,
     REQUEST_TYPE,
 )
 from llm.grammar_comparison.grammars.grammar_factory import (
@@ -308,10 +310,12 @@ class TestScoreAllHypotheses:
                 "under UNIFORM vs TIERED"
             )
 
-    def test_hypothesis_without_dsl_code_gets_neg_inf(self):
-        """Hypotheses with no dsl_code should get -inf log_prob.
+    def test_hypothesis_without_dsl_code_uses_python_fallback(self):
+        """Hypotheses with dsl_code=None but valid python_code should get a
+        finite score via the Python-to-AST fallback path.
 
-        We mock load_phase1b_hypotheses to return a hypothesis without dsl_code.
+        We mock load_phase1b_hypotheses to return a hypothesis without dsl_code
+        but with a python_code that the python_parser can handle.
         """
         mock_hypotheses = [
             {
@@ -320,7 +324,34 @@ class TestScoreAllHypotheses:
                 "confidence": "HIGH",
                 "nl_description": "Test hypothesis",
                 "dsl_code": None,
-                "python_code": "lambda hand: True",
+                "python_code": "lambda hand: all(card.suit == Suit.CLUBS for card in hand)",
+                "judge_verdict": "PASS",
+                "source_model": "test",
+            }
+        ]
+
+        with patch(
+            "llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+            return_value=mock_hypotheses,
+        ):
+            results = score_all_hypotheses("base", CostStructure.UNIFORM)
+
+        assert len(results) == 1
+        assert math.isfinite(results[0]["log_prob"])
+        assert results[0]["log_prob"] < 0
+
+    def test_hypothesis_with_both_none_gets_neg_inf(self):
+        """Hypotheses with both dsl_code=None and python_code=None should
+        get -inf log_prob since there is nothing to parse.
+        """
+        mock_hypotheses = [
+            {
+                "rule_id": "test_rule",
+                "rank": 1,
+                "confidence": "HIGH",
+                "nl_description": "Test hypothesis",
+                "dsl_code": None,
+                "python_code": None,
                 "judge_verdict": "PASS",
                 "source_model": "test",
             }
@@ -334,3 +365,58 @@ class TestScoreAllHypotheses:
 
         assert len(results) == 1
         assert results[0]["log_prob"] == float('-inf')
+
+
+# ---------------------------------------------------------------------------
+# parse_hypothesis -- fallback logic
+# ---------------------------------------------------------------------------
+
+class TestParseHypothesisFallback:
+    """Test the parse_hypothesis() helper and its fallback chain."""
+
+    def test_dsl_code_none_python_code_valid_returns_program(self):
+        """When dsl_code is None but python_code is valid, parse_hypothesis
+        should return a Program AST (not None).
+        """
+        hyp = {
+            "dsl_code": None,
+            "python_code": "lambda hand: all(card.suit == Suit.CLUBS for card in hand)",
+        }
+        program = parse_hypothesis(hyp)
+        assert program is not None
+
+    def test_both_none_returns_none(self):
+        """When both dsl_code and python_code are None, parse_hypothesis
+        should return None.
+        """
+        hyp = {"dsl_code": None, "python_code": None}
+        program = parse_hypothesis(hyp)
+        assert program is None
+
+    def test_fallback_produces_same_score_as_direct(self, base_uniform_grammar):
+        """When a hypothesis has BOTH dsl_code and python_code, the score
+        from the s-expression path should match the score from the Python
+        fallback path.
+
+        This validates that both parsers produce equivalent ASTs for the
+        same underlying rule.
+        """
+        # A simple rule: all cards are clubs
+        dsl_code = "(λ all (λ eq (get_suit $0) CLUBS) $0)"
+        python_code = "lambda hand: all(card.suit == Suit.CLUBS for card in hand)"
+
+        # Score via the direct s-expression path
+        score_sexpr = score_hypothesis(dsl_code, base_uniform_grammar)
+
+        # Score via the Python fallback path
+        hyp_python_only = {"dsl_code": None, "python_code": python_code}
+        program_from_python = parse_hypothesis(hyp_python_only)
+        assert program_from_python is not None
+        score_python = score_program(program_from_python, base_uniform_grammar)
+
+        # Both should be finite and equal
+        assert math.isfinite(score_sexpr)
+        assert math.isfinite(score_python)
+        assert score_sexpr == score_python, (
+            f"Scores differ: s-expr={score_sexpr:.4f}, python={score_python:.4f}"
+        )
