@@ -94,10 +94,14 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
         top_k=args.top_k,
         seed=args.seed,
         verbose=args.verbose,
+        init_max_depth=args.init_max_depth,
+        beta_start=args.beta_start,
+        beta_end=args.beta_end,
     )
 
     print(f"Config: {config.n_steps} steps x {args.n_chains} chains, "
-          f"depth={config.max_depth}, eps={config.noise_epsilon}, "
+          f"depth={config.max_depth} (init={config.init_max_depth}), "
+          f"eps={config.noise_epsilon}, β={config.beta_start}→{config.beta_end}, "
           f"verbose={args.verbose}")
     print(f"{'='*60}")
 
@@ -229,6 +233,12 @@ def main() -> None:
     parser.add_argument('--verbose', '-v', type=int, default=0,
                         help='Verbose level: 0=summary, 1=chain progress, '
                              '2=accept/reject, 3=proposal details')
+    parser.add_argument('--beta-start', type=float, default=0.1,
+                        help='Likelihood annealing start temperature (default: 0.1)')
+    parser.add_argument('--beta-end', type=float, default=1.0,
+                        help='Likelihood annealing end temperature (default: 1.0)')
+    parser.add_argument('--init-max-depth', type=int, default=3,
+                        help='Max depth for initial program sample (default: 3)')
 
     args = parser.parse_args()
 
