@@ -882,8 +882,11 @@ def propose_regeneration(
 
 logger = logging.getLogger(__name__)
 
-# Total number of 6-card hands from a 52-card deck: C(52, 6)
-TOTAL_HANDS = 20_358_520
+# Total number of ORDERED 6-card hands from a 52-card deck: P(52, 6)
+# Hands are ordered because position matters (e.g., strict_increasing,
+# colors_palindrome). P(52,6) = 52 × 51 × 50 × 49 × 48 × 47.
+# Note: bayesian_scorer.py and hypothesis_table.py on main also need this fix.
+TOTAL_HANDS = 14_658_134_400
 
 
 @dataclass
