@@ -1,14 +1,8 @@
 """
 Tests for the log-probability scorer (compute_costs module).
 
-Verifies that:
-  - score_hypothesis returns negative floats for valid programs
-  - Simpler programs get higher (less negative) scores than complex ones
-  - Inexpressible programs return -inf
-  - score_all_hypotheses returns dicts with the correct fields
-  - Scores differ between grammar/cost combinations
-
-Written TDD-style: tests define expected behaviour before implementation.
+Verifies posterior = prior + likelihood, backward compatibility of score_hypothesis,
+fingerprint/extension fields, and exemplar consistency checks.
 """
 
 import math
@@ -16,7 +10,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-# Allow importing from the main src/ tree
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 import pytest
@@ -26,6 +19,8 @@ from llm.grammar_comparison.evaluation.compute_costs import (
     score_all_hypotheses,
     parse_hypothesis,
     score_program,
+    _fingerprint_to_string,
+    _make_predicate,
     REQUEST_TYPE,
 )
 from llm.grammar_comparison.grammars.grammar_factory import (
@@ -33,390 +28,214 @@ from llm.grammar_comparison.grammars.grammar_factory import (
     CostStructure,
 )
 from dreamcoder_core.type_system import HAND, BOOL, arrow
+from rules.cards import Card, Suit, Rank
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+def _make_hand_all_clubs():
+    return [Card(Suit.CLUBS, r) for r in [Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE, Rank.SIX, Rank.SEVEN]]
+
+def _make_hand_mixed():
+    return [
+        Card(Suit.CLUBS, Rank.TWO), Card(Suit.HEARTS, Rank.THREE),
+        Card(Suit.DIAMONDS, Rank.FOUR), Card(Suit.SPADES, Rank.FIVE),
+        Card(Suit.CLUBS, Rank.SIX), Card(Suit.HEARTS, Rank.SEVEN),
+    ]
+
+def _mock_hypothesis(dsl_code="(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)", python_code=None,
+                     exemplar_hands=None, rule_id="test_rule", rank=1):
+    if exemplar_hands is None:
+        exemplar_hands = [_make_hand_all_clubs() for _ in range(6)]
+    return {
+        "rule_id": rule_id, "rank": rank, "confidence": "HIGH",
+        "nl_description": "Test hypothesis", "dsl_code": dsl_code,
+        "python_code": python_code, "judge_verdict": "PASS",
+        "source_model": "test", "exemplar_hands": exemplar_hands,
+    }
+
 
 @pytest.fixture
 def base_uniform_grammar():
-    """The base grammar with uniform costs — simplest combination."""
     return build_grammar("base", CostStructure.UNIFORM)
-
 
 @pytest.fixture
 def base_tiered_grammar():
-    """The base grammar with tiered costs."""
     return build_grammar("base", CostStructure.TIERED)
-
 
 @pytest.fixture
 def minimal_uniform_grammar():
-    """The minimal grammar with uniform costs — fewer primitives."""
     return build_grammar("minimal", CostStructure.UNIFORM)
 
 
-# ---------------------------------------------------------------------------
-# Request type
-# ---------------------------------------------------------------------------
-
 class TestRequestType:
-    """Verify the request type constant is correctly constructed."""
-
     def test_request_type_is_hand_to_bool(self):
-        """REQUEST_TYPE should be arrow(HAND, BOOL) = list(card) -> bool."""
-        expected = arrow(HAND, BOOL)
-        assert REQUEST_TYPE == expected
+        assert REQUEST_TYPE == arrow(HAND, BOOL)
 
-    def test_request_type_string(self):
-        """Sanity check on the string representation."""
-        assert "list(card)" in str(REQUEST_TYPE)
-        assert "bool" in str(REQUEST_TYPE)
-
-
-# ---------------------------------------------------------------------------
-# score_hypothesis — basic scoring
-# ---------------------------------------------------------------------------
 
 class TestScoreHypothesisBasic:
-    """Test that score_hypothesis returns sensible values for valid programs."""
-
     def test_valid_program_returns_negative_float(self, base_uniform_grammar):
-        """A valid, expressible program should get a finite negative score.
-
-        We use a simple program: (λ all (λ eq (get_suit $0) CLUBS) $0)
-        which means 'all cards are clubs'. This uses only base primitives.
-        """
-        sexpr = "(λ all (λ eq (get_suit $0) CLUBS) $0)"
-        ll = score_hypothesis(sexpr, base_uniform_grammar)
-
-        # Should be a finite negative number (log-probability < 0)
-        assert isinstance(ll, float)
-        assert ll < 0
-        assert math.isfinite(ll)
+        ll = score_hypothesis("(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)", base_uniform_grammar)
+        assert isinstance(ll, float) and ll < 0 and math.isfinite(ll)
 
     def test_another_valid_program(self, base_uniform_grammar):
-        """Test with a different valid program for robustness.
+        ll = score_hypothesis("(\u03bb gt (length $0) 3)", base_uniform_grammar)
+        assert isinstance(ll, float) and ll < 0 and math.isfinite(ll)
 
-        (λ gt (length $0) 3) means 'hand has more than 3 cards'.
-        """
-        sexpr = "(λ gt (length $0) 3)"
-        ll = score_hypothesis(sexpr, base_uniform_grammar)
-
-        assert isinstance(ll, float)
-        assert ll < 0
-        assert math.isfinite(ll)
-
-
-# ---------------------------------------------------------------------------
-# score_hypothesis — inexpressible / invalid programs
-# ---------------------------------------------------------------------------
 
 class TestScoreHypothesisInexpressible:
-    """Test that inexpressible or invalid programs return -inf."""
-
     def test_parse_error_returns_neg_inf(self, base_uniform_grammar):
-        """A syntactically invalid s-expression should return -inf."""
-        sexpr = "(((broken syntax"
-        ll = score_hypothesis(sexpr, base_uniform_grammar)
-        assert ll == float('-inf')
+        assert score_hypothesis("(((broken syntax", base_uniform_grammar) == float('-inf')
 
     def test_unknown_primitive_returns_neg_inf(self, base_uniform_grammar):
-        """A program using a primitive not in the registry returns -inf."""
-        sexpr = "(λ nonexistent_primitive $0)"
-        ll = score_hypothesis(sexpr, base_uniform_grammar)
-        assert ll == float('-inf')
+        assert score_hypothesis("(\u03bb nonexistent_primitive $0)", base_uniform_grammar) == float('-inf')
 
     def test_empty_string_returns_neg_inf(self, base_uniform_grammar):
-        """An empty string should return -inf."""
-        ll = score_hypothesis("", base_uniform_grammar)
-        assert ll == float('-inf')
+        assert score_hypothesis("", base_uniform_grammar) == float('-inf')
 
     def test_primitive_not_in_grammar(self, minimal_uniform_grammar):
-        """A program using a primitive missing from the minimal grammar.
+        assert score_hypothesis("(\u03bb gt (count_suit HEARTS $0) 2)", minimal_uniform_grammar) == float('-inf')
 
-        The minimal grammar doesn't include 'count_suit', so a program
-        using it should be inexpressible (return -inf).
-        """
-        # count_suit is NOT in _MINIMAL_KEEP
-        sexpr = "(λ gt (count_suit HEARTS $0) 2)"
-        ll = score_hypothesis(sexpr, minimal_uniform_grammar)
-        assert ll == float('-inf')
-
-
-# ---------------------------------------------------------------------------
-# score_hypothesis — complexity comparison
-# ---------------------------------------------------------------------------
 
 class TestScoreHypothesisComplexity:
-    """Test that simpler programs score higher than complex ones.
-
-    Under any reasonable grammar, a program using fewer primitives/applications
-    should have a higher (less negative) log-probability than one using more,
-    since each production choice multiplies probabilities (adds log-probs).
-    """
-
     def test_simple_beats_complex(self, base_uniform_grammar):
-        """A simpler program should have a higher log-probability.
+        ll_s = score_hypothesis("(\u03bb gt (length $0) 3)", base_uniform_grammar)
+        ll_c = score_hypothesis("(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)", base_uniform_grammar)
+        assert math.isfinite(ll_s) and math.isfinite(ll_c) and ll_s > ll_c
 
-        Simple:  (λ gt (length $0) 3)              — 4 choices
-        Complex: (λ all (λ eq (get_suit $0) CLUBS) $0) — more choices
-        """
-        simple = "(λ gt (length $0) 3)"
-        complex_ = "(λ all (λ eq (get_suit $0) CLUBS) $0)"
-
-        ll_simple = score_hypothesis(simple, base_uniform_grammar)
-        ll_complex = score_hypothesis(complex_, base_uniform_grammar)
-
-        # Both should be finite
-        assert math.isfinite(ll_simple)
-        assert math.isfinite(ll_complex)
-
-        # Simpler should have higher (less negative) log-probability
-        assert ll_simple > ll_complex, (
-            f"Expected simpler program to score higher: "
-            f"{ll_simple:.2f} vs {ll_complex:.2f}"
-        )
-
-
-# ---------------------------------------------------------------------------
-# score_hypothesis — different grammars/costs produce different scores
-# ---------------------------------------------------------------------------
 
 class TestScoreHypothesisDifferences:
-    """Verify that different grammar/cost combinations produce different scores."""
-
-    def test_different_cost_structures_differ(
-        self, base_uniform_grammar, base_tiered_grammar
-    ):
-        """The same program under different cost structures should score differently.
-
-        Under TIERED costs, Tier 1 primitives (like eq, get_suit, CLUBS) are
-        boosted, so a program using only Tier 1 primitives should score
-        differently than under UNIFORM.
-        """
-        sexpr = "(λ all (λ eq (get_suit $0) CLUBS) $0)"
-
-        ll_uniform = score_hypothesis(sexpr, base_uniform_grammar)
-        ll_tiered = score_hypothesis(sexpr, base_tiered_grammar)
-
-        # Both should be finite
-        assert math.isfinite(ll_uniform)
-        assert math.isfinite(ll_tiered)
-
-        # They should differ (tiered boosts tier-1 prims like eq, get_suit)
-        assert ll_uniform != ll_tiered, (
-            f"Expected different scores: uniform={ll_uniform:.4f}, "
-            f"tiered={ll_tiered:.4f}"
-        )
+    def test_different_cost_structures_differ(self, base_uniform_grammar, base_tiered_grammar):
+        sexpr = "(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)"
+        assert score_hypothesis(sexpr, base_uniform_grammar) != score_hypothesis(sexpr, base_tiered_grammar)
 
     def test_different_grammars_differ(self, base_uniform_grammar):
-        """The same program under a different grammar should score differently.
-
-        The 'add-both' grammar has more primitives, so uniform probabilities
-        are spread thinner, producing a different score.
-        """
-        sexpr = "(λ gt (length $0) 3)"
-
-        ll_base = score_hypothesis(sexpr, base_uniform_grammar)
-
-        add_both_grammar = build_grammar("add-both", CostStructure.UNIFORM)
-        ll_add_both = score_hypothesis(sexpr, add_both_grammar)
-
-        # Both should be finite
-        assert math.isfinite(ll_base)
-        assert math.isfinite(ll_add_both)
-
-        # They should differ (different number of primitives = different uniform weight)
-        assert ll_base != ll_add_both
+        sexpr = "(\u03bb gt (length $0) 3)"
+        assert score_hypothesis(sexpr, base_uniform_grammar) != score_hypothesis(sexpr, build_grammar("add-both", CostStructure.UNIFORM))
 
 
-# ---------------------------------------------------------------------------
-# score_all_hypotheses — batch scoring
-# ---------------------------------------------------------------------------
+class TestHelpers:
+    def test_fingerprint_to_string_basic(self):
+        assert _fingerprint_to_string((True, False, True, None, False)) == "101X0"
 
-class TestScoreAllHypotheses:
-    """Test the batch scoring function."""
+    def test_fingerprint_to_string_empty(self):
+        assert _fingerprint_to_string(()) == ""
 
-    def test_returns_list_of_dicts(self):
-        """score_all_hypotheses should return a list of dicts with correct fields."""
-        results = score_all_hypotheses("base", CostStructure.UNIFORM, limit=5)
+    def test_make_predicate_valid(self):
+        from llm.grammar_comparison.translation.sexpr_parser import parse_hypothesis_sexpr
+        pred = _make_predicate(parse_hypothesis_sexpr("(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)"))
+        assert pred is not None
+        assert pred(_make_hand_all_clubs()) is True
+        assert pred(_make_hand_mixed()) is False
 
-        assert isinstance(results, list)
-        assert len(results) <= 5
+    def test_make_predicate_returns_none_on_failure(self):
+        from dreamcoder_core.program import Index
+        assert _make_predicate(Index(0)) is None
 
-        if len(results) > 0:
-            r = results[0]
-            # Check all required fields are present
-            assert "rule_id" in r
-            assert "rank" in r
-            assert "confidence" in r
-            assert "nl_description" in r
-            assert "log_prob" in r
-            assert "grammar_name" in r
-            assert "cost_structure" in r
 
-            # Check field types
-            assert isinstance(r["rule_id"], str)
-            assert isinstance(r["rank"], int)
-            assert isinstance(r["log_prob"], float)
-            assert r["grammar_name"] == "base"
-            assert r["cost_structure"] == "uniform"
+class TestScoreAllHypothesesPosterior:
 
-    def test_log_prob_is_negative_or_neg_inf(self):
-        """All log-probabilities should be <= 0 (negative or -inf)."""
-        results = score_all_hypotheses("base", CostStructure.UNIFORM, limit=10)
-
-        for r in results:
-            assert r["log_prob"] <= 0 or r["log_prob"] == float('-inf'), (
-                f"log_prob should be <= 0, got {r['log_prob']} for "
-                f"{r['rule_id']} rank {r['rank']}"
-            )
-
-    def test_limit_zero_returns_all(self):
-        """limit=0 (default) should return all hypotheses."""
-        results_limited = score_all_hypotheses("base", CostStructure.UNIFORM, limit=3)
-        results_all = score_all_hypotheses("base", CostStructure.UNIFORM, limit=0)
-
-        # The unlimited version should have at least as many as the limited
-        assert len(results_all) >= len(results_limited)
-
-    def test_different_grammars_produce_different_scores(self):
-        """Batch scoring with different grammars should give different results.
-
-        We score the same hypotheses under UNIFORM and TIERED costs
-        and check that at least some scores differ.
-        """
-        results_uniform = score_all_hypotheses(
-            "base", CostStructure.UNIFORM, limit=10
-        )
-        results_tiered = score_all_hypotheses(
-            "base", CostStructure.TIERED, limit=10
-        )
-
-        # Find hypotheses that have finite scores in both
-        finite_pairs = [
-            (u["log_prob"], t["log_prob"])
-            for u, t in zip(results_uniform, results_tiered)
-            if math.isfinite(u["log_prob"]) and math.isfinite(t["log_prob"])
-        ]
-
-        if len(finite_pairs) > 0:
-            # At least one pair should differ
-            any_differ = any(u != t for u, t in finite_pairs)
-            assert any_differ, (
-                "Expected at least one hypothesis to score differently "
-                "under UNIFORM vs TIERED"
-            )
-
-    def test_hypothesis_without_dsl_code_uses_python_fallback(self):
-        """Hypotheses with dsl_code=None but valid python_code should get a
-        finite score via the Python-to-AST fallback path.
-
-        We mock load_phase1b_hypotheses to return a hypothesis without dsl_code
-        but with a python_code that the python_parser can handle.
-        """
-        mock_hypotheses = [
-            {
-                "rule_id": "test_rule",
-                "rank": 1,
-                "confidence": "HIGH",
-                "nl_description": "Test hypothesis",
-                "dsl_code": None,
-                "python_code": "lambda hand: all(card.suit == Suit.CLUBS for card in hand)",
-                "judge_verdict": "PASS",
-                "source_model": "test",
-            }
-        ]
-
-        with patch(
-            "llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
-            return_value=mock_hypotheses,
-        ):
+    def test_returns_list_of_dicts_with_new_fields(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
             results = score_all_hypotheses("base", CostStructure.UNIFORM)
+        r = results[0]
+        for f in ["log_prior", "log_likelihood", "log_posterior", "base_rate",
+                   "fingerprint", "exemplars_consistent", "grammar_name", "cost_structure"]:
+            assert f in r, f"Missing field: {f}"
+        assert isinstance(r["log_prior"], float) and isinstance(r["log_posterior"], float)
+        assert r["grammar_name"] == "base" and r["cost_structure"] == "uniform"
 
-        assert len(results) == 1
-        assert math.isfinite(results[0]["log_prob"])
-        assert results[0]["log_prob"] < 0
+    def test_posterior_is_sum_of_prior_and_likelihood(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            r = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+        if math.isfinite(r["log_prior"]) and math.isfinite(r["log_likelihood"]):
+            assert abs(r["log_posterior"] - (r["log_prior"] + r["log_likelihood"])) < 1e-10
 
-    def test_hypothesis_with_both_none_gets_neg_inf(self):
-        """Hypotheses with both dsl_code=None and python_code=None should
-        get -inf log_prob since there is nothing to parse.
-        """
-        mock_hypotheses = [
-            {
-                "rule_id": "test_rule",
-                "rank": 1,
-                "confidence": "HIGH",
-                "nl_description": "Test hypothesis",
-                "dsl_code": None,
-                "python_code": None,
-                "judge_verdict": "PASS",
-                "source_model": "test",
-            }
-        ]
+    def test_log_prior_is_negative(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            assert score_all_hypotheses("base", CostStructure.UNIFORM)[0]["log_prior"] <= 0
 
-        with patch(
-            "llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
-            return_value=mock_hypotheses,
-        ):
+    def test_log_likelihood_is_negative(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            assert score_all_hypotheses("base", CostStructure.UNIFORM)[0]["log_likelihood"] <= 0
+
+    def test_specific_hypothesis_higher_likelihood_than_vague(self):
+        specific = _mock_hypothesis(rule_id="specific", rank=1)
+        vague = _mock_hypothesis(dsl_code="(\u03bb gt (length $0) 0)", rule_id="vague", rank=2)
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[specific, vague]):
             results = score_all_hypotheses("base", CostStructure.UNIFORM)
+        s = next(r for r in results if r["rule_id"] == "specific")
+        v = next(r for r in results if r["rule_id"] == "vague")
+        assert s["log_likelihood"] > v["log_likelihood"]
 
-        assert len(results) == 1
-        assert results[0]["log_prob"] == float('-inf')
+    def test_inconsistent_exemplars_give_neg_inf_likelihood(self):
+        hyp = _mock_hypothesis(exemplar_hands=[_make_hand_mixed() for _ in range(6)])
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[hyp]):
+            r = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+        assert r["log_likelihood"] == float('-inf')
+        assert r["exemplars_consistent"] is False
+        assert r["log_posterior"] == float('-inf')
 
+    def test_unparseable_hypothesis_gets_all_neg_inf(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis(dsl_code=None, python_code=None)]):
+            r = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+        assert r["log_prior"] == r["log_likelihood"] == r["log_posterior"] == float('-inf')
+        assert r["fingerprint"] == "" and r["exemplars_consistent"] is False
 
-# ---------------------------------------------------------------------------
-# parse_hypothesis -- fallback logic
-# ---------------------------------------------------------------------------
+    def test_limit_parameter_works(self):
+        hyps = [_mock_hypothesis(rule_id=f"rule_{i}", rank=i) for i in range(3)]
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=hyps):
+            assert len(score_all_hypotheses("base", CostStructure.UNIFORM, limit=2)) == 2
+
+    def test_different_grammars_same_likelihood(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            r_base = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+            r_add = score_all_hypotheses("add-both", CostStructure.UNIFORM)[0]
+        if math.isfinite(r_base["log_prior"]) and math.isfinite(r_add["log_prior"]):
+            assert r_base["log_prior"] != r_add["log_prior"]
+        assert r_base["log_likelihood"] == r_add["log_likelihood"]
+
+    def test_fingerprint_is_populated(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            r = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+        assert len(r["fingerprint"]) > 0 and all(c in "01X" for c in r["fingerprint"])
+
+    def test_different_cost_structures_same_likelihood(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis()]):
+            ru = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+            rt = score_all_hypotheses("base", CostStructure.TIERED)[0]
+        if math.isfinite(ru["log_prior"]) and math.isfinite(rt["log_prior"]):
+            assert ru["log_prior"] != rt["log_prior"]
+        assert ru["log_likelihood"] == rt["log_likelihood"]
+
+    def test_python_fallback_with_exemplar_hands(self):
+        with patch("llm.grammar_comparison.evaluation.compute_costs.load_phase1b_hypotheses",
+                   return_value=[_mock_hypothesis(dsl_code=None,
+                       python_code="lambda hand: all(card.suit == Suit.CLUBS for card in hand)")]):
+            r = score_all_hypotheses("base", CostStructure.UNIFORM)[0]
+        assert math.isfinite(r["log_prior"]) and r["log_prior"] < 0
+
 
 class TestParseHypothesisFallback:
-    """Test the parse_hypothesis() helper and its fallback chain."""
+    def test_dsl_code_none_python_code_valid(self):
+        assert parse_hypothesis({"dsl_code": None, "python_code": "lambda hand: all(card.suit == Suit.CLUBS for card in hand)"}) is not None
 
-    def test_dsl_code_none_python_code_valid_returns_program(self):
-        """When dsl_code is None but python_code is valid, parse_hypothesis
-        should return a Program AST (not None).
-        """
-        hyp = {
-            "dsl_code": None,
-            "python_code": "lambda hand: all(card.suit == Suit.CLUBS for card in hand)",
-        }
-        program = parse_hypothesis(hyp)
-        assert program is not None
+    def test_both_none(self):
+        assert parse_hypothesis({"dsl_code": None, "python_code": None}) is None
 
-    def test_both_none_returns_none(self):
-        """When both dsl_code and python_code are None, parse_hypothesis
-        should return None.
-        """
-        hyp = {"dsl_code": None, "python_code": None}
-        program = parse_hypothesis(hyp)
-        assert program is None
-
-    def test_fallback_produces_same_score_as_direct(self, base_uniform_grammar):
-        """When a hypothesis has BOTH dsl_code and python_code, the score
-        from the s-expression path should match the score from the Python
-        fallback path.
-
-        This validates that both parsers produce equivalent ASTs for the
-        same underlying rule.
-        """
-        # A simple rule: all cards are clubs
-        dsl_code = "(λ all (λ eq (get_suit $0) CLUBS) $0)"
-        python_code = "lambda hand: all(card.suit == Suit.CLUBS for card in hand)"
-
-        # Score via the direct s-expression path
-        score_sexpr = score_hypothesis(dsl_code, base_uniform_grammar)
-
-        # Score via the Python fallback path
-        hyp_python_only = {"dsl_code": None, "python_code": python_code}
-        program_from_python = parse_hypothesis(hyp_python_only)
-        assert program_from_python is not None
-        score_python = score_program(program_from_python, base_uniform_grammar)
-
-        # Both should be finite and equal
-        assert math.isfinite(score_sexpr)
-        assert math.isfinite(score_python)
-        assert score_sexpr == score_python, (
-            f"Scores differ: s-expr={score_sexpr:.4f}, python={score_python:.4f}"
-        )
+    def test_fallback_same_score(self, base_uniform_grammar):
+        dsl = "(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)"
+        py = "lambda hand: all(card.suit == Suit.CLUBS for card in hand)"
+        s1 = score_hypothesis(dsl, base_uniform_grammar)
+        p = parse_hypothesis({"dsl_code": None, "python_code": py})
+        s2 = score_program(p, base_uniform_grammar)
+        assert math.isfinite(s1) and s1 == s2

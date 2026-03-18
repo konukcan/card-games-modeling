@@ -1,22 +1,31 @@
 """
-Compute log-probabilities of hypothesis programs under different grammars.
+Compute log-probabilities and posteriors of hypothesis programs under grammars.
 
 PURPOSE:
     This module connects the s-expression parser (which converts hypothesis
     strings into Program ASTs) with the grammar factory (which builds Grammar
     objects with weighted productions) to produce log-probability scores.
 
-    These scores are the core metric for the grammar-comparison experiment:
-    a hypothesis that is more "natural" under a grammar will have a higher
-    (less negative) log-probability.
+    The full posterior for each hypothesis is:
+        log_posterior = log_prior + log_likelihood
+
+    where:
+        - log_prior: grammar PCFG score (how naturally the grammar generates
+          the program)
+        - log_likelihood: size principle score, -n * log(|ext(h)|), rewarding
+          specific hypotheses consistent with observed exemplar hands
 
 HOW IT WORKS:
     1. Parse the hypothesis s-expression into a Program AST using
        parse_hypothesis_sexpr() from the translation layer.
-    2. Score the Program under a Grammar using grammar.program_log_likelihood(),
-       which computes log P(program | grammar, request_type).
-    3. The request type is arrow(HAND, BOOL) because every hypothesis is a
-       function from a hand (list of cards) to a boolean.
+    2. Compute a fingerprint on 200 probe hands (for extension caching and
+       the correct_rank metric).
+    3. Rewrite the AST for the target grammar using rewrite_ast().
+    4. Score the rewritten Program under the Grammar using
+       grammar.program_log_likelihood() to get log_prior.
+    5. Compute the extension size via estimate_extension() using the
+       hypothesis's exemplar_hands to get log_likelihood.
+    6. log_posterior = log_prior + log_likelihood.
 
 USAGE:
     from llm.grammar_comparison.evaluation.compute_costs import (
@@ -28,17 +37,18 @@ USAGE:
     )
 
     grammar = build_grammar("base", CostStructure.UNIFORM)
-    ll = score_hypothesis("(λ all (λ eq (get_suit $0) CLUBS) $0)", grammar)
-    # ll is a negative float (log-probability)
+    ll = score_hypothesis("(\u03bb all (\u03bb eq (get_suit $0) CLUBS) $0)", grammar)
+    # ll is a negative float (log-probability / prior only)
 
     results = score_all_hypotheses("base", CostStructure.UNIFORM, limit=10)
-    # list of dicts with rule_id, rank, log_prob, etc.
+    # list of dicts with rule_id, rank, log_prior, log_likelihood, log_posterior, etc.
 """
 
 import logging
+import math
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Path setup: allow importing from the main src/ tree
@@ -53,6 +63,12 @@ from dreamcoder_core.type_system import HAND, BOOL, arrow
 
 from llm.grammar_comparison.translation.sexpr_parser import parse_hypothesis_sexpr
 from llm.grammar_comparison.translation.python_parser import python_to_ast
+from llm.grammar_comparison.translation.rewriter import rewrite_ast, InexpressibleError
+from llm.grammar_comparison.translation.verification import (
+    compute_ast_fingerprint,
+    load_probe_hands,
+)
+from llm.grammar_comparison.evaluation.extension import estimate_extension
 from llm.grammar_comparison.grammars.grammar_factory import (
     build_grammar,
     CostStructure,
@@ -61,33 +77,14 @@ from llm.grammar_comparison.data_loader import load_phase1b_hypotheses
 
 logger = logging.getLogger(__name__)
 
-# The request type for all hypotheses: a function from a hand to a boolean.
-# Every hypothesis is λ hand. body, where hand : list(card) and body : bool.
 REQUEST_TYPE = arrow(HAND, BOOL)
 
 
-
 def parse_hypothesis(hypothesis: Dict) -> Optional[Program]:
-    """Parse a hypothesis dict into a Program AST, trying available representations.
-
-    Attempts parsing in priority order:
-        1. dsl_code (s-expression) via parse_hypothesis_sexpr()
-        2. python_code (Python lambda) via python_to_ast()
-
-    This fallback ensures that hypotheses without s-expression translations
-    (19 of 271 in Phase 1b) can still be scored, as long as they have a
-    Python representation.
-
-    Args:
-        hypothesis: A dict with optional 'dsl_code' and 'python_code' keys.
-
-    Returns:
-        A Program AST, or None if neither representation can be parsed.
-    """
+    """Parse a hypothesis dict into a Program AST, trying available representations."""
     dsl_code = hypothesis.get("dsl_code")
     python_code = hypothesis.get("python_code")
 
-    # Priority 1: s-expression
     if dsl_code is not None:
         try:
             return parse_hypothesis_sexpr(dsl_code)
@@ -95,7 +92,6 @@ def parse_hypothesis(hypothesis: Dict) -> Optional[Program]:
             logger.debug("S-expr parse error for %r: %s", dsl_code, e)
             return None
 
-    # Priority 2: Python lambda
     if python_code is not None:
         try:
             return python_to_ast(python_code)
@@ -103,43 +99,23 @@ def parse_hypothesis(hypothesis: Dict) -> Optional[Program]:
             logger.debug("Python parse error for %r: %s", python_code, e)
             return None
 
-    # Neither representation available
     return None
 
 
 def score_hypothesis(sexpr: str, grammar: Grammar) -> float:
-    """Score a single hypothesis s-expression under a grammar.
+    """Score a single hypothesis s-expression under a grammar (prior only).
 
-    Parses the s-expression into a Program AST, then computes
-    log P(program | grammar, request_type) where request_type = HAND -> BOOL.
-
-    Args:
-        sexpr: An s-expression string, e.g.
-               "(λ all (λ eq (get_suit $0) CLUBS) $0)"
-        grammar: A Grammar object (from grammar_factory.build_grammar).
-
-    Returns:
-        The log-probability (a negative float, or -inf if the program
-        cannot be parsed or is inexpressible under this grammar).
-
-    Why this function returns -inf for failures:
-        - If the s-expression has a syntax error, parse_hypothesis_sexpr
-          raises ValueError.
-        - If the program uses a primitive not in the grammar, the grammar's
-          program_log_likelihood returns -inf.
-        - Both cases mean "this grammar cannot generate this program."
+    Backward-compatible convenience function returning only the log_prior.
     """
     try:
         program = parse_hypothesis_sexpr(sexpr)
     except (ValueError, Exception) as e:
-        # Parsing failed — this hypothesis is inexpressible as a valid AST
         logger.debug("Parse error for %r: %s", sexpr, e)
         return float('-inf')
 
     try:
         ll = grammar.program_log_likelihood(program, REQUEST_TYPE)
     except Exception as e:
-        # Scoring failed — e.g. type mismatch during unification
         logger.debug("Scoring error for %r: %s", sexpr, e)
         return float('-inf')
 
@@ -147,19 +123,7 @@ def score_hypothesis(sexpr: str, grammar: Grammar) -> float:
 
 
 def score_program(program: Program, grammar: Grammar) -> float:
-    """Score a pre-parsed Program AST under a grammar.
-
-    Like score_hypothesis() but takes an already-parsed Program instead
-    of an s-expression string. Useful when the Program was obtained via
-    parse_hypothesis() (which may have used the Python fallback path).
-
-    Args:
-        program: A Program AST node.
-        grammar: A Grammar object.
-
-    Returns:
-        The log-probability, or -inf on error.
-    """
+    """Score a pre-parsed Program AST under a grammar."""
     try:
         return grammar.program_log_likelihood(program, REQUEST_TYPE)
     except Exception as e:
@@ -167,72 +131,114 @@ def score_program(program: Program, grammar: Grammar) -> float:
         return float('-inf')
 
 
+def _fingerprint_to_string(fp: Tuple[Optional[bool], ...]) -> str:
+    """Convert a fingerprint tuple to a compact string: True->'1', False->'0', None->'X'."""
+    return ''.join(
+        '1' if v is True else ('0' if v is False else 'X')
+        for v in fp
+    )
+
+
+def _make_predicate(program: Program):
+    """Turn a Program AST into a callable predicate, or None if evaluation fails."""
+    try:
+        func = program.evaluate([])
+    except Exception:
+        return None
+
+    def predicate(hand):
+        result = func(hand)
+        return bool(result)
+
+    return predicate
+
+
 def score_all_hypotheses(
     grammar_name: str,
     cost_structure: CostStructure,
     limit: int = 0,
 ) -> List[Dict]:
-    """Score all Phase 1b hypotheses under a specific grammar + cost structure.
+    """Score all Phase 1b hypotheses under a grammar with posterior = prior + likelihood.
 
-    This is the batch entry point for the grammar-comparison pipeline.
-    It loads hypotheses, builds the grammar, and scores each one.
-
-    Args:
-        grammar_name: One of the 7 grammar names (e.g. "base",
-                      "swap-positional"). See grammar_factory.GRAMMAR_NAMES.
-        cost_structure: The cost structure to use (UNIFORM, TIERED, or LOTLIB3).
-        limit: If > 0, only process the first `limit` hypotheses.
-               Useful for quick testing.
-
-    Returns:
-        A list of dicts, one per hypothesis, each containing:
-          - rule_id        (str): The card-game rule this hypothesis targets.
-          - rank           (int): Confidence rank from the LLM (1 = most confident).
-          - confidence     (str): HIGH / MEDIUM / LOW label.
-          - nl_description (str): Natural-language description.
-          - log_prob     (float): Log-probability under this grammar (-inf if
-                                  inexpressible or missing DSL code).
-          - grammar_name   (str): Which grammar was used.
-          - cost_structure  (str): Which cost structure was used.
-
-    How it works:
-        1. load_phase1b_hypotheses() returns a flat list of hypothesis dicts
-           that already have 'dsl_code' (s-expression) fields from cross-
-           referencing with injected_hypotheses.json.
-        2. build_grammar() constructs a Grammar with the chosen primitives
-           and log-probability assignments.
-        3. For each hypothesis, parse_hypothesis() tries the s-expression
-           first and falls back to python_to_ast() if dsl_code is missing.
-           Hypotheses with neither representation get -inf.
+    Returns a list of dicts with: rule_id, rank, confidence, nl_description,
+    log_prior, log_likelihood, log_posterior, base_rate, fingerprint,
+    exemplars_consistent, grammar_name, cost_structure.
     """
-    # Load hypotheses from Phase 1b data files
     hypotheses = load_phase1b_hypotheses()
 
-    # Apply limit if requested
     if limit > 0:
         hypotheses = hypotheses[:limit]
 
-    # Build the grammar for scoring
     grammar = build_grammar(grammar_name, cost_structure)
+
+    try:
+        probes = load_probe_hands()
+    except FileNotFoundError:
+        logger.warning("Probe hands file not found; fingerprints will be empty.")
+        probes = []
 
     results = []
     for hyp in hypotheses:
-        # Try to parse the hypothesis using the fallback chain:
-        # dsl_code (s-expression) first, then python_code if needed.
         program = parse_hypothesis(hyp)
 
-        if program is not None:
-            log_prob = score_program(program, grammar)
+        if program is None:
+            results.append({
+                "rule_id": hyp["rule_id"],
+                "rank": hyp["rank"],
+                "confidence": hyp["confidence"],
+                "nl_description": hyp["nl_description"],
+                "log_prior": float('-inf'),
+                "log_likelihood": float('-inf'),
+                "log_posterior": float('-inf'),
+                "base_rate": 0.0,
+                "fingerprint": "",
+                "exemplars_consistent": False,
+                "grammar_name": grammar_name,
+                "cost_structure": cost_structure.value,
+            })
+            continue
+
+        if probes:
+            fp_tuple = compute_ast_fingerprint(program, probes)
+            fingerprint = _fingerprint_to_string(fp_tuple)
         else:
-            # Neither representation could be parsed — cannot score
-            log_prob = float('-inf')
+            fingerprint = ""
+
+        exemplar_hands = hyp.get("exemplar_hands", [])
+        predicate = _make_predicate(program)
+
+        if predicate is not None:
+            ext_result = estimate_extension(predicate, exemplar_hands)
+            log_likelihood = ext_result.log_likelihood
+            base_rate = ext_result.base_rate
+            exemplars_consistent = ext_result.exemplars_consistent
+        else:
+            log_likelihood = float('-inf')
+            base_rate = 0.0
+            exemplars_consistent = False
+
+        try:
+            rewritten = rewrite_ast(program, grammar_name)
+            log_prior = score_program(rewritten, grammar)
+        except InexpressibleError:
+            log_prior = float('-inf')
+
+        if math.isinf(log_prior) or math.isinf(log_likelihood):
+            log_posterior = float('-inf')
+        else:
+            log_posterior = log_prior + log_likelihood
 
         results.append({
             "rule_id": hyp["rule_id"],
             "rank": hyp["rank"],
             "confidence": hyp["confidence"],
             "nl_description": hyp["nl_description"],
-            "log_prob": log_prob,
+            "log_prior": log_prior,
+            "log_likelihood": log_likelihood,
+            "log_posterior": log_posterior,
+            "base_rate": base_rate,
+            "fingerprint": fingerprint,
+            "exemplars_consistent": exemplars_consistent,
             "grammar_name": grammar_name,
             "cost_structure": cost_structure.value,
         })
