@@ -93,10 +93,12 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
         max_nodes=args.max_nodes,
         top_k=args.top_k,
         seed=args.seed,
+        verbose=args.verbose,
     )
 
     print(f"Config: {config.n_steps} steps x {args.n_chains} chains, "
-          f"depth={config.max_depth}, eps={config.noise_epsilon}")
+          f"depth={config.max_depth}, eps={config.noise_epsilon}, "
+          f"verbose={args.verbose}")
     print(f"{'='*60}")
 
     # 6. Run MCMC for each rule
@@ -150,9 +152,20 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
               f"entropy={summary['entropy_bits']:.1f} bits, {rule_time:.1f}s")
         if freq_ranking:
             prog_str = freq_ranking[0]['program']
-            # Truncate long programs for display
             display = prog_str[:80] + ('...' if len(prog_str) > 80 else '')
             print(f"  top: {display}")
+
+        # At verbose >= 1, show top-5 hypotheses with details
+        if args.verbose >= 1 and freq_ranking:
+            print(f"\n  Top-5 hypotheses (by visit count):")
+            for rank, hyp in enumerate(freq_ranking[:5], 1):
+                visits = hyp['visit_count']
+                emp_post = hyp['empirical_posterior']
+                first = hyp['first_step']
+                prog = hyp['program'][:100]
+                print(f"    #{rank}: visits={visits} ({emp_post:.3f}) "
+                      f"first@step={first}")
+                print(f"        {prog}")
 
     total_time = time.time() - total_start
 
@@ -207,6 +220,9 @@ def main() -> None:
                         help='Random seed (default: 42)')
     parser.add_argument('--quick', action='store_true',
                         help='Quick test: 3 rules, 1000 steps, 2 chains')
+    parser.add_argument('--verbose', '-v', type=int, default=0,
+                        help='Verbose level: 0=summary, 1=chain progress, '
+                             '2=accept/reject, 3=proposal details')
 
     args = parser.parse_args()
 

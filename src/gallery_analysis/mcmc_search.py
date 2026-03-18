@@ -915,6 +915,7 @@ class MCMCConfig:
     max_nodes: int = 25
     top_k: int = 250
     seed: Optional[int] = None
+    verbose: int = 0  # 0=silent, 1=chain progress, 2=accept/reject, 3=proposal details
 
 
 @dataclass
@@ -1104,6 +1105,8 @@ class MCMCChain:
         # -------------------------------------------------------------- #
         # Initialize: sample a starting program from the prior.
         # -------------------------------------------------------------- #
+        V = config.verbose  # shorthand
+
         current = sample_program(
             grammar, request_type, max_depth=config.max_depth,
             seed=rng.randint(0, 2**31),
@@ -1115,6 +1118,15 @@ class MCMCChain:
             current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
         )
         current_log_posterior = current_log_prior + current_log_lik
+
+        if V >= 1:
+            print(f"  [init] size={current.size()} depth={current.depth()} "
+                  f"prior={current_log_prior:.2f} lik={current_log_lik:.2f} "
+                  f"post={current_log_posterior:.2f}")
+            print(f"         {str(current)[:120]}")
+
+        # Logging interval for verbose=1: print every N steps
+        log_interval = max(1, config.n_steps // 10)
 
         # -------------------------------------------------------------- #
         # Tracking structures.
@@ -1175,6 +1187,7 @@ class MCMCChain:
             #
             # Handle -inf gracefully: if both posteriors are -inf, reject
             # (0/0 situation — no reason to move).
+            log_alpha = float('-inf')  # default for logging
             if (current_log_posterior == float('-inf')
                     and proposed_log_posterior == float('-inf')):
                 accept = False
@@ -1183,6 +1196,7 @@ class MCMCChain:
             elif current_log_posterior == float('-inf'):
                 # Current is impossible, proposed is finite — always accept.
                 accept = True
+                log_alpha = float('inf')
             else:
                 log_alpha = (
                     (proposed_log_posterior + log_q_rev)
@@ -1197,6 +1211,22 @@ class MCMCChain:
                 current_log_lik = proposed_log_lik
                 current_log_posterior = proposed_log_posterior
                 n_accepted += 1
+
+                if V >= 2:
+                    print(f"  [step {step}] ACCEPT size={current.size()} "
+                          f"prior={current_log_prior:.2f} lik={current_log_lik:.2f} "
+                          f"post={current_log_posterior:.2f}")
+                    print(f"    {str(current)[:120]}")
+            elif V >= 3:
+                print(f"  [step {step}] reject (log_α={log_alpha:.2f})")
+
+            # Periodic progress at verbose=1
+            if V >= 1 and step % log_interval == 0:
+                rate = n_accepted / step if step > 0 else 0
+                print(f"  [step {step}/{config.n_steps}] "
+                      f"accepted={n_accepted} ({rate:.1%}) "
+                      f"unique={len(visit_counts)} "
+                      f"best_post={best_log_posterior:.2f}")
 
             # (f) Track the current state (after accept/reject decision).
             current_str = str(current)
@@ -1328,13 +1358,19 @@ def run_parallel_chains(
             max_nodes=config.max_nodes,
             top_k=config.top_k,
             seed=chain_seed,
+            verbose=config.verbose,
         )
+        if config.verbose >= 1:
+            print(f"\n  --- Chain {i+1}/{n_chains} (seed={chain_seed}) ---")
         chain = MCMCChain(grammar, chain_config)
         result = chain.run(
             request_type=request_type,
             exemplar_hands=exemplar_hands,
             ext_probe_hands=ext_probe_hands,
         )
+        if config.verbose >= 1:
+            print(f"  --- Chain {i+1} done: accepted={result.n_accepted} "
+                  f"({result.acceptance_rate:.1%}), unique={result.n_unique} ---")
         chain_results.append(result)
 
     # ------------------------------------------------------------------ #
