@@ -56,7 +56,7 @@ from dreamcoder_core.type_system import (
 )
 from dreamcoder_core.grammar import Grammar
 from dreamcoder_core.program import (
-    Program, Index, Application, Abstraction,
+    Program, Index, Application, Abstraction, uses_variable,
 )
 
 
@@ -889,6 +889,33 @@ logger = logging.getLogger(__name__)
 TOTAL_HANDS = 14_658_134_400
 
 
+# =========================================================================== #
+# TAUTOLOGY DETECTION (Layer 1: Syntactic)
+# =========================================================================== #
+
+
+def is_vacuous_lambda(program: Program) -> bool:
+    """
+    Check if a program is a vacuous lambda -- ignores its input.
+
+    A lambda (Abstraction) is "vacuous" if its body never references
+    the bound variable ($0). Such programs compute a constant regardless
+    of the hand they receive, making them trivially uninformative as
+    hypotheses.
+
+    Precedent: LOTlib3's check_lambdas rejects these.
+
+    Args:
+        program: A Program AST to check.
+
+    Returns:
+        True if the program is (lambda body) where body never uses $0.
+    """
+    if not isinstance(program, Abstraction):
+        return False
+    return not uses_variable(program.body, 0)
+
+
 @dataclass
 class MCMCConfig:
     """
@@ -952,6 +979,7 @@ class MCMCResult:
     visit_counts: Dict[str, int] = field(default_factory=dict)
     first_passage: Dict[str, int] = field(default_factory=dict)
     trajectory: List[str] = field(default_factory=list)  # Step-by-step sequence of program strings
+    ext_fractions: Dict[str, float] = field(default_factory=dict)  # Extension fraction per program string
 
 
 # =========================================================================== #
@@ -964,7 +992,7 @@ def compute_mcmc_log_likelihood(
     exemplar_hands: List,
     noise_epsilon: float,
     ext_probe_hands: List,
-) -> float:
+) -> Tuple[float, float]:
     """
     Compute log P(data | hypothesis) using the size principle with noise.
 
@@ -988,8 +1016,12 @@ def compute_mcmc_log_likelihood(
                           estimation of the hypothesis extension size.
 
     Returns:
-        Log-likelihood (sum of log P(hand_i | hypothesis) for each exemplar).
-        Returns -inf if the program cannot be evaluated at all.
+        A tuple (log_likelihood, ext_fraction) where:
+          - log_likelihood: sum of log P(hand_i | hypothesis) for each
+            exemplar. Returns -inf if the program cannot be evaluated.
+          - ext_fraction: fraction of probe hands accepted by the program
+            (n_hits_probe / n_probes). Useful for tautology detection:
+            ext_fraction >= 1.0 means the program accepts everything.
 
     How extension size estimation works:
         We evaluate the program on each probe hand and count hits.
@@ -1002,7 +1034,7 @@ def compute_mcmc_log_likelihood(
     try:
         func = program.evaluate([])
     except Exception:
-        return float('-inf')
+        return (float('-inf'), 0.0)
 
     # Estimate the extension size via Monte Carlo on probe hands.
     n_probes = len(ext_probe_hands)
@@ -1015,6 +1047,8 @@ def compute_mcmc_log_likelihood(
         except Exception:
             # Program crashes on this hand — treat as non-member.
             continue
+
+    ext_fraction = n_hits_probe / n_probes if n_probes > 0 else 0.0
 
     # Extension size estimate. Guard against zero (program accepts nothing).
     if n_hits_probe == 0:
@@ -1041,10 +1075,10 @@ def compute_mcmc_log_likelihood(
             p = noise_epsilon / TOTAL_HANDS
 
         if p <= 0:
-            return float('-inf')
+            return (float('-inf'), ext_fraction)
         total_log_lik += math.log(p)
 
-    return total_log_lik
+    return (total_log_lik, ext_fraction)
 
 
 # =========================================================================== #
@@ -1113,21 +1147,36 @@ class MCMCChain:
         # -------------------------------------------------------------- #
         V = config.verbose  # shorthand
 
-        current = sample_program(
-            grammar, request_type, max_depth=config.init_max_depth,
-            seed=rng.randint(0, 2**31),
-        )
+        # Resample if initial program is vacuous or a 100%-on-probes tautology.
+        for _retry in range(20):
+            current = sample_program(
+                grammar, request_type, max_depth=config.init_max_depth,
+                seed=rng.randint(0, 2**31),
+            )
+            if is_vacuous_lambda(current):
+                continue
+            current_log_lik, current_ext_frac = compute_mcmc_log_likelihood(
+                current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
+            )
+            if current_ext_frac >= 1.0:
+                continue
+            break
+
         current_log_prior = grammar.program_log_likelihood(
             current, request_type
         )
-        current_log_lik = compute_mcmc_log_likelihood(
-            current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
-        )
+        # Re-compute likelihood in case the loop exited without breaking
+        # (all 20 attempts were vacuous/tautological -- use last sample).
+        if is_vacuous_lambda(current):
+            current_log_lik, current_ext_frac = compute_mcmc_log_likelihood(
+                current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
+            )
         current_log_posterior = current_log_prior + current_log_lik
 
         if V >= 1:
             print(f"  [init] size={current.size()} depth={current.depth()} "
                   f"prior={current_log_prior:.2f} lik={current_log_lik:.2f} "
+                  f"ext_frac={current_ext_frac:.3f} "
                   f"post={current_log_posterior:.2f}")
             print(f"         {str(current)[:120]}")
 
@@ -1140,6 +1189,7 @@ class MCMCChain:
         visit_counts: Dict[str, int] = {}
         first_passage: Dict[str, int] = {}
         log_posteriors: Dict[str, float] = {}
+        ext_fractions: Dict[str, float] = {}
         n_accepted = 0
 
         # Record the initial program.
@@ -1147,6 +1197,7 @@ class MCMCChain:
         visit_counts[current_str] = 1
         first_passage[current_str] = 0
         log_posteriors[current_str] = current_log_posterior
+        ext_fractions[current_str] = current_ext_frac
         trajectory: List[str] = [current_str]  # Step-by-step trajectory
 
         best_program = current_str
@@ -1178,13 +1229,28 @@ class MCMCChain:
                 trajectory.append(current_str)
                 continue
 
+            # (b2) Layer 1: Reject vacuous lambdas -- programs that ignore their input.
+            if is_vacuous_lambda(proposed):
+                current_str = str(current)
+                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                trajectory.append(current_str)
+                continue
+
             # (c) Compute proposed posterior.
             proposed_log_prior = grammar.program_log_likelihood(
                 proposed, request_type
             )
-            proposed_log_lik = compute_mcmc_log_likelihood(
+            proposed_log_lik, proposed_ext_frac = compute_mcmc_log_likelihood(
                 proposed, exemplar_hands, config.noise_epsilon, ext_probe_hands,
             )
+
+            # (c2) Layer 2: Reject programs that accept 100% of probes (tautologies).
+            if proposed_ext_frac >= 1.0:
+                current_str = str(current)
+                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                trajectory.append(current_str)
+                continue
+
             proposed_log_posterior = proposed_log_prior + proposed_log_lik
 
             # (d) MH acceptance ratio with likelihood annealing.
@@ -1224,6 +1290,7 @@ class MCMCChain:
                 current_log_prior = proposed_log_prior
                 current_log_lik = proposed_log_lik
                 current_log_posterior = proposed_log_posterior
+                current_ext_frac = proposed_ext_frac
                 n_accepted += 1
 
                 if V >= 2:
@@ -1252,6 +1319,8 @@ class MCMCChain:
             # Track best log posterior for this program.
             if current_str not in log_posteriors or current_log_posterior > log_posteriors[current_str]:
                 log_posteriors[current_str] = current_log_posterior
+            # Layer 3: Store extension fraction for post-hoc filtering.
+            ext_fractions[current_str] = current_ext_frac
 
             # Update best overall.
             if current_log_posterior > best_log_posterior:
@@ -1292,6 +1361,7 @@ class MCMCChain:
             visit_counts=visit_counts,
             first_passage=first_passage,
             trajectory=trajectory,
+            ext_fractions=ext_fractions,
         )
 
 
@@ -1399,6 +1469,7 @@ def run_parallel_chains(
     merged_visit_counts: Dict[str, int] = {}
     merged_first_passage: Dict[str, int] = {}
     merged_log_posteriors: Dict[str, float] = {}
+    merged_ext_fractions: Dict[str, float] = {}
     merged_trajectory: List[str] = []
     total_accepted = 0
 
@@ -1423,6 +1494,10 @@ def run_parallel_chains(
             lp = hyp['log_posterior']
             if prog not in merged_log_posteriors or lp > merged_log_posteriors[prog]:
                 merged_log_posteriors[prog] = lp
+
+        # Merge extension fractions (keep latest value per program).
+        for prog, frac in result.ext_fractions.items():
+            merged_ext_fractions[prog] = frac
 
         total_accepted += result.n_accepted
         merged_trajectory.extend(result.trajectory)
@@ -1469,4 +1544,5 @@ def run_parallel_chains(
         visit_counts=merged_visit_counts,
         first_passage=merged_first_passage,
         trajectory=merged_trajectory,
+        ext_fractions=merged_ext_fractions,
     )

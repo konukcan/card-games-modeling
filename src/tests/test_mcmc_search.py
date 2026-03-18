@@ -3,7 +3,8 @@ Tests for the MCMC program sampler and chain runner.
 
 Verifies that sample_program() produces complete, type-correct programs
 from the grammar prior, with reproducibility via seeding. Also tests the
-full MH chain (MCMCChain) and likelihood computation.
+full MH chain (MCMCChain) and likelihood computation, including the
+3-layer tautology rejection system.
 """
 import sys
 from pathlib import Path
@@ -17,13 +18,13 @@ import math
 from dreamcoder_core.type_system import (
     Arrow, BOOL, HAND, INT, CARD, SUIT, RANK, TypeContext, Type,
 )
-from dreamcoder_core.program import has_holes, Hole, Program
+from dreamcoder_core.program import has_holes, Hole, Program, Index, Abstraction, Application, Primitive
 from gallery_analysis.enumerator import build_gallery_grammar
 from gallery_analysis.mcmc_search import (
     sample_program, collect_subtree_sites, propose_regeneration,
     replace_subtree, SubtreeSite,
     MCMCConfig, MCMCResult, MCMCChain, compute_mcmc_log_likelihood,
-    run_parallel_chains,
+    run_parallel_chains, is_vacuous_lambda,
 )
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
 
@@ -250,14 +251,19 @@ def exemplars():
     return load_exemplars()
 
 
-def test_likelihood_returns_float(grammar, exemplars):
-    """Likelihood should return a finite float (or -inf), never NaN."""
+def test_likelihood_returns_tuple(grammar, exemplars):
+    """Likelihood should return a (float, float) tuple, never NaN."""
     hands = exemplars['all_red']['hands_primary']
     probes = generate_probe_set(n_probes=1000, seed=42)
     prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=42)
-    ll = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
-    assert isinstance(ll, float), f"Expected float, got {type(ll)}"
+    result = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
+    assert isinstance(result, tuple), f"Expected tuple, got {type(result)}"
+    assert len(result) == 2, f"Expected 2-tuple, got length {len(result)}"
+    ll, ext_frac = result
+    assert isinstance(ll, float), f"Expected float log-lik, got {type(ll)}"
+    assert isinstance(ext_frac, float), f"Expected float ext_frac, got {type(ext_frac)}"
     assert not math.isnan(ll), f"Likelihood is NaN for program {prog}"
+    assert 0.0 <= ext_frac <= 1.0, f"ext_fraction should be in [0,1], got {ext_frac}"
 
 
 def test_likelihood_noise_prevents_neg_inf(grammar, exemplars):
@@ -265,12 +271,12 @@ def test_likelihood_noise_prevents_neg_inf(grammar, exemplars):
     for programs that can at least be evaluated, even if they miss all exemplars."""
     hands = exemplars['all_red']['hands_primary']
     probes = generate_probe_set(n_probes=1000, seed=42)
-    # Try several seeds — at least one program should evaluate without crashing
+    # Try several seeds -- at least one program should evaluate without crashing
     # and produce a finite (not -inf) likelihood due to noise floor.
     finite_count = 0
     for seed in range(20):
         prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=seed)
-        ll = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
+        ll, ext_frac = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
         if math.isfinite(ll):
             finite_count += 1
     assert finite_count > 0, (
@@ -347,6 +353,20 @@ def test_chain_visit_counts_sum(grammar, exemplars):
     )
 
 
+def test_chain_has_ext_fractions(grammar, exemplars):
+    """Chain result should populate ext_fractions dict."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    # Every visited program should have an ext_fraction entry
+    assert len(result.ext_fractions) > 0
+    for prog_str, frac in result.ext_fractions.items():
+        assert 0.0 <= frac <= 1.0, f"ext_fraction {frac} out of range for {prog_str[:60]}"
+
+
 # =========================================================================== #
 # Tests for run_parallel_chains
 # =========================================================================== #
@@ -395,6 +415,21 @@ def test_parallel_chains_more_unique_than_single(grammar, exemplars):
     # Multi-chain should find at least as many unique programs
     # (very likely more, since different starting points)
     assert multi.n_unique >= single.n_unique
+
+
+def test_parallel_chains_merge_ext_fractions(grammar, exemplars):
+    """Merged result should have ext_fractions from all chains."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=4,
+    )
+    assert len(result.ext_fractions) > 0
+    for prog_str, frac in result.ext_fractions.items():
+        assert 0.0 <= frac <= 1.0
 
 
 # =========================================================================== #
@@ -513,3 +548,74 @@ def test_init_max_depth_produces_small_programs(grammar):
     assert avg < 50, f"Average size {avg} too large for max_depth=3"
     assert max(sizes) < 100, f"Max size {max(sizes)} too large"
 
+
+# =========================================================================== #
+# Tests for tautology rejection (3 layers)
+# =========================================================================== #
+
+def test_vacuous_lambda_detected(grammar):
+    """is_vacuous_lambda should detect programs that ignore their input.
+
+    A vacuous lambda like (lambda (lt 0 5)) never references $0, so it
+    computes the same constant regardless of the hand. Such programs are
+    uninformative as hypotheses and should be rejected.
+    """
+    # Find the 'lt' primitive in the grammar
+    lt_prim = None
+    for p in grammar.productions:
+        if str(p.program) == 'lt':
+            lt_prim = p.program
+            break
+    assert lt_prim is not None, "Grammar should have 'lt'"
+
+    # Build (lambda (lt 0 5)) -- a vacuous lambda that ignores its input
+    zero = Primitive('0', INT, 0)
+    five = Primitive('5', INT, 5)
+    vacuous = Abstraction(Application(Application(lt_prim, zero), five))
+    assert is_vacuous_lambda(vacuous) is True, (
+        f"Expected vacuous lambda, but is_vacuous_lambda returned False for: {vacuous}"
+    )
+
+    # A program that uses $0 should NOT be vacuous
+    uses_input = Abstraction(Application(Application(lt_prim, Index(0)), five))
+    assert is_vacuous_lambda(uses_input) is False, (
+        f"Expected non-vacuous lambda, but is_vacuous_lambda returned True for: {uses_input}"
+    )
+
+
+def test_vacuous_lambda_non_abstraction():
+    """is_vacuous_lambda should return False for non-Abstraction programs."""
+    # A bare primitive is not a lambda at all
+    prim = Primitive('0', INT, 0)
+    assert is_vacuous_lambda(prim) is False
+
+    # An Index is not a lambda
+    idx = Index(0)
+    assert is_vacuous_lambda(idx) is False
+
+
+def test_tautology_not_top_hypothesis(grammar, exemplars):
+    """With tautology rejection, known tautologies should not dominate the chain.
+
+    Programs like (lambda (eq $0 $0)) or (lambda (lt 0 5)) always return True
+    regardless of the hand. The 3-layer rejection system should prevent these
+    from being the top hypothesis.
+    """
+    config = MCMCConfig(n_steps=500, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    # The top hypothesis should not be a known tautology pattern
+    if result.top_hypotheses:
+        top = result.top_hypotheses[0]['program']
+        known_tautologies = [
+            '(lambda (eq $0 $0))',
+            '(lambda (lt 0 5))',
+            '(lambda (le 0 5))',
+            '(lambda (gt 5 0))',
+        ]
+        assert top not in known_tautologies, (
+            f"Tautology {top} should not be the #1 hypothesis"
+        )

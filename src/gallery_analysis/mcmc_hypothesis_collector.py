@@ -110,6 +110,49 @@ class TrajectoryAnalyzer:
             for prog, count in sorted_hyps
         ]
 
+    def frequency_ranking_filtered(
+        self, top_k: int = 50, max_ext_fraction: float = 0.5
+    ) -> List[Dict[str, Any]]:
+        """Rank hypotheses by visit frequency, excluding near-tautologies.
+
+        Like frequency_ranking() but filters out programs whose extension
+        fraction exceeds max_ext_fraction. Extension fraction is the proportion
+        of random probe hands that the program accepts -- a value of 0.5 means
+        the program accepts half of all hands, making it too vague to be a
+        useful hypothesis.
+
+        Args:
+            top_k:            Maximum number of hypotheses to return.
+            max_ext_fraction: Programs with ext_fraction > this are excluded.
+                              Default 0.5 removes programs accepting >50% of hands.
+
+        Returns:
+            List of dicts sorted by visit count descending, each with keys:
+              - 'program': the program string
+              - 'visit_count': total visits
+              - 'empirical_posterior': visit_count / n_steps
+              - 'first_step': step at which hypothesis was first seen (-1 if unknown)
+              - 'ext_fraction': fraction of probe hands accepted by the program
+        """
+        total = max(1, self.result.n_steps)
+        sorted_hyps = sorted(
+            self.result.visit_counts.items(), key=lambda x: -x[1]
+        )
+        filtered = []
+        for prog, count in sorted_hyps:
+            ext_frac = self.result.ext_fractions.get(prog, 0.0)
+            if ext_frac <= max_ext_fraction:
+                filtered.append({
+                    'program': prog,
+                    'visit_count': count,
+                    'empirical_posterior': count / total,
+                    'first_step': self.result.first_passage.get(prog, -1),
+                    'ext_fraction': ext_frac,
+                })
+                if len(filtered) >= top_k:
+                    break
+        return filtered
+
     def first_passage_ordering(self) -> List[Dict[str, Any]]:
         """Order hypotheses by first-passage time (when first discovered).
 
