@@ -178,7 +178,7 @@ def generate_rule_page(
             )
             if balanced_gt_hist:
                 chart_p_accept_balanced = json.dumps(
-                    p_accept_ground_truth(balanced_gt_hist, rule_id, title="Balanced Sampling").to_dict()
+                    p_accept_ground_truth(balanced_gt_hist, rule_id, title="Balanced Sampling", show_legend=False).to_dict()
                 )
 
         # Fall back to old single-panel histogram when gt data is missing

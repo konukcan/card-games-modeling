@@ -266,6 +266,7 @@ def p_accept_ground_truth(
     gt_hist: dict,
     rule_id: str,
     title: str = "",
+    show_legend: bool = True,
 ) -> alt.Chart:
     """Stacked bar chart of P(accept) bins split by ground truth.
 
@@ -326,6 +327,7 @@ def p_accept_ground_truth(
                 "component:N",
                 title="Ground Truth",
                 scale=gt_scale,
+                legend=alt.Legend() if show_legend else None,
             ),
             tooltip=[
                 alt.Tooltip("bin:N", title="P(accept) bin"),
