@@ -1242,3 +1242,166 @@ class MCMCChain:
             visit_counts=visit_counts,
             first_passage=first_passage,
         )
+
+
+# =========================================================================== #
+# MULTI-CHAIN PARALLEL RUNNER
+# =========================================================================== #
+
+
+def run_parallel_chains(
+    grammar: Grammar,
+    config: MCMCConfig,
+    request_type: Type,
+    exemplar_hands: List,
+    n_chains: int = 8,
+    ext_probe_hands: Optional[List] = None,
+) -> MCMCResult:
+    """
+    Run multiple independent MCMC chains and merge their results.
+
+    This is the simplest form of parallel MCMC: each chain starts from an
+    independent sample from the prior, explores with its own random seed,
+    and has no communication with other chains. The merged visit counts
+    across chains provide a better approximation to the posterior than any
+    single chain, because different chains are less likely to all get stuck
+    in the same local optimum.
+
+    COGNITIVE MODELING NOTE
+    -----------------------
+    Multiple chains model multiple learners or multiple independent "attempts"
+    at rule learning. The merged visit counts approximate the posterior better
+    than any single chain, and programs found by multiple chains independently
+    are particularly strong competitors — they represent hypotheses that are
+    robust attractors in the hypothesis space.
+
+    (Path to parallel tempering noted for future work: chains at different
+    temperatures can swap states to improve mixing.)
+
+    Args:
+        grammar:         The PCFG grammar defining the hypothesis space.
+        config:          MCMCConfig for each individual chain. Each chain runs
+                         config.n_steps steps with config.max_depth, etc.
+        request_type:    The type of programs to explore (e.g., Arrow(HAND, BOOL)).
+        exemplar_hands:  Positive exemplar hands for likelihood computation.
+        n_chains:        Number of independent chains to run (default 8).
+        ext_probe_hands: Shared probe hands for extension size estimation.
+                         If None, generated once and shared across all chains.
+
+    Returns:
+        A single merged MCMCResult where:
+          - visit_counts: summed across chains
+          - first_passage: earliest (minimum) across chains, offset by chain
+            position (step + i * config.n_steps) so the merged timeline is
+            [0, n_chains * n_steps)
+          - n_accepted: summed across chains
+          - n_steps: n_chains * config.n_steps (total steps across all chains)
+          - top_hypotheses: sorted by merged visit count, top config.top_k
+    """
+    from gallery_analysis.exemplars import generate_probe_set
+
+    # Determine the base seed for deriving per-chain seeds.
+    base_seed = config.seed if config.seed is not None else 42
+
+    # Generate shared probe hands once (expensive to create, shared across chains).
+    if ext_probe_hands is None:
+        ext_probe_hands = generate_probe_set(n_probes=10_000, seed=base_seed)
+
+    # ------------------------------------------------------------------ #
+    # Run each chain sequentially with a different seed.
+    # (Can be parallelized with ProcessPoolExecutor later.)
+    # ------------------------------------------------------------------ #
+    chain_results: List[MCMCResult] = []
+    for i in range(n_chains):
+        # Each chain gets a unique seed spaced 1000 apart to avoid overlap.
+        chain_seed = base_seed + i * 1000
+        chain_config = MCMCConfig(
+            n_steps=config.n_steps,
+            max_depth=config.max_depth,
+            noise_epsilon=config.noise_epsilon,
+            max_nodes=config.max_nodes,
+            top_k=config.top_k,
+            seed=chain_seed,
+        )
+        chain = MCMCChain(grammar, chain_config)
+        result = chain.run(
+            request_type=request_type,
+            exemplar_hands=exemplar_hands,
+            ext_probe_hands=ext_probe_hands,
+        )
+        chain_results.append(result)
+
+    # ------------------------------------------------------------------ #
+    # Merge results across chains.
+    # ------------------------------------------------------------------ #
+    merged_visit_counts: Dict[str, int] = {}
+    merged_first_passage: Dict[str, int] = {}
+    merged_log_posteriors: Dict[str, float] = {}
+    total_accepted = 0
+
+    for i, result in enumerate(chain_results):
+        # Offset for this chain's position in the merged timeline.
+        # Chain i's steps map to [i * n_steps, (i+1) * n_steps).
+        step_offset = i * config.n_steps
+
+        # Sum visit counts.
+        for prog, count in result.visit_counts.items():
+            merged_visit_counts[prog] = merged_visit_counts.get(prog, 0) + count
+
+        # Take earliest first passage (with offset).
+        for prog, step in result.first_passage.items():
+            offset_step = step + step_offset
+            if prog not in merged_first_passage or offset_step < merged_first_passage[prog]:
+                merged_first_passage[prog] = offset_step
+
+        # Track best log posterior per program.
+        for hyp in result.top_hypotheses:
+            prog = hyp['program']
+            lp = hyp['log_posterior']
+            if prog not in merged_log_posteriors or lp > merged_log_posteriors[prog]:
+                merged_log_posteriors[prog] = lp
+
+        total_accepted += result.n_accepted
+
+    # ------------------------------------------------------------------ #
+    # Build merged top hypotheses, sorted by visit count descending.
+    # ------------------------------------------------------------------ #
+    sorted_programs = sorted(
+        merged_visit_counts.keys(),
+        key=lambda p: merged_visit_counts[p],
+        reverse=True,
+    )[:config.top_k]
+
+    top_hypotheses = [
+        {
+            'program': prog,
+            'visit_count': merged_visit_counts[prog],
+            'log_posterior': merged_log_posteriors.get(prog, float('-inf')),
+            'first_seen_step': merged_first_passage.get(prog, -1),
+        }
+        for prog in sorted_programs
+    ]
+
+    # Identify overall best program by log posterior.
+    best_program = None
+    best_log_posterior = float('-inf')
+    for prog, lp in merged_log_posteriors.items():
+        if lp > best_log_posterior:
+            best_log_posterior = lp
+            best_program = prog
+
+    total_steps = n_chains * config.n_steps
+    n_unique = len(merged_visit_counts)
+    acceptance_rate = total_accepted / total_steps if total_steps > 0 else 0.0
+
+    return MCMCResult(
+        n_steps=total_steps,
+        n_accepted=total_accepted,
+        n_unique=n_unique,
+        acceptance_rate=acceptance_rate,
+        top_hypotheses=top_hypotheses,
+        best_program=best_program,
+        best_log_posterior=best_log_posterior,
+        visit_counts=merged_visit_counts,
+        first_passage=merged_first_passage,
+    )

@@ -23,6 +23,7 @@ from gallery_analysis.mcmc_search import (
     sample_program, collect_subtree_sites, propose_regeneration,
     replace_subtree, SubtreeSite,
     MCMCConfig, MCMCResult, MCMCChain, compute_mcmc_log_likelihood,
+    run_parallel_chains,
 )
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
 
@@ -344,3 +345,53 @@ def test_chain_visit_counts_sum(grammar, exemplars):
     assert total_visits == config.n_steps + 1, (
         f"Expected {config.n_steps + 1} total visits, got {total_visits}"
     )
+
+
+# =========================================================================== #
+# Tests for run_parallel_chains
+# =========================================================================== #
+
+def test_parallel_chains_merge_results(grammar, exemplars):
+    """Multiple chains should merge visit counts, total steps = n_chains * n_steps."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=4,
+    )
+    assert result.n_unique > 0
+    assert result.n_steps == 200 * 4
+
+
+def test_parallel_chains_acceptance_rate(grammar, exemplars):
+    """Merged acceptance rate should be reasonable."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=4,
+    )
+    assert 0.0 <= result.acceptance_rate <= 1.0
+
+
+def test_parallel_chains_more_unique_than_single(grammar, exemplars):
+    """4 chains should typically find more unique programs than 1 chain with same per-chain budget."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    single = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    multi = run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=4,
+    )
+    # Multi-chain should find at least as many unique programs
+    # (very likely more, since different starting points)
+    assert multi.n_unique >= single.n_unique
