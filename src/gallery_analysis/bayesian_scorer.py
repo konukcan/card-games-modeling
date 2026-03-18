@@ -70,8 +70,12 @@ from rules.cards import Hand
 from gallery_analysis.hypothesis_table import HypothesisTable, estimate_extension_size
 
 
-# Total number of possible 6-card hands: C(52, 6) = 20,358,520
-TOTAL_HANDS = 20_358_520
+# Total number of possible 6-card hands (ordered, without replacement):
+# P(52, 6) = 52! / (52-6)! = 14,658,134,400
+# Ordered because card position matters for many rules (e.g. ranks_palindrome,
+# blacks_before_reds). Previously C(52,6) = 20,358,520 which undercounted by 6!.
+# The error cancelled in posterior computations but affected reported extension sizes.
+TOTAL_HANDS = 14_658_134_400
 
 
 @dataclass

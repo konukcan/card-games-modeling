@@ -176,8 +176,8 @@ def estimate_extension_size(
             pass
 
     base_rate = hits / n_samples
-    # C(52, 6) = 20,358,520
-    total_hands = 20_358_520
+    # P(52, 6) = 14,658,134,400 (ordered, without replacement)
+    total_hands = 14_658_134_400
     estimated_size = int(base_rate * total_hands)
 
     return estimated_size, base_rate

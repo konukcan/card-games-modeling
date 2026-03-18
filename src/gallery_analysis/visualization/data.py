@@ -194,6 +194,7 @@ def _build_hypotheses_df(rule_details: Dict[str, Any]) -> pd.DataFrame:
                     "probability": hyp["probability"],
                     "n_expressions": hyp["n_expressions"],
                     "extension_size": hyp["extension_size"],
+                    "base_rate": hyp.get("base_rate", 0),
                     "log_prior": hyp["log_prior"],
                     "log_likelihood": hyp["log_likelihood"],
                     "is_true_rule": (

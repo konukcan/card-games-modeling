@@ -264,7 +264,7 @@
         <th>Program</th>
         <th>Depth</th>
         <th>Posterior</th>
-        <th>Extension Size</th>
+        <th>Base Rate</th>
         <th>Expressions</th>
         <th>Log Prior</th>
         <th>Log Likelihood</th>
@@ -277,7 +277,7 @@
         <td class="mono">{{ h.program }}</td>
         <td>{{ h.program_depth }}</td>
         <td>{{ "%.4f" | format(h.probability) }}</td>
-        <td>{{ h.extension_size }}</td>
+        <td>{{ "%.2f" | format(h.base_rate * 100) }}%</td>
         <td>{{ h.n_expressions }}</td>
         <td>{{ "%.2f" | format(h.log_prior) }}</td>
         <td>{{ "%.2f" | format(h.log_likelihood) }}</td>
@@ -289,7 +289,7 @@
         <td class="mono">{{ true_rule_hypothesis.program }}</td>
         <td>{{ true_rule_hypothesis.program_depth }}</td>
         <td>{{ "%.4f" | format(true_rule_hypothesis.probability) }}</td>
-        <td>{{ true_rule_hypothesis.extension_size }}</td>
+        <td>—</td>
         <td>{{ true_rule_hypothesis.n_expressions }}</td>
         <td>{{ "%.2f" | format(true_rule_hypothesis.log_prior) }}</td>
         <td>{{ "%.2f" | format(true_rule_hypothesis.log_likelihood) }}</td>
