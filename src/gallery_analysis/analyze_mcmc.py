@@ -113,6 +113,9 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
 
         hands = exemplars[rule_id]['hands_primary']
 
+        # Per-rule seed variation so different rules explore different trajectories
+        rule_seed_offset = hash(rule_id) % 100_000
+
         # Run parallel chains
         result = run_parallel_chains(
             grammar, config,
@@ -120,6 +123,7 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
             exemplar_hands=hands,
             n_chains=args.n_chains,
             ext_probe_hands=ext_probes,
+            seed_offset=rule_seed_offset,
         )
 
         # Trajectory analysis
@@ -188,8 +192,10 @@ def run_mcmc_analysis(args: argparse.Namespace) -> None:
     results_dir = Path(__file__).parent / 'results'
     results_dir.mkdir(exist_ok=True)
 
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     suffix = 'quick' if args.quick else f'{args.n_steps}steps_{args.n_chains}chains'
-    output_path = results_dir / f'mcmc_{suffix}_results.json'
+    output_path = results_dir / f'mcmc_{suffix}_{timestamp}_results.json'
 
     with open(output_path, 'w') as f:
         json.dump(output, f, indent=2, default=str)

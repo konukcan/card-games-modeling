@@ -1307,6 +1307,7 @@ def run_parallel_chains(
     exemplar_hands: List,
     n_chains: int = 8,
     ext_probe_hands: Optional[List] = None,
+    seed_offset: int = 0,
 ) -> MCMCResult:
     """
     Run multiple independent MCMC chains and merge their results.
@@ -1338,6 +1339,9 @@ def run_parallel_chains(
         n_chains:        Number of independent chains to run (default 8).
         ext_probe_hands: Shared probe hands for extension size estimation.
                          If None, generated once and shared across all chains.
+        seed_offset:     Additional offset added to chain seeds so that different
+                         rules (or callers) explore different trajectories even
+                         when they share the same base seed (default 0).
 
     Returns:
         A single merged MCMCResult where:
@@ -1365,7 +1369,7 @@ def run_parallel_chains(
     chain_results: List[MCMCResult] = []
     for i in range(n_chains):
         # Each chain gets a unique seed spaced 1000 apart to avoid overlap.
-        chain_seed = base_seed + i * 1000
+        chain_seed = base_seed + seed_offset + i * 1000
         chain_config = MCMCConfig(
             n_steps=config.n_steps,
             max_depth=config.max_depth,
