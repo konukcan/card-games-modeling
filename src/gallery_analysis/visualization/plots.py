@@ -440,7 +440,10 @@ def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
                 "program_label:N",
                 title=None,
                 sort=sorted_labels,
-                axis=alt.Axis(labelLimit=450),
+                axis=alt.Axis(
+                    labelLimit=450,
+                    labelExpr="split(datum.label, '\\n')",
+                ),
             ),
             color=alt.Color(
                 "component:N",
