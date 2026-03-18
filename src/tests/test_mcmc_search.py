@@ -466,6 +466,38 @@ class TestMCMCIntegration:
 
 
 # --------------------------------------------------------------------------- #
+# Tests for likelihood annealing (beta schedule)
+# --------------------------------------------------------------------------- #
+
+def test_annealing_completes(grammar, exemplars):
+    """Chain with annealing should complete without error."""
+    config = MCMCConfig(
+        n_steps=100, max_depth=5, seed=42,
+        beta_start=0.0, beta_end=1.0,
+    )
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert result.n_steps == 100
+
+
+def test_annealing_default_is_no_anneal(grammar, exemplars):
+    """Default beta_start=1.0 beta_end=1.0 should work identically to before."""
+    config = MCMCConfig(n_steps=50, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert result.n_steps == 50
+    # Default betas are 1.0/1.0
+    assert config.beta_start == 1.0
+    assert config.beta_end == 1.0
+
+
+# --------------------------------------------------------------------------- #
 # Test: init_max_depth produces small programs
 # --------------------------------------------------------------------------- #
 

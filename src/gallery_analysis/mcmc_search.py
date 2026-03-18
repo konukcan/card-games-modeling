@@ -920,6 +920,8 @@ class MCMCConfig:
     seed: Optional[int] = None
     verbose: int = 0  # 0=silent, 1=chain progress, 2=accept/reject, 3=proposal details
     init_max_depth: int = 3   # Max depth for initial program sample (small to avoid dead chains)
+    beta_start: float = 1.0   # Likelihood temperature at step 0 (1.0 = no annealing)
+    beta_end: float = 1.0     # Likelihood temperature at final step
 
 
 @dataclass
@@ -1185,26 +1187,34 @@ class MCMCChain:
             )
             proposed_log_posterior = proposed_log_prior + proposed_log_lik
 
-            # (d) MH acceptance ratio.
-            # log_alpha = log[P(proposed) * Q(current|proposed)]
-            #           - log[P(current) * Q(proposed|current)]
-            #
-            # Handle -inf gracefully: if both posteriors are -inf, reject
-            # (0/0 situation — no reason to move).
+            # (d) MH acceptance ratio with likelihood annealing.
+            # The annealed posterior uses beta * log_lik instead of log_lik,
+            # allowing the chain to explore more freely early on (low beta)
+            # and focus on high-likelihood regions later (beta -> 1.0).
+            # Tracking (visit counts, best posterior) still uses the
+            # unannealed posterior for correct posterior estimates.
+            if config.beta_start == config.beta_end:
+                beta = config.beta_start
+            else:
+                beta = config.beta_start + (config.beta_end - config.beta_start) * (step / config.n_steps)
+
+            current_annealed = current_log_prior + beta * current_log_lik
+            proposed_annealed = proposed_log_prior + beta * proposed_log_lik
+
             log_alpha = float('-inf')  # default for logging
-            if (current_log_posterior == float('-inf')
-                    and proposed_log_posterior == float('-inf')):
+            if (current_annealed == float('-inf')
+                    and proposed_annealed == float('-inf')):
                 accept = False
-            elif proposed_log_posterior == float('-inf'):
+            elif proposed_annealed == float('-inf'):
                 accept = False
-            elif current_log_posterior == float('-inf'):
+            elif current_annealed == float('-inf'):
                 # Current is impossible, proposed is finite — always accept.
                 accept = True
                 log_alpha = float('inf')
             else:
                 log_alpha = (
-                    (proposed_log_posterior + log_q_rev)
-                    - (current_log_posterior + log_q_fwd)
+                    (proposed_annealed + log_q_rev)
+                    - (current_annealed + log_q_fwd)
                 )
                 accept = (log_alpha >= 0) or (math.log(rng.random()) < log_alpha)
 
@@ -1230,7 +1240,8 @@ class MCMCChain:
                 print(f"  [step {step}/{config.n_steps}] "
                       f"accepted={n_accepted} ({rate:.1%}) "
                       f"unique={len(visit_counts)} "
-                      f"best_post={best_log_posterior:.2f}")
+                      f"best_post={best_log_posterior:.2f} "
+                      f"β={beta:.3f}")
 
             # (f) Track the current state (after accept/reject decision).
             current_str = str(current)
