@@ -26,7 +26,7 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -168,3 +168,51 @@ class TrajectoryAnalyzer:
             'top_1_visits': max(visits) if visits else 0,
             'concentration': max(visits) / max(1, total),
         }
+
+    def transition_counts(self) -> Dict[Tuple[str, str], int]:
+        """Count transitions between hypotheses in the trajectory.
+
+        A transition (A -> B) means the chain moved from A to B in one step.
+        Self-transitions (A -> A) are counted when a proposal is rejected.
+
+        Returns:
+            Dict mapping (from_prog, to_prog) -> count.
+        """
+        if not self.result.trajectory:
+            return {}
+        counts: Dict[Tuple[str, str], int] = {}
+        for i in range(len(self.result.trajectory) - 1):
+            pair = (self.result.trajectory[i], self.result.trajectory[i + 1])
+            counts[pair] = counts.get(pair, 0) + 1
+        return counts
+
+    def consecutive_dwelling_times(self) -> Dict[str, List[int]]:
+        """Compute consecutive dwelling times (run lengths) per hypothesis.
+
+        For each hypothesis, collect the lengths of consecutive runs
+        (how many steps the chain stayed before moving away).
+
+        Example: trajectory [A, A, A, B, B, A, A] gives:
+            A: [3, 2]  (two runs of length 3 and 2)
+            B: [2]     (one run of length 2)
+
+        The mean run length is the expected "stickiness" of a hypothesis.
+        """
+        if not self.result.trajectory:
+            return {}
+
+        dwellings: Dict[str, List[int]] = {}
+        current = self.result.trajectory[0]
+        run_length = 1
+
+        for i in range(1, len(self.result.trajectory)):
+            if self.result.trajectory[i] == current:
+                run_length += 1
+            else:
+                dwellings.setdefault(current, []).append(run_length)
+                current = self.result.trajectory[i]
+                run_length = 1
+        # Don't forget the last run
+        dwellings.setdefault(current, []).append(run_length)
+
+        return dwellings

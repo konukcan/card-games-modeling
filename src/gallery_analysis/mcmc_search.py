@@ -944,6 +944,7 @@ class MCMCResult:
     best_log_posterior: float = float('-inf')
     visit_counts: Dict[str, int] = field(default_factory=dict)
     first_passage: Dict[str, int] = field(default_factory=dict)
+    trajectory: List[str] = field(default_factory=list)  # Step-by-step sequence of program strings
 
 
 # =========================================================================== #
@@ -1128,6 +1129,7 @@ class MCMCChain:
         visit_counts[current_str] = 1
         first_passage[current_str] = 0
         log_posteriors[current_str] = current_log_posterior
+        trajectory: List[str] = [current_str]  # Step-by-step trajectory
 
         best_program = current_str
         best_log_posterior = current_log_posterior
@@ -1148,12 +1150,14 @@ class MCMCChain:
                 # subtree sites (e.g., a single variable). Skip this step.
                 current_str = str(current)
                 visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                trajectory.append(current_str)
                 continue
 
             # (b) Reject if program is too large.
             if proposed.size() > config.max_nodes:
                 current_str = str(current)
                 visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                trajectory.append(current_str)
                 continue
 
             # (c) Compute proposed posterior.
@@ -1197,6 +1201,7 @@ class MCMCChain:
             # (f) Track the current state (after accept/reject decision).
             current_str = str(current)
             visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+            trajectory.append(current_str)
             if current_str not in first_passage:
                 first_passage[current_str] = step
             # Track best log posterior for this program.
@@ -1241,6 +1246,7 @@ class MCMCChain:
             best_log_posterior=best_log_posterior,
             visit_counts=visit_counts,
             first_passage=first_passage,
+            trajectory=trajectory,
         )
 
 
@@ -1337,6 +1343,7 @@ def run_parallel_chains(
     merged_visit_counts: Dict[str, int] = {}
     merged_first_passage: Dict[str, int] = {}
     merged_log_posteriors: Dict[str, float] = {}
+    merged_trajectory: List[str] = []
     total_accepted = 0
 
     for i, result in enumerate(chain_results):
@@ -1362,6 +1369,7 @@ def run_parallel_chains(
                 merged_log_posteriors[prog] = lp
 
         total_accepted += result.n_accepted
+        merged_trajectory.extend(result.trajectory)
 
     # ------------------------------------------------------------------ #
     # Build merged top hypotheses, sorted by visit count descending.
@@ -1404,4 +1412,5 @@ def run_parallel_chains(
         best_log_posterior=best_log_posterior,
         visit_counts=merged_visit_counts,
         first_passage=merged_first_passage,
+        trajectory=merged_trajectory,
     )

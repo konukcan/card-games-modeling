@@ -81,3 +81,36 @@ def test_empirical_posteriors_sum_to_one(mcmc_result):
     ranking = analyzer.frequency_ranking(top_k=len(mcmc_result.visit_counts))
     total_post = sum(e['empirical_posterior'] for e in ranking)
     assert abs(total_post - 1.0) < 0.01, f"Posteriors sum to {total_post}, not ~1.0"
+
+
+def test_trajectory_recorded(mcmc_result):
+    """Trajectory should have entries for each step."""
+    assert len(mcmc_result.trajectory) > 0
+
+
+def test_transition_counts(mcmc_result):
+    """Transition counts should sum to trajectory length - 1."""
+    analyzer = TrajectoryAnalyzer(mcmc_result)
+    transitions = analyzer.transition_counts()
+    if mcmc_result.trajectory:
+        total = sum(transitions.values())
+        assert total == len(mcmc_result.trajectory) - 1
+
+
+def test_consecutive_dwelling_times(mcmc_result):
+    """Consecutive dwelling times should cover all trajectory entries."""
+    analyzer = TrajectoryAnalyzer(mcmc_result)
+    dwellings = analyzer.consecutive_dwelling_times()
+    if mcmc_result.trajectory:
+        # Sum of all run lengths should equal trajectory length
+        total_runs = sum(sum(runs) for runs in dwellings.values())
+        assert total_runs == len(mcmc_result.trajectory)
+
+
+def test_dwelling_mean_positive(mcmc_result):
+    """Mean dwelling time should be positive for all hypotheses."""
+    analyzer = TrajectoryAnalyzer(mcmc_result)
+    dwellings = analyzer.consecutive_dwelling_times()
+    for prog, runs in dwellings.items():
+        mean_dwell = sum(runs) / len(runs)
+        assert mean_dwell > 0
