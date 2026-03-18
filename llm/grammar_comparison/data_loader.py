@@ -16,8 +16,18 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
+
+# ---------------------------------------------------------------------------
+# Path setup: allow importing from the main src/ tree
+# ---------------------------------------------------------------------------
+_SRC_DIR = str(Path(__file__).resolve().parents[2] / "src")
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
+from rules.cards import Card, Suit, Rank
 
 
 # Default paths relative to this file's location within the repo.
@@ -78,6 +88,67 @@ def _normalise(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip().lower())
 
 
+# ---------------------------------------------------------------------------
+# Suit and rank symbol mappings for parsing hand strings like "2♠ 5♥ K♣"
+# ---------------------------------------------------------------------------
+
+# Maps Unicode suit symbols and single-letter abbreviations to Suit enum values.
+_SUIT_SYMBOL: dict[str, Suit] = {
+    "♠": Suit.SPADES,
+    "♥": Suit.HEARTS,
+    "♦": Suit.DIAMONDS,
+    "♣": Suit.CLUBS,
+    "S": Suit.SPADES,
+    "H": Suit.HEARTS,
+    "D": Suit.DIAMONDS,
+    "C": Suit.CLUBS,
+}
+
+# Maps rank strings (as they appear in hand notation) to Rank enum values.
+# Includes both numeric ranks (2-10) and face-card abbreviations (J, Q, K, A).
+_RANK_SYMBOL: dict[str, Rank] = {r.value: r for r in Rank}
+
+
+def _parse_hand_string(hand_str: str) -> List[Card]:
+    """Convert a hand string like ``"2♠ 5♥ K♣ 3♦ 7♠ J♥"`` into a list of Card objects.
+
+    Each token in the space-separated string is a card where the last character
+    is the suit symbol (Unicode or letter) and the preceding characters are the
+    rank (2-10, J, Q, K, A).
+
+    Parameters
+    ----------
+    hand_str : str
+        Space-separated card tokens, e.g. ``"2♠ 5♥ K♣ 3♦ 7♠ J♥"``.
+
+    Returns
+    -------
+    List[Card]
+        Parsed Card objects in the same order as the input string.
+
+    Raises
+    ------
+    ValueError
+        If a token cannot be parsed into a valid rank + suit.
+    """
+    cards: List[Card] = []
+    for token in hand_str.split():
+        # The last character is always the suit symbol.
+        suit_char = token[-1]
+        rank_str = token[:-1]
+
+        suit = _SUIT_SYMBOL.get(suit_char)
+        if suit is None:
+            raise ValueError(f"Unknown suit symbol '{suit_char}' in token '{token}'")
+
+        rank = _RANK_SYMBOL.get(rank_str)
+        if rank is None:
+            raise ValueError(f"Unknown rank '{rank_str}' in token '{token}'")
+
+        cards.append(Card(suit, rank))
+    return cards
+
+
 def load_phase1b_hypotheses(
     *,
     phase1b_dir: Optional[Path] = None,
@@ -96,6 +167,9 @@ def load_phase1b_hypotheses(
         - python_code   (str): Python lambda from the LLM (the 'code' field).
         - judge_verdict (str): "PASS" or "FAIL" from the code judge.
         - source_model  (str): Which LLM produced this hypothesis (e.g. "gemini-pro").
+        - exemplar_hands (List[List[Card]]): The 6 example hands shown to the LLM,
+          parsed into Card objects.  All hypotheses for the same rule share the
+          same exemplar hands.
 
     Parameters
     ----------
@@ -150,6 +224,12 @@ def load_phase1b_hypotheses(
         rule_id = data["rule_id"]
         source_model = data.get("source_model", parts[0])
 
+        # Parse exemplar hands (per-file, shared across all hypotheses for this rule).
+        # The hands_shown field contains space-separated card strings like "2♠ 5♥ K♣".
+        exemplar_hands: List[List[Card]] = []
+        for hand_str in data.get("hands_shown", []):
+            exemplar_hands.append(_parse_hand_string(hand_str))
+
         for hyp in data.get("hypotheses", []):
             # Apply passed filter
             if passed_only and not hyp.get("passed", False):
@@ -173,6 +253,7 @@ def load_phase1b_hypotheses(
                 "python_code": hyp.get("code", ""),
                 "judge_verdict": verdict_str,
                 "source_model": source_model,
+                "exemplar_hands": exemplar_hands,
             })
 
     # Sort by rule_id then rank for deterministic ordering
