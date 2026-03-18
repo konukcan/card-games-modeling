@@ -1,8 +1,9 @@
 """
-Tests for the MCMC program sampler.
+Tests for the MCMC program sampler and chain runner.
 
 Verifies that sample_program() produces complete, type-correct programs
-from the grammar prior, with reproducibility via seeding.
+from the grammar prior, with reproducibility via seeding. Also tests the
+full MH chain (MCMCChain) and likelihood computation.
 """
 import sys
 from pathlib import Path
@@ -21,7 +22,9 @@ from gallery_analysis.enumerator import build_gallery_grammar
 from gallery_analysis.mcmc_search import (
     sample_program, collect_subtree_sites, propose_regeneration,
     replace_subtree, SubtreeSite,
+    MCMCConfig, MCMCResult, MCMCChain, compute_mcmc_log_likelihood,
 )
+from gallery_analysis.exemplars import load_exemplars, generate_probe_set
 
 
 @pytest.fixture
@@ -233,4 +236,111 @@ def test_propose_regeneration_changes_program(grammar):
             different_count += 1
     assert different_count > 0, (
         f"All 20 proposals produced the same program as the original: {prog}"
+    )
+
+
+# =========================================================================== #
+# Tests for compute_mcmc_log_likelihood
+# =========================================================================== #
+
+@pytest.fixture
+def exemplars():
+    """Load frozen exemplar hands from the gallery experiment."""
+    return load_exemplars()
+
+
+def test_likelihood_returns_float(grammar, exemplars):
+    """Likelihood should return a finite float (or -inf), never NaN."""
+    hands = exemplars['all_red']['hands_primary']
+    probes = generate_probe_set(n_probes=1000, seed=42)
+    prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=42)
+    ll = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
+    assert isinstance(ll, float), f"Expected float, got {type(ll)}"
+    assert not math.isnan(ll), f"Likelihood is NaN for program {prog}"
+
+
+def test_likelihood_noise_prevents_neg_inf(grammar, exemplars):
+    """With noise_epsilon > 0, likelihood should be finite (not -inf)
+    for programs that can at least be evaluated, even if they miss all exemplars."""
+    hands = exemplars['all_red']['hands_primary']
+    probes = generate_probe_set(n_probes=1000, seed=42)
+    # Try several seeds — at least one program should evaluate without crashing
+    # and produce a finite (not -inf) likelihood due to noise floor.
+    finite_count = 0
+    for seed in range(20):
+        prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=seed)
+        ll = compute_mcmc_log_likelihood(prog, hands, noise_epsilon=0.01, ext_probe_hands=probes)
+        if math.isfinite(ll):
+            finite_count += 1
+    assert finite_count > 0, (
+        "All 20 programs produced -inf likelihood despite noise_epsilon=0.01"
+    )
+
+
+# =========================================================================== #
+# Tests for MCMCChain
+# =========================================================================== #
+
+def test_chain_runs_without_error(grammar, exemplars):
+    """Chain should complete N steps without crashing."""
+    config = MCMCConfig(n_steps=100, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert result is not None
+    assert result.n_steps == 100
+
+
+def test_chain_collects_unique_programs(grammar, exemplars):
+    """Chain should find distinct programs."""
+    config = MCMCConfig(n_steps=500, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert result.n_unique > 0
+
+
+def test_chain_acceptance_rate(grammar, exemplars):
+    """Acceptance rate should be between 0 and 1."""
+    config = MCMCConfig(n_steps=500, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert 0.0 <= result.acceptance_rate <= 1.0
+
+
+def test_chain_has_top_hypotheses(grammar, exemplars):
+    """Result should have ranked hypotheses with required fields."""
+    config = MCMCConfig(n_steps=1000, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    assert len(result.top_hypotheses) > 0
+    for hyp in result.top_hypotheses[:5]:
+        assert 'program' in hyp
+        assert 'visit_count' in hyp
+        assert 'log_posterior' in hyp
+        assert 'first_seen_step' in hyp
+
+
+def test_chain_visit_counts_sum(grammar, exemplars):
+    """Total visit counts should equal n_steps + 1 (initial state + all steps)."""
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    total_visits = sum(result.visit_counts.values())
+    # n_steps + 1 because we count the initial program plus one count per step.
+    assert total_visits == config.n_steps + 1, (
+        f"Expected {config.n_steps + 1} total visits, got {total_visits}"
     )

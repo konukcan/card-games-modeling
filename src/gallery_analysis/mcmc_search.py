@@ -27,6 +27,9 @@ This module provides:
   - collect_subtree_sites()    : find all AST positions eligible for regeneration
   - replace_subtree()          : swap a subtree at a given path
   - propose_regeneration()     : the core MCMC subtree-regeneration proposal
+  - compute_mcmc_log_likelihood() : size-principle likelihood with noise
+  - MCMCConfig / MCMCResult    : configuration and result dataclasses
+  - MCMCChain                  : full Metropolis-Hastings chain runner
 
 ARCHITECTURE
 ------------
@@ -34,15 +37,16 @@ ARCHITECTURE
   collect_subtree_sites()      <- walk AST, collect regeneration sites
   replace_subtree()            <- structural replacement at a path
   propose_regeneration()       <- select site + regenerate + compute proposal ratio
-  mcmc_step()                  <- future: MH accept/reject
-  run_chain()                  <- future: full MCMC chain
+  compute_mcmc_log_likelihood()<- P(data | hypothesis) via size principle
+  MCMCChain.run()              <- full MH chain with accept/reject
 """
 import sys
 import math
 import random
-from dataclasses import dataclass
+import logging
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -870,3 +874,371 @@ def propose_regeneration(
     log_q_reverse = log_pick_rev + log_gen_rev
 
     return new_program, log_q_forward, log_q_reverse
+
+
+# =========================================================================== #
+# MCMC CONFIGURATION AND RESULTS
+# =========================================================================== #
+
+logger = logging.getLogger(__name__)
+
+# Total number of 6-card hands from a 52-card deck: C(52, 6)
+TOTAL_HANDS = 20_358_520
+
+
+@dataclass
+class MCMCConfig:
+    """
+    Configuration for a single MCMC chain.
+
+    Attributes:
+        n_steps:       Number of Metropolis-Hastings steps per chain.
+        max_depth:     Maximum AST depth for sampled/regenerated programs.
+        noise_epsilon: Noise floor for the likelihood function. When > 0,
+                       even programs that miss an exemplar get a small
+                       non-zero probability, preventing the chain from
+                       getting permanently stuck on the first program
+                       that covers any exemplar. Set to 0 for strict
+                       (deterministic) likelihood.
+        max_nodes:     Hard cutoff on program AST size (number of nodes).
+                       Programs exceeding this are immediately rejected.
+                       Follows LOTlib3 convention of bounding hypothesis
+                       complexity to keep the chain in a tractable region.
+        top_k:         Number of top hypotheses (by visit count) to retain
+                       in the result. Keeps memory bounded for long chains.
+        seed:          Random seed for reproducibility. If None, the chain
+                       is non-deterministic.
+    """
+    n_steps: int = 100_000
+    max_depth: int = 6
+    noise_epsilon: float = 0.01
+    max_nodes: int = 25
+    top_k: int = 250
+    seed: Optional[int] = None
+
+
+@dataclass
+class MCMCResult:
+    """
+    Result of running a single MCMC chain.
+
+    Attributes:
+        n_steps:          Total MH steps executed.
+        n_accepted:       Number of proposals accepted.
+        n_unique:         Number of distinct programs visited.
+        acceptance_rate:  Fraction of proposals accepted (n_accepted / n_steps).
+        top_hypotheses:   List of dicts sorted by visit_count descending.
+                          Each dict has keys: 'program', 'visit_count',
+                          'log_posterior', 'first_seen_step'.
+        best_program:     String representation of the highest-posterior program.
+        best_log_posterior: Log posterior of the best program found.
+        visit_counts:     Dict mapping program string -> number of visits.
+        first_passage:    Dict mapping program string -> step number first seen.
+    """
+    n_steps: int
+    n_accepted: int
+    n_unique: int
+    acceptance_rate: float
+    top_hypotheses: List[Dict[str, Any]]
+    best_program: Optional[str] = None
+    best_log_posterior: float = float('-inf')
+    visit_counts: Dict[str, int] = field(default_factory=dict)
+    first_passage: Dict[str, int] = field(default_factory=dict)
+
+
+# =========================================================================== #
+# LIKELIHOOD COMPUTATION
+# =========================================================================== #
+
+
+def compute_mcmc_log_likelihood(
+    program,
+    exemplar_hands: List,
+    noise_epsilon: float,
+    ext_probe_hands: List,
+) -> float:
+    """
+    Compute log P(data | hypothesis) using the size principle with noise.
+
+    The size principle (Tenenbaum & Griffiths, 2001) says that a hypothesis
+    that picks out a smaller extension (fewer hands satisfy it) assigns
+    higher probability to each observed exemplar — it makes a "stronger
+    prediction." This naturally implements a preference for more specific
+    rules over vague ones.
+
+    The noise parameter epsilon provides a floor probability for exemplars
+    that the program misses, preventing -inf likelihoods that would trap
+    the chain. This models the idea that human learners tolerate some
+    noise in the data (e.g., "maybe the experimenter made an error").
+
+    Args:
+        program:          A Program AST to evaluate as a hypothesis.
+        exemplar_hands:   List of Hand objects that are positive exemplars
+                          (known to satisfy the true rule).
+        noise_epsilon:    Noise floor (0 = strict, 0.01 = 1% noise).
+        ext_probe_hands:  List of random Hand objects for Monte Carlo
+                          estimation of the hypothesis extension size.
+
+    Returns:
+        Log-likelihood (sum of log P(hand_i | hypothesis) for each exemplar).
+        Returns -inf if the program cannot be evaluated at all.
+
+    How extension size estimation works:
+        We evaluate the program on each probe hand and count hits.
+        ext_size = (n_hits / n_probes) * TOTAL_HANDS
+        This gives an unbiased Monte Carlo estimate of the number of
+        6-card hands that the hypothesis classifies as positive.
+    """
+    # Try to compile the program into a callable function.
+    # If the program crashes on evaluation, it's an impossible hypothesis.
+    try:
+        func = program.evaluate([])
+    except Exception:
+        return float('-inf')
+
+    # Estimate the extension size via Monte Carlo on probe hands.
+    n_probes = len(ext_probe_hands)
+    n_hits_probe = 0
+    for hand in ext_probe_hands:
+        try:
+            result = func(hand)
+            if result is True:
+                n_hits_probe += 1
+        except Exception:
+            # Program crashes on this hand — treat as non-member.
+            continue
+
+    # Extension size estimate. Guard against zero (program accepts nothing).
+    if n_hits_probe == 0:
+        # The program's extension is empty (or nearly so).
+        # Every exemplar is a "miss," so likelihood is driven entirely by noise.
+        ext_size = 1.0  # Minimal extension to avoid division by zero.
+    else:
+        ext_size = (n_hits_probe / n_probes) * TOTAL_HANDS
+
+    # Compute log-likelihood for each exemplar hand.
+    total_log_lik = 0.0
+    for hand in exemplar_hands:
+        try:
+            result = func(hand)
+            is_hit = (result is True)
+        except Exception:
+            is_hit = False
+
+        if is_hit:
+            # Size principle: P = (1 - epsilon) / ext_size + epsilon / TOTAL_HANDS
+            p = (1.0 - noise_epsilon) / ext_size + noise_epsilon / TOTAL_HANDS
+        else:
+            # Miss: only noise probability
+            p = noise_epsilon / TOTAL_HANDS
+
+        if p <= 0:
+            return float('-inf')
+        total_log_lik += math.log(p)
+
+    return total_log_lik
+
+
+# =========================================================================== #
+# MCMC CHAIN
+# =========================================================================== #
+
+
+class MCMCChain:
+    """
+    Metropolis-Hastings chain for card-game rule induction.
+
+    Explores the hypothesis space of typed programs by iteratively proposing
+    local modifications (subtree regeneration) and accepting/rejecting them
+    based on the posterior probability P(program | data) = P(data | program) * P(program).
+
+    The chain tracks visit counts for each distinct program, which provides
+    an approximation to the posterior: programs visited more often have
+    higher posterior probability.
+
+    Usage:
+        grammar = build_gallery_grammar()
+        config = MCMCConfig(n_steps=10000, seed=42)
+        chain = MCMCChain(grammar, config)
+        result = chain.run(
+            request_type=Arrow(HAND, BOOL),
+            exemplar_hands=exemplars['all_red']['hands_primary'],
+        )
+        print(result.top_hypotheses[:5])
+    """
+
+    def __init__(self, grammar: Grammar, config: MCMCConfig):
+        self.grammar = grammar
+        self.config = config
+
+    def run(
+        self,
+        request_type,
+        exemplar_hands: List,
+        ext_probe_hands: List = None,
+    ) -> MCMCResult:
+        """
+        Run the Metropolis-Hastings chain.
+
+        Args:
+            request_type:    The type of programs to explore (e.g., Arrow(HAND, BOOL)).
+            exemplar_hands:  Positive exemplar hands for likelihood computation.
+            ext_probe_hands: Probe hands for extension size estimation. If None,
+                             generated automatically using generate_probe_set.
+
+        Returns:
+            MCMCResult with visit counts, top hypotheses, and chain statistics.
+        """
+        config = self.config
+        grammar = self.grammar
+        rng = random.Random(config.seed)
+
+        # Generate probe hands if not provided.
+        if ext_probe_hands is None:
+            from gallery_analysis.exemplars import generate_probe_set
+            ext_probe_hands = generate_probe_set(
+                n_probes=10_000, seed=rng.randint(0, 2**31)
+            )
+
+        # -------------------------------------------------------------- #
+        # Initialize: sample a starting program from the prior.
+        # -------------------------------------------------------------- #
+        current = sample_program(
+            grammar, request_type, max_depth=config.max_depth,
+            seed=rng.randint(0, 2**31),
+        )
+        current_log_prior = grammar.program_log_likelihood(
+            current, request_type
+        )
+        current_log_lik = compute_mcmc_log_likelihood(
+            current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
+        )
+        current_log_posterior = current_log_prior + current_log_lik
+
+        # -------------------------------------------------------------- #
+        # Tracking structures.
+        # -------------------------------------------------------------- #
+        visit_counts: Dict[str, int] = {}
+        first_passage: Dict[str, int] = {}
+        log_posteriors: Dict[str, float] = {}
+        n_accepted = 0
+
+        # Record the initial program.
+        current_str = str(current)
+        visit_counts[current_str] = 1
+        first_passage[current_str] = 0
+        log_posteriors[current_str] = current_log_posterior
+
+        best_program = current_str
+        best_log_posterior = current_log_posterior
+
+        # -------------------------------------------------------------- #
+        # Main MH loop.
+        # -------------------------------------------------------------- #
+        for step in range(1, config.n_steps + 1):
+            # (a) Propose a new program via subtree regeneration.
+            try:
+                proposed, log_q_fwd, log_q_rev = propose_regeneration(
+                    grammar, current, request_type,
+                    max_depth=config.max_depth,
+                    seed=rng.randint(0, 2**31),
+                )
+            except RuntimeError:
+                # propose_regeneration can fail if the program has no
+                # subtree sites (e.g., a single variable). Skip this step.
+                current_str = str(current)
+                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                continue
+
+            # (b) Reject if program is too large.
+            if proposed.size() > config.max_nodes:
+                current_str = str(current)
+                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+                continue
+
+            # (c) Compute proposed posterior.
+            proposed_log_prior = grammar.program_log_likelihood(
+                proposed, request_type
+            )
+            proposed_log_lik = compute_mcmc_log_likelihood(
+                proposed, exemplar_hands, config.noise_epsilon, ext_probe_hands,
+            )
+            proposed_log_posterior = proposed_log_prior + proposed_log_lik
+
+            # (d) MH acceptance ratio.
+            # log_alpha = log[P(proposed) * Q(current|proposed)]
+            #           - log[P(current) * Q(proposed|current)]
+            #
+            # Handle -inf gracefully: if both posteriors are -inf, reject
+            # (0/0 situation — no reason to move).
+            if (current_log_posterior == float('-inf')
+                    and proposed_log_posterior == float('-inf')):
+                accept = False
+            elif proposed_log_posterior == float('-inf'):
+                accept = False
+            elif current_log_posterior == float('-inf'):
+                # Current is impossible, proposed is finite — always accept.
+                accept = True
+            else:
+                log_alpha = (
+                    (proposed_log_posterior + log_q_rev)
+                    - (current_log_posterior + log_q_fwd)
+                )
+                accept = (log_alpha >= 0) or (math.log(rng.random()) < log_alpha)
+
+            # (e) Accept or reject.
+            if accept:
+                current = proposed
+                current_log_prior = proposed_log_prior
+                current_log_lik = proposed_log_lik
+                current_log_posterior = proposed_log_posterior
+                n_accepted += 1
+
+            # (f) Track the current state (after accept/reject decision).
+            current_str = str(current)
+            visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+            if current_str not in first_passage:
+                first_passage[current_str] = step
+            # Track best log posterior for this program.
+            if current_str not in log_posteriors or current_log_posterior > log_posteriors[current_str]:
+                log_posteriors[current_str] = current_log_posterior
+
+            # Update best overall.
+            if current_log_posterior > best_log_posterior:
+                best_log_posterior = current_log_posterior
+                best_program = current_str
+
+        # -------------------------------------------------------------- #
+        # Build result.
+        # -------------------------------------------------------------- #
+        # Sort hypotheses by visit count descending, take top_k.
+        sorted_programs = sorted(
+            visit_counts.keys(),
+            key=lambda p: visit_counts[p],
+            reverse=True,
+        )[:config.top_k]
+
+        top_hypotheses = [
+            {
+                'program': prog,
+                'visit_count': visit_counts[prog],
+                'log_posterior': log_posteriors.get(prog, float('-inf')),
+                'first_seen_step': first_passage.get(prog, -1),
+            }
+            for prog in sorted_programs
+        ]
+
+        n_unique = len(visit_counts)
+        acceptance_rate = n_accepted / config.n_steps if config.n_steps > 0 else 0.0
+
+        return MCMCResult(
+            n_steps=config.n_steps,
+            n_accepted=n_accepted,
+            n_unique=n_unique,
+            acceptance_rate=acceptance_rate,
+            top_hypotheses=top_hypotheses,
+            best_program=best_program,
+            best_log_posterior=best_log_posterior,
+            visit_counts=visit_counts,
+            first_passage=first_passage,
+        )
