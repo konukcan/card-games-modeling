@@ -395,3 +395,71 @@ def test_parallel_chains_more_unique_than_single(grammar, exemplars):
     # Multi-chain should find at least as many unique programs
     # (very likely more, since different starting points)
     assert multi.n_unique >= single.n_unique
+
+
+# =========================================================================== #
+# Integration tests on real gallery rules
+# =========================================================================== #
+
+class TestMCMCIntegration:
+    """End-to-end tests on real gallery rules."""
+
+    def setup_method(self):
+        from gallery_analysis.enumerator import build_gallery_grammar
+        from gallery_analysis.exemplars import load_exemplars
+        self.grammar = build_gallery_grammar()
+        self.exemplars = load_exemplars()
+
+    def test_finds_hypotheses_for_easy_rule(self):
+        """MCMC should find consistent hypotheses for 'all_red' (group 1, easy)."""
+        config = MCMCConfig(n_steps=5000, max_depth=5, seed=42)
+        hands = self.exemplars['all_red']['hands_primary']
+        result = run_parallel_chains(
+            self.grammar, config,
+            request_type=Arrow(HAND, BOOL),
+            exemplar_hands=hands,
+            n_chains=4,
+        )
+        assert result.n_unique > 10, f"Only found {result.n_unique} unique programs"
+        assert result.acceptance_rate > 0.001, f"Acceptance rate too low: {result.acceptance_rate}"
+        print(f"\nall_red: {result.n_unique} unique, accept={result.acceptance_rate:.3f}, top={result.top_hypotheses[0]['program'][:80]}")
+
+    def test_finds_hypotheses_for_medium_rule(self):
+        """MCMC should find hypotheses for 'all_even' (group 2, medium)."""
+        config = MCMCConfig(n_steps=5000, max_depth=5, seed=42)
+        hands = self.exemplars['all_even']['hands_primary']
+        result = run_parallel_chains(
+            self.grammar, config,
+            request_type=Arrow(HAND, BOOL),
+            exemplar_hands=hands,
+            n_chains=4,
+        )
+        assert result.n_unique > 5, f"Only found {result.n_unique} unique programs"
+        print(f"\nall_even: {result.n_unique} unique, accept={result.acceptance_rate:.3f}, top={result.top_hypotheses[0]['program'][:80]}")
+
+    def test_top_hypothesis_has_reasonable_visits(self):
+        """The most-visited hypothesis should have more than 1 visit."""
+        config = MCMCConfig(n_steps=2000, max_depth=5, seed=42)
+        hands = self.exemplars['all_red']['hands_primary']
+        result = run_parallel_chains(
+            self.grammar, config,
+            request_type=Arrow(HAND, BOOL),
+            exemplar_hands=hands,
+            n_chains=2,
+        )
+        assert len(result.top_hypotheses) > 0
+        assert result.top_hypotheses[0]['visit_count'] > 1, "Top hypothesis should be visited multiple times"
+
+    def test_first_passage_tracked(self):
+        """First passage times should be tracked for discovered hypotheses."""
+        config = MCMCConfig(n_steps=1000, max_depth=5, seed=42)
+        hands = self.exemplars['all_red']['hands_primary']
+        result = run_parallel_chains(
+            self.grammar, config,
+            request_type=Arrow(HAND, BOOL),
+            exemplar_hands=hands,
+            n_chains=2,
+        )
+        assert len(result.first_passage) > 0
+        for prog_str, step in result.first_passage.items():
+            assert step >= 0, f"First passage step should be non-negative, got {step}"
