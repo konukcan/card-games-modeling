@@ -382,20 +382,16 @@ def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
     plot_df["prior_width"] = plot_df["probability"] * prior_share
     plot_df["likelihood_width"] = plot_df["probability"] * likelihood_share
 
-    # Translate DSL programs to English, truncate for y-axis labels.
-    plot_df["program_label"] = plot_df["program"].apply(
-        lambda p: translate_dsl(p)[:40]
-    )
-
-    # De-duplicate labels that map to the same English string by appending
-    # the rank so Altair can distinguish rows.
-    seen: dict[str, int] = {}
+    # Two-line label: NL translation on first line, DSL program on second.
     labels: list[str] = []
+    seen: dict[str, int] = {}
     for _, row in plot_df.iterrows():
-        lbl = row["program_label"]
+        nl = translate_dsl(row["program"])[:50]
+        dsl = row["program"][:60]
+        lbl = f"{nl}\n{dsl}"
         if lbl in seen:
             seen[lbl] += 1
-            lbl = f"{lbl} ({seen[lbl]})"
+            lbl = f"{nl} ({seen[lbl]})\n{dsl}"
         else:
             seen[lbl] = 1
         labels.append(lbl)
@@ -491,7 +487,7 @@ def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
         (bars + text)
         .properties(
             width=550,
-            height=max(200, n_hyps * 25),
+            height=max(250, n_hyps * 45),
             title=f"Posterior Decomposition — {rule_id}",
         )
     )

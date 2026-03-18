@@ -226,12 +226,6 @@
         <h3>Posterior Decomposition</h3>
         <div id="chart-decomposition"></div>
       </div>
-      {% if has_diagnosticity %}
-      <div class="panel" style="margin-top: 1rem;">
-        <h3>Diagnosticity</h3>
-        <div id="chart-diag"></div>
-      </div>
-      {% endif %}
       {% if has_gt_histogram %}
       <div class="panel" style="margin-top: 1rem;">
         <h3>P(accept) Distribution</h3>
@@ -346,9 +340,6 @@
   {# ── Embed Vega-Lite charts ── #}
   <script>
     vegaEmbed('#chart-decomposition', {{ chart_decomposition | safe }}, {actions: false});
-    {% if has_diagnosticity %}
-    vegaEmbed('#chart-diag', {{ chart_diag | safe }}, {actions: false});
-    {% endif %}
     {% if has_gt_histogram %}
     vegaEmbed('#chart-p-accept-uniform', {{ chart_p_accept_uniform | safe }}, {actions: false});
     {% if chart_p_accept_balanced %}
