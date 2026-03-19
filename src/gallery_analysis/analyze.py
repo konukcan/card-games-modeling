@@ -67,6 +67,7 @@ def build_hypothesis_pool(
     probe_seed: int = 42,
     max_list_chain: int = 2,
     verbose: int = 1,
+    use_targeted_probes: bool = False,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Build the shared pool of equivalence classes (rule-independent).
@@ -141,11 +142,44 @@ def build_hypothesis_pool(
               f"({t_trivial:.1f}s)", flush=True)
 
     # --- Step 4: Fingerprint into equivalence classes ---
-    if verbose >= 1:
-        print(f"Step 3: Fingerprinting ({n_probes} probes)...", flush=True)
+    if use_targeted_probes:
+        # Config I: exemplar + near-miss + random probes
+        import random as _rng_mod
+        from rules.cards import Card, Suit, Rank
+        exemplars_data = load_exemplars()
+        exemplar_hands = []
+        for data in exemplars_data.values():
+            exemplar_hands.extend(data["hands_primary"])
+        # Generate near-miss probes (1-edit, 2-edit, 3-edit)
+        all_suits = list(Suit)
+        all_ranks = list(Rank)
+        rng = _rng_mod.Random(probe_seed)
+        near_miss = []
+        for depth in range(1, 4):  # 1-edit, 2-edit, 3-edit
+            for hand in exemplar_hands:
+                new_hand = list(hand)
+                positions = rng.sample(range(len(hand)), min(depth, len(hand)))
+                for pos in positions:
+                    card = new_hand[pos]
+                    if rng.random() < 0.5:
+                        new_suit = rng.choice([s for s in all_suits if s != card.suit])
+                        new_hand[pos] = Card(new_suit, card.rank)
+                    else:
+                        new_rank = rng.choice([r for r in all_ranks if r != card.rank])
+                        new_hand[pos] = Card(card.suit, new_rank)
+                near_miss.append(new_hand)
+        random_probes = generate_probe_set(n_probes=140, seed=probe_seed)
+        probes = exemplar_hands + near_miss + random_probes
+        if verbose >= 1:
+            print(f"Step 3: Fingerprinting with targeted probes: "
+                  f"{len(exemplar_hands)} exemplar + {len(near_miss)} near-miss + "
+                  f"{len(random_probes)} random = {len(probes)} total...", flush=True)
+    else:
+        probes = generate_probe_set(n_probes=n_probes, seed=probe_seed)
+        if verbose >= 1:
+            print(f"Step 3: Fingerprinting ({n_probes} probes)...", flush=True)
 
     t0 = time.time()
-    probes = generate_probe_set(n_probes=n_probes, seed=probe_seed)
 
     # Group by fingerprint
     fp_groups: Dict[str, List[Tuple[str, Callable, float]]] = {}
@@ -571,6 +605,7 @@ def run_analysis(
     likelihood_exponent: float = 1.0,
     likelihood_mode: str = "noisy",
     verbose: int = 1,
+    use_targeted_probes: bool = False,
 ) -> Dict[str, Any]:
     """
     Run the full Bayesian rule induction analysis over all 60 gallery rules.
@@ -589,6 +624,7 @@ def run_analysis(
         n_probes=n_probes,
         max_list_chain=max_list_chain,
         verbose=verbose,
+        use_targeted_probes=use_targeted_probes,
     )
 
     # --- Step 3b: Merge injected hypotheses (if provided) ---
@@ -981,7 +1017,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-programs", type=int, default=300_000, help="Max programs to enumerate")
     parser.add_argument("--max-cost", type=float, default=35.0, help="Max cost to explore")
     parser.add_argument("--timeout", type=float, default=600.0, help="Enumeration timeout")
-    parser.add_argument("--probes", type=int, default=500, help="Number of probe hands")
+    parser.add_argument("--probes", type=int, default=500, help="Number of random probe hands (ignored when --targeted-probes)")
+    parser.add_argument("--targeted-probes", action="store_true", default=False,
+                        help="Use Config I probes: 360 exemplar + 1080 near-miss + 140 random = 1580 total")
+    parser.add_argument("--no-targeted-probes", action="store_true", default=False,
+                        help="Force random-only probes (overrides --targeted-probes)")
     parser.add_argument("--mc-samples", type=int, default=100_000, help="MC samples for extension size")
     parser.add_argument("--epsilon", type=float, default=0.01, help="Noise parameter")
     parser.add_argument("--prior", choices=["canonical", "summed"], default="summed", help="Prior mode")
@@ -1036,6 +1076,7 @@ def main():
         likelihood_exponent=args.likelihood_exponent,
         likelihood_mode=args.likelihood_mode,
         verbose=args.verbose,
+        use_targeted_probes=args.targeted_probes and not args.no_targeted_probes,
     )
 
     print_difficulty_report(results, verbose=args.verbose)
