@@ -636,6 +636,162 @@ def calibration_plot(cal_df: pd.DataFrame) -> alt.LayerChart:
     )
 
 
+def confusion_quadrant(hand_summaries: list, rule_id: str) -> alt.Chart:
+    """Weighted confusion quadrant with P(accept) histograms per TP/FP/FN/TN.
+
+    Builds a 2x2 faceted histogram showing the distribution of P(accept)
+    within each confusion category (TP, FP, FN, TN).  This reveals *where*
+    the model's errors concentrate along the probability axis.
+
+    Parameters
+    ----------
+    hand_summaries : list of dict
+        Each entry has ``{"p_accept": float, "ground_truth": bool}``.
+    rule_id : str
+        Rule identifier (used in chart title).
+    """
+    if not hand_summaries:
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    # Classify each hand into TP / FP / FN / TN.
+    rows = []
+    for h in hand_summaries:
+        p = h["p_accept"]
+        gt = h["ground_truth"]
+        predicted_accept = p > 0.5
+        if gt and predicted_accept:
+            cat, truth, pred = "TP", "True Accept", "Predicted Accept"
+        elif (not gt) and predicted_accept:
+            cat, truth, pred = "FP", "True Reject", "Predicted Accept"
+        elif gt and (not predicted_accept):
+            cat, truth, pred = "FN", "True Accept", "Predicted Reject"
+        else:
+            cat, truth, pred = "TN", "True Reject", "Predicted Reject"
+        rows.append({
+            "p_accept": p,
+            "ground_truth": gt,
+            "category": cat,
+            "truth_label": truth,
+            "pred_label": pred,
+        })
+    df = pd.DataFrame(rows)
+
+    # Count per category for cell titles.
+    counts = df["category"].value_counts().to_dict()
+
+    # Build a label column that includes the count, e.g. "TP (n=4200)".
+    cat_label_map = {
+        cat: f"{cat} (n={counts.get(cat, 0):,})"
+        for cat in ["TP", "FP", "FN", "TN"]
+    }
+    df["cell_label"] = df["category"].map(cat_label_map)
+
+    # Color: correct predictions (TP, TN) are muted grey; errors (FP, FN) are red.
+    color_map = {"TP": "#999", "FP": "#C44E52", "FN": "#C44E52", "TN": "#999"}
+    df["bar_color"] = df["category"].map(color_map)
+
+    # Order the facet rows and columns logically.
+    truth_order = ["True Accept", "True Reject"]
+    pred_order = ["Predicted Accept", "Predicted Reject"]
+
+    return (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "p_accept:Q",
+                bin=alt.Bin(maxbins=20, extent=[0, 1]),
+                title="P(accept)",
+            ),
+            y=alt.Y("count():Q", title="Count"),
+            color=alt.Color(
+                "bar_color:N",
+                scale=None,  # use raw hex values
+            ),
+            tooltip=[
+                alt.Tooltip("category:N", title="Category"),
+                alt.Tooltip("count():Q", title="Count"),
+            ],
+        )
+        .properties(width=180, height=100)
+        .facet(
+            column=alt.Column(
+                "pred_label:N",
+                title=None,
+                sort=pred_order,
+                header=alt.Header(labelFontSize=11, labelOrient="top"),
+            ),
+            row=alt.Row(
+                "truth_label:N",
+                title=None,
+                sort=truth_order,
+                header=alt.Header(labelFontSize=11, labelOrient="left"),
+            ),
+            title=f"Confusion Analysis — {rule_id}",
+        )
+        .resolve_scale(y="independent")
+    )
+
+
+def rug_strip(
+    hand_summaries: list,
+    rule_id: str,
+    width: int = 300,
+    show_legend: bool = True,
+) -> alt.Chart:
+    """Thin rug strip of hands sorted by P(accept), colored by ground truth.
+
+    Each hand is drawn as a thin vertical tick mark along the P(accept) axis.
+    Green marks are true-accept hands, red marks are true-reject hands.  The
+    strip is intended to be placed directly below a P(accept) histogram to
+    show the raw distribution of individual hands.
+
+    Parameters
+    ----------
+    hand_summaries : list of dict
+        Each entry has ``{"p_accept": float, "ground_truth": bool}``.
+    rule_id : str
+        Rule identifier (used in chart title).
+    width : int
+        Chart width in pixels.  Should match the histogram above.
+    show_legend : bool
+        Whether to display the ground-truth color legend.
+    """
+    if not hand_summaries:
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    df = pd.DataFrame(hand_summaries)
+    df["label"] = df["ground_truth"].map({True: "Accept", False: "Reject"})
+
+    gt_scale = alt.Scale(
+        domain=["Accept", "Reject"],
+        range=["#2CA02C", "#C44E52"],
+    )
+
+    return (
+        alt.Chart(df)
+        .mark_tick(thickness=1, opacity=0.5)
+        .encode(
+            x=alt.X(
+                "p_accept:Q",
+                title="P(accept)",
+                scale=alt.Scale(domain=[0, 1]),
+            ),
+            color=alt.Color(
+                "label:N",
+                title="Ground Truth",
+                scale=gt_scale,
+                legend=alt.Legend() if show_legend else None,
+            ),
+            tooltip=[
+                alt.Tooltip("p_accept:Q", title="P(accept)", format=".3f"),
+                alt.Tooltip("label:N", title="Ground Truth"),
+            ],
+        )
+        .properties(width=width, height=30)
+    )
+
+
 def entropy_vs_accuracy(merged_df: pd.DataFrame) -> alt.Chart:
     """Scatter of posterior entropy vs weighted-vote classification accuracy.
 

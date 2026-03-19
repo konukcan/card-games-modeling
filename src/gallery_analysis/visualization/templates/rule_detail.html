@@ -232,14 +232,26 @@
         <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 280px;">
             <div id="chart-p-accept-uniform"></div>
+            {% if chart_rug_uniform %}
+            <div id="chart-rug-uniform" style="margin-top: -10px;"></div>
+            {% endif %}
           </div>
           {% if chart_p_accept_balanced %}
           <div style="flex: 1; min-width: 280px;">
             <div id="chart-p-accept-balanced"></div>
+            {% if chart_rug_balanced %}
+            <div id="chart-rug-balanced" style="margin-top: -10px;"></div>
+            {% endif %}
           </div>
           {% endif %}
         </div>
       </div>
+      {% if chart_confusion %}
+      <div class="panel" style="margin-top: 1rem;">
+        <h3>Confusion Analysis</h3>
+        <div id="chart-confusion"></div>
+      </div>
+      {% endif %}
       {% elif has_test_hands %}
       <div class="panel" style="margin-top: 1rem;">
         <h3>P(accept) Distribution</h3>
@@ -347,6 +359,15 @@
     {% endif %}
     {% elif has_test_hands %}
     vegaEmbed('#chart-p-accept', {{ chart_p_accept_hist | safe }}, {actions: false});
+    {% endif %}
+    {% if chart_rug_uniform %}
+    vegaEmbed('#chart-rug-uniform', {{ chart_rug_uniform | safe }}, {actions: false});
+    {% endif %}
+    {% if chart_rug_balanced %}
+    vegaEmbed('#chart-rug-balanced', {{ chart_rug_balanced | safe }}, {actions: false});
+    {% endif %}
+    {% if chart_confusion %}
+    vegaEmbed('#chart-confusion', {{ chart_confusion | safe }}, {actions: false});
     {% endif %}
   </script>
 
