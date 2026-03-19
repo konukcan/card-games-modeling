@@ -33,6 +33,29 @@ from gallery_analysis.hypothesis_table import compute_fingerprint
 _REQUIRED_FIELDS = {"id", "source", "true_for_rule", "dsl_program"}
 
 
+def deduplicate_injections(injections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Keep only one injection per unique DSL program string.
+
+    When duplicates exist, keeps the one with the shortest program
+    (fewest characters). This prevents LLM-generated duplicates from
+    artificially inflating the summed prior of equivalence classes.
+
+    Args:
+        injections: List of validated injection dicts, each containing
+            at least a 'dsl_program' key.
+
+    Returns:
+        Deduplicated list. Order follows first-seen order of each
+        unique program string.
+    """
+    seen: Dict[str, Dict[str, Any]] = {}  # dsl_program -> injection entry
+    for inj in injections:
+        prog = inj["dsl_program"]
+        if prog not in seen or len(prog) < len(seen[prog]["dsl_program"]):
+            seen[prog] = inj
+    return list(seen.values())
+
+
 def load_and_validate_injections(
     filepath: str,
     grammar=None,

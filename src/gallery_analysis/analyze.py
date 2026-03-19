@@ -36,9 +36,53 @@ from dataclasses import asdict
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from rules.cards import Hand
+from rules.cards import Card, Hand, Suit, Rank
 from gallery_analysis.enumerator import enumerate_hypotheses_with_stats
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
+
+
+def _generate_near_miss_probes(
+    exemplar_hands: List[List[Card]],
+    n_edit_depths: int = 3,
+    seed: int = 42,
+) -> List[List[Card]]:
+    """Generate near-miss probes by perturbing exemplar hands.
+
+    For each exemplar hand, creates perturbations at increasing edit depths
+    (1-edit, 2-edit, 3-edit). Each edit randomly changes either the suit or
+    rank of a card in the hand. This produces hands that are "near misses"
+    of the exemplars, which helps fingerprinting distinguish hypotheses that
+    agree on exemplars but differ on boundary cases.
+
+    Args:
+        exemplar_hands: List of hands (each a list of Card objects) to perturb.
+        n_edit_depths: Number of edit depths (1 through n_edit_depths).
+        seed: Random seed for reproducibility.
+
+    Returns:
+        List of perturbed hands. Length = len(exemplar_hands) * n_edit_depths.
+    """
+    import random
+
+    all_suits = list(Suit)
+    all_ranks = list(Rank)
+    rng = random.Random(seed)
+
+    near_miss = []
+    for depth in range(1, n_edit_depths + 1):
+        for hand in exemplar_hands:
+            new_hand = list(hand)
+            positions = rng.sample(range(len(hand)), min(depth, len(hand)))
+            for pos in positions:
+                card = new_hand[pos]
+                if rng.random() < 0.5:
+                    new_suit = rng.choice([s for s in all_suits if s != card.suit])
+                    new_hand[pos] = Card(new_suit, card.rank)
+                else:
+                    new_rank = rng.choice([r for r in all_ranks if r != card.rank])
+                    new_hand[pos] = Card(card.suit, new_rank)
+            near_miss.append(new_hand)
+    return near_miss
 from gallery_analysis.hypothesis_table import (
     filter_trivial, compute_fingerprint, estimate_extension_size,
 )
@@ -66,6 +110,7 @@ def build_hypothesis_pool(
     n_probes: int = 500,
     probe_seed: int = 42,
     max_list_chain: int = 2,
+    use_targeted_probes: bool = True,
     verbose: int = 1,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
@@ -83,6 +128,9 @@ def build_hypothesis_pool(
         max_list_chain: Maximum consecutive list→list transforms (default 2).
             Set to None to disable. Eliminates "deeply wrapped shallow
             predicates" that carry negligible posterior mass.
+        use_targeted_probes: When True (default), uses Config I probe set:
+            360 exemplar hands + 1080 near-miss perturbations + 140 random
+            = 1580 probes. When False, uses n_probes random probes (old behavior).
         verbose: 0=silent, 1=summary, 2=detailed.
 
     Returns:
@@ -141,11 +189,30 @@ def build_hypothesis_pool(
               f"({t_trivial:.1f}s)", flush=True)
 
     # --- Step 4: Fingerprint into equivalence classes ---
-    if verbose >= 1:
-        print(f"Step 3: Fingerprinting ({n_probes} probes)...", flush=True)
-
     t0 = time.time()
-    probes = generate_probe_set(n_probes=n_probes, seed=probe_seed)
+
+    if use_targeted_probes:
+        # Config I probe set: exemplar hands + near-miss perturbations + random
+        exemplar_hands_for_probes = []
+        for data in exemplars.values():
+            exemplar_hands_for_probes.extend(data["hands_primary"])
+        near_miss = _generate_near_miss_probes(
+            exemplar_hands_for_probes, n_edit_depths=3, seed=probe_seed
+        )
+        random_probes = generate_probe_set(140, seed=probe_seed)
+        probes = exemplar_hands_for_probes + near_miss + random_probes
+        if verbose >= 1:
+            print(
+                f"Step 3: Fingerprinting with targeted probes: "
+                f"{len(exemplar_hands_for_probes)} exemplar + "
+                f"{len(near_miss)} near-miss + "
+                f"{len(random_probes)} random = {len(probes)} total...",
+                flush=True,
+            )
+    else:
+        probes = generate_probe_set(n_probes=n_probes, seed=probe_seed)
+        if verbose >= 1:
+            print(f"Step 3: Fingerprinting ({n_probes} probes)...", flush=True)
 
     # Group by fingerprint
     fp_groups: Dict[str, List[Tuple[str, Callable, float]]] = {}
@@ -190,6 +257,9 @@ def build_hypothesis_pool(
               f"({t_fp:.1f}s)", flush=True)
 
     pipeline_stats["total_time_seconds"] = round(time.time() - t_start, 1)
+    # Stash the actual probes used so callers (e.g. injection merge) can
+    # reuse the identical probe set.  Not serialised to JSON.
+    pipeline_stats["_probes"] = probes
     return equivalence_classes, pipeline_stats
 
 
@@ -285,6 +355,42 @@ def estimate_extensions(
 
             if verbose >= 2 and n_computed % 500 == 0:
                 print(f"  {n_computed}/{n_to_compute} computed...", flush=True)
+
+    t_pass1 = time.time() - t0
+
+    # --- Two-pass adaptive: re-estimate rare classes with more samples ---
+    # Classes with fewer than 100 hits (base_rate < 0.001) get a second pass
+    # with 10x more samples for higher precision.
+    rare_threshold = 100  # fewer than this many hits in first pass
+    rare_n_samples = 1_000_000
+    rare_indices = []
+    for i, (ext_size, base_rate) in enumerate(extensions):
+        fp = equivalence_classes[i]["fingerprint"]
+        # Only re-estimate if we computed it fresh (not from cache with higher
+        # precision already).  We detect cache entries by checking whether
+        # they were in the original cache loaded at the top.
+        hits = round(base_rate * n_samples)
+        if hits < rare_threshold and ext_size > 0:
+            rare_indices.append(i)
+
+    if rare_indices:
+        if verbose >= 1:
+            print(f"  Second pass: re-estimating {len(rare_indices)} rare classes "
+                  f"(hits < {rare_threshold}) with {rare_n_samples:,} MC samples...",
+                  flush=True)
+
+        t0_pass2 = time.time()
+        for idx in rare_indices:
+            cls = equivalence_classes[idx]
+            ext_size, base_rate = estimate_extension_size(
+                cls["predicate"], n_samples=rare_n_samples, seed=seed
+            )
+            extensions[idx] = (ext_size, base_rate)
+            cache[cls["fingerprint"]] = (ext_size, base_rate)
+
+        t_pass2 = time.time() - t0_pass2
+        if verbose >= 1:
+            print(f"  Second pass done in {t_pass2:.1f}s", flush=True)
 
     t_ext = time.time() - t0
     if verbose >= 1:
@@ -570,6 +676,7 @@ def run_analysis(
     scoring_grammar: str = "uniform",
     likelihood_exponent: float = 1.0,
     likelihood_mode: str = "noisy",
+    use_targeted_probes: bool = True,
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -588,12 +695,15 @@ def run_analysis(
         timeout=timeout,
         n_probes=n_probes,
         max_list_chain=max_list_chain,
+        use_targeted_probes=use_targeted_probes,
         verbose=verbose,
     )
 
     # --- Step 3b: Merge injected hypotheses (if provided) ---
     if inject_path:
-        from gallery_analysis.injection import load_and_validate_injections, merge_injected
+        from gallery_analysis.injection import (
+            load_and_validate_injections, merge_injected, deduplicate_injections,
+        )
         from gallery_analysis.enumerator import build_gallery_grammar
 
         if verbose >= 1:
@@ -613,8 +723,16 @@ def run_analysis(
             enumerated_prior_range=enumerated_prior_range,
         )
 
-        # Regenerate the same probes used during fingerprinting (same seed)
-        probes = generate_probe_set(n_probes=n_probes, seed=42)
+        # Deduplicate: keep only shortest program per unique DSL string
+        n_before_dedup = len(injected)
+        injected = deduplicate_injections(injected)
+        if verbose >= 1:
+            print(f"  After deduplication: {len(injected)} unique programs "
+                  f"(removed {n_before_dedup - len(injected)} duplicates)",
+                  flush=True)
+
+        # Reuse the exact probes from build_hypothesis_pool
+        probes = pipeline_stats["_probes"]
 
         n_before = len(equiv_classes)
         equiv_classes = merge_injected(equiv_classes, injected, probes)
@@ -627,7 +745,9 @@ def run_analysis(
                   flush=True)
 
         pipeline_stats["injection"] = {
+            "n_injected_raw": n_before_dedup,
             "n_injected": len(injected),
+            "n_duplicates_removed": n_before_dedup - len(injected),
             "n_novel_classes": n_after - n_before,
             "n_merged": len(injected) - (n_after - n_before),
         }
@@ -640,11 +760,11 @@ def run_analysis(
         cache_path=extension_cache,
     )
 
-    # Compute provenance metadata
-    probes = generate_probe_set(n_probes=n_probes, seed=42)
+    # Compute provenance metadata — reuse the exact probes from build_hypothesis_pool
+    probes = pipeline_stats["_probes"]
     provenance = compute_provenance(
         probe_seed=42,
-        n_probes=n_probes,
+        n_probes=len(probes),
         probes=probes,
         inject_path=inject_path if inject_path else None,
         n_equiv_classes=len(equiv_classes),
@@ -1003,6 +1123,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--likelihood-mode", choices=["noisy", "strict"], default="noisy",
                         help="Likelihood model: 'noisy' (default, soft penalty for misses) or "
                              "'strict' (zero posterior for any miss)")
+    parser.add_argument("--targeted-probes", action="store_true", default=True,
+                        dest="targeted_probes",
+                        help="Use Config I targeted probes: exemplar + near-miss + random (default)")
+    parser.add_argument("--no-targeted-probes", action="store_false", dest="targeted_probes",
+                        help="Use only random probes for fingerprinting (old behavior)")
     return parser
 
 
@@ -1035,6 +1160,7 @@ def main():
         scoring_grammar=args.grammar,
         likelihood_exponent=args.likelihood_exponent,
         likelihood_mode=args.likelihood_mode,
+        use_targeted_probes=args.targeted_probes,
         verbose=args.verbose,
     )
 
