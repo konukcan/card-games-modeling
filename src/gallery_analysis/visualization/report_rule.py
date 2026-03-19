@@ -33,6 +33,7 @@ try:
         p_accept_histogram,
         p_accept_ground_truth,
         confusion_quadrant,
+        confusion_severity,
         rug_strip,
     )
     from gallery_analysis.visualization.cards import (
@@ -56,6 +57,7 @@ except ImportError:
         p_accept_histogram,
         p_accept_ground_truth,
         confusion_quadrant,
+        confusion_severity,
         rug_strip,
     )
     from gallery_analysis.visualization.cards import (
@@ -192,21 +194,33 @@ def generate_rule_page(
                 p_accept_histogram(hist_data, rule_id).to_dict()
             )
 
-    # ── Confusion quadrant + rug strips (need per-hand data) ─────────
-    chart_confusion = None
+    # ── Confusion analysis + rug strips (need per-hand data) ──────────
+    chart_confusion_uniform = None
+    chart_confusion_balanced = None
+    chart_severity_uniform = None
+    chart_severity_balanced = None
     chart_rug_uniform = None
     chart_rug_balanced = None
     if diag_results is not None:
         uniform_summaries = diag_results.hand_summaries.get(rule_id, [])
         balanced_summaries = diag_results.balanced_hand_summaries.get(rule_id, [])
         if uniform_summaries:
-            chart_confusion = json.dumps(
-                confusion_quadrant(uniform_summaries, rule_id).to_dict()
+            chart_confusion_uniform = json.dumps(
+                confusion_quadrant(uniform_summaries, rule_id + " (Uniform)").to_dict()
+            )
+            chart_severity_uniform = json.dumps(
+                confusion_severity(uniform_summaries, rule_id + " (Uniform)").to_dict()
             )
             chart_rug_uniform = json.dumps(
-                rug_strip(uniform_summaries, rule_id, width=300, show_legend=True).to_dict()
+                rug_strip(uniform_summaries, rule_id, width=300, show_legend=False).to_dict()
             )
         if balanced_summaries:
+            chart_confusion_balanced = json.dumps(
+                confusion_quadrant(balanced_summaries, rule_id + " (Balanced)").to_dict()
+            )
+            chart_severity_balanced = json.dumps(
+                confusion_severity(balanced_summaries, rule_id + " (Balanced)").to_dict()
+            )
             chart_rug_balanced = json.dumps(
                 rug_strip(balanced_summaries, rule_id, width=300, show_legend=False).to_dict()
             )
@@ -257,7 +271,10 @@ def generate_rule_page(
         hypotheses=hypotheses,
         true_rule_hypothesis=true_rule_hypothesis,
         true_rule_in_top=true_rule_in_top,
-        chart_confusion=chart_confusion,
+        chart_confusion_uniform=chart_confusion_uniform,
+        chart_confusion_balanced=chart_confusion_balanced,
+        chart_severity_uniform=chart_severity_uniform,
+        chart_severity_balanced=chart_severity_balanced,
         chart_rug_uniform=chart_rug_uniform,
         chart_rug_balanced=chart_rug_balanced,
     )

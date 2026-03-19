@@ -533,8 +533,8 @@ def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
 def confusion_quadrant(hand_summaries: list, rule_id: str) -> alt.Chart:
     """2x2 confusion quadrant with P(accept) histograms per TP/FP/FN/TN.
 
-    Each cell shows the distribution of P(accept) values for hands in that
-    confusion category.  TP/TN cells are grey (correct), FP/FN are red (errors).
+    Shared y-axis across all cells so relative frequency is visible.
+    Cells colored by correctness: grey for TP/TN, red for FP/FN.
     """
     alt.data_transformers.disable_max_rows()
 
@@ -557,15 +557,10 @@ def confusion_quadrant(hand_summaries: list, rule_id: str) -> alt.Chart:
         rows.append({"p_accept": pa, "category": cat, "truth": truth, "pred": pred})
 
     df = pd.DataFrame(rows)
-
-    # Count per cell for titles
     counts = df["category"].value_counts().to_dict()
-    df["cell_label"] = df.apply(
-        lambda r: f"{r['category']} (n={counts.get(r['category'], 0):,})", axis=1
+    df["color_key"] = df["category"].map(
+        lambda c: "Error" if c in ("FP", "FN") else "Correct"
     )
-
-    color_map = {"TP": "#999", "TN": "#999", "FP": "#C44E52", "FN": "#C44E52"}
-    df["color_key"] = df["category"].map(lambda c: "Error" if c in ("FP", "FN") else "Correct")
 
     return (
         alt.Chart(df)
@@ -584,8 +579,113 @@ def confusion_quadrant(hand_summaries: list, rule_id: str) -> alt.Chart:
             column=alt.Column("pred:N", title=None, sort=["Pred Accept", "Pred Reject"]),
             row=alt.Row("truth:N", title=None, sort=["True Accept", "True Reject"]),
         )
-        .resolve_scale(y="independent")
-        .properties(title=f"Confusion Analysis — {rule_id}")
+        .resolve_scale(y="shared")
+        .properties(title=f"Confusion Quadrant — {rule_id}")
+    )
+
+
+def confusion_severity(hand_summaries: list, rule_id: str) -> alt.LayerChart:
+    """2-row severity heatmap: error magnitude × frequency at a glance.
+
+    Two rows (True Accept / True Reject), 10 P(accept) bins.
+    Cell color: diverging scale from red (wrong side, severe error)
+    through white (near boundary) to blue (correct side, confident).
+    Cell opacity/size: proportional to hand count in that bin.
+    """
+    import numpy as np
+    alt.data_transformers.disable_max_rows()
+
+    if not hand_summaries:
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    bin_edges = np.linspace(0, 1, 11)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bin_labels = [f"{lo:.1f}-{hi:.1f}" for lo, hi in zip(bin_edges[:-1], bin_edges[1:])]
+
+    rows = []
+    for h in hand_summaries:
+        pa = h["p_accept"]
+        gt = h["ground_truth"]
+        bi = min(int(pa * 10), 9)
+        rows.append({
+            "truth": "True Accept" if gt else "True Reject",
+            "bin_idx": bi,
+        })
+
+    df = pd.DataFrame(rows)
+    # Aggregate: count per (truth, bin)
+    agg_rows = []
+    for truth in ["True Accept", "True Reject"]:
+        for bi in range(10):
+            n = len(df[(df["truth"] == truth) & (df["bin_idx"] == bi)])
+            bc = bin_centers[bi]
+            # Severity: how wrong is this bin for this truth?
+            # True Accept at P=0.05 is very wrong (severity = -1)
+            # True Accept at P=0.95 is very right (severity = +1)
+            # True Reject at P=0.05 is very right (severity = +1)
+            # True Reject at P=0.95 is very wrong (severity = -1)
+            if truth == "True Accept":
+                severity = (bc - 0.5) * 2  # -1 at P=0, +1 at P=1
+            else:
+                severity = (0.5 - bc) * 2  # +1 at P=0, -1 at P=1
+            agg_rows.append({
+                "truth": truth,
+                "bin": bin_labels[bi],
+                "bin_center": bc,
+                "count": n,
+                "severity": severity,
+            })
+
+    agg_df = pd.DataFrame(agg_rows)
+    max_count = max(agg_df["count"].max(), 1)
+
+    heatmap = (
+        alt.Chart(agg_df)
+        .mark_rect(stroke="#eee", strokeWidth=0.5)
+        .encode(
+            x=alt.X("bin:O", title="P(accept)", sort=bin_labels),
+            y=alt.Y("truth:N", title=None, sort=["True Accept", "True Reject"]),
+            color=alt.Color(
+                "severity:Q",
+                scale=alt.Scale(
+                    domain=[-1, 0, 1],
+                    range=["#C44E52", "#f5f5f5", "#4A90D9"],
+                ),
+                title="Severity",
+                legend=alt.Legend(orient="bottom", direction="horizontal"),
+            ),
+            opacity=alt.Opacity(
+                "count:Q",
+                scale=alt.Scale(domain=[0, max_count], range=[0.1, 1.0]),
+                legend=None,
+            ),
+            tooltip=[
+                alt.Tooltip("truth:N", title="Ground Truth"),
+                alt.Tooltip("bin:O", title="P(accept) bin"),
+                alt.Tooltip("count:Q", title="Count", format=","),
+                alt.Tooltip("severity:Q", title="Severity", format=".2f"),
+            ],
+        )
+    )
+
+    # Text labels showing count in each cell
+    text = (
+        alt.Chart(agg_df[agg_df["count"] > 0])
+        .mark_text(fontSize=10, color="#333")
+        .encode(
+            x=alt.X("bin:O", sort=bin_labels),
+            y=alt.Y("truth:N", sort=["True Accept", "True Reject"]),
+            text=alt.Text("count:Q", format=","),
+        )
+    )
+
+    return (
+        (heatmap + text)
+        .properties(
+            width=450,
+            height=80,
+            title=f"Error Severity — {rule_id}",
+        )
     )
 
 
