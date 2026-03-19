@@ -252,33 +252,17 @@
         <div id="chart-p-accept"></div>
       </div>
       {% endif %}
-      {% if chart_severity_uniform or chart_confusion_uniform %}
+      {% if chart_severity_uniform %}
       <div class="panel" style="margin-top: 1rem;">
         <h3>Confusion Analysis</h3>
-        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-          {% if chart_severity_uniform %}
-          <div style="flex: 1; min-width: 300px;">
-            <div id="chart-severity-uniform"></div>
-          </div>
-          {% endif %}
-          {% if chart_severity_balanced %}
-          <div style="flex: 1; min-width: 300px;">
-            <div id="chart-severity-balanced"></div>
-          </div>
-          {% endif %}
+        <div style="margin-bottom: 1.5rem;">
+          <div id="chart-severity-uniform"></div>
         </div>
-        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1rem;">
-          {% if chart_confusion_uniform %}
-          <div style="flex: 1; min-width: 300px;">
-            <div id="chart-confusion-uniform"></div>
-          </div>
-          {% endif %}
-          {% if chart_confusion_balanced %}
-          <div style="flex: 1; min-width: 300px;">
-            <div id="chart-confusion-balanced"></div>
-          </div>
-          {% endif %}
+        {% if chart_severity_balanced %}
+        <div>
+          <div id="chart-severity-balanced"></div>
         </div>
+        {% endif %}
       </div>
       {% endif %}
     </div>
@@ -394,12 +378,6 @@
     {% endif %}
     {% if chart_severity_balanced %}
     vegaEmbed('#chart-severity-balanced', {{ chart_severity_balanced | safe }}, {actions: false});
-    {% endif %}
-    {% if chart_confusion_uniform %}
-    vegaEmbed('#chart-confusion-uniform', {{ chart_confusion_uniform | safe }}, {actions: false});
-    {% endif %}
-    {% if chart_confusion_balanced %}
-    vegaEmbed('#chart-confusion-balanced', {{ chart_confusion_balanced | safe }}, {actions: false});
     {% endif %}
   </script>
 
