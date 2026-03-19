@@ -243,8 +243,11 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.quick:
-        args.n_steps = 1000
-        args.n_chains = 2
+        # Only override if user didn't explicitly provide values
+        if '--n-steps' not in sys.argv:
+            args.n_steps = 1000
+        if '--n-chains' not in sys.argv:
+            args.n_chains = 2
 
     run_mcmc_analysis(args)
 
