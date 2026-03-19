@@ -229,6 +229,10 @@ def main():
         "--likelihood-exponent", type=float, default=1.0,
         help="Exponent k on P(D|h)^k. k>1 inflates size principle (default 1.0)"
     )
+    parser.add_argument(
+        "--targeted-probes", action="store_true", default=False,
+        help="Use Config I probes (targeted + near-miss) instead of random"
+    )
     args = parser.parse_args()
 
     # Determine which rules to analyze
@@ -261,6 +265,7 @@ def main():
         max_depth=args.depth,
         max_programs=args.max_programs,
         verbose=args.verbose,
+        use_targeted_probes=getattr(args, 'targeted_probes', False),
     )
     print(f"  {len(equiv_classes):,} equivalence classes", flush=True)
 
