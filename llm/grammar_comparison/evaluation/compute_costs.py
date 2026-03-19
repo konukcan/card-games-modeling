@@ -153,23 +153,18 @@ def _make_predicate(program: Program):
     return predicate
 
 
-def score_all_hypotheses(
-    grammar_name: str,
-    cost_structure: CostStructure,
+def precompute_hypothesis_data(
     limit: int = 0,
 ) -> List[Dict]:
-    """Score all Phase 1b hypotheses under a grammar with posterior = prior + likelihood.
+    """Parse all hypotheses, compute fingerprints and extensions ONCE.
 
-    Returns a list of dicts with: rule_id, rank, confidence, nl_description,
-    log_prior, log_likelihood, log_posterior, base_rate, fingerprint,
-    exemplars_consistent, grammar_name, cost_structure.
+    Returns a list of dicts with parsed programs, fingerprints, and
+    extension results that can be reused across multiple grammar evaluations.
+    This avoids recomputing 1M-sample Monte Carlo for each grammar.
     """
     hypotheses = load_phase1b_hypotheses()
-
     if limit > 0:
         hypotheses = hypotheses[:limit]
-
-    grammar = build_grammar(grammar_name, cost_structure)
 
     try:
         probes = load_probe_hands()
@@ -177,9 +172,78 @@ def score_all_hypotheses(
         logger.warning("Probe hands file not found; fingerprints will be empty.")
         probes = []
 
-    results = []
+    precomputed = []
     for hyp in hypotheses:
         program = parse_hypothesis(hyp)
+
+        if program is None:
+            precomputed.append({
+                **hyp,
+                "_program": None,
+                "_fingerprint": "",
+                "_log_likelihood": float('-inf'),
+                "_base_rate": 0.0,
+                "_exemplars_consistent": False,
+            })
+            continue
+
+        # Fingerprint (grammar-independent)
+        if probes:
+            fp_tuple = compute_ast_fingerprint(program, probes)
+            fingerprint = _fingerprint_to_string(fp_tuple)
+        else:
+            fingerprint = ""
+
+        # Extension and likelihood (grammar-independent)
+        exemplar_hands = hyp.get("exemplar_hands", [])
+        predicate = _make_predicate(program)
+
+        if predicate is not None:
+            ext_result = estimate_extension(predicate, exemplar_hands)
+            log_likelihood = ext_result.log_likelihood
+            base_rate = ext_result.base_rate
+            exemplars_consistent = ext_result.exemplars_consistent
+        else:
+            log_likelihood = float('-inf')
+            base_rate = 0.0
+            exemplars_consistent = False
+
+        precomputed.append({
+            **hyp,
+            "_program": program,
+            "_fingerprint": fingerprint,
+            "_log_likelihood": log_likelihood,
+            "_base_rate": base_rate,
+            "_exemplars_consistent": exemplars_consistent,
+        })
+
+    return precomputed
+
+
+def score_all_hypotheses(
+    grammar_name: str,
+    cost_structure: CostStructure,
+    limit: int = 0,
+    precomputed: Optional[List[Dict]] = None,
+) -> List[Dict]:
+    """Score all Phase 1b hypotheses under a grammar with posterior = prior + likelihood.
+
+    If precomputed is provided, skips parsing/fingerprinting/extension estimation
+    (which are grammar-independent) and only computes the grammar-specific prior.
+    This makes subsequent grammar evaluations near-instant.
+
+    Returns a list of dicts with: rule_id, rank, confidence, nl_description,
+    log_prior, log_likelihood, log_posterior, base_rate, fingerprint,
+    exemplars_consistent, grammar_name, cost_structure.
+    """
+    if precomputed is None:
+        precomputed = precompute_hypothesis_data(limit)
+
+    grammar = build_grammar(grammar_name, cost_structure)
+
+    results = []
+    for hyp in precomputed:
+        program = hyp.get("_program")
 
         if program is None:
             results.append({
@@ -198,24 +262,10 @@ def score_all_hypotheses(
             })
             continue
 
-        if probes:
-            fp_tuple = compute_ast_fingerprint(program, probes)
-            fingerprint = _fingerprint_to_string(fp_tuple)
-        else:
-            fingerprint = ""
-
-        exemplar_hands = hyp.get("exemplar_hands", [])
-        predicate = _make_predicate(program)
-
-        if predicate is not None:
-            ext_result = estimate_extension(predicate, exemplar_hands)
-            log_likelihood = ext_result.log_likelihood
-            base_rate = ext_result.base_rate
-            exemplars_consistent = ext_result.exemplars_consistent
-        else:
-            log_likelihood = float('-inf')
-            base_rate = 0.0
-            exemplars_consistent = False
+        fingerprint = hyp["_fingerprint"]
+        log_likelihood = hyp["_log_likelihood"]
+        base_rate = hyp["_base_rate"]
+        exemplars_consistent = hyp["_exemplars_consistent"]
 
         try:
             rewritten = rewrite_ast(program, grammar_name)

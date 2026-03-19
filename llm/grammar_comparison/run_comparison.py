@@ -38,7 +38,10 @@ from llm.grammar_comparison.grammars.grammar_factory import (
     CostStructure,
     GRAMMAR_NAMES,
 )
-from llm.grammar_comparison.evaluation.compute_costs import score_all_hypotheses
+from llm.grammar_comparison.evaluation.compute_costs import (
+    score_all_hypotheses,
+    precompute_hypothesis_data,
+)
 from llm.grammar_comparison.evaluation.metrics import (
     spearman_agreement,
     weighted_log_probability,
@@ -322,10 +325,17 @@ def run_stage1(
     rows: List[Dict[str, Any]] = []
     t0 = time.time()
 
+    # Precompute grammar-independent data ONCE (parsing, fingerprints, extensions)
+    print("Precomputing hypothesis data (parsing, fingerprints, extensions)...")
+    precomputed = precompute_hypothesis_data(limit=limit)
+    t_precompute = time.time() - t0
+    print(f"  Done in {t_precompute:.1f}s ({len(precomputed)} hypotheses)\n")
+
     for grammar_name in grammar_names:
         for cost in cost_structures:
             # Score all hypotheses under this grammar + cost
-            scored = score_all_hypotheses(grammar_name, cost, limit=limit)
+            # Uses precomputed data — only computes grammar-specific prior
+            scored = score_all_hypotheses(grammar_name, cost, limit=limit, precomputed=precomputed)
 
             if not scored:
                 # Graceful handling of empty results
