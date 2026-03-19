@@ -530,6 +530,97 @@ def posterior_decomposition(hyp_df: pd.DataFrame, rule_id: str) -> alt.Chart:
     )
 
 
+def confusion_quadrant(hand_summaries: list, rule_id: str) -> alt.Chart:
+    """2x2 confusion quadrant with P(accept) histograms per TP/FP/FN/TN.
+
+    Each cell shows the distribution of P(accept) values for hands in that
+    confusion category.  TP/TN cells are grey (correct), FP/FN are red (errors).
+    """
+    alt.data_transformers.disable_max_rows()
+
+    if not hand_summaries:
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    rows = []
+    for h in hand_summaries:
+        pa = h["p_accept"]
+        gt = h["ground_truth"]
+        pred_accept = pa > 0.5
+        if gt and pred_accept:
+            cat, truth, pred = "TP", "True Accept", "Pred Accept"
+        elif gt and not pred_accept:
+            cat, truth, pred = "FN", "True Accept", "Pred Reject"
+        elif not gt and pred_accept:
+            cat, truth, pred = "FP", "True Reject", "Pred Accept"
+        else:
+            cat, truth, pred = "TN", "True Reject", "Pred Reject"
+        rows.append({"p_accept": pa, "category": cat, "truth": truth, "pred": pred})
+
+    df = pd.DataFrame(rows)
+
+    # Count per cell for titles
+    counts = df["category"].value_counts().to_dict()
+    df["cell_label"] = df.apply(
+        lambda r: f"{r['category']} (n={counts.get(r['category'], 0):,})", axis=1
+    )
+
+    color_map = {"TP": "#999", "TN": "#999", "FP": "#C44E52", "FN": "#C44E52"}
+    df["color_key"] = df["category"].map(lambda c: "Error" if c in ("FP", "FN") else "Correct")
+
+    return (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("p_accept:Q", bin=alt.Bin(maxbins=20), title="P(accept)"),
+            y=alt.Y("count():Q", title="Count"),
+            color=alt.Color(
+                "color_key:N",
+                scale=alt.Scale(domain=["Correct", "Error"], range=["#999", "#C44E52"]),
+                legend=None,
+            ),
+        )
+        .properties(width=200, height=120)
+        .facet(
+            column=alt.Column("pred:N", title=None, sort=["Pred Accept", "Pred Reject"]),
+            row=alt.Row("truth:N", title=None, sort=["True Accept", "True Reject"]),
+        )
+        .resolve_scale(y="independent")
+        .properties(title=f"Confusion Analysis — {rule_id}")
+    )
+
+
+def rug_strip(hand_summaries: list, rule_id: str, width: int = 300,
+              show_legend: bool = True) -> alt.Chart:
+    """Thin rug strip of hands colored by ground truth along the P(accept) axis."""
+    alt.data_transformers.disable_max_rows()
+
+    if not hand_summaries:
+        return alt.Chart(pd.DataFrame({"x": []})).mark_point()
+
+    df = pd.DataFrame(hand_summaries)
+    df["gt_label"] = df["ground_truth"].map({True: "Accept", False: "Reject"})
+
+    gt_scale = alt.Scale(
+        domain=["Accept", "Reject"],
+        range=["#2CA02C", "#C44E52"],
+    )
+
+    return (
+        alt.Chart(df)
+        .mark_tick(thickness=1, opacity=0.5)
+        .encode(
+            x=alt.X("p_accept:Q", title=None, scale=alt.Scale(domain=[0, 1])),
+            color=alt.Color(
+                "gt_label:N",
+                title="Ground Truth",
+                scale=gt_scale,
+                legend=alt.Legend(orient="top") if show_legend else None,
+            ),
+        )
+        .properties(width=width, height=30)
+    )
+
+
 def diagnosticity_bars(diag_df: pd.DataFrame) -> alt.LayerChart:
     """Bar chart of exemplar agreement rate with a diagnostic threshold line.
 
