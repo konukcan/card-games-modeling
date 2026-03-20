@@ -27,6 +27,7 @@ from gallery_analysis.visualization.data import (
 from gallery_analysis.visualization.cards import load_exemplars
 from gallery_analysis.visualization.report_summary import generate_summary
 from gallery_analysis.visualization.report_rule import generate_rule_page
+from gallery_analysis.visualization.report_comparison import generate_comparison_page
 from shared.theme import register_theme
 
 RESULTS_DIR = Path("gallery_analysis/results")
@@ -36,17 +37,20 @@ REPORTS_BASE = RESULTS_DIR / "reports"
 DEPTH_DECOMP = RESULTS_DIR / "depth_decomposition_data.json"
 
 # Each variant: (short_name, results_file, diagnosticity_file_or_None, label)
+# v2 files use Config I probes, 1M programs, corrected TOTAL_HANDS + predicates.
+# Diagnosticity is shared (v2_diagnosticity.json) for all inject variants.
+DIAG_V2 = "v2_diagnosticity.json"
 VARIANTS = [
-    ("weighted-canonical-inject",   "weighted_depth6_canonical_results.json",  "diagnosticity_all_rules_weighted_canonical.json", "Weighted · Canonical · +Inject"),
-    ("weighted-summed-inject",      "weighted_depth6_results.json",            "diagnosticity_all_rules_weighted.json",           "Weighted · Summed · +Inject"),
-    ("weighted-canonical-noinject", "weighted_depth6_canonical_noinject.json",  None,                                              "Weighted · Canonical · No Inject"),
-    ("weighted-summed-noinject",    "weighted_depth6_summed_noinject.json",     None,                                              "Weighted · Summed · No Inject"),
-    ("uniform-canonical-inject",    "uniform_depth6_canonical_inject.json",     None,                                              "Uniform · Canonical · +Inject"),
-    ("uniform-summed-inject",       "uniform_depth6_summed_inject.json",        None,                                              "Uniform · Summed · +Inject"),
-    ("uniform-canonical-noinject",  "uniform_depth6_canonical_noinject.json",   None,                                              "Uniform · Canonical · No Inject"),
-    ("uniform-summed-noinject",     "uniform_depth6_summed_noinject.json",      None,                                              "Uniform · Summed · No Inject"),
-    ("weighted-canonical-strict",   "weighted_depth6_canonical_strict.json",    None,                                              "Weighted · Canonical · Strict"),
-    ("weighted-summed-strict",      "weighted_depth6_summed_strict.json",       None,                                              "Weighted · Summed · Strict"),
+    ("weighted-canonical-inject",   "v2_weighted_canonical_inject.json",   DIAG_V2, "Weighted · Canonical · +Inject"),
+    ("weighted-summed-inject",      "v2_weighted_summed_inject.json",      DIAG_V2, "Weighted · Summed · +Inject"),
+    ("weighted-canonical-noinject", "v2_weighted_canonical_noinject.json",  None,    "Weighted · Canonical · No Inject"),
+    ("weighted-summed-noinject",    "v2_weighted_summed_noinject.json",     None,    "Weighted · Summed · No Inject"),
+    ("uniform-canonical-inject",    "v2_uniform_canonical_inject.json",     DIAG_V2, "Uniform · Canonical · +Inject"),
+    ("uniform-summed-inject",       "v2_uniform_summed_inject.json",        DIAG_V2, "Uniform · Summed · +Inject"),
+    ("uniform-canonical-noinject",  "v2_uniform_canonical_noinject.json",   None,    "Uniform · Canonical · No Inject"),
+    ("uniform-summed-noinject",     "v2_uniform_summed_noinject.json",      None,    "Uniform · Summed · No Inject"),
+    ("weighted-canonical-strict",   "v2_weighted_canonical_strict.json",    None,    "Weighted · Canonical · Strict"),
+    ("weighted-summed-strict",      "v2_weighted_summed_strict.json",       None,    "Weighted · Summed · Strict"),
 ]
 
 
@@ -209,6 +213,7 @@ def generate_switcher(generated: list[tuple[str, str, bool]]) -> None:
 <body>
   <h1>Bayesian Rule Induction — Report Variants</h1>
   <p class="sub">Click any variant to open its summary page. Each contains 60 per-rule detail pages with full navigation. Summary pages also have a dropdown to switch variants inline.</p>
+  <p style="margin-bottom:1.5rem;"><a href="comparison.html" style="color:#4A90D9;font-weight:600;">View Variant Comparison Dashboard &rarr;</a></p>
   <div class="grid">
 {cards_html}  </div>
 </body>
@@ -260,6 +265,12 @@ def main() -> None:
     print("=" * 60)
 
     generate_switcher(generated)
+
+    # Generate the cross-variant comparison dashboard.
+    comparison_path = REPORTS_BASE / "comparison.html"
+    print(f"\n── Generating comparison dashboard ──")
+    generate_comparison_page(RESULTS_DIR, comparison_path)
+
     print(f"\nDone. Open {REPORTS_BASE / 'switcher.html'} to browse all variants.")
 
 
