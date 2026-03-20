@@ -209,6 +209,44 @@ def build_hypothesis_pool(
             "predicate": canonical_pred,
         })
 
+    # Safety dedup: merge any classes that share a fingerprint.
+    # This shouldn't be needed (fp_groups already groups by fingerprint),
+    # but guards against edge cases and injection-time duplicates.
+    fp_index: Dict[str, int] = {}
+    deduped: List[Dict[str, Any]] = []
+    n_post_merges = 0
+    for cls in equivalence_classes:
+        fp = cls["fingerprint"]
+        if fp in fp_index:
+            # Merge into existing class — combine programs, update priors.
+            existing = deduped[fp_index[fp]]
+            existing["all_programs"].extend(cls.get("all_programs", []))
+            existing["n_expressions"] += cls["n_expressions"]
+            # Keep the higher (less negative) canonical prior.
+            if cls["canonical_prior"] > existing["canonical_prior"]:
+                existing["canonical_prior"] = cls["canonical_prior"]
+                existing["canonical_program"] = cls["canonical_program"]
+                existing["predicate"] = cls["predicate"]
+            # Recompute summed prior.
+            existing["summed_prior"] = math.log(
+                math.exp(existing["summed_prior"]) + math.exp(cls["summed_prior"])
+            )
+            # Merge metadata.
+            for key in ("injection_ids", "true_for_rules"):
+                if key in cls:
+                    existing.setdefault(key, []).extend(cls[key])
+            if "true_for_rule" in cls:
+                existing["true_for_rule"] = cls["true_for_rule"]
+            if cls.get("source") == "merged":
+                existing["source"] = "merged"
+            n_post_merges += 1
+        else:
+            fp_index[fp] = len(deduped)
+            deduped.append(cls)
+    equivalence_classes = deduped
+    if n_post_merges > 0 and verbose >= 1:
+        print(f"  Post-hoc fingerprint dedup: merged {n_post_merges} duplicate classes", flush=True)
+
     # Sort by canonical prior
     equivalence_classes.sort(key=lambda c: -c["canonical_prior"])
 
@@ -217,6 +255,7 @@ def build_hypothesis_pool(
         "n_equivalence_classes": len(equivalence_classes),
         "dedup_ratio": round(1 - len(equivalence_classes) / max(len(survivors), 1), 3),
         "time_seconds": round(t_fp, 1),
+        "post_merges": n_post_merges,
     }
     if verbose >= 1:
         print(f"  Equivalence classes: {len(equivalence_classes):,} "

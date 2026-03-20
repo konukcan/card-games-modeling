@@ -291,6 +291,35 @@ def merge_injected(
 
             n_novel += 1
 
+    # Safety dedup: check for duplicate fingerprints after injection merge.
+    import math
+    fp_check: Dict[str, int] = {}
+    deduped: List[Dict] = []
+    n_post = 0
+    for cls in merged:
+        fp = cls["fingerprint"]
+        if fp in fp_check:
+            existing = deduped[fp_check[fp]]
+            existing["all_programs"].extend(cls.get("all_programs", []))
+            existing["n_expressions"] += cls["n_expressions"]
+            if cls.get("canonical_prior", float("-inf")) > existing.get("canonical_prior", float("-inf")):
+                existing["canonical_prior"] = cls["canonical_prior"]
+                existing["canonical_program"] = cls["canonical_program"]
+                existing["predicate"] = cls["predicate"]
+            existing["summed_prior"] = _log_sum_exp(
+                existing["summed_prior"], cls["summed_prior"]
+            )
+            for key in ("injection_ids", "true_for_rules"):
+                if key in cls:
+                    existing.setdefault(key, []).extend(cls[key])
+            if "true_for_rule" in cls:
+                existing["true_for_rule"] = cls["true_for_rule"]
+            n_post += 1
+        else:
+            fp_check[fp] = len(deduped)
+            deduped.append(cls)
+    merged = deduped
+
     # Print merge statistics
     print(
         f"Injection merge: {len(injected)} hypotheses → "
@@ -298,6 +327,7 @@ def merge_injected(
         f"{n_novel} novel classes created. "
         f"Total classes: {len(merged)} "
         f"(was {len(equivalence_classes)})"
+        + (f" [post-dedup merged {n_post} duplicates]" if n_post > 0 else "")
     )
 
     return merged
