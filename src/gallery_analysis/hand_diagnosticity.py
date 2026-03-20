@@ -173,6 +173,14 @@ def compute_posteriors_for_rule(
         if prob >= mass_threshold:
             posteriors.append((prob, cls_idx, hit_vec))
 
+    # Renormalize after pruning so posteriors sum to 1.0.
+    # Without this, p_accept in rate_hand would be biased downward
+    # by the missing tail mass.
+    if posteriors:
+        total_mass = sum(p for p, _, _ in posteriors)
+        if total_mass > 0 and total_mass < 1.0:
+            posteriors = [(p / total_mass, idx, hv) for p, idx, hv in posteriors]
+
     return posteriors
 
 

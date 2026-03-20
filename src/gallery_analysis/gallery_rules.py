@@ -444,14 +444,19 @@ def zigzag_ranks(hand: Hand) -> bool:
     return True
 
 def suit_brackets_no_cross(hand: Hand) -> bool:
-    """Suits form properly nested non-crossing brackets.
-    ♠↔♣ and ♥↔♦ are bracket pairs. Each opener must close before the next pair opens."""
+    """Suits form non-crossing brackets — each type nests only within itself.
+    ♠↔♣ (type A) and ♥↔♦ (type B). An opener of type X is only allowed
+    if the stack is empty or the top of the stack is also type X.
+    e.g. (())[] valid, ([]) INVALID (B nested inside A)."""
     openers = {Suit.SPADES: "A", Suit.HEARTS: "B"}
     closers = {Suit.CLUBS: "A", Suit.DIAMONDS: "B"}
     stack = []
     for c in hand:
         if c.suit in openers:
-            stack.append(openers[c.suit])
+            typ = openers[c.suit]
+            if stack and stack[-1] != typ:
+                return False
+            stack.append(typ)
         elif c.suit in closers:
             if not stack or stack[-1] != closers[c.suit]:
                 return False

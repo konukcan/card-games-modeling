@@ -263,6 +263,8 @@ def build_hypothesis_pool(
               f"({t_fp:.1f}s)", flush=True)
 
     pipeline_stats["total_time_seconds"] = round(time.time() - t_start, 1)
+    # Store probes so injection merge can reuse the exact same set.
+    pipeline_stats["_probes"] = probes
     return equivalence_classes, pipeline_stats
 
 
@@ -544,7 +546,7 @@ def score_rule(
             "log_prior": round(
                 (sh.log_posterior_strict if likelihood_mode == "strict"
                  else sh.log_posterior_noisy)
-                - (sh.log_likelihood_strict if likelihood_mode == "strict"
+                - likelihood_exponent * (sh.log_likelihood_strict if likelihood_mode == "strict"
                    else sh.log_likelihood_noisy), 2),
             "log_likelihood": round(
                 sh.log_likelihood_strict if likelihood_mode == "strict"
@@ -721,8 +723,12 @@ def run_analysis(
             enumerated_prior_range=enumerated_prior_range,
         )
 
-        # Regenerate the same probes used during fingerprinting (same seed)
-        probes = generate_probe_set(n_probes=n_probes, seed=42)
+        # Reuse the exact probes used during fingerprinting (stored in pipeline_stats).
+        # This is critical: if targeted probes were used, random-only probes would
+        # produce different fingerprints and fail to merge injected hypotheses.
+        probes = pipeline_stats.get("_probes")
+        if probes is None:
+            probes = generate_probe_set(n_probes=n_probes, seed=42)
 
         n_before = len(equiv_classes)
         equiv_classes = merge_injected(equiv_classes, injected, probes)
@@ -748,8 +754,8 @@ def run_analysis(
         cache_path=extension_cache,
     )
 
-    # Compute provenance metadata
-    probes = generate_probe_set(n_probes=n_probes, seed=42)
+    # Compute provenance metadata — use the actual probes from fingerprinting.
+    probes = pipeline_stats.get("_probes") or generate_probe_set(n_probes=n_probes, seed=42)
     provenance = compute_provenance(
         probe_seed=42,
         n_probes=n_probes,

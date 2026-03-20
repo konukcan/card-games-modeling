@@ -157,8 +157,8 @@ def estimate_extension_size(
     """
     Estimate |extension(h)| via Monte Carlo sampling.
 
-    Samples random hands from the full deck and counts how many satisfy
-    the predicate. Scales up to the total number of possible hands C(52,6).
+    Samples random ordered hands from the full deck and counts how many satisfy
+    the predicate. Scales up to the total number of ordered hands P(52,6).
 
     Returns:
         (estimated_extension_size, base_rate)
