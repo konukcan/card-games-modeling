@@ -223,18 +223,22 @@ def generate_rule_page(
     true_rule_in_top = any(h["is_true_rule"] for h in hypotheses)
     true_rule_hypothesis = None
     if not true_rule_in_top and difficulty.get("true_rule_rank") is not None:
-        # Build a minimal hypothesis dict from difficulty metrics.
-        # The full hypothesis data isn't available here (only top-10 are
-        # in hypotheses_df), so we show what we can.
+        # Build hypothesis dict from rule-level true_rule_* fields.
+        # The full per-hypothesis data isn't in hypotheses_df (only top-10),
+        # but the results JSON stores the key metrics at the rule level.
+        true_rule_program = difficulty.get("true_rule_program", difficulty.get("answer", "—"))
+        true_rule_log_prior = difficulty.get("true_rule_log_prior", 0) or 0
+        true_rule_mass = difficulty.get("true_rule_posterior_mass", 0) or 0
         true_rule_hypothesis = {
             "rank": difficulty["true_rule_rank"],
-            "program": difficulty.get("answer", "—"),
+            "program": true_rule_program if true_rule_program else "—",
             "program_depth": "—",
-            "probability": difficulty.get("true_rule_posterior_mass", 0) or 0,
-            "extension_size": "—",
+            "probability": true_rule_mass,
+            "base_rate": 0,  # not available at rule level; show "—" in template
             "n_expressions": "—",
-            "log_prior": 0,
-            "log_likelihood": 0,
+            "log_prior": true_rule_log_prior,
+            "log_likelihood": 0,  # not stored at rule level
+            "_missing_details": True,  # flag for template to show "—" where needed
         }
 
     # ── Render template ──────────────────────────────────────────────

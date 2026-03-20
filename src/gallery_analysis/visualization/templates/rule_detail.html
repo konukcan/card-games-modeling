@@ -294,11 +294,11 @@
         <td>{{ true_rule_hypothesis.rank }}</td>
         <td class="mono">{{ true_rule_hypothesis.program }}</td>
         <td>{{ true_rule_hypothesis.program_depth }}</td>
-        <td>{{ "%.4f" | format(true_rule_hypothesis.probability) }}</td>
+        <td>{{ "%.2e" | format(true_rule_hypothesis.probability) }}</td>
         <td>—</td>
         <td>{{ true_rule_hypothesis.n_expressions }}</td>
-        <td>{{ "%.2f" | format(true_rule_hypothesis.log_prior) }}</td>
-        <td>{{ "%.2f" | format(true_rule_hypothesis.log_likelihood) }}</td>
+        <td>{{ "%.2f" | format(true_rule_hypothesis.log_prior) if true_rule_hypothesis.log_prior else "—" }}</td>
+        <td>—</td>
       </tr>
       {% endif %}
     </tbody>
