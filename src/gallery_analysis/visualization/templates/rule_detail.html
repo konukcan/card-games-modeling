@@ -295,10 +295,10 @@
         <td class="mono">{{ true_rule_hypothesis.program }}</td>
         <td>{{ true_rule_hypothesis.program_depth }}</td>
         <td>{{ "%.2e" | format(true_rule_hypothesis.probability) }}</td>
-        <td>—</td>
+        <td>{% if true_rule_hypothesis.base_rate is not none %}{{ "%.2f" | format(true_rule_hypothesis.base_rate * 100) }}%{% else %}—{% endif %}</td>
         <td>{{ true_rule_hypothesis.n_expressions }}</td>
-        <td>{{ "%.2f" | format(true_rule_hypothesis.log_prior) if true_rule_hypothesis.log_prior else "—" }}</td>
-        <td>—</td>
+        <td>{% if true_rule_hypothesis.log_prior %}{{ "%.2f" | format(true_rule_hypothesis.log_prior) }}{% else %}—{% endif %}</td>
+        <td>{% if true_rule_hypothesis.log_likelihood %}{{ "%.2f" | format(true_rule_hypothesis.log_likelihood) }}{% else %}—{% endif %}</td>
       </tr>
       {% endif %}
     </tbody>

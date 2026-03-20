@@ -227,18 +227,20 @@ def generate_rule_page(
         # The full per-hypothesis data isn't in hypotheses_df (only top-10),
         # but the results JSON stores the key metrics at the rule level.
         true_rule_program = difficulty.get("true_rule_program", difficulty.get("answer", "—"))
-        true_rule_log_prior = difficulty.get("true_rule_log_prior", 0) or 0
+        true_rule_log_prior = difficulty.get("true_rule_log_prior")
         true_rule_mass = difficulty.get("true_rule_posterior_mass", 0) or 0
+        true_rule_base_rate = difficulty.get("true_rule_base_rate")
+        true_rule_log_lik = difficulty.get("true_rule_log_likelihood")
+        true_rule_n_expr = difficulty.get("true_rule_n_expressions")
         true_rule_hypothesis = {
             "rank": difficulty["true_rule_rank"],
             "program": true_rule_program if true_rule_program else "—",
             "program_depth": "—",
             "probability": true_rule_mass,
-            "base_rate": 0,  # not available at rule level; show "—" in template
-            "n_expressions": "—",
-            "log_prior": true_rule_log_prior,
-            "log_likelihood": 0,  # not stored at rule level
-            "_missing_details": True,  # flag for template to show "—" where needed
+            "base_rate": true_rule_base_rate,
+            "n_expressions": true_rule_n_expr if true_rule_n_expr is not None else "—",
+            "log_prior": true_rule_log_prior if true_rule_log_prior is not None else 0,
+            "log_likelihood": true_rule_log_lik if true_rule_log_lik is not None else 0,
         }
 
     # ── Render template ──────────────────────────────────────────────

@@ -508,6 +508,11 @@ def score_rule(
     true_rule_log_prior = None
     true_rule_hit_vector = None
 
+    true_rule_extension_size = None
+    true_rule_base_rate = None
+    true_rule_log_likelihood = None
+    true_rule_n_expressions = None
+
     if true_rule_fingerprint:
         for i, (sh, prob) in enumerate(normalized):
             if sh.fingerprint == true_rule_fingerprint:
@@ -516,6 +521,13 @@ def score_rule(
                 true_rule_program = sh.canonical_program
                 true_rule_log_prior = sh.log_prior_summed
                 true_rule_hit_vector = sh.hit_vector
+                true_rule_extension_size = sh.extension_size
+                true_rule_base_rate = sh.base_rate
+                true_rule_log_likelihood = (
+                    sh.log_likelihood_strict if likelihood_mode == "strict"
+                    else sh.log_likelihood_noisy
+                )
+                true_rule_n_expressions = sh.n_expressions
                 break
 
     # --- Approximate true rule flag ---
@@ -579,6 +591,10 @@ def score_rule(
         "true_rule_posterior_mass": true_rule_posterior_mass,
         "true_rule_program": true_rule_program,
         "true_rule_log_prior": true_rule_log_prior,
+        "true_rule_extension_size": true_rule_extension_size,
+        "true_rule_base_rate": true_rule_base_rate,
+        "true_rule_log_likelihood": true_rule_log_likelihood,
+        "true_rule_n_expressions": true_rule_n_expressions,
         "true_rule_approximate": true_rule_approximate,
         # Diagnosticity (None when no true rule fingerprint provided)
         "exemplar_diagnosticity": exemplar_diagnosticity,
@@ -1105,6 +1121,10 @@ def main():
                 "true_rule_posterior_mass": rr.get("true_rule_posterior_mass"),
                 "true_rule_program": rr.get("true_rule_program"),
                 "true_rule_log_prior": rr.get("true_rule_log_prior"),
+                "true_rule_extension_size": rr.get("true_rule_extension_size"),
+                "true_rule_base_rate": rr.get("true_rule_base_rate"),
+                "true_rule_log_likelihood": rr.get("true_rule_log_likelihood"),
+                "true_rule_n_expressions": rr.get("true_rule_n_expressions"),
                 "exemplar_diagnosticity": rr.get("exemplar_diagnosticity"),
             }
 

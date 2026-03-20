@@ -149,6 +149,10 @@ def _build_difficulty_df(rule_details: Dict[str, Any]) -> pd.DataFrame:
                 "true_rule_posterior_mass": detail.get("true_rule_posterior_mass"),
                 "true_rule_program": detail.get("true_rule_program"),
                 "true_rule_log_prior": detail.get("true_rule_log_prior"),
+                "true_rule_extension_size": detail.get("true_rule_extension_size"),
+                "true_rule_base_rate": detail.get("true_rule_base_rate"),
+                "true_rule_log_likelihood": detail.get("true_rule_log_likelihood"),
+                "true_rule_n_expressions": detail.get("true_rule_n_expressions"),
             }
         )
     return pd.DataFrame(rows)
