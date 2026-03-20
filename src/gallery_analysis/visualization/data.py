@@ -147,6 +147,8 @@ def _build_difficulty_df(rule_details: Dict[str, Any]) -> pd.DataFrame:
                 # True-rule diagnostics (may be null).
                 "true_rule_rank": detail.get("true_rule_rank"),
                 "true_rule_posterior_mass": detail.get("true_rule_posterior_mass"),
+                "true_rule_program": detail.get("true_rule_program"),
+                "true_rule_log_prior": detail.get("true_rule_log_prior"),
             }
         )
     return pd.DataFrame(rows)
