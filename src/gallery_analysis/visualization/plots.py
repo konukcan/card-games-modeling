@@ -23,6 +23,9 @@ from __future__ import annotations
 import altair as alt
 import pandas as pd
 
+# Allow large datasets (10k+ hands per rule for confusion/rug charts).
+alt.data_transformers.disable_max_rows()
+
 # Import shared theme helpers.  Fallback gracefully if the shared package
 # is not on sys.path (mirrors the pattern in data.py).
 try:
