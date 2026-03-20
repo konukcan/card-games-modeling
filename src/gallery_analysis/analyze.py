@@ -388,12 +388,15 @@ def estimate_extensions(
 # Step 6: Per-rule scoring
 # =========================================================================
 
-def _recompute_class_prior(cls: Dict[str, Any], grammar) -> float:
+def _recompute_class_prior(cls: Dict[str, Any], grammar, prior_mode: str = "summed") -> float:
     """
-    Recompute the summed log-prior for an equivalence class under a new grammar.
+    Recompute the log-prior for an equivalence class under a new grammar.
 
-    Sums exp(log_prior) across all programs in the class (log-sum-exp),
-    matching the summed_prior semantics used by the default pipeline.
+    Args:
+        cls: Equivalence class dict with 'all_programs' and 'canonical_program'.
+        grammar: Grammar object for computing per-program log-priors.
+        prior_mode: "canonical" uses the best (shortest/cheapest) program's prior.
+                    "summed" sums exp(log_prior) across all programs (log-sum-exp).
     """
     from gallery_analysis.dsl_prior import compute_log_prior
 
@@ -412,8 +415,13 @@ def _recompute_class_prior(cls: Dict[str, Any], grammar) -> float:
         except Exception:
             return float('-inf')
 
-    max_lp = max(log_probs)
-    return max_lp + math.log(sum(math.exp(lp - max_lp) for lp in log_probs))
+    if prior_mode == "canonical":
+        # Best (least negative) log-prior across all programs in the class.
+        return max(log_probs)
+    else:
+        # Summed: log(Σ exp(log_prior_i)) — marginalizes over syntax.
+        max_lp = max(log_probs)
+        return max_lp + math.log(sum(math.exp(lp - max_lp) for lp in log_probs))
 
 
 def score_rule(
@@ -482,7 +490,7 @@ def score_rule(
         # Select prior
         if grammar is not None:
             # Recompute prior under the provided (weighted) grammar
-            log_prior = _recompute_class_prior(cls, grammar)
+            log_prior = _recompute_class_prior(cls, grammar, prior_mode=prior_mode)
         elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
         else:
@@ -533,7 +541,11 @@ def score_rule(
             "n_expressions": sh.n_expressions,
             "extension_size": sh.extension_size,
             "base_rate": round(sh.base_rate, 6),
-            "log_prior": round(sh.log_prior_summed, 2),
+            "log_prior": round(
+                (sh.log_posterior_strict if likelihood_mode == "strict"
+                 else sh.log_posterior_noisy)
+                - (sh.log_likelihood_strict if likelihood_mode == "strict"
+                   else sh.log_likelihood_noisy), 2),
             "log_likelihood": round(
                 sh.log_likelihood_strict if likelihood_mode == "strict"
                 else sh.log_likelihood_noisy, 2),
@@ -558,7 +570,12 @@ def score_rule(
                 true_rule_rank = i + 1  # 1-indexed
                 true_rule_posterior_mass = prob
                 true_rule_program = sh.canonical_program
-                true_rule_log_prior = sh.log_prior_summed
+                # Recover the actual prior used for scoring (posterior - likelihood).
+                _tr_lik = (sh.log_likelihood_strict if likelihood_mode == "strict"
+                           else sh.log_likelihood_noisy)
+                _tr_post = (sh.log_posterior_strict if likelihood_mode == "strict"
+                            else sh.log_posterior_noisy)
+                true_rule_log_prior = _tr_post - _tr_lik
                 true_rule_hit_vector = sh.hit_vector
                 true_rule_extension_size = sh.extension_size
                 true_rule_base_rate = sh.base_rate
