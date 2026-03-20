@@ -43,16 +43,16 @@ except ImportError:
 # 'inject' is "inject" / "noinject"; 'likelihood' is "noisy" / "strict".
 
 VARIANT_FILES = [
-    ("v2_weighted_canonical_inject.json",   "weighted", "canonical", "inject",   "noisy"),
-    ("v2_weighted_summed_inject.json",      "weighted", "summed",    "inject",   "noisy"),
-    ("v2_weighted_canonical_noinject.json",  "weighted", "canonical", "noinject", "noisy"),
-    ("v2_weighted_summed_noinject.json",     "weighted", "summed",    "noinject", "noisy"),
-    ("v2_uniform_canonical_inject.json",     "uniform",  "canonical", "inject",   "noisy"),
-    ("v2_uniform_summed_inject.json",        "uniform",  "summed",    "inject",   "noisy"),
-    ("v2_uniform_canonical_noinject.json",   "uniform",  "canonical", "noinject", "noisy"),
-    ("v2_uniform_summed_noinject.json",      "uniform",  "summed",    "noinject", "noisy"),
-    ("v2_weighted_canonical_strict.json",    "weighted", "canonical", "inject",   "strict"),
-    ("v2_weighted_summed_strict.json",       "weighted", "summed",    "inject",   "strict"),
+    ("v2_weighted_canonical_inject.json",    "weighted", "canonical", "inject",    "noisy"),
+    ("v2_weighted_summed_inject.json",       "weighted", "summed",    "inject",    "noisy"),
+    ("v2_weighted_canonical_trueonly.json",   "weighted", "canonical", "trueonly",  "noisy"),
+    ("v2_weighted_summed_trueonly.json",      "weighted", "summed",    "trueonly",  "noisy"),
+    ("v2_uniform_canonical_inject.json",      "uniform",  "canonical", "inject",    "noisy"),
+    ("v2_uniform_summed_inject.json",         "uniform",  "summed",    "inject",    "noisy"),
+    ("v2_uniform_canonical_trueonly.json",    "uniform",  "canonical", "trueonly",  "noisy"),
+    ("v2_uniform_summed_trueonly.json",       "uniform",  "summed",    "trueonly",  "noisy"),
+    ("v2_weighted_canonical_strict.json",     "weighted", "canonical", "inject",    "strict"),
+    ("v2_weighted_summed_strict.json",        "weighted", "summed",    "inject",    "strict"),
 ]
 
 

@@ -43,12 +43,12 @@ DIAG_V2 = "v2_diagnosticity.json"
 VARIANTS = [
     ("weighted-canonical-inject",   "v2_weighted_canonical_inject.json",   DIAG_V2, "Weighted · Canonical · +Inject"),
     ("weighted-summed-inject",      "v2_weighted_summed_inject.json",      DIAG_V2, "Weighted · Summed · +Inject"),
-    ("weighted-canonical-noinject", "v2_weighted_canonical_noinject.json",  None,    "Weighted · Canonical · No Inject"),
-    ("weighted-summed-noinject",    "v2_weighted_summed_noinject.json",     None,    "Weighted · Summed · No Inject"),
+    ("weighted-canonical-trueonly",  "v2_weighted_canonical_trueonly.json",  None,    "Weighted · Canonical · True Only"),
+    ("weighted-summed-trueonly",     "v2_weighted_summed_trueonly.json",    None,    "Weighted · Summed · True Only"),
     ("uniform-canonical-inject",    "v2_uniform_canonical_inject.json",     DIAG_V2, "Uniform · Canonical · +Inject"),
     ("uniform-summed-inject",       "v2_uniform_summed_inject.json",        DIAG_V2, "Uniform · Summed · +Inject"),
-    ("uniform-canonical-noinject",  "v2_uniform_canonical_noinject.json",   None,    "Uniform · Canonical · No Inject"),
-    ("uniform-summed-noinject",     "v2_uniform_summed_noinject.json",      None,    "Uniform · Summed · No Inject"),
+    ("uniform-canonical-trueonly",   "v2_uniform_canonical_trueonly.json",   None,    "Uniform · Canonical · True Only"),
+    ("uniform-summed-trueonly",      "v2_uniform_summed_trueonly.json",     None,    "Uniform · Summed · True Only"),
     ("weighted-canonical-strict",   "v2_weighted_canonical_strict.json",    None,    "Weighted · Canonical · Strict"),
     ("weighted-summed-strict",      "v2_weighted_summed_strict.json",       None,    "Weighted · Summed · Strict"),
 ]
