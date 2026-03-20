@@ -14,17 +14,18 @@ RESULTS_DIR = Path("gallery_analysis/results")
 INJECT_PATH = "gallery_analysis/data/injected_hypotheses.json"
 EXT_CACHE = str(RESULTS_DIR / "extension_cache_depth6_v2.json")
 
+# inject: "all" = true rules + LLM foils, "true_only" = true rules only, "none" = nothing
 VARIANTS = [
-    ("weighted_canonical_inject",   "canonical", "weighted", True,  "noisy"),
-    ("weighted_summed_inject",      "summed",    "weighted", True,  "noisy"),
-    ("weighted_canonical_noinject", "canonical", "weighted", False, "noisy"),
-    ("weighted_summed_noinject",    "summed",    "weighted", False, "noisy"),
-    ("uniform_canonical_inject",    "canonical", "uniform",  True,  "noisy"),
-    ("uniform_summed_inject",       "summed",    "uniform",  True,  "noisy"),
-    ("uniform_canonical_noinject",  "canonical", "uniform",  False, "noisy"),
-    ("uniform_summed_noinject",     "summed",    "uniform",  False, "noisy"),
-    ("weighted_canonical_strict",   "canonical", "weighted", True,  "strict"),
-    ("weighted_summed_strict",      "summed",    "weighted", True,  "strict"),
+    ("weighted_canonical_inject",    "canonical", "weighted", "all",       "noisy"),
+    ("weighted_summed_inject",       "summed",    "weighted", "all",       "noisy"),
+    ("weighted_canonical_trueonly",  "canonical", "weighted", "true_only", "noisy"),
+    ("weighted_summed_trueonly",     "summed",    "weighted", "true_only", "noisy"),
+    ("uniform_canonical_inject",     "canonical", "uniform",  "all",       "noisy"),
+    ("uniform_summed_inject",        "summed",    "uniform",  "all",       "noisy"),
+    ("uniform_canonical_trueonly",   "canonical", "uniform",  "true_only", "noisy"),
+    ("uniform_summed_trueonly",      "summed",    "uniform",  "true_only", "noisy"),
+    ("weighted_canonical_strict",    "canonical", "weighted", "all",       "strict"),
+    ("weighted_summed_strict",       "summed",    "weighted", "all",       "strict"),
 ]
 
 def run_variant(name, prior_mode, scoring_grammar, inject, likelihood_mode):
@@ -40,8 +41,10 @@ def run_variant(name, prior_mode, scoring_grammar, inject, likelihood_mode):
         "--verbose", "1",
         "--output", output,
     ]
-    if inject:
+    if inject in ("all", "true_only"):
         cmd += ["--inject", INJECT_PATH]
+    if inject == "true_only":
+        cmd += ["--inject-true-only"]
     if likelihood_mode == "strict":
         cmd += ["--likelihood-mode", "strict"]
 

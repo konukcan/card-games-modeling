@@ -680,6 +680,7 @@ def run_analysis(
     likelihood_mode: str = "noisy",
     verbose: int = 1,
     use_targeted_probes: bool = False,
+    inject_true_only: bool = False,
 ) -> Dict[str, Any]:
     """
     Run the full Bayesian rule induction analysis over all 60 gallery rules.
@@ -722,6 +723,13 @@ def run_analysis(
             inject_path, grammar=grammar,
             enumerated_prior_range=enumerated_prior_range,
         )
+
+        # Filter injections if requested.
+        if inject_true_only:
+            n_all = len(injected)
+            injected = [e for e in injected if e.get("id", "").startswith("true__")]
+            if verbose >= 1:
+                print(f"  Filtered to true-rule-only injections: {len(injected)}/{n_all}", flush=True)
 
         # Reuse the exact probes used during fingerprinting (stored in pipeline_stats).
         # This is critical: if targeted probes were used, random-only probes would
@@ -1100,6 +1108,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
                         help="Use Config I probes: 360 exemplar + 1080 near-miss + 140 random = 1580 total")
     parser.add_argument("--no-targeted-probes", action="store_true", default=False,
                         help="Force random-only probes (overrides --targeted-probes)")
+    parser.add_argument("--inject-true-only", action="store_true", default=False,
+                        help="Inject only true-rule hypotheses (filter out LLM foils)")
     parser.add_argument("--mc-samples", type=int, default=100_000, help="MC samples for extension size")
     parser.add_argument("--epsilon", type=float, default=0.01, help="Noise parameter")
     parser.add_argument("--prior", choices=["canonical", "summed"], default="summed", help="Prior mode")
@@ -1155,6 +1165,7 @@ def main():
         likelihood_mode=args.likelihood_mode,
         verbose=args.verbose,
         use_targeted_probes=args.targeted_probes and not args.no_targeted_probes,
+        inject_true_only=args.inject_true_only,
     )
 
     print_difficulty_report(results, verbose=args.verbose)
