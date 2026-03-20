@@ -437,6 +437,7 @@ def score_rule(
     grammar=None,
     likelihood_exponent: float = 1.0,
     likelihood_mode: str = "noisy",
+    precomputed_priors: List[float] = None,
 ) -> Dict[str, Any]:
     """
     Score all hypotheses for a single rule and compute difficulty.
@@ -466,7 +467,7 @@ def score_rule(
     n_with_any_hit = 0
     n_with_all_hits = 0
 
-    for cls, (ext_size, base_rate) in zip(equivalence_classes, extensions):
+    for i_cls, (cls, (ext_size, base_rate)) in enumerate(zip(equivalence_classes, extensions)):
         # Compute hit vector for this rule's exemplars
         pred = cls["predicate"]
         hit_vector = []
@@ -490,8 +491,9 @@ def score_rule(
         log_lik_noisy = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size, epsilon)
 
         # Select prior
-        if grammar is not None:
-            # Recompute prior under the provided (weighted) grammar
+        if precomputed_priors is not None:
+            log_prior = precomputed_priors[i_cls]
+        elif grammar is not None:
             log_prior = _recompute_class_prior(cls, grammar, prior_mode=prior_mode)
         elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
@@ -806,6 +808,20 @@ def run_analysis(
     if likelihood_exponent != 1.0 and verbose >= 1:
         print(f"Using likelihood exponent k={likelihood_exponent} (inflated size principle)", flush=True)
 
+    # Precompute priors under the scoring grammar (rule-independent).
+    # This avoids re-parsing every program for every rule.
+    precomputed_priors = None
+    if scoring_grammar_obj is not None:
+        if verbose >= 1:
+            print(f"\nPrecomputing priors for {len(equiv_classes)} classes under weighted grammar...", flush=True)
+        t_prior = time.time()
+        precomputed_priors = []
+        for cls in equiv_classes:
+            lp = _recompute_class_prior(cls, scoring_grammar_obj, prior_mode=prior_mode)
+            precomputed_priors.append(lp)
+        if verbose >= 1:
+            print(f"  Done in {time.time() - t_prior:.1f}s", flush=True)
+
     # Score each rule
     if verbose >= 1:
         print(f"\nStep 5: Scoring {len(GALLERY_RULES)} rules...", flush=True)
@@ -831,6 +847,7 @@ def run_analysis(
             grammar=scoring_grammar_obj,
             likelihood_exponent=likelihood_exponent,
             likelihood_mode=likelihood_mode,
+            precomputed_priors=precomputed_priors,
         )
         result["group"] = rule_info["group"]
         result["answer"] = rule_info["answer"]
