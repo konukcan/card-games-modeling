@@ -183,37 +183,44 @@ def build_density_charts(
     """
     panels: list[alt.Chart] = []
 
+    # For each panel, average the metric across the non-compared factors
+    # so each rule appears exactly once per level.
+    noisy = df[df["likelihood"] != "strict"]
+
     # Panel 1: Grammar (weighted vs uniform).
-    # Exclude strict likelihood (only exists for weighted) to keep the
-    # comparison balanced.
-    df_grammar = df[df["likelihood"] != "strict"]
+    # Average across prior_mode and inject for each (rule, grammar).
+    df_grammar = (
+        noisy.groupby(["rule_id", "grammar"])[metric]
+        .mean().reset_index()
+    )
     panels.append(_density_panel(
         df_grammar, metric, "grammar",
         title="Grammar Effect", x_title=x_title,
     ))
 
     # Panel 2: Prior mode (canonical vs summed).
-    df_prior = df[df["likelihood"] != "strict"]
+    df_prior = (
+        noisy.groupby(["rule_id", "prior_mode"])[metric]
+        .mean().reset_index()
+    )
     panels.append(_density_panel(
         df_prior, metric, "prior_mode",
         title="Prior Mode Effect", x_title=x_title,
     ))
 
     # Panel 3: Injection (inject vs noinject).
-    # Exclude strict variants (they don't have a noinject pair).
-    df_inject = df[df["likelihood"] != "strict"]
+    df_inject = (
+        noisy.groupby(["rule_id", "inject"])[metric]
+        .mean().reset_index()
+    )
     panels.append(_density_panel(
         df_inject, metric, "inject",
         title="Injection Effect", x_title=x_title,
     ))
 
-    # Panel 4: Likelihood (noisy vs strict) — weighted only.
-    # Compare inject variants: weighted-canonical-inject (noisy) vs
-    # weighted-canonical-strict, and weighted-summed-inject (noisy) vs
-    # weighted-summed-strict.
+    # Panel 4: Likelihood (noisy vs strict) — weighted+inject only.
     df_likelihood = df[
-        (df["grammar"] == "weighted") &
-        ((df["likelihood"] == "strict") | (df["inject"] == "inject"))
+        (df["grammar"] == "weighted") & (df["inject"] == "inject")
     ]
     panels.append(_density_panel(
         df_likelihood, metric, "likelihood",
