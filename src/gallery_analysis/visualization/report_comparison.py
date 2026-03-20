@@ -116,9 +116,9 @@ def load_all_variants(results_dir: str | Path) -> pd.DataFrame:
     df = pd.DataFrame(all_rows)
 
     # Add log10 of posterior mass (handling zeros / very small values).
-    # Clamp at -10 so density plots stay readable.
+    # No clamping — let the full range show. None/zero → NaN (excluded from density).
     df["log10_mass"] = df["true_rule_posterior_mass"].apply(
-        lambda x: max(math.log10(x), -10) if x and x > 0 else -10
+        lambda x: math.log10(x) if x and x > 0 else float("nan")
     )
 
     return df
@@ -144,14 +144,22 @@ def _density_panel(
     """
     levels = sorted(df[group_col].unique())
 
+    # Drop NaN values for density estimation.
+    plot_df = df.dropna(subset=[value_col])
+
+    # Compute extent: clamp minimum at 0 for entropy (can't be negative).
+    val_min = float(plot_df[value_col].min())
+    val_max = float(plot_df[value_col].max())
+    extent_min = max(val_min - 0.1, 0) if "entropy" in value_col.lower() else val_min - 0.5
+    extent_max = val_max + 0.5
+
     chart = (
-        alt.Chart(df)
+        alt.Chart(plot_df)
         .transform_density(
             value_col,
             as_=[value_col, "density"],
             groupby=[group_col],
-            extent=[float(df[value_col].min() - 0.1),
-                    float(df[value_col].max() + 0.1)],
+            extent=[extent_min, extent_max],
         )
         .mark_area(opacity=0.35, interpolate="monotone")
         .encode(
