@@ -153,10 +153,10 @@ def _density_panel(
             extent=[float(df[value_col].min() - 0.1),
                     float(df[value_col].max() + 0.1)],
         )
-        .mark_area(opacity=0.4, interpolate="monotone")
+        .mark_area(opacity=0.35, interpolate="monotone")
         .encode(
             x=alt.X(f"{value_col}:Q", title=x_title),
-            y=alt.Y("density:Q", title="Density"),
+            y=alt.Y("density:Q", title="Density", stack=None),
             color=alt.Color(
                 f"{group_col}:N",
                 scale=alt.Scale(domain=levels, range=_COLORS_2[:len(levels)]),
