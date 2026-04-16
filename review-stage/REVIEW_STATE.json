@@ -9,7 +9,7 @@
   "hard_time_budget_hours": 10,
   "codex_mcp_available": false,
   "fallback_reviewer": "claude-general-purpose",
-  "current_round": 1,
+  "current_round": 2,
   "rounds": [
     {
       "round": 1,
@@ -22,10 +22,35 @@
       "prior_failed_agent_id": "ab9a0f705ef731f77",
       "review_received_at": "2026-04-16T05:15:00Z",
       "priority_fixes_ordered": ["C2", "C6", "C3", "C4", "C1", "H5"],
-      "notes": "MH density mismatch (C1) and dropped β-annealing (C2) are soundness bugs. Tests assert runtime, not correctness of MH ratio or posterior. Not ready for CogSci claim."
+      "notes": "MH density mismatch (C1) and dropped β-annealing (C2) are soundness bugs. Tests assert runtime, not correctness of MH ratio or posterior. Not ready for CogSci claim.",
+      "fixes_landed": ["C2", "C3", "C4", "C6", "docstring_cleanup"],
+      "fixes_deferred_to_round_2_plus": ["C1", "C5", "H5"]
+    },
+    {
+      "round": 2,
+      "verdict": "major revision",
+      "score": 5.5,
+      "review_agent_id": "a97cf5cd84ae6c9b9",
+      "review_received_at": "2026-04-16T08:15:00Z",
+      "round_1_fix_assessments": {
+        "C2": "adequate",
+        "C3": "adequate_with_caveat",
+        "C4": "adequate",
+        "C6": "adequate"
+      },
+      "new_issues": ["test_tautology_filter smoke-only", "init-retry log_prior/lik desync"],
+      "priority_fixes_ordered": ["C1", "posterior_calibration_experiment"],
+      "notes": "C1 is the single blocker for CogSci. Reviewer requires posterior-calibration experiment in Round 3 (toy grammar, analytical posterior, verify empirical visit freq matches within MC error). Score up 4→5.5. Authors can proceed on C1 alone IF calibration accompanies."
     }
   ],
-  "last_checkpoint_action": "round_1_review_received",
-  "last_checkpoint_at": "2026-04-16T05:55:25Z",
-  "baseline_tests_status": "green_40_of_40_in_1173s"
+  "last_checkpoint_action": "round_2_review_received",
+  "last_checkpoint_at": "2026-04-16T08:20:00Z",
+  "baseline_tests_status": "green_40_of_40_in_1173s",
+  "round_1_validation": {
+    "command": "analyze_mcmc --quick --n-steps 2000 --n-chains 4 --beta-start 0.1 --beta-end 1.0 --seed 42",
+    "wallclock_seconds": 411,
+    "beta_ramp_observed": [0.1, 0.19, 0.28, 0.37, 0.64, 0.73, 0.82, 0.91, 1.0],
+    "acceptance_rate_range": "5% to 17%",
+    "status": "no_crash_beta_propagated"
+  }
 }
