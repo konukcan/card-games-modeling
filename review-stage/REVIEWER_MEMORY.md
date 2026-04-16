@@ -108,3 +108,35 @@ Persistent memory across rounds for the external GPT-5.4 reviewer (Codex MCP, `x
 >   3. If hardware permits, do the depth-3 calibration run; if not, document the limitation clearly.
 
 **Bottom line:** "If the paper's central claim is only that the chain targets a posterior after burn-in, this is close. If it also leans on early discovery timing or strong 'full gallery' calibration language, it is still not ready."
+
+---
+
+## Round 4 — Score: 8.0/10, Verdict: Almost (FINAL)
+
+**Reviewer read commit `a05a59c` directly; verified full-kernel test and subtle duplicate-destination case (multiple `(site, subtree)` pairs mapping to same `new_program` — fine because the implemented kernel is a mixture over site-conditioned proposals).**
+
+### Rulings on Round 3 priorities + carry-forward weaknesses
+- `R3 full-kernel normalization priority`: **OVERRULED** — closed by `test_mcmc_search.py:1250`.
+- `Init-resampling ruling after doc fix`: **PARTIALLY SUSTAINED** — correctly documented, but still incompatible with any early-trajectory claim.
+- `C1-gallery depth=2`: **PARTIALLY SUSTAINED** — independent-prior calibration is meaningful, but still only depth-2.
+- `Calibration-support depth=2`: **PARTIALLY SUSTAINED** — same reason.
+- `C5 init retries`: **PARTIALLY SUSTAINED** — no longer a kernel defect, still an init-policy caveat.
+- `H-n_sites-invariance`: **OVERRULED** — site-drop bug fixed, new kernel test closes prior normalization gap.
+- `Hidden-free-type caps`: **OVERRULED for the current gallery regime** — no evidence the current gallery is relying on the fallback path.
+- `Explicit-cap weaknesses`: **PARTIALLY SUSTAINED** — if caps are ever hit, exactness silently degrades.
+- `H5 sequential chains`: **SUSTAINED**, low priority — `run_parallel_chains` (mcmc_search.py:2234) still sequential.
+
+### NEW weaknesses introduced by R3 fixes
+- No new algebraic correctness defect.
+- Minor coverage gap: new kernel test is empty-env BOOL only. A lambda / bound-variable variant would strengthen regression coverage (not a blocker).
+- Minor process gap: init caveat now exists in code comments; the manuscript still has to honor it.
+
+### Scalability caps recommendation (Round 4 new)
+> Do not leave `_DEPTH_CAP_EXACT_ENUM_CAP=16` (mcmc_search.py:793) and `_MARGINALIZATION_FREE_VAR_CAP=3` (mcmc_search.py:630) as comments only. Add a gallery-level assertion or runtime counter that must stay at zero for the reported experiments.
+
+### Reviewer memory update for future rounds (verbatim from GPT-5.4, Round 4)
+> Addressed: full-kernel site-conditioned proposal normalization; init caveat is now explicit and correct.
+> Still open: depth-3 / fuller-gallery calibration remains missing; exactness caps need active guardrails; init policy still rules out early-trajectory claims.
+> Pattern update: the fatal MH-ratio defects appear resolved. Remaining risk is now claim scope and silent future regression outside the current gallery regime.
+
+**Final bottom line:** "If the paper says 'this MH implementation targets the post-burn-in posterior under the current gallery grammar' and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape. If it claims full-gallery calibration, or uses early discovery timing as evidence, it is still not ready."

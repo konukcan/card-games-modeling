@@ -1,0 +1,32 @@
+## Score: 8.0/10
+## READY for submission: Almost
+
+The MH kernel now looks theoretically coherent for the current gallery regime. I do not see a remaining fatal detailed-balance / proposal-density defect in `a05a59c`. I still stop at `Almost` rather than `Yes` because the validation story is still depth-2, and the code still contains silent approximation fallbacks behind explicit caps.
+
+**Direct answers**
+- `Kernel test adequacy`: yes. [test_mcmc_search.py:1250](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/tests/test_mcmc_search.py:1250) satisfies the Round-3 priority. It checks the exact forward-kernel factorization used in [mcmc_search.py:1667](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/gallery_analysis/mcmc_search.py:1667). I also checked the subtle duplicate-destination case: multiple `(site, subtree)` pairs can map to the same `new_program`, and that is still fine because the implemented kernel is a mixture over site-conditioned proposals.
+- `Init caveat, doc vs code`: sufficient for this review scope. The caveat at [mcmc_search.py:1981](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/gallery_analysis/mcmc_search.py:1981) is correct. If the paper avoids first-passage / cognitive-timing claims and frames results as post-burn-in stationary sampling, I do not treat init resampling as a blocker.
+- `Scalability caps`: do not leave these as comments only. Add a gallery-level assertion or at least a runtime counter that must stay at zero for the reported experiments. The relevant boundaries are [_MARGINALIZATION_FREE_VAR_CAP = 3 at mcmc_search.py:630](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/gallery_analysis/mcmc_search.py:630) and [_DEPTH_CAP_EXACT_ENUM_CAP = 16 at mcmc_search.py:793](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/gallery_analysis/mcmc_search.py:793).
+
+**Rulings**
+- `R3 full-kernel normalization priority`: **overrule**. Closed by [test_mcmc_search.py:1250](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/tests/test_mcmc_search.py:1250).
+- `Init-resampling ruling after doc fix`: **partially sustain**. Correctly documented, but still incompatible with any early-trajectory claim.
+- `C1-gallery depth=2`: **partially sustain**. The independent-prior calibration is now meaningful, but it is still only depth-2.
+- `Calibration-support depth=2`: **partially sustain**. Same reason.
+- `C5 init retries`: **partially sustain**. No longer a kernel defect; still an init-policy caveat.
+- `H-n_sites-invariance`: **overrule**. The site-drop bug is fixed, and the new kernel test closes the prior normalization gap.
+- `Hidden-free-type caps`: **overrule for the current gallery regime**. I do not see evidence the current gallery is relying on the fallback path.
+- `Explicit-cap weaknesses`: **partially sustain**. If those caps are ever hit, exactness silently degrades.
+- `H5 sequential chains`: **sustain**, but low priority for tonight's soundness target. [run_parallel_chains](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review/src/gallery_analysis/mcmc_search.py:2234) is still sequential.
+
+**New weaknesses introduced by R3 fixes**
+- No new algebraic correctness defect.
+- Minor coverage gap: the new kernel test is empty-env BOOL only. A lambda / bound-variable variant would strengthen regression coverage, but I do not view it as a blocker.
+- Minor process gap: the init caveat now exists in code comments; the manuscript still has to honor it.
+
+**Memory update**
+- Addressed: full-kernel site-conditioned proposal normalization; init caveat is now explicit and correct.
+- Still open: depth-3 / fuller-gallery calibration remains missing; exactness caps need active guardrails; init policy still rules out early-trajectory claims.
+- Pattern update: the fatal MH-ratio defects appear resolved. Remaining risk is now claim scope and silent future regression outside the current gallery regime.
+
+If the paper says "this MH implementation targets the post-burn-in posterior under the current gallery grammar" and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape. If it claims full-gallery calibration, or uses early discovery timing as evidence, it is still not ready.

@@ -1,6 +1,7 @@
 {
   "session_id": "aris-mcmc-review-night2-2026-04-16",
   "started_at": "2026-04-16T08:45:40Z",
+  "completed_at": "2026-04-16T17:30:00Z",
   "branch": "aris/mcmc-review-20260411",
   "worktree": "/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review",
   "loop_topic": "Internal-coherence review of MCMC program search (Night 2 continuation)",
@@ -16,18 +17,16 @@
   "reviewer_reasoning_effort": "xhigh",
   "thread_id": "019d9579-b4c2-7b23-97c2-8a2316c6d104",
   "round": 4,
-  "status": "in_progress",
-  "last_score": 7.0,
+  "status": "completed",
+  "last_score": 8.0,
   "last_verdict": "almost",
-  "pending_experiments": ["round4_fixes_then_fire_round4"],
-  "baseline_tests": "46/46_green_in_10167s_post_R2_fixes",
-  "r2_fixes_commit": "23134f4",
-  "r3_priorities": [
-    "add tiny full-kernel ΣQ=1 test for propose_regeneration (site-pick × regeneration)",
-    "document init-resampling as burn-in/documentation (no first-passage claims)",
-    "depth-3 calibration is hardware-bounded — document limitation"
-  ],
-  "timestamp": "2026-04-16T16:10:00Z",
+  "final_score": 8.0,
+  "final_verdict": "almost",
+  "pending_experiments": [],
+  "baseline_tests": "47/47_green_in_10174s_post_R3_fixes",
+  "r3_fixes_commit": "a05a59c",
+  "score_trajectory": [4.5, 5.5, 7.0, 8.0],
+  "timestamp": "2026-04-16T17:30:00Z",
   "rounds": [
     {
       "round": 1,
@@ -54,12 +53,23 @@
       "new_weaknesses": [
         "explicit approximation caps (_DEPTH_CAP_EXACT_ENUM_CAP=16, _MARGINALIZATION_FREE_VAR_CAP=3) — not hit in gallery but still boundaries",
         "exact depth-cap scorer is exponential in competing lookahead productions — scalability risk"
-      ],
-      "round4_priority": [
-        "add tiny full-kernel ΣQ=1 test for propose_regeneration (site-pick × regeneration)",
-        "decide first-passage / cognitive-timing claims — if yes fix init resampling or exclude",
-        "depth-3 calibration if hardware permits; else document limitation"
       ]
+    },
+    {
+      "round": 4,
+      "score": 8.0,
+      "verdict": "almost",
+      "raw_response_file": "review-stage/round_4_review.txt",
+      "commits": ["a05a59c"],
+      "sustained": ["H5"],
+      "partially_sustained": ["init-resampling-doc", "C1-gallery-depth2", "calibration-support-depth2", "C5-init-retries", "explicit-cap-weaknesses"],
+      "overruled": ["full-kernel-normalization-priority", "H-n_sites-invariance", "hidden-free-type-caps"],
+      "new_weaknesses": [
+        "minor coverage gap: kernel test empty-env BOOL only (lambda/bound-variable variant would strengthen)",
+        "process gap: manuscript must honor init caveat",
+        "scalability caps need runtime assertion/counter guardrails"
+      ],
+      "final_bottom_line": "If the paper says 'this MH implementation targets the post-burn-in posterior under the current gallery grammar' and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape. If it claims full-gallery calibration, or uses early discovery timing as evidence, it is still not ready."
     }
   ]
 }

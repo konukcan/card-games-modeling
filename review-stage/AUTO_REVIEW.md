@@ -138,3 +138,47 @@ See `review-stage/round_3_review.txt` for verbatim text.
 - Per launch prompt, still aiming for 4 rounds ("aim 4 rounds even if score ≥6/10 is reached").
 - Proceeding to Round 4 implementing priorities 1-3 where feasible.
 - Difficulty: hard.
+
+---
+
+## Round 4 (FINAL) (2026-04-16T17:30:00Z)
+
+### Assessment (Summary)
+- **Score:** 8.0/10 (+1.0 from Round 3)
+- **Verdict:** Almost
+- **Key ruling:** R3 full-kernel normalization OVERRULED. H-n_sites-invariance OVERRULED. Hidden free-type caps OVERRULED for gallery regime. No remaining fatal detailed-balance / proposal-density defect. Still "Almost" (not "Yes") because validation is depth-2 and exactness caps are silent fallbacks.
+
+### Reviewer Raw Response
+
+<details>
+<summary>Click to expand full reviewer response (saved in review-stage/round_4_review.txt)</summary>
+
+See `review-stage/round_4_review.txt` for verbatim text.
+
+</details>
+
+### Rulings summary
+- **Overruled (3):** R3 full-kernel normalization priority, H-n_sites-invariance, hidden-free-type caps (gallery regime).
+- **Partially sustained (5):** init-resampling (doc fix accepted), C1-gallery depth=2, calibration-support depth=2, C5 init retries, explicit-cap weaknesses.
+- **Sustained (1):** H5 sequential chains (low priority).
+
+### New weaknesses surfaced in Round 4
+1. **Coverage gap** (minor, non-blocking): new kernel test is empty-env BOOL only. Lambda/bound-variable variant would strengthen regression coverage.
+2. **Process gap** (minor, non-blocking): init caveat in code; manuscript must honor it.
+3. **Scalability caps recommendation**: add gallery-level assertion or runtime counter for `_DEPTH_CAP_EXACT_ENUM_CAP=16` and `_MARGINALIZATION_FREE_VAR_CAP=3` — must stay at zero for reported experiments.
+
+### Final verdict
+> "If the paper says 'this MH implementation targets the post-burn-in posterior under the current gallery grammar' and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape. If it claims full-gallery calibration, or uses early discovery timing as evidence, it is still not ready."
+
+### Score trajectory
+| Round | Score | Verdict | Key gain |
+|-------|-------|---------|----------|
+| 1 | 4.5 | not ready | Reviewer ran code, 4 concrete counterexamples confirmed |
+| 2 | 5.5 | not ready | C3/H-methodology/H-autocorr/H-seeds OVERRULED; C2-cap sustained |
+| 3 | 7.0 | almost | C2-cap OVERRULED (exact depth-cap scorer); max_nodes init OVERRULED |
+| 4 | 8.0 | almost | Full-kernel ΣQ=1 verified; H-n_sites-invariance OVERRULED |
+
+### Status
+- **Night 2 COMPLETED.** 4/4 rounds run. Threshold SATISFIED (8.0/10 ≥ 6, 4 rounds ≥ 3).
+- Remaining open items documented in MORNING_REPORT.md.
+- Difficulty: hard.
