@@ -1,0 +1,78 @@
+{
+  "config": {
+    "max_depth": 2,
+    "beta": 0.9,
+    "n_steps": 50000,
+    "n_burnin": 5000,
+    "seeds": [
+      20260417,
+      20260418,
+      20260419,
+      20260420,
+      20260421
+    ],
+    "request_type": "int -> bool",
+    "concrete_types": [
+      "bool",
+      "int"
+    ]
+  },
+  "support_size": 990,
+  "per_seed": [
+    {
+      "seed": 20260417,
+      "n_post_burnin": 45000,
+      "accept_rate": 0.25464,
+      "ess_geyer_ips": 1447.3699426149517,
+      "tv": 0.09227201730249274,
+      "mc_bound_95": 0.5848073532959671,
+      "outside_mass": 0.0005555555555555556,
+      "pass": true
+    },
+    {
+      "seed": 20260418,
+      "n_post_burnin": 45000,
+      "accept_rate": 0.26104,
+      "ess_geyer_ips": 909.1690209294193,
+      "tv": 0.0929707706007715,
+      "mc_bound_95": 0.7378707332140874,
+      "outside_mass": 0.0008222222222222222,
+      "pass": true
+    },
+    {
+      "seed": 20260419,
+      "n_post_burnin": 45000,
+      "accept_rate": 0.24996,
+      "ess_geyer_ips": 1589.3484200947626,
+      "tv": 0.09181429705200236,
+      "mc_bound_95": 0.5580756094430069,
+      "outside_mass": 0.0046,
+      "pass": true
+    },
+    {
+      "seed": 20260420,
+      "n_post_burnin": 45000,
+      "accept_rate": 0.25268,
+      "ess_geyer_ips": 1327.488405301091,
+      "tv": 0.09604474448983225,
+      "mc_bound_95": 0.610642786573776,
+      "outside_mass": 0.005288888888888889,
+      "pass": true
+    },
+    {
+      "seed": 20260421,
+      "n_post_burnin": 45000,
+      "accept_rate": 0.2576,
+      "ess_geyer_ips": 1606.95555701008,
+      "tv": 0.10444329879828197,
+      "mc_bound_95": 0.5550098190245535,
+      "outside_mass": 0.003777777777777778,
+      "pass": true
+    }
+  ],
+  "mean_tv": 0.09550902564867617,
+  "max_tv": 0.10444329879828197,
+  "n_seeds_pass": 5,
+  "n_seeds_total": 5,
+  "wall_seconds": 800.5550129413605
+}

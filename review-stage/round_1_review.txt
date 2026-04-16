@@ -1,0 +1,33 @@
+## Score: 4.5/10
+## Verdict: not ready
+
+## Confirmed/Refuted from Night 1
+- C3-tier2: confirm — `_sample` resolves env-unresolved free vars only via env unification plus `rng.choice(_CONCRETE_TYPES)` at `mcmc_search.py:543-549`; the scorer adds an output-conditioned backsolve via `infer_type` at `mcmc_search.py:810-827`. In a minimal counterexample (`choose : ('a->bool)->out`, `is_zero : int->bool`, `_CONCRETE_TYPES=[BOOL,INT]`), the scorer gives `P=1.0` for `choose ((λ is_zero $0))`, while raw `_sample` emits it `992/2000 ≈ 0.496`. Under-scoped: deleting tier-2 alone is still not exact, because tier-3 still fails to marginalize hidden type draws.
+- C1-gallery: confirm — the calibration is explicitly `{not,and,or}` with `BOOL->BOOL` only at `posterior_calibration.py:14-15`, and its enumerator explicitly says it does not mirror polymorphic free-var logic at `:156-158`. It does not touch the disputed gallery paths.
+- C2-cap: confirm — the scorer explicitly skips the lookahead branch at `mcmc_search.py:707-713`. I instrumented the current gallery grammar at `HAND->BOOL`, `max_depth=5`, 200 seeds: `1955/8318` `_sample` calls (`23.5%`) entered the skipped "no terminals / no vars" branch. This is not rare.
+- H-methodology: partial — the exact "ratio collapses to likelihood only" claim is too strong for subtree regeneration because site-pick/context terms remain. But the experiment is still self-referential: the same scorer defines the root prior at `posterior_calibration.py:206-214` and the local proposal density at `:61-66, 276-300`, so it is weak evidence against scorer/q mismatch.
+- H-autocorr: confirm — the bound uses `n_eff_proxy = n_post_burnin * (1 - rejection_rate)` at `posterior_calibration.py:378-383`; no IAT/ESS estimate is computed.
+- H-seeds: confirm — single seed only at `posterior_calibration.py:76`, one MH run at `:344-347`.
+- H-n_sites-invariance: partial — excluding Application heads at `mcmc_search.py:1004-1012` is defensible and probably necessary; invariance itself is not required. The real gap is no `ΣQ=1` test, plus silent `except` blocks in site collection at `:953-962, 1013-1028`.
+- C5: confirm — `sample_program` retries with `seed+attempt` at `mcmc_search.py:126-156` and is the actual proposal generator at `:1176-1179`. This is worse than determinism: it changes `q`. On 500 gallery root samples, `14/500` (`2.8%`) needed retries.
+- H5: confirm — `run_parallel_chains` is a sequential for-loop at `mcmc_search.py:1811-1835`.
+
+## New issues (beyond Night 1's list)
+- Retry-conditioned proposal law — critical — `propose_regeneration` samples via `sample_program` but scores via `_score_subtree_under_sampler`; those are different distributions. In the toy counterexample, raw `_sample` gave `{choose ((λ is_zero $0)): 992, choose ((λ $0)): 471, ERR: 537}`, while `sample_program` changed this to `{1338, 662}`. Minimum fix: use raw `_sample` in proposal/init paths, or derive and score the exact retry-conditioned law.
+- Layer-1 vacuous-lambda hard rejection — critical — proposals are rejected pre-MH at `mcmc_search.py:1589-1594`, analogous to the already-fixed Layer-2 tautology bug. Unless vacuous lambdas are assigned zero target density explicitly, this truncates the state space off-book. Minimum fix: move vacuity into the target (`-inf`) or post-hoc reporting; do not hard-reject before MH.
+- Hidden free-type draws still not marginalized — high — even after tier-2, tier-3 picks one sentinel concrete type and charges `-log K` at `mcmc_search.py:836-844`, but the correct density is a sum over compatible latent assignments and their downstream probabilities. Minimum fix: branch over unresolved assignments and log-sum-exp them through the arg recursion.
+- Silent site-drop path — medium — `collect_subtree_sites` swallows inference failures at `mcmc_search.py:953-962, 1013-1028`, so `n_sites` can silently drift. Minimum fix: instrument/count failures and add tests asserting zero site-collection errors on sampled well-typed programs.
+
+## Prioritized action list for this round
+1. Align the actual proposal generator with the scored density — `mcmc_search.py:70-157, 1176-1212` — replace `sample_program` retries in proposal/init paths or score the conditioned law exactly — verify with the `choose/is_zero` toy and a gallery retry-rate counter.
+2. Replace tier-2/tier-3 heuristics with exact marginalization over env-unresolved type draws — `mcmc_search.py:785-845` — enumerate `_CONCRETE_TYPES^k` branches and propagate each branch's substitution forward — verify on the current toy counterexample, then on `{not,and,or,eq,if}`; time-box `<90 min`.
+3. Mirror the depth-cap lookahead in the scorer — `mcmc_search.py:435-474, 699-713` — score the same restricted candidate set `_sample` uses, including terminable/non-recursive fallbacks — verify with the branch counter and a small enumerated-state normalization check.
+4. Remove proposal-time vacuous rejection as an unmodeled support filter — `mcmc_search.py:1507-1520, 1589-1594` — encode vacuity in the target or defer it to reporting — verify that vacuous proposals are handled by MH scoring, not a pre-MH hard reject.
+5. Re-run calibration with an independent prior and real ESS — `posterior_calibration.py:206-214, 344-390` — use `grammar.program_log_likelihood`, 5 seeds, IAT/Geyer ESS, and the polymorphic `{not,and,or,eq,if}` grammar with `_CONCRETE_TYPES=[BOOL,INT]`, `INT->BOOL` — time-box `<90 min`.
+6. Add proposal-normalization / site-collection regressions — `mcmc_search.py:910-1214`, `test_mcmc_search.py` — assert zero site-collection exceptions and numerically check `ΣQ(s'|s)≈1` on several small hand-built states.
+
+## Memory update (for future rounds)
+- Suspicion: the current q is still wrong until the proposal generator, scorer, and latent type-resolution story are literally the same object.
+- Unresolved: `max_nodes` and other hard support truncations may also be off-book unless folded into the target explicitly.
+- Patterns: every major soundness failure so far comes from operational filters or retries that live outside the stated posterior.
+- Unresolved: an independent-prior calibration may fail even after tier-2 removal unless the `sample_program` retry mismatch is fixed first.

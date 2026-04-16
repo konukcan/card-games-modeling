@@ -1,0 +1,17 @@
+[   0.0s] enumerating support at depth=2
+  |support|=990 after dedup
+  |reachable|=990
+[   0.3s] MH seed=20260417 ...
+  TV=0.0923 ESS=1447 accept=0.255 outside=0.0006 pass=True
+[ 160.6s] MH seed=20260418 ...
+  TV=0.0930 ESS=909 accept=0.261 outside=0.0008 pass=True
+[ 320.7s] MH seed=20260419 ...
+  TV=0.0918 ESS=1589 accept=0.250 outside=0.0046 pass=True
+[ 480.5s] MH seed=20260420 ...
+  TV=0.0960 ESS=1327 accept=0.253 outside=0.0053 pass=True
+[ 640.2s] MH seed=20260421 ...
+  TV=0.1044 ESS=1607 accept=0.258 outside=0.0038 pass=True
+
+=== SUMMARY (5 seeds, polymorphic INT→BOOL, independent prior) ===
+Mean TV: 0.0955, max TV: 0.1044, passed 5/5 seeds
+Results written to posterior_calibration_v2_result.json, posterior_calibration_v2_log.txt
