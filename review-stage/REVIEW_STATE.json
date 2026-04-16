@@ -1,0 +1,17 @@
+{
+  "session_id": "aris-mcmc-review-2026-04-16",
+  "started_at": "2026-04-16T05:03:07Z",
+  "branch": "aris/mcmc-review-20260411",
+  "worktree": "/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-review",
+  "loop_topic": "Improve MCMC program search quality for Bayesian rule induction over card-game rules",
+  "difficulty": "hard",
+  "max_rounds": 4,
+  "hard_time_budget_hours": 10,
+  "codex_mcp_available": false,
+  "fallback_reviewer": "claude-general-purpose",
+  "current_round": 0,
+  "rounds": [],
+  "last_checkpoint_action": "baseline_tests_green",
+  "last_checkpoint_at": "2026-04-16T05:10:00Z",
+  "baseline_tests_status": "green_40_of_40_in_1173s"
+}
