@@ -145,6 +145,51 @@ For each round:
 - What you'd do if you had another night
 - What human judgment calls are pending
 
+## Resilience to network interruptions (READ THIS)
+
+This session may die if the user's Wi-Fi drops for more than a couple of minutes (Claude Code is an API client; long network outages kill the session). Your job is to make sure **nothing is lost** if that happens, so a morning relaunch can resume cleanly.
+
+### Checkpoint-frequently rules
+
+1. **Commit after EVERY meaningful unit of work**, not just end of round. Rule of thumb: if you'd be annoyed to redo it, commit it. Specifically commit after:
+   - Every ~3-5 file edits
+   - Before launching any experiment
+   - After each reviewer response is logged
+   - After each fix is implemented
+2. **Update `review-stage/REVIEW_STATE.json` aggressively.** The ARIS skill writes it at end-of-round; you should ALSO touch it after each of: receiving a review, starting fixes, finishing fixes, launching an experiment. Add a `last_checkpoint_action` field documenting what was just completed.
+3. **Append to `review-stage/AUTO_REVIEW.md` as you go**, not in bulk at end-of-round. Cumulative log = survivable.
+
+### Experiments must survive session death
+
+When launching any MCMC run or diagnostic experiment:
+- **ALWAYS** use `nohup caffeinate -d -i -s ~/miniforge3/bin/python ... > <logfile> 2>&1 &` pattern
+- This makes the experiment a child of init, not of the Claude session — it keeps running even if Claude dies
+- Write the launched PID to `review-stage/experiments/round_N/<exp_name>.pid` so the resume session can find and check on it
+- Write a `review-stage/experiments/round_N/<exp_name>.cmd` file with the exact command used (for human debugging)
+
+### Resume protocol (this kicks in automatically)
+
+If a morning session is launched with the same prompt:
+- ARIS will detect `REVIEW_STATE.json`, see `status: in_progress` and a recent timestamp, and resume at the next round
+- **Before resuming,** you must:
+  1. Check any PID files in `review-stage/experiments/round_N/` — use `ps -p <PID>` to see if the experiment is still running, finished, or was killed
+  2. Read any experiment log files completed overnight — they may already have the results the reviewer asked for
+  3. Confirm the git state is clean (if there are uncommitted edits from the dying session, commit them first as `chore: resume overnight run - recovered uncommitted edits`)
+- Do NOT restart completed rounds. Do NOT re-run completed experiments.
+
+### If the user launches a morning session manually before you've finished
+
+The user may wake up, see the session is dead, and relaunch. Your resume logic handles this. But if the user relaunches while you're MID-round (the unusual case of network coming back and user relaunching simultaneously), you might have two sessions. Check `review-stage/REVIEW_STATE.json` first thing — if its timestamp is <5 min old and status is `in_progress`, ANOTHER session is active. In that case, exit immediately with a message to the user: "Another session appears active; aborting to avoid conflicts."
+
+### Write `RESUME_INSTRUCTIONS.md` early in your run
+
+As one of your first actions, write `RESUME_INSTRUCTIONS.md` at the worktree root with:
+- The exact command to relaunch if the session died
+- What files to check to see where the run left off
+- Any known-long-running experiments and their PID file paths
+
+This way, if the user wakes up to a dead session, they have a 30-second path to resume without asking you.
+
 ## Safety rails
 
 - **No destructive git operations.** No `git reset --hard`, no `git clean -f`, no force push. If you get into a confused state, commit what you have and write a note.
