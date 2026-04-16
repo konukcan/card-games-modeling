@@ -37,3 +37,41 @@ Persistent memory across rounds for the external GPT-5.4 reviewer (Codex MCP, `x
 > Unresolved: `max_nodes` and other hard support truncations may also be off-book unless folded into the target explicitly.
 > Patterns: every major soundness failure so far comes from operational filters or retries that live outside the stated posterior.
 > Unresolved: an independent-prior calibration may fail even after tier-2 removal unless the `sample_program` retry mismatch is fixed first.
+
+---
+
+## Round 2 — Score: 5.5/10, Verdict: not ready
+
+**Reviewer read commit `3bdf156` directly (not just prose summary).**
+
+### Rulings on Round 1 weaknesses
+- `C3-tier2`: **OVERRULED** — scorer backsolve bug gone; hidden arg-level type draws genuinely marginalized (mcmc_search.py:633).
+- `C1-gallery`: **PARTIALLY SUSTAINED** — polymorphism + independent prior now exercised, but depth=2 still, not full-support exact.
+- `C2-cap`: **SUSTAINED** — depth-cap scorer is still approximate ("mean-field" at mcmc_search.py:734). Counterexample reproduced: raw `_sample` gives `P(p1 0)=0.736`, scorer returns `0.667`.
+- `C5`: **PARTIALLY SUSTAINED** — proposal kernel clean, retries remain on init/one-shot path.
+- `H-methodology`: **OVERRULED** — independent-prior calibration is a real improvement (posterior_calibration_v2.py:135).
+- `H-autocorr`: **OVERRULED** — Geyer IPS ESS used (posterior_calibration_v2.py:344).
+- `H-seeds`: **OVERRULED** — five seeds present.
+- `H-n_sites-invariance`: **PARTIALLY SUSTAINED** — silent-drop fixed (mcmc_search.py:1132), but no direct proposal-normalization test.
+- `H5`: **SUSTAINED** — `run_parallel_chains` still sequential (mcmc_search.py:2039).
+- `retry-conditioned proposal law`: **OVERRULED** — `allow_retries=False` at mcmc_search.py:1397.
+- `vacuous-lambda hard reject`: **OVERRULED** — target-coded at mcmc_search.py:1826.
+- `hidden free-type draws`: **PARTIALLY SUSTAINED** — fixed for ordinary arg scoring; not fixed for depth-cap filtered-candidate normalization.
+- `silent site-drop path`: **OVERRULED**.
+
+### NEW weaknesses introduced or exposed (Round 2)
+- **Depth-cap correction still approximate** (mcmc_search.py:921). Folding survival probs into per-production weights is NOT the exact marginal of the sampler's random filtered set. **Main remaining soundness defect.**
+- **`max_nodes` off-book on init** (mcmc_search.py:1731). MH body applies −∞ (:1824) but init path does not. 57/100 initialized gallery states exceeded `max_nodes=25`.
+- **Init resampling = arbitrary prior over starts** (mcmc_search.py:1731). Vacuous/tautological starts skipped. Doesn't break stationarity but biases early visit counts / first-passage analyses.
+- **Calibration support incomplete** (posterior_calibration_v2.py:243). Enumerator drops nonzero-arity productions at cap; result file shows nonzero outside-support mass on every seed.
+- **Proposal-density regression test is weak** (test_mcmc_search.py:973). Checks only top-2 proposals with factor-3 tolerance. Would not catch the remaining depth-cap mismatch.
+
+### Reviewer memory update for future rounds (verbatim from GPT-5.4, Round 2)
+> Addressed: proposal retry-conditioning, scorer tier-2 inversion, silent site-drop path, ESS/seeds, Night 1 methodology flaw.
+> Still open: exact depth-cap scorer/sampler agreement, init-path `max_nodes` inconsistency, arbitrary init resampling, lack of explicit `ΣQ(s'|s)=1` verification.
+> Pattern update: the remaining failures are now concentrated in "rare branch" logic where the fix was approximate rather than exact.
+> Next-round priority:
+>   1. Make the depth-cap scorer exact or prove the branch is excluded in the final experimental regime.
+>   2. Apply `max_nodes` consistently at init or state clearly that init is arbitrary and excluded from all timing/visit analyses.
+>   3. Add a true proposal-normalization test on a tiny hand-built state space.
+>   4. If possible, rerun calibration at depth 3 on a machine that can enumerate the support exactly.

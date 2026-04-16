@@ -1,0 +1,47 @@
+Round 2 — MCMC Program Search Review (GPT-5.4 Codex MCP xhigh)
+Thread ID: 019d9579-b4c2-7b23-97c2-8a2316c6d104
+Received: 2026-04-16T11:25:57Z
+Reviewer commit read: 3bdf156
+
+I reviewed the current worktree at `3bdf156`, not just the prose summary.
+
+**Score:** 5.5/10
+**Ready for submission:** No
+
+**Direct answers**
+1. For the ordinary per-argument free-var path, the new `rng.choice(_CONCRETE_TYPES)` marginalization is the right object. Your `_env_resolve_free_vars` at mcmc_search.py:594 mirrors the sampler's first-success env ordering well enough. The remaining mismatch is elsewhere: the depth-cap filter is still not exact.
+2. Encoding `max_nodes` / vacuity as `log π = -inf` is sufficient for the MH kernel. `q` does not need to renormalize over supported states; proposing impossible states and rejecting them is fine. The problem is that `max_nodes` is still not applied on initialization, so the chain often starts outside its stated target with finite prior.
+3. Calibration v2 is materially better and does answer the Night 1 methodology complaint. It is not enough for sign-off because it is still `MAX_DEPTH=2`, and its support enumerator does not mirror the sampler's depth-cap fallback, which is exactly where one remaining mismatch lives.
+4. The main remaining off-book behavior to audit is initialization: vacuous/tautology resampling and size-cap inconsistency. I would also add an explicit `ΣQ(s'|s)=1` check on a tiny hand-built state space.
+
+**Round 1 weaknesses**
+- `C3-tier2`: **overrule**. The scorer-side backsolve bug is gone; ordinary arg-level hidden type draws are now genuinely marginalized at mcmc_search.py:633.
+- `C1-gallery`: **partially sustain**. Calibration now exercises polymorphism and uses an independent prior, but it is still depth-2 and not full-support exact.
+- `C2-cap`: **sustain**. The new depth-cap scorer is still approximate, not exact. The code says "mean-field" at mcmc_search.py:734. I reproduced a counterexample where raw `_sample` gives `P(p1 0)=0.736` and `_score_subtree_under_sampler` returns `0.667`.
+- `C5`: **partially sustain**. Retry-conditioning is removed from the proposal kernel, which was the important part. Retries remain on init / one-shot sampling.
+- `H-methodology`: **overrule**. The new independent-prior calibration at posterior_calibration_v2.py:135 is a real improvement.
+- `H-autocorr`: **overrule**. Geyer IPS ESS is now used at posterior_calibration_v2.py:344.
+- `H-seeds`: **overrule**. Five seeds are present.
+- `H-n_sites-invariance`: **partially sustain**. The actual silent-drop bug is fixed well via root-threaded type annotation at mcmc_search.py:1132, but there is still no direct proposal-normalization test.
+- `H5`: **sustain**. `run_parallel_chains` is still sequential at mcmc_search.py:2039.
+- `retry-conditioned proposal law`: **overrule**. Fixed in the MH proposal path by `allow_retries=False` at mcmc_search.py:1397.
+- `vacuous-lambda hard reject`: **overrule** for the kernel. It is now target-coded at mcmc_search.py:1826.
+- `hidden free-type draws`: **partially sustain**. Fixed for ordinary argument scoring; not fixed for depth-cap filtered-candidate normalization.
+- `silent site-drop path`: **overrule**. I buy this fix.
+
+**New weaknesses introduced or exposed**
+- **Depth-cap correction is still approximate.** Folding survival probabilities into per-production weights at mcmc_search.py:921 is not the exact marginal of the sampler's random filtered set. This is the main remaining soundness defect.
+- **`max_nodes` is still off-book on init.** The MH body applies `-inf` at mcmc_search.py:1824, but the init path at mcmc_search.py:1731 does not. Empirically, `57/100` final initialized gallery states exceeded `max_nodes=25`.
+- **Init resampling remains an arbitrary prior over starts.** Vacuous and tautological starts are still skipped at mcmc_search.py:1731. That does not break stationarity, but it does bias early visit counts / first-passage style analyses.
+- **Calibration support is incomplete.** The enumerator still just drops nonzero-arity productions at the cap at posterior_calibration_v2.py:243, and the stored result file reports nonzero outside-support mass on every seed.
+- **The new regression test for proposal density is weak.** test_mcmc_search.py:973 checks only the top two proposals with a factor-3 tolerance. It would not catch the remaining depth-cap mismatch.
+
+**Memory update**
+- Addressed: proposal retry-conditioning, scorer tier-2 inversion, silent site-drop path, ESS/seeds, Night 1 methodology flaw.
+- Still open: exact depth-cap scorer/sampler agreement, init-path `max_nodes` inconsistency, arbitrary init resampling, lack of explicit `ΣQ(s'|s)=1` verification.
+- Pattern update: the remaining failures are now concentrated in "rare branch" logic where the fix was approximate rather than exact.
+- Next-round priority:
+  1. Make the depth-cap scorer exact or prove the branch is excluded in the final experimental regime.
+  2. Apply `max_nodes` consistently at init or state clearly that init is arbitrary and excluded from all timing/visit analyses.
+  3. Add a true proposal-normalization test on a tiny hand-built state space.
+  4. If possible, rerun calibration at depth 3 on a machine that can enumerate the support exactly.

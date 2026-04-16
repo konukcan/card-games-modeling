@@ -13,12 +13,52 @@
   "codex_mcp_available": true,
   "reviewer_model": "gpt-5.4",
   "reviewer_reasoning_effort": "xhigh",
-  "round": 0,
+  "thread_id": "019d9579-b4c2-7b23-97c2-8a2316c6d104",
+  "round": 2,
   "status": "in_progress",
-  "last_score": null,
-  "last_verdict": null,
+  "last_score": 5.5,
+  "last_verdict": "not ready",
   "pending_experiments": [],
-  "baseline_tests": "47/47_green_in_1732s",
-  "timestamp": "2026-04-16T08:45:40Z",
-  "rounds": []
+  "baseline_tests": "44/44_green_in_3688s_post_round1",
+  "timestamp": "2026-04-16T11:25:57Z",
+  "rounds": [
+    {
+      "round": 1,
+      "score": 4.5,
+      "verdict": "not ready",
+      "raw_response_file": "review-stage/round_1_review.txt",
+      "commits": ["3ac343c", "3bdf156"],
+      "fixes_implemented": [
+        "R1-Fix1: sample_program retry gated; proposal path uses allow_retries=False",
+        "R1-Fix2: exact marginalization over _CONCRETE_TYPES^k in scorer",
+        "R1-Fix3: depth-cap _all_args_terminable mirrored in scorer (mean-field approx)",
+        "R1-Fix4: max_nodes + vacuous-lambda encoded as log π = -inf",
+        "R1-Fix5: calibration v2 (indep prior, 5 seeds, Geyer IPS) — depth=2, 5/5 pass",
+        "R1-Fix6: 4 regression tests added (site-drop, poly-toy, prop-vs-sampler, retry static check)",
+        "R1-emergent: collect_subtree_sites walker root-threaded TypeContext"
+      ]
+    },
+    {
+      "round": 2,
+      "score": 5.5,
+      "verdict": "not ready",
+      "raw_response_file": "review-stage/round_2_review.txt",
+      "sustained": ["C2-cap", "H5"],
+      "partially_sustained": ["C1-gallery", "C5", "H-n_sites-invariance", "hidden-free-type-draws"],
+      "overruled": ["C3-tier2", "H-methodology", "H-autocorr", "H-seeds", "retry-conditioned-proposal-law", "vacuous-lambda-hard-reject", "silent-site-drop"],
+      "new_weaknesses": [
+        "depth-cap scorer is mean-field approximation, not exact (mcmc_search.py:921)",
+        "max_nodes not applied on init path (mcmc_search.py:1731); 57/100 init states exceed max_nodes=25",
+        "init resampling = arbitrary prior over starts (vacuous/tautology skipped)",
+        "calibration enumerator drops nonzero-arity productions at cap (posterior_calibration_v2.py:243); nonzero outside mass on every seed",
+        "proposal-density regression test weak (test_mcmc_search.py:973): top-2 with factor-3 tolerance"
+      ],
+      "round3_priority": [
+        "make depth-cap scorer exact OR prove branch is excluded in gallery regime",
+        "apply max_nodes at init OR explicitly document that init is arbitrary",
+        "add ΣQ(s'|s)=1 normalization regression test on tiny hand-built state space",
+        "rerun calibration at depth=3 on better hardware (optional)"
+      ]
+    }
+  ]
 }
