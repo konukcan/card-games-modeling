@@ -121,5 +121,38 @@ Artifacts: `review-stage/experiments/round_3/posterior_calibration.py`, `posteri
 - **Code simplicity**: Approves 3-tier resolution (flags tier-3 as unreachable in practice but essential for totality + detailed balance). Suggests extracting shared `subst`-propagation helper (reduces drift risk) and removing dead `restricted_used` variable.
 
 
+## Round 3: External Review (2026-04-16T09:30Z)
 
+**Reviewer:** Claude general-purpose sub-agent as harsh NeurIPS area chair (agent `a31d1af267b79cb2b`).
+**Verdict:** Major revision.
+**Score:** 6.5/10 (up from 5.5/10). **Early-stop threshold triggered (≥6/10).**
 
+**C1 adequacy (verdict "narrowly adequate"):** Algebraic fix correct for slice toy grammar exercises. Joint log-sum-exp mirrors `_sample` faithfully; `_walk_without_collect` correctly excludes Application heads. Calibration PASSES (TV=0.0014 < 0.1446 MC bound, zero outside-support mass, per-program ratios 0.74–1.52 on tail — √N MC scatter). Round 2's demand discharged **narrowly** — toy grammar masks the three Kieran-flagged concerns.
+
+**New critical issues (reviewer flagged — NOT fixed in this round):**
+
+- **C1-gallery.** Toy calibration (BOOL→BOOL, {not,and,or}) has zero polymorphism/HOFs/lists — exactly the code paths with Kieran's concerns (tier-2 resolution, subst-propagation, depth-cap lookahead). The CogSci Bayesian claim is over the FULL gallery grammar, not boolean ops. Fix requires second calibration over {not,and,or,eq:'a→'a→bool, if}, `_CONCRETE_TYPES=[BOOL,INT]`, depth-3, ≥200K steps.
+
+- **C2-cap.** `_sample`'s depth-cap lookahead branch (lines 446–473) that the scorer explicitly declines to mirror is claimed "rare" without measurement. Gallery BOOL has no true/false terminals → BOOL holes with no variable in scope may hit this branch often. Fix: instrument counter in gallery run; if >1%, must be scored correctly.
+
+- **C3-tier2 (NEW, potentially fatal).** Tier-2 observed-type resolution (lines 810–827) is a **scoring-side invention not in `_sample`'s forward path**. `_sample` resolves free vars via env-unification then `rng.choice(_CONCRETE_TYPES)`; it does NOT `infer_type` from the body. The scorer's tier 2 reverse-engineers the RNG draw from the output — producing a density NOT equal to `_sample`'s density. For free vars env-resolution misses, `_sample` charges `-log(|_CONCRETE_TYPES|)` uniformly; scorer's tier 2 frequently skips this charge, returning a density up to 5× too large. **Breaks detailed balance asymmetrically — forward/reverse mismatch that C1 was introduced to fix re-emerges.** Fix: delete tier 2; charge `-log(|_CONCRETE_TYPES|)` for every free var not resolved by env.
+
+**High-priority (3):**
+- H1: MC bound uses `n_eff = n * (1-rejection_rate)` ≠ standard ESS. IAT could tighten bound 10–50×. Qualitative PASS holds, but reported 105× margin misleading.
+- H2: Single-seed calibration. Needs N≥5 seeds with cross-seed TV variance.
+- H3: `n_sites` not invariant under trivial restructurings after `_walk_without_collect`. Dedicated test for ∑_{s'} Q(s'|s)=1.
+
+**Methodological critique of calibration (important):** Using `_score_subtree_under_sampler` as the prior in π means MH ratio `(π_new−π_old) + (q_rev−q_fwd)` with π = q·ℓ reduces to `log ℓ(new) − log ℓ(old)` — **independent of q's correctness relative to `_sample`.** Test cannot detect scorer/sampler mismatch. Fix: use `grammar.program_log_likelihood` (the OLD type-indexed density) as the prior in a new calibration; if scorer is self-consistent with sampler, chain converges to analytical π.
+
+**Minimum additional experiment for accept:** calibration over {not, and, or, eq:'a→'a→bool, if:bool→'a→'a→'a}, `_CONCRETE_TYPES=[BOOL,INT]`, `request_type=INT→BOOL`, depth-3 enumeration, π uses `program_log_likelihood` as prior, 500K steps, 5 seeds, ESS-corrected MC bound. Pass: TV < 2×MC_bound on 4/5 seeds AND outside-mass < 1%. Expected wall: <1 hour.
+
+Full review text cached at `/tmp/round3_review.txt`.
+
+## Loop Termination
+
+Score 6.5/10 crosses early-stop threshold (≥6/10). Per ARIS protocol, loop terminates after Round 3. Remaining issues (C1-gallery, C2-cap, C3-tier2, H1–H3) documented for next engineering cycle; they are out of scope for this unattended overnight run given the early-stop condition.
+
+**Summary of progress across rounds:**
+- Round 1: 4/10 → fixes for C2, C3, C4, C6 landed (commits d1eabe8, 35cfef4, 83e5e93, cbef8ce).
+- Round 2: 5.5/10 → C1 fix landed (commit 6f8b261) + posterior calibration PASS (commit 072784a).
+- Round 3: 6.5/10 → early-stop. New critical issue C3-tier2 surfaced (scorer-side correctness defect in polymorphic regime); C1-gallery generalization demanded. Neither exercised by current tests or calibration.
