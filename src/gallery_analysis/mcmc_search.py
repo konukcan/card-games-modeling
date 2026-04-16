@@ -1249,12 +1249,15 @@ class MCMCChain:
                 proposed, exemplar_hands, config.noise_epsilon, ext_probe_hands,
             )
 
-            # (c2) Layer 2: Reject programs that accept 100% of probes (tautologies).
-            if proposed_ext_frac >= 1.0:
-                current_str = str(current)
-                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
-                trajectory.append(current_str)
-                continue
+            # (c2) Layer 2 tautology filter is applied POST-HOC at result
+            # construction (see below). Rejecting `ext_frac >= 1.0` inline
+            # here would break detailed balance: moves from non-tautology to
+            # tautology would be hard-rejected while moves out of a tautology
+            # cannot occur (the chain is never in such a state), so the
+            # acceptance operator is not symmetric. Size-principle likelihood
+            # already strongly penalizes tautologies (ext_size = TOTAL_HANDS
+            # → extremely low per-exemplar probability); the post-hoc filter
+            # then removes any surviving tautology from reported hypotheses.
 
             proposed_log_posterior = proposed_log_prior + proposed_log_lik
 
@@ -1335,12 +1338,20 @@ class MCMCChain:
         # -------------------------------------------------------------- #
         # Build result.
         # -------------------------------------------------------------- #
-        # Sort hypotheses by visit count descending, take top_k.
-        sorted_programs = sorted(
-            visit_counts.keys(),
-            key=lambda p: visit_counts[p],
-            reverse=True,
-        )[:config.top_k]
+        # Sort hypotheses by visit count descending, filter Layer-2
+        # tautologies (ext_fraction >= 1.0) post-hoc, take top_k.
+        # (Rejecting them inline in the MH loop would break detailed
+        # balance; the filter is applied only to the reported hypothesis
+        # table. visit_counts/first_passage/trajectory retain the full
+        # unfiltered trace for trajectory analysis.)
+        sorted_programs = [
+            p for p in sorted(
+                visit_counts.keys(),
+                key=lambda p: visit_counts[p],
+                reverse=True,
+            )
+            if ext_fractions.get(p, 0.0) < 1.0
+        ][:config.top_k]
 
         top_hypotheses = [
             {
@@ -1505,14 +1516,27 @@ def run_parallel_chains(
         total_accepted += result.n_accepted
         merged_trajectory.extend(result.trajectory)
 
+    # Average ext_fractions across chains (one estimate per chain in which
+    # the program was visited; pools Monte-Carlo noise). Computed here so
+    # the Layer-2 post-hoc filter below can use averaged fractions.
+    merged_ext_fractions = {
+        prog: ext_sum / ext_n
+        for prog, (ext_sum, ext_n) in ext_fraction_accum.items()
+    }
+
     # ------------------------------------------------------------------ #
-    # Build merged top hypotheses, sorted by visit count descending.
+    # Build merged top hypotheses: sort by visit count, filter Layer-2
+    # tautologies (averaged ext_fraction >= 1.0) post-hoc, take top_k.
+    # (See single-chain run() for rationale; detailed balance preserved.)
     # ------------------------------------------------------------------ #
-    sorted_programs = sorted(
-        merged_visit_counts.keys(),
-        key=lambda p: merged_visit_counts[p],
-        reverse=True,
-    )[:config.top_k]
+    sorted_programs = [
+        p for p in sorted(
+            merged_visit_counts.keys(),
+            key=lambda p: merged_visit_counts[p],
+            reverse=True,
+        )
+        if merged_ext_fractions.get(p, 0.0) < 1.0
+    ][:config.top_k]
 
     top_hypotheses = [
         {
@@ -1524,10 +1548,12 @@ def run_parallel_chains(
         for prog in sorted_programs
     ]
 
-    # Identify overall best program by log posterior.
+    # Identify overall best program by log posterior, excluding tautologies.
     best_program = None
     best_log_posterior = float('-inf')
     for prog, lp in merged_log_posteriors.items():
+        if merged_ext_fractions.get(prog, 0.0) >= 1.0:
+            continue
         if lp > best_log_posterior:
             best_log_posterior = lp
             best_program = prog
@@ -1535,13 +1561,6 @@ def run_parallel_chains(
     total_steps = n_chains * config.n_steps
     n_unique = len(merged_visit_counts)
     acceptance_rate = total_accepted / total_steps if total_steps > 0 else 0.0
-
-    # Average ext_fractions across chains (one estimate per chain in which
-    # the program was visited; pools Monte-Carlo noise).
-    merged_ext_fractions = {
-        prog: ext_sum / ext_n
-        for prog, (ext_sum, ext_n) in ext_fraction_accum.items()
-    }
 
     # Per-chain first-passage (raw within-chain step indices) for honest
     # downstream cognitive-timing analysis.

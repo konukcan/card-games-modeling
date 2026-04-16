@@ -662,6 +662,33 @@ def test_vacuous_lambda_non_abstraction():
     assert is_vacuous_lambda(idx) is False
 
 
+def test_tautology_filter_is_post_hoc(grammar, exemplars):
+    """Regression test for C3: Layer-2 tautology filter must be post-hoc only.
+
+    Prior bug: ext_fraction >= 1.0 was rejected inline in the MH loop, breaking
+    detailed balance. Fix: let the MH loop run normally (size-principle
+    likelihood naturally suppresses tautologies), then filter tautologies
+    from top_hypotheses at result construction. visit_counts/trajectory
+    retain the full unfiltered trace.
+    """
+    config = MCMCConfig(n_steps=500, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = MCMCChain(grammar, config).run(
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+    )
+    # top_hypotheses must not contain tautologies (ext_fraction >= 1.0).
+    for hyp in result.top_hypotheses:
+        prog = hyp['program']
+        frac = result.ext_fractions.get(prog, 0.0)
+        assert frac < 1.0, (
+            f"Tautology {prog[:80]!r} with ext_fraction={frac} leaked into "
+            f"top_hypotheses — post-hoc filter broken."
+        )
+    # Chain should still produce some usable hypotheses.
+    assert len(result.top_hypotheses) > 0
+
+
 def test_tautology_not_top_hypothesis(grammar, exemplars):
     """With tautology rejection, known tautologies should not dominate the chain.
 
