@@ -786,6 +786,264 @@ def _log_prob_prod_survives_depth_cap_filter(
     return math.log(survive) - k * math.log(C)
 
 
+# Cap on exact enumeration of 2^n filter subsets in the depth-cap lookahead.
+# With n <= 16, we enumerate at most 65536 subsets; polymorphic hole types in
+# the gallery grammar rarely have more than ~5 productions, so this cap is
+# almost never hit. When exceeded, we fall back to the mean-field shift.
+_DEPTH_CAP_EXACT_ENUM_CAP = 16
+
+
+def _log_expected_softmax_over_random_filter(
+    obs_lp: float,
+    other_lps: List[float],
+    other_log_s: List[float],
+) -> float:
+    """
+    log E_F[softmax_{{obs}∪F}(obs)] where F is a random subset of `others`
+    with each j ∈ F independently passing a Bernoulli filter of parameter
+    exp(other_log_s[j]).
+
+    Exact enumeration over 2^n subsets, each weighted by
+        P(F) = ∏_{j∈F} s_j ∏_{k∉F} (1 - s_k),
+    then averaging the softmax weight of `obs` over the active set
+    {obs} ∪ F.
+
+    This replaces the R1-Fix3 mean-field shift
+        exp(lp + log s) / Σ exp(lp_j + log s_j),
+    which in general does NOT equal the above expectation. The mean-field
+    shift can over- or under-weight obs depending on the covariance
+    structure of the filter outcomes vs. the softmax over those outcomes.
+    Counterexample (R2): grammar {p1:int→bool lp=0, p2:'a→bool lp=0, 0:int}
+    at depth cap yields exact P(p1)=0.75 but mean-field 0.667.
+
+    Falls back to mean-field when n > _DEPTH_CAP_EXACT_ENUM_CAP for safety.
+    """
+    n = len(other_lps)
+
+    if n > _DEPTH_CAP_EXACT_ENUM_CAP:
+        # Defensive: mean-field shift (old R1-Fix3 behavior).
+        shifted = [
+            other_lps[j] + other_log_s[j]
+            for j in range(n)
+            if other_log_s[j] != float('-inf')
+        ]
+        max_lp = max([obs_lp] + shifted) if shifted else obs_lp
+        Z = math.exp(obs_lp - max_lp) + sum(
+            math.exp(s - max_lp) for s in shifted
+        )
+        return (obs_lp - max_lp) - math.log(Z)
+
+    log_terms: List[float] = []
+    for subset in range(1 << n):
+        log_p_F = 0.0
+        active_lps = [obs_lp]
+        feasible = True
+        for j in range(n):
+            log_s_j = other_log_s[j]
+            in_subset = bool(subset & (1 << j))
+            if in_subset:
+                if log_s_j == float('-inf'):
+                    feasible = False
+                    break
+                log_p_F += log_s_j
+                active_lps.append(other_lps[j])
+            else:
+                # log(1 - exp(log_s_j)).
+                if log_s_j == float('-inf'):
+                    # s_j = 0 → 1 - s_j = 1 → log = 0.
+                    pass
+                elif log_s_j >= 0.0:
+                    # s_j = 1 exactly → failure impossible, subset infeasible.
+                    feasible = False
+                    break
+                else:
+                    log_p_F += math.log1p(-math.exp(log_s_j))
+        if not feasible:
+            continue
+
+        max_active = max(active_lps)
+        Z_active = sum(math.exp(lp - max_active) for lp in active_lps)
+        log_softmax_obs = (obs_lp - max_active) - math.log(Z_active)
+        log_terms.append(log_p_F + log_softmax_obs)
+
+    if not log_terms:
+        return float('-inf')
+
+    max_t = max(log_terms)
+    return max_t + math.log(sum(math.exp(t - max_t) for t in log_terms))
+
+
+def _score_depth_cap_lookahead_exact(
+    grammar: Grammar,
+    subtree: Program,
+    target_type: Type,
+    max_depth: int,
+    depth: int,
+    env: List[Type],
+    production_candidates: List[Tuple],
+) -> float:
+    """
+    Exact log P(subtree) for `_sample`'s depth-cap lookahead branch
+    (mcmc_search.py:437-476). Returns the full head+args log-probability.
+
+    Two mutually exclusive cases:
+      A. obs-prod passes the filter. The candidate set at softmax time is
+         {obs} ∪ F, where F ⊆ other_prods is a random subset with each j
+         in F independently with probability s_j. We compute
+             P(case A) = s_obs × E_F[softmax({obs}∪F)(obs)]
+         via `_log_expected_softmax_over_random_filter`.
+      B. ALL prods fail. `_sample` then falls back to non_recursive prods
+         (or the full set if non_recursive is empty). This is deterministic
+         given the "all fail" event. If obs ∈ fallback_set, it can still be
+         selected via the fallback softmax:
+             P(case B) = ∏_j (1 - s_j) × softmax_fallback(obs).
+         Otherwise P(case B) = 0.
+
+    Total log P(head) = logsumexp(log P(A), log P(B)).
+    Arguments are then scored via the usual `_score_arg_marginalizing_free_vars`
+    (they are sampled AFTER the head via independent rng draws).
+
+    Variables never appear in this branch: it is only entered when BOTH
+    terminal_prods AND var_candidates are empty (see _sample line 444).
+    """
+    # Unwrap Application chain to find the head + observed args.
+    node = subtree
+    args_observed: List[Program] = []
+    while isinstance(node, Application):
+        args_observed.insert(0, node.x)
+        node = node.f
+
+    if not isinstance(node, (Primitive, Invented)):
+        return float('-inf')
+
+    obs_prod = grammar.get_production(node)
+    if obs_prod is None:
+        return float('-inf')
+
+    # Find obs-prod in the unrestricted candidate list.
+    obs_idx: Optional[int] = None
+    for i, (prod, inst_type, lp) in enumerate(production_candidates):
+        if prod is obs_prod:
+            obs_idx = i
+            break
+    if obs_idx is None:
+        return float('-inf')
+
+    _, obs_inst_type, obs_lp = production_candidates[obs_idx]
+    obs_arg_types = list(obs_inst_type.arguments)
+    if len(args_observed) != len(obs_arg_types):
+        return float('-inf')
+
+    # Per-production survival log-probabilities.
+    n_total = len(production_candidates)
+    log_s_all: List[float] = [float('-inf')] * n_total
+    for i, (prod, inst_type, lp) in enumerate(production_candidates):
+        log_s_all[i] = _log_prob_prod_survives_depth_cap_filter(
+            grammar, inst_type, env,
+        )
+    obs_log_s = log_s_all[obs_idx]
+
+    # ---- Case A ------------------------------------------------------ #
+    other_lps = [
+        production_candidates[i][2] for i in range(n_total) if i != obs_idx
+    ]
+    other_log_s = [log_s_all[i] for i in range(n_total) if i != obs_idx]
+
+    if obs_log_s == float('-inf'):
+        log_caseA = float('-inf')
+    else:
+        log_exp_softmax = _log_expected_softmax_over_random_filter(
+            obs_lp, other_lps, other_log_s,
+        )
+        if log_exp_softmax == float('-inf'):
+            log_caseA = float('-inf')
+        else:
+            log_caseA = obs_log_s + log_exp_softmax
+
+    # ---- Case B ------------------------------------------------------ #
+    def _log_one_minus_exp(log_s: float) -> float:
+        if log_s == float('-inf'):
+            return 0.0
+        if log_s >= 0.0:
+            return float('-inf')
+        return math.log1p(-math.exp(log_s))
+
+    log_p_all_fail = 0.0
+    for ls in log_s_all:
+        term = _log_one_minus_exp(ls)
+        if term == float('-inf'):
+            log_p_all_fail = float('-inf')
+            break
+        log_p_all_fail += term
+
+    if log_p_all_fail == float('-inf'):
+        log_caseB = float('-inf')
+    else:
+        non_recursive = [
+            (p, it, lp) for p, it, lp in production_candidates
+            if not any(
+                _contains_type(arg_t, target_type) for arg_t in it.arguments
+            )
+        ]
+        fallback_set = non_recursive if non_recursive else list(production_candidates)
+        obs_in_fallback = any(p is obs_prod for (p, _, _) in fallback_set)
+        if not obs_in_fallback:
+            log_caseB = float('-inf')
+        else:
+            fb_lps = [lp for (_, _, lp) in fallback_set]
+            max_fb = max(fb_lps)
+            Z_fb = sum(math.exp(lp - max_fb) for lp in fb_lps)
+            log_softmax_obs_fb = (obs_lp - max_fb) - math.log(Z_fb)
+            log_caseB = log_p_all_fail + log_softmax_obs_fb
+
+    # ---- Combine ----------------------------------------------------- #
+    if log_caseA == float('-inf') and log_caseB == float('-inf'):
+        return float('-inf')
+    if log_caseB == float('-inf'):
+        log_p_head = log_caseA
+    elif log_caseA == float('-inf'):
+        log_p_head = log_caseB
+    else:
+        m = max(log_caseA, log_caseB)
+        log_p_head = m + math.log(
+            math.exp(log_caseA - m) + math.exp(log_caseB - m)
+        )
+
+    # ---- Args (normal polymorphic marginalization) ------------------- #
+    log_p_args = 0.0
+    subst: dict = {}
+    for j, (arg_type, arg_observed) in enumerate(
+        zip(obs_arg_types, args_observed)
+    ):
+        log_p_this_arg = _score_arg_marginalizing_free_vars(
+            grammar, arg_observed, arg_type, subst, env,
+            max_depth, depth + 1,
+        )
+        if log_p_this_arg == float('-inf'):
+            return float('-inf')
+        log_p_args += log_p_this_arg
+
+        if j < len(obs_arg_types) - 1:
+            remaining_free = set()
+            for future_type in obs_arg_types[j + 1:]:
+                remaining_free |= future_type.free_type_variables()
+            if remaining_free:
+                try:
+                    infer_ctx = TypeContext()
+                    actual_type = arg_observed.infer_type(infer_ctx, env)
+                    actual_type = infer_ctx.apply(actual_type)
+                    unify_ctx = TypeContext()
+                    unify_ctx.unify(arg_type, actual_type)
+                    for var_id in remaining_free:
+                        resolved = unify_ctx.apply(TypeVariable(var_id))
+                        if not isinstance(resolved, TypeVariable):
+                            subst[var_id] = resolved
+                except Exception:
+                    pass
+
+    return log_p_head + log_p_args
+
+
 def _score_subtree_under_sampler(
     grammar: Grammar,
     subtree: Program,
@@ -915,33 +1173,18 @@ def _score_subtree_under_sampler(
         if terminal_prods or var_candidates:
             production_candidates = terminal_prods
         else:
-            # Lookahead branch (mirror _sample lines 438-462): include each
-            # production with its rng-marginalized filter-survival probability.
-            restricted = []
-            for prod, inst_type, lp in production_candidates:
-                log_p_survive = _log_prob_prod_survives_depth_cap_filter(
-                    grammar, inst_type, env,
-                )
-                if log_p_survive != float('-inf'):
-                    restricted.append((prod, inst_type, lp + log_p_survive))
-
-            if restricted:
-                production_candidates = restricted
-            else:
-                # Second fallback: non-recursive productions (mirror _sample
-                # lines 452-461). A production is "recursive" if any of its
-                # args contain the target type as a substructure.
-                non_recursive = [
-                    (p, it, lp) for p, it, lp in production_candidates
-                    if not any(
-                        _contains_type(arg_t, target_type)
-                        for arg_t in it.arguments
-                    )
-                ]
-                if non_recursive:
-                    production_candidates = non_recursive
-                # Else: keep full unrestricted set; `_sample` would too, and
-                # both sides then rely on `_ABSOLUTE_DEPTH_LIMIT` to terminate.
+            # Depth-cap lookahead branch (R2-Fix1): delegate to the EXACT
+            # scorer that matches the sampler's random-filter-then-softmax
+            # semantics. The R1-Fix3 mean-field shift
+            # `lp_i + log s_i → softmax` is not the true marginal of the
+            # filtered softmax; it can be biased in either direction.
+            # `_score_depth_cap_lookahead_exact` enumerates subsets of
+            # surviving "other" prods in Case A and handles the all-fail
+            # fallback in Case B/C, then scores args normally.
+            return _score_depth_cap_lookahead_exact(
+                grammar, subtree, target_type, max_depth, depth, env,
+                production_candidates,
+            )
 
     # -------------------------------------------------------------------- #
     # Step 4 mirror: build unified (choice, log_prob) list.
@@ -1728,13 +1971,20 @@ class MCMCChain:
         # -------------------------------------------------------------- #
         V = config.verbose  # shorthand
 
-        # Resample if initial program is vacuous or a 100%-on-probes tautology.
+        # Resample if initial program is vacuous, a 100%-on-probes tautology,
+        # OR exceeds `max_nodes` (R2-Fix2: the MH body encodes size-cap
+        # violations as log π = -inf; init must be consistent with the target
+        # so the chain never starts outside its stated support with finite
+        # prior. GPT-5.4 R2 measured 57/100 initialized gallery states
+        # exceeding max_nodes=25 before this fix).
         for _retry in range(20):
             current = sample_program(
                 grammar, request_type, max_depth=config.init_max_depth,
                 seed=rng.randint(0, 2**31),
             )
             if is_vacuous_lambda(current):
+                continue
+            if current.size() > config.max_nodes:
                 continue
             current_log_lik, current_ext_frac = compute_mcmc_log_likelihood(
                 current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
@@ -1747,14 +1997,14 @@ class MCMCChain:
             current, request_type
         )
         # Re-compute likelihood in case the loop exited without breaking
-        # (all 20 attempts were vacuous/tautological -- use last sample).
-        if is_vacuous_lambda(current):
+        # (all 20 attempts were vacuous/tautological/oversized -- use last
+        # sample, but make its prior consistent with the MH body's encoding
+        # so the first legal proposal always accepts via the
+        # `current_annealed == -inf` branch).
+        if is_vacuous_lambda(current) or current.size() > config.max_nodes:
             current_log_lik, current_ext_frac = compute_mcmc_log_likelihood(
                 current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
             )
-            # Vacuity is encoded as -inf in the target; make init consistent
-            # with the MH body's handling so the first non-vacuous proposal
-            # always accepts via the `current_annealed == -inf` branch.
             current_log_prior = float('-inf')
         current_log_posterior = current_log_prior + current_log_lik
 

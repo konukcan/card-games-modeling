@@ -1047,3 +1047,171 @@ def test_proposal_retry_loop_disabled_in_sample_program():
         "to keep the forward proposal distribution consistent with "
         "_score_subtree_under_sampler."
     )
+
+
+# --------------------------------------------------------------------------- #
+# R2-Fix3: ΣQ(s'|s) = 1 on a tiny hand-built state space.
+#
+# Reviewer weakness (R2): the existing proposal-density test
+# `test_propose_regeneration_matches_sampler_on_polymorphic_grammar` only
+# checks the top-2 proposals with a factor-3 tolerance, which is too weak
+# to detect residual scorer/sampler disagreement in rare-branch logic
+# (depth-cap lookahead, fallback set). The test below constructs a
+# micro-grammar {t:bool, f:bool→bool} whose support at max_depth=3 is
+# enumerable in closed form ({t, f(t), f(f(t)), f(f(f(t)))} with exact
+# sampler probabilities {1/2, 1/4, 1/8, 1/8}) and asserts both that
+#   (a) Σ exp(log_q_scored) ≈ 1 across the full support (normalization), and
+#   (b) each |log_q_scored - log_q_expected| ≤ 1e-6 (pointwise exactness).
+# Any disagreement exposes a scorer/sampler divergence directly; no
+# statistical tolerance is needed because the support is enumerable.
+# --------------------------------------------------------------------------- #
+
+
+def _build_tiny_bool_grammar():
+    """Build {t:bool, f:bool→bool}, each lp=0. No variables (log_variable=-inf)."""
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+    prods = [
+        Production(t_prim, _BOOL, 0.0),
+        Production(f_prim, _Arrow(_BOOL, _BOOL), 0.0),
+    ]
+    # log_variable = -inf so variables never compete with productions
+    # (the support then depends only on the two productions).
+    return Grammar(prods, log_variable=float('-inf'))
+
+
+def _enumerate_tiny_bool_support(max_depth):
+    """
+    Closed-form sampler distribution for `_sample(BOOL, max_depth=D, depth=0)`
+    under `_build_tiny_bool_grammar`. At each depth < D, P(pick t) = P(pick f) = 1/2.
+    At depth == D, forced to t (terminal_prods = {t}, var_candidates = []).
+
+    Returns List[(Program_as_str, probability)].
+    """
+    # Programs: t, f(t), f(f(t)), ..., f^k(t) for k in 0..D.
+    # P(f^k(t)) = (1/2)^(k+1) for k < D; P(f^D(t)) = (1/2)^D (forced last).
+    # Sum: Σ_{k=0}^{D-1} (1/2)^(k+1) + (1/2)^D = (1 - (1/2)^D) + (1/2)^D = 1. ✓
+    from dreamcoder_core.program import Primitive, Application
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+
+    support = []
+    prog = t_prim
+    for k in range(max_depth):
+        prob = 0.5 ** (k + 1)
+        support.append((prog, prob))
+        prog = Application(f_prim, prog)
+    # Terminal forced at depth == max_depth:
+    support.append((prog, 0.5 ** max_depth))
+    return support
+
+
+def test_score_subtree_under_sampler_normalizes_on_tiny_grammar():
+    """
+    ΣQ(s'|s) = 1 regression test on a hand-built state space (R2-Fix3).
+
+    The tiny grammar {t:bool, f:bool→bool} has an enumerable support at
+    max_depth=3: {t, f(t), f(f(t)), f(f(f(t)))}. This is the exact kind
+    of setting where a scorer/sampler mismatch in the depth-cap lookahead
+    would surface, because depth >= max_depth forces the terminal_prods
+    branch (var_candidates empty via log_variable = -inf).
+    """
+    from dreamcoder_core.type_system import BOOL as _BOOL
+    grammar = _build_tiny_bool_grammar()
+    max_depth = 3
+    support = _enumerate_tiny_bool_support(max_depth)
+
+    # Sanity: expected probabilities sum to 1.
+    assert abs(sum(p for _, p in support) - 1.0) < 1e-12
+
+    # Score every program in the support and compare to expected.
+    scored_probs = []
+    for prog, expected_p in support:
+        log_q = _score_subtree_under_sampler(
+            grammar, prog, _BOOL, max_depth=max_depth, depth=0, env=[],
+        )
+        if log_q == float('-inf'):
+            pytest.fail(
+                f"Scorer assigned probability 0 to {prog!r}, which should "
+                f"have P = {expected_p}. Scorer/sampler divergence."
+            )
+        scored_p = math.exp(log_q)
+        scored_probs.append((prog, scored_p, expected_p))
+        assert abs(scored_p - expected_p) < 1e-9, (
+            f"Pointwise mismatch for {prog!r}: scored {scored_p:.10f}, "
+            f"expected {expected_p:.10f}, diff {scored_p - expected_p:.2e}."
+        )
+
+    total_scored = sum(p for _, p, _ in scored_probs)
+    assert abs(total_scored - 1.0) < 1e-9, (
+        f"Σ exp(log_q) = {total_scored:.10f} ≠ 1. Scorer is not a proper "
+        f"density over `_sample`'s support."
+    )
+
+
+def test_score_depth_cap_exact_matches_reviewer_counterexample():
+    """
+    Exact verification of R2-Fix1 against the reviewer's counterexample.
+
+    Grammar: {p1: int→bool, p2: 'a→bool, 0: int}, request bool at depth cap.
+    Sampler semantics:
+      - p1 survives filter with probability 1 (no free vars; terminable).
+      - p2 survives with probability 1/2 ('a=int → terminable via 0:int;
+        'a=bool → no bool terminal, not terminable).
+      - 0:int is not a candidate for bool.
+    Exact P(pick p1) = 1/2 × (1/1) + 1/2 × (1/2) = 0.75.
+    Old mean-field P(pick p1) = exp(0)/(exp(0) + exp(log 0.5)) = 1/1.5 = 0.6667.
+
+    We drive _score_subtree_under_sampler with a state at depth == max_depth
+    (no terminals for bool, no variables) and assert it returns log(0.75)
+    for the observed subtree `p1 0`, not log(0.6667).
+    """
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive, Application
+    from dreamcoder_core.type_system import (
+        BOOL as _BOOL, INT as _INT, Arrow as _Arrow, TypeVariable,
+    )
+    import gallery_analysis.mcmc_search as ms
+
+    p1 = Primitive('p1', _Arrow(_INT, _BOOL), None)
+    # p2 is polymorphic: 'a -> bool.
+    tv = TypeVariable(0)
+    p2 = Primitive('p2', _Arrow(tv, _BOOL), None)
+    zero = Primitive('0', _INT, 0)
+
+    prods = [
+        Production(p1, _Arrow(_INT, _BOOL), 0.0),
+        Production(p2, _Arrow(tv, _BOOL), 0.0),
+        Production(zero, _INT, 0.0),
+    ]
+    grammar = Grammar(prods, log_variable=float('-inf'))
+
+    # Pin _CONCRETE_TYPES to [BOOL, INT] so p2's survival computation matches
+    # the reviewer's counterexample (1/2 survival).
+    saved = list(ms._CONCRETE_TYPES)
+    ms._CONCRETE_TYPES[:] = [_BOOL, _INT]
+    try:
+        # Observed subtree: p1(0). We want the scorer at depth == max_depth = 0
+        # (so the lookahead branch fires immediately). The branch only enters
+        # when terminal_prods for bool are empty AND var_candidates are empty;
+        # bool has no zero-arg production here, and env=[] gives no variables.
+        observed = Application(p1, zero)
+        log_q = _score_subtree_under_sampler(
+            grammar, observed, _BOOL, max_depth=0, depth=0, env=[],
+        )
+        scored_p = math.exp(log_q)
+        # Head weight only — p1 scored at depth cap under the exact dispatch.
+        # The only arg is 0:int at depth 1 (>= max_depth=0), with target INT.
+        # INT has one terminal production (0), no vars, so that branch picks it
+        # with P=1. Thus scored_p equals P(pick p1 head at depth cap) = 0.75.
+        assert abs(scored_p - 0.75) < 1e-9, (
+            f"Scorer returned {scored_p:.6f}; expected 0.75. If you see "
+            f"0.6667, the mean-field shift is still in effect. Check "
+            f"_score_depth_cap_lookahead_exact integration."
+        )
+    finally:
+        ms._CONCRETE_TYPES[:] = saved
