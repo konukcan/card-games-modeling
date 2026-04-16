@@ -1,0 +1,419 @@
+diff --git a/src/gallery_analysis/mcmc_search.py b/src/gallery_analysis/mcmc_search.py
+index 11cf27a..2f2458f 100644
+--- a/src/gallery_analysis/mcmc_search.py
++++ b/src/gallery_analysis/mcmc_search.py
+@@ -44,7 +44,7 @@ import sys
+ import math
+ import random
+ import logging
+-from dataclasses import dataclass, field
++from dataclasses import dataclass, field, replace as dc_replace
+ from pathlib import Path
+ from typing import Any, Dict, List, Optional, Tuple
+ 
+@@ -980,6 +980,11 @@ class MCMCResult:
+     first_passage: Dict[str, int] = field(default_factory=dict)
+     trajectory: List[str] = field(default_factory=list)  # Step-by-step sequence of program strings
+     ext_fractions: Dict[str, float] = field(default_factory=dict)  # Extension fraction per program string
++    # Per-chain first-passage distributions (populated by run_parallel_chains).
++    # Each element is one chain's first_passage dict; step indices are
++    # within-chain (0..n_steps), NOT offset into a concatenated timeline.
++    # Needed for honest per-chain cognitive-timing analysis.
++    per_chain_first_passage: List[Dict[str, int]] = field(default_factory=list)
+ 
+ 
+ # =========================================================================== #
+@@ -1048,15 +1053,29 @@ def compute_mcmc_log_likelihood(
+             # Program crashes on this hand — treat as non-member.
+             continue
+ 
++    # Raw (unsmoothed) extension fraction for human-readable reporting and
++    # the post-hoc Layer-2 tautology filter. Jeffreys-smoothed fraction is
++    # used for the likelihood calculation below.
+     ext_fraction = n_hits_probe / n_probes if n_probes > 0 else 0.0
+ 
+-    # Extension size estimate. Guard against zero (program accepts nothing).
+-    if n_hits_probe == 0:
+-        # The program's extension is empty (or nearly so).
+-        # Every exemplar is a "miss," so likelihood is driven entirely by noise.
+-        ext_size = 1.0  # Minimal extension to avoid division by zero.
++    # Jeffreys-prior smoothed extension estimate:
++    # ext_fraction_smoothed = (n_hits + 0.5) / (n_probes + 1.0)
++    # Avoids the (n_hits == 0 → ext_size = 1.0) pathology which previously
++    # REWARDED programs accepting nothing by making per-exemplar probability
++    # (1 - ε)/1.0 + ε/TOTAL_HANDS ≈ 1.0 for any hit (even via noise).
++    # One-probe resolution floor: ext_size >= TOTAL_HANDS / n_probes,
++    # acknowledging that a Monte-Carlo estimate cannot resolve extension
++    # smaller than one probe's worth of the hypothesis space.
++    if n_probes > 0:
++        ext_fraction_smoothed = (n_hits_probe + 0.5) / (n_probes + 1.0)
++        ext_size = max(
++            ext_fraction_smoothed * TOTAL_HANDS,
++            TOTAL_HANDS / n_probes,
++        )
+     else:
+-        ext_size = (n_hits_probe / n_probes) * TOTAL_HANDS
++        # Defensive: should not happen in practice (ext_probe_hands is
++        # generated with n_probes=10_000).
++        ext_size = float(TOTAL_HANDS)
+ 
+     # Compute log-likelihood for each exemplar hand.
+     total_log_lik = 0.0
+@@ -1244,12 +1263,15 @@ class MCMCChain:
+                 proposed, exemplar_hands, config.noise_epsilon, ext_probe_hands,
+             )
+ 
+-            # (c2) Layer 2: Reject programs that accept 100% of probes (tautologies).
+-            if proposed_ext_frac >= 1.0:
+-                current_str = str(current)
+-                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
+-                trajectory.append(current_str)
+-                continue
++            # (c2) Layer 2 tautology filter is applied POST-HOC at result
++            # construction (see below). Rejecting `ext_frac >= 1.0` inline
++            # here would break detailed balance: moves from non-tautology to
++            # tautology would be hard-rejected while moves out of a tautology
++            # cannot occur (the chain is never in such a state), so the
++            # acceptance operator is not symmetric. Size-principle likelihood
++            # already strongly penalizes tautologies (ext_size = TOTAL_HANDS
++            # → extremely low per-exemplar probability); the post-hoc filter
++            # then removes any surviving tautology from reported hypotheses.
+ 
+             proposed_log_posterior = proposed_log_prior + proposed_log_lik
+ 
+@@ -1330,12 +1352,20 @@ class MCMCChain:
+         # -------------------------------------------------------------- #
+         # Build result.
+         # -------------------------------------------------------------- #
+-        # Sort hypotheses by visit count descending, take top_k.
+-        sorted_programs = sorted(
+-            visit_counts.keys(),
+-            key=lambda p: visit_counts[p],
+-            reverse=True,
+-        )[:config.top_k]
++        # Sort hypotheses by visit count descending, filter Layer-2
++        # tautologies (ext_fraction >= 1.0) post-hoc, take top_k.
++        # (Rejecting them inline in the MH loop would break detailed
++        # balance; the filter is applied only to the reported hypothesis
++        # table. visit_counts/first_passage/trajectory retain the full
++        # unfiltered trace for trajectory analysis.)
++        sorted_programs = [
++            p for p in sorted(
++                visit_counts.keys(),
++                key=lambda p: visit_counts[p],
++                reverse=True,
++            )
++            if ext_fractions.get(p, 0.0) < 1.0
++        ][:config.top_k]
+ 
+         top_hypotheses = [
+             {
+@@ -1440,16 +1470,10 @@ def run_parallel_chains(
+     for i in range(n_chains):
+         # Each chain gets a unique seed spaced 1000 apart to avoid overlap.
+         chain_seed = base_seed + seed_offset + i * 1000
+-        chain_config = MCMCConfig(
+-            n_steps=config.n_steps,
+-            max_depth=config.max_depth,
+-            noise_epsilon=config.noise_epsilon,
+-            max_nodes=config.max_nodes,
+-            top_k=config.top_k,
+-            seed=chain_seed,
+-            verbose=config.verbose,
+-            init_max_depth=config.init_max_depth,
+-        )
++        # Propagate ALL fields from caller's config, only override seed.
++        # (Previous bug: beta_start/beta_end were silently dropped, so every
++        # gallery run ignored --beta-start/--beta-end and ran at β=1.0.)
++        chain_config = dc_replace(config, seed=chain_seed)
+         if config.verbose >= 1:
+             print(f"\n  --- Chain {i+1}/{n_chains} (seed={chain_seed}) ---")
+         chain = MCMCChain(grammar, chain_config)
+@@ -1471,22 +1495,23 @@ def run_parallel_chains(
+     merged_log_posteriors: Dict[str, float] = {}
+     merged_ext_fractions: Dict[str, float] = {}
+     merged_trajectory: List[str] = []
++    ext_fraction_accum: Dict[str, Tuple[float, int]] = {}  # (sum, count) for averaging
+     total_accepted = 0
+ 
+     for i, result in enumerate(chain_results):
+-        # Offset for this chain's position in the merged timeline.
+-        # Chain i's steps map to [i * n_steps, (i+1) * n_steps).
+-        step_offset = i * config.n_steps
+-
+         # Sum visit counts.
+         for prog, count in result.visit_counts.items():
+             merged_visit_counts[prog] = merged_visit_counts.get(prog, 0) + count
+ 
+-        # Take earliest first passage (with offset).
++        # First-passage merge: chains are INDEPENDENT trajectories, NOT a
++        # concatenated timeline. Report the true min step across chains
++        # (i.e., "fastest chain to reach this program"), not step + i*n_steps
++        # which would bias low-index chains to appear faster for any hypothesis
++        # that appears in multiple chains. Per-chain first_passage is still
++        # available via chain_results for downstream analysis.
+         for prog, step in result.first_passage.items():
+-            offset_step = step + step_offset
+-            if prog not in merged_first_passage or offset_step < merged_first_passage[prog]:
+-                merged_first_passage[prog] = offset_step
++            if prog not in merged_first_passage or step < merged_first_passage[prog]:
++                merged_first_passage[prog] = step
+ 
+         # Track best log posterior per program.
+         for hyp in result.top_hypotheses:
+@@ -1495,21 +1520,37 @@ def run_parallel_chains(
+             if prog not in merged_log_posteriors or lp > merged_log_posteriors[prog]:
+                 merged_log_posteriors[prog] = lp
+ 
+-        # Merge extension fractions (keep latest value per program).
++        # Accumulate extension fractions for averaging across chains.
++        # (Prior "latest value" merge silently preferred the last chain's
++        # estimate. Averaging pools Monte-Carlo noise across chains.)
+         for prog, frac in result.ext_fractions.items():
+-            merged_ext_fractions[prog] = frac
++            ext_sum, ext_n = ext_fraction_accum.get(prog, (0.0, 0))
++            ext_fraction_accum[prog] = (ext_sum + frac, ext_n + 1)
+ 
+         total_accepted += result.n_accepted
+         merged_trajectory.extend(result.trajectory)
+ 
++    # Average ext_fractions across chains (one estimate per chain in which
++    # the program was visited; pools Monte-Carlo noise). Computed here so
++    # the Layer-2 post-hoc filter below can use averaged fractions.
++    merged_ext_fractions = {
++        prog: ext_sum / ext_n
++        for prog, (ext_sum, ext_n) in ext_fraction_accum.items()
++    }
++
+     # ------------------------------------------------------------------ #
+-    # Build merged top hypotheses, sorted by visit count descending.
++    # Build merged top hypotheses: sort by visit count, filter Layer-2
++    # tautologies (averaged ext_fraction >= 1.0) post-hoc, take top_k.
++    # (See single-chain run() for rationale; detailed balance preserved.)
+     # ------------------------------------------------------------------ #
+-    sorted_programs = sorted(
+-        merged_visit_counts.keys(),
+-        key=lambda p: merged_visit_counts[p],
+-        reverse=True,
+-    )[:config.top_k]
++    sorted_programs = [
++        p for p in sorted(
++            merged_visit_counts.keys(),
++            key=lambda p: merged_visit_counts[p],
++            reverse=True,
++        )
++        if merged_ext_fractions.get(p, 0.0) < 1.0
++    ][:config.top_k]
+ 
+     top_hypotheses = [
+         {
+@@ -1521,10 +1562,12 @@ def run_parallel_chains(
+         for prog in sorted_programs
+     ]
+ 
+-    # Identify overall best program by log posterior.
++    # Identify overall best program by log posterior, excluding tautologies.
+     best_program = None
+     best_log_posterior = float('-inf')
+     for prog, lp in merged_log_posteriors.items():
++        if merged_ext_fractions.get(prog, 0.0) >= 1.0:
++            continue
+         if lp > best_log_posterior:
+             best_log_posterior = lp
+             best_program = prog
+@@ -1533,6 +1576,10 @@ def run_parallel_chains(
+     n_unique = len(merged_visit_counts)
+     acceptance_rate = total_accepted / total_steps if total_steps > 0 else 0.0
+ 
++    # Per-chain first-passage (raw within-chain step indices) for honest
++    # downstream cognitive-timing analysis.
++    per_chain_first_passage = [dict(r.first_passage) for r in chain_results]
++
+     return MCMCResult(
+         n_steps=total_steps,
+         n_accepted=total_accepted,
+@@ -1545,4 +1592,5 @@ def run_parallel_chains(
+         first_passage=merged_first_passage,
+         trajectory=merged_trajectory,
+         ext_fractions=merged_ext_fractions,
++        per_chain_first_passage=per_chain_first_passage,
+     )
+diff --git a/src/tests/test_mcmc_search.py b/src/tests/test_mcmc_search.py
+index 0790ad3..2087853 100644
+--- a/src/tests/test_mcmc_search.py
++++ b/src/tests/test_mcmc_search.py
+@@ -266,6 +266,65 @@ def test_likelihood_returns_tuple(grammar, exemplars):
+     assert 0.0 <= ext_frac <= 1.0, f"ext_fraction should be in [0,1], got {ext_frac}"
+ 
+ 
++def test_likelihood_rejects_empty_extension(grammar, exemplars):
++    """Regression test for C4: 'accepts nothing' programs must not be rewarded.
++
++    Prior bug: when n_hits_probe == 0, ext_size was set to 1.0 (smallest
++    possible), so if any exemplar happened to be accepted via the noise
++    floor, the per-exemplar probability was (1 - ε)/1.0 ≈ 1.0 — the
++    HIGHEST possible. This rewarded programs that accept nothing on probes
++    but luckily accept an exemplar.
++
++    Fix: Jeffreys-smoothed ext_fraction (n_hits+0.5)/(n_probes+1) with a
++    one-probe floor ensures ext_size >= TOTAL_HANDS / n_probes, so the
++    per-exemplar probability is bounded above by n_probes/TOTAL_HANDS,
++    which for n_probes=1000 and TOTAL_HANDS≈1.47e10 is ~7e-8 — very low.
++    An "accepts nothing" program should have lower likelihood than a
++    program that actually fits the exemplars.
++    """
++    from dreamcoder_core.program import Abstraction, Application
++
++    hands = exemplars['all_red']['hands_primary']
++    probes = generate_probe_set(n_probes=1000, seed=42)
++
++    # Look up primitives by string name from the grammar's production list.
++    prims_by_name = {str(p): p for p in grammar.primitives()}
++    required = ('lt', '0', '5')
++    for name in required:
++        if name not in prims_by_name:
++            import pytest
++            pytest.skip(f"Grammar missing primitive {name!r}")
++
++    lt = prims_by_name['lt']
++    zero = prims_by_name['0']
++    five = prims_by_name['5']
++
++    # (lambda (lt 5 0)) — constant-false (5 < 0 is always False).
++    empty = Abstraction(Application(Application(lt, five), zero))
++    ll_empty, frac_empty = compute_mcmc_log_likelihood(
++        empty, hands, noise_epsilon=0.01, ext_probe_hands=probes,
++    )
++    assert frac_empty == 0.0, f"'accepts nothing' should have ext_fraction=0, got {frac_empty}"
++
++    # (lambda (lt 0 5)) — constant-true tautology.
++    taut = Abstraction(Application(Application(lt, zero), five))
++    ll_taut, frac_taut = compute_mcmc_log_likelihood(
++        taut, hands, noise_epsilon=0.01, ext_probe_hands=probes,
++    )
++    assert frac_taut == 1.0
++
++    # The "accepts nothing" program must NOT have higher likelihood than the
++    # tautology. Prior bug: n_hits==0 set ext_size=1.0, inflating per-exemplar
++    # probability to ~1.0 on any noise-accepted exemplar, making the empty
++    # program *more* attractive than a tautology. With Jeffreys smoothing +
++    # one-probe floor, ext_size is bounded below at TOTAL_HANDS/n_probes so
++    # per-exemplar probability stays tiny.
++    assert ll_empty <= ll_taut + 1e-6, (
++        f"'accepts nothing' likelihood {ll_empty} exceeds tautology "
++        f"likelihood {ll_taut} — empty-extension pathology returned?"
++    )
++
++
+ def test_likelihood_noise_prevents_neg_inf(grammar, exemplars):
+     """With noise_epsilon > 0, likelihood should be finite (not -inf)
+     for programs that can at least be evaluated, even if they miss all exemplars."""
+@@ -432,6 +491,74 @@ def test_parallel_chains_merge_ext_fractions(grammar, exemplars):
+         assert 0.0 <= frac <= 1.0
+ 
+ 
++def test_parallel_chains_first_passage_no_offset(grammar, exemplars):
++    """Regression test for C6: merged first_passage must not offset by chain-index.
++
++    Prior bug: merged_first_passage[prog] = min(step + i*n_steps, ...) caused
++    chain-0 to always appear "fastest" for any program seen in multiple chains.
++    The merged min must lie within a single chain's step range [0, n_steps).
++    """
++    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
++    hands = exemplars['all_red']['hands_primary']
++    result = run_parallel_chains(
++        grammar, config,
++        request_type=Arrow(HAND, BOOL),
++        exemplar_hands=hands,
++        n_chains=4,
++    )
++    # All first-passage steps must be within a single chain's range.
++    # If the buggy offset were present, chain-3's first-seen programs would
++    # have step >= 3*200 = 600.
++    assert len(result.first_passage) > 0
++    for prog, step in result.first_passage.items():
++        assert 0 <= step < config.n_steps, (
++            f"First-passage step {step} for {prog[:60]!r} lies outside "
++            f"single-chain range [0, {config.n_steps}) — offset bug returned?"
++        )
++    # Per-chain first-passage should be exposed for honest timing analysis.
++    assert len(result.per_chain_first_passage) == 4
++    for pc_fp in result.per_chain_first_passage:
++        for step in pc_fp.values():
++            assert 0 <= step < config.n_steps
++
++
++def test_parallel_chains_propagates_beta_annealing(grammar, exemplars, monkeypatch):
++    """Regression test for C2: each chain config must carry caller's beta_start/beta_end.
++
++    Prior bug: run_parallel_chains re-instantiated MCMCConfig from a hand-picked
++    subset of fields, silently dropping beta_start/beta_end so every chain ran
++    at the dataclass default β=1.0 despite the caller setting β-annealing.
++    """
++    import gallery_analysis.mcmc_search as mcmc_module
++
++    captured_configs = []
++    original_init = mcmc_module.MCMCChain.__init__
++
++    def spy_init(self, grammar_arg, config_arg):
++        captured_configs.append(config_arg)
++        return original_init(self, grammar_arg, config_arg)
++
++    monkeypatch.setattr(mcmc_module.MCMCChain, "__init__", spy_init)
++
++    config = MCMCConfig(
++        n_steps=50, max_depth=5, seed=42,
++        beta_start=0.1, beta_end=0.9,
++    )
++    hands = exemplars['all_red']['hands_primary']
++    run_parallel_chains(
++        grammar, config,
++        request_type=Arrow(HAND, BOOL),
++        exemplar_hands=hands,
++        n_chains=3,
++    )
++    assert len(captured_configs) == 3
++    for cfg in captured_configs:
++        assert cfg.beta_start == 0.1, f"beta_start lost in propagation: {cfg.beta_start}"
++        assert cfg.beta_end == 0.9, f"beta_end lost in propagation: {cfg.beta_end}"
++        assert cfg.n_steps == 50
++        assert cfg.max_depth == 5
++
++
+ # =========================================================================== #
+ # Integration tests on real gallery rules
+ # =========================================================================== #
+@@ -594,6 +721,33 @@ def test_vacuous_lambda_non_abstraction():
+     assert is_vacuous_lambda(idx) is False
+ 
+ 
++def test_tautology_filter_is_post_hoc(grammar, exemplars):
++    """Regression test for C3: Layer-2 tautology filter must be post-hoc only.
++
++    Prior bug: ext_fraction >= 1.0 was rejected inline in the MH loop, breaking
++    detailed balance. Fix: let the MH loop run normally (size-principle
++    likelihood naturally suppresses tautologies), then filter tautologies
++    from top_hypotheses at result construction. visit_counts/trajectory
++    retain the full unfiltered trace.
++    """
++    config = MCMCConfig(n_steps=500, max_depth=5, seed=42)
++    hands = exemplars['all_red']['hands_primary']
++    result = MCMCChain(grammar, config).run(
++        request_type=Arrow(HAND, BOOL),
++        exemplar_hands=hands,
++    )
++    # top_hypotheses must not contain tautologies (ext_fraction >= 1.0).
++    for hyp in result.top_hypotheses:
++        prog = hyp['program']
++        frac = result.ext_fractions.get(prog, 0.0)
++        assert frac < 1.0, (
++            f"Tautology {prog[:80]!r} with ext_fraction={frac} leaked into "
++            f"top_hypotheses — post-hoc filter broken."
++        )
++    # Chain should still produce some usable hypotheses.
++    assert len(result.top_hypotheses) > 0
++
++
+ def test_tautology_not_top_hypothesis(grammar, exemplars):
+     """With tautology rejection, known tautologies should not dominate the chain.
+ 

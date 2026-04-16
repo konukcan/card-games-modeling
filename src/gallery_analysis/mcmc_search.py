@@ -1446,12 +1446,20 @@ def run_parallel_chains(
     Returns:
         A single merged MCMCResult where:
           - visit_counts: summed across chains
-          - first_passage: earliest (minimum) across chains, offset by chain
-            position (step + i * config.n_steps) so the merged timeline is
-            [0, n_chains * n_steps)
+          - first_passage: true min step across chains (raw within-chain step
+            indices, NOT offset into a concatenated timeline — independent
+            chains must not be treated as one merged trajectory). Per-chain
+            within-chain indices are also exposed via `per_chain_first_passage`
+            for honest cognitive-timing analysis.
           - n_accepted: summed across chains
-          - n_steps: n_chains * config.n_steps (total steps across all chains)
-          - top_hypotheses: sorted by merged visit count, top config.top_k
+          - n_steps: n_chains * config.n_steps (total steps pooled across
+            chains; note this is a pooled counter, not a timeline bound —
+            see first_passage semantics above).
+          - ext_fractions: averaged across chains in which a program was
+            visited (pools Monte-Carlo probe noise).
+          - top_hypotheses: sorted by merged visit count, Layer-2 tautologies
+            (averaged ext_fraction >= 1.0) filtered post-hoc, top config.top_k.
+          - best_program: highest log_posterior among non-tautologies.
     """
     from gallery_analysis.exemplars import generate_probe_set
 
