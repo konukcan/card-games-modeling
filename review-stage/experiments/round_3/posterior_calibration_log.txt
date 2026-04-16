@@ -1,0 +1,37 @@
+[   0.0s] enumerating programs up to depth=3 ...
+  |support| = 2776 (after dedup)
+[   0.0s] computing analytical posterior ...
+  |reachable under scorer| = 2776
+[   0.6s] running MH: n_steps=200000, burnin=20000
+  post-burnin samples: 180000
+  unique states visited: 44
+  acceptance rate: 0.369 (accept=73753, proposed=200000)
+
+Per-program comparison (top 20 by analytical prob):
+  program                                            analytical  empirical    ratio
+  (λ $0)                                                 0.9363     0.9362     1.00
+  (λ not $0)                                             0.0497     0.0496     1.00
+  (λ and $0 $0)                                          0.0043     0.0048     1.10
+  (λ or $0 $0)                                           0.0043     0.0038     0.89
+  (λ not (not $0))                                       0.0026     0.0028     1.07
+  (λ not (not (not $0)))                                 0.0004     0.0006     1.42
+  (λ not (and $0 $0))                                    0.0002     0.0002     0.94
+  (λ not (or $0 $0))                                     0.0002     0.0002     0.99
+  (λ and $0 (not $0))                                    0.0002     0.0002     0.75
+  (λ and (not $0) $0)                                    0.0002     0.0003     1.52
+  (λ or $0 (not $0))                                     0.0002     0.0002     0.75
+  (λ or (not $0) $0)                                     0.0002     0.0003     1.28
+  (λ not (not (and $0 $0)))                              0.0001     0.0001     0.97
+  (λ not (not (or $0 $0)))                               0.0001     0.0001     0.74
+  (λ not (and $0 (not $0)))                              0.0000     0.0000     0.81
+  (λ not (and (not $0) $0))                              0.0000     0.0000     0.81
+  (λ not (or $0 (not $0)))                               0.0000     0.0000     0.00
+  (λ not (or (not $0) $0))                               0.0000     0.0000     1.13
+  (λ and $0 (not (not $0)))                              0.0000     0.0000     0.16
+  (λ and (not (not $0)) $0)                              0.0000     0.0000     0.16
+
+=== SUMMARY ===
+Total variation (empirical vs analytical): 0.0014
+Rough 95% MC bound on TV (n_eff~66378): 0.1446
+Mass outside enumerated support: 0.0000
+Pass: True

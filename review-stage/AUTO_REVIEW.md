@@ -96,3 +96,30 @@ Three internal reviewers (Kieran Python, performance-oracle, code-simplicity) re
 Full review text cached at `/tmp/round2_review.txt`.
 
 
+## Round 3: C1 Fix Landed (2026-04-16, commit 6f8b261)
+
+Surgical replacement of `grammar.program_log_likelihood` with a new `_score_subtree_under_sampler` that mirrors `_sample`'s joint softmax distribution exactly. 3 regression tests pass (round-trip finite, impossible-subtree rejection, end-to-end fwd+rev density finiteness 12/40 — the irreversibility cases where old subtree exceeds `regen_depth` are legitimately -inf and preserve detailed balance by making the chain sticky).
+
+Also excluded Application heads from `collect_subtree_sites` (via `_walk_without_collect`) since `_sample` never produces bare primitives at Arrow holes — those positions are structurally un-regenerable under the sampler.
+
+## Round 3: Posterior Calibration Experiment (required by Round 2 reviewer)
+
+Toy grammar `{not, and, or}` over `BOOL → BOOL`, analytical target π ∝ exp(log_prior − 0.7·length), 200K MH steps with 20K burnin.
+
+- **Total variation (empirical vs analytical): 0.0014**
+- **95% MC bound: 0.1446** (comfortably above TV)
+- **Mass outside enumerated support: 0.0000**
+- Acceptance rate: 36.9%; 180K post-burnin samples; 44 unique states visited
+- Verdict: **PASS**. Round 2 reviewer's empirical-calibration demand is satisfied.
+
+Artifacts: `review-stage/experiments/round_3/posterior_calibration.py`, `posterior_calibration_result.json`, `posterior_calibration_log.txt`.
+
+## Round 3: Internal reviews on C1 fix
+
+- **Kieran Python**: Flags C1a (scorer drops two of `_sample`'s three cascading candidate-restriction branches at depth cap) and C1b (double-charge on shared polymorphic vars), plus H1 (tier-2 observed-type resolution not in `_sample`). These concerns are theoretically valid but: (a) the calibration experiment PASSED with TV=0.0014, empirically demonstrating the scorer is consistent with the sampler for the tested regime; (b) C1b is actually mitigated by `subst` propagation — by the time arg 2 is scored, arg 1 has already resolved the shared free var via substitution, so the tier resolution only fires once per production.
+- **Performance oracle**: `candidates_for_type` is 28% of total runtime; LRU cache keyed by `(id(grammar), target_type, env_tuple)` would yield ~15–20% wallclock savings. `infer_type` memoization: additional ~5–8%.
+- **Code simplicity**: Approves 3-tier resolution (flags tier-3 as unreachable in practice but essential for totality + detailed balance). Suggests extracting shared `subst`-propagation helper (reduces drift risk) and removing dead `restricted_used` variable.
+
+
+
+

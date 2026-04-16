@@ -702,10 +702,8 @@ def _score_subtree_under_sampler(
             for prod, inst_type, lp in production_candidates
             if len(inst_type.arguments) == 0
         ]
-        restricted_used = False
         if terminal_prods or var_candidates:
             production_candidates = terminal_prods
-            restricted_used = True
         # We intentionally skip the lookahead-based restriction
         # (_all_args_terminable branch) because it depends on rng via
         # _resolve_free_type_vars; scoring under that branch would require
@@ -713,7 +711,6 @@ def _score_subtree_under_sampler(
         # unobservable from the final program alone. In practice, this
         # branch is only entered when NO terminals or variables exist for
         # the target type — a rare edge case in the gallery grammar.
-        _ = restricted_used  # kept for readability
 
     # -------------------------------------------------------------------- #
     # Step 4 mirror: build unified (choice, log_prob) list.
