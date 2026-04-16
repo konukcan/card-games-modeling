@@ -25,6 +25,9 @@ from gallery_analysis.mcmc_search import (
     replace_subtree, SubtreeSite,
     MCMCConfig, MCMCResult, MCMCChain, compute_mcmc_log_likelihood,
     run_parallel_chains, is_vacuous_lambda,
+    _score_subtree_under_sampler, _sample,
+    get_collect_subtree_sites_failures,
+    reset_collect_subtree_sites_failures,
 )
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
 
@@ -876,3 +879,171 @@ def test_tautology_not_top_hypothesis(grammar, exemplars):
         assert top not in known_tautologies, (
             f"Tautology {top} should not be the #1 hypothesis"
         )
+
+
+# =========================================================================== #
+# R1 fixes: regression tests for proposal density & site collection
+# =========================================================================== #
+
+def test_collect_subtree_sites_no_silent_drops_on_sampled_programs(grammar):
+    """
+    `collect_subtree_sites` must not silently swallow inference failures on
+    well-typed sampled programs. Its `try/except` blocks now increment a
+    module-level counter; the gallery grammar sampler should produce zero
+    drops across a reasonable sample size.
+    """
+    reset_collect_subtree_sites_failures()
+    for seed in range(50):
+        prog = sample_program(grammar, Arrow(HAND, BOOL), max_depth=5, seed=seed)
+        _ = collect_subtree_sites(prog, Arrow(HAND, BOOL))
+    assert get_collect_subtree_sites_failures() == 0, (
+        f"collect_subtree_sites silently dropped "
+        f"{get_collect_subtree_sites_failures()} sites across 50 sampled "
+        f"programs. n_sites in the MH ratio is no longer what the chain "
+        f"believes it is."
+    )
+
+
+def test_score_matches_empirical_on_polymorphic_toy():
+    """
+    The choose/is_zero toy from Round 1 review: raw `_sample` emits
+    `choose ((λ is_zero $0))` with empirical probability ≈ 0.13, while
+    the earlier scorer (tier-2 / tier-3 heuristics) reported P = 1.0.
+    After exact marginalization the scored probability should match
+    the empirical frequency to within a few percent.
+    """
+    import random as _random
+    from dreamcoder_core.type_system import Arrow as _Arrow, TypeVariable, BOOL as _BOOL, INT as _INT
+    from dreamcoder_core.grammar import Grammar as _Grammar, Production as _Production
+    from dreamcoder_core.program import Primitive as _Primitive, Abstraction as _Abs, Application as _App, Index as _Idx
+    import gallery_analysis.mcmc_search as ms
+
+    alpha = TypeVariable(0)
+    choose = _Primitive('choose', _Arrow(_Arrow(alpha, _BOOL), _BOOL), 1.0)
+    is_zero = _Primitive('is_zero', _Arrow(_INT, _BOOL), 1.0)
+    prods = [
+        _Production(choose, _Arrow(_Arrow(alpha, _BOOL), _BOOL), 0.0),
+        _Production(is_zero, _Arrow(_INT, _BOOL), 0.0),
+    ]
+    g = _Grammar(productions=prods, log_variable=0.0)
+
+    # Narrow _CONCRETE_TYPES to [BOOL, INT] for the duration of this test.
+    saved = list(ms._CONCRETE_TYPES)
+    try:
+        ms._CONCRETE_TYPES[:] = [_BOOL, _INT]
+
+        N = 2000
+        counts = {}
+        for seed in range(N):
+            rng = _random.Random(seed)
+            try:
+                p = _sample(g, _BOOL, 5, 0, [], rng)
+                counts[str(p)] = counts.get(str(p), 0) + 1
+            except Exception:
+                pass
+
+        target_body = _App(is_zero, _Idx(0))
+        target = _App(choose, _Abs(target_body))
+        empirical = counts.get(str(target), 0) / N
+
+        log_p = _score_subtree_under_sampler(g, target, _BOOL, 5, 0, [])
+        scored = math.exp(log_p) if log_p != float('-inf') else 0.0
+
+        assert empirical > 0.05, (
+            f"Sanity: expected empirical > 5% for choose((λ is_zero $0)); "
+            f"got {empirical:.4f}"
+        )
+        assert scored > 0.0, f"Scored P should be > 0; got {scored:.6f}"
+        # Tolerate at most 5 percentage points of absolute deviation (the
+        # sampler has ERR retries that the direct _sample call does not, so
+        # the two distributions are not identical — but the scored value
+        # should no longer be the inflated tier-2/tier-3 value of 1.0).
+        assert abs(scored - empirical) < 0.05, (
+            f"Scored P {scored:.4f} differs from empirical {empirical:.4f} "
+            f"by more than 0.05 — free-var marginalization may be wrong."
+        )
+        assert scored < 0.5, (
+            f"Scored P {scored:.4f} too large — the pre-R1 tier-2 bug "
+            f"reported P=1.0 here; any value > 0.5 suggests a regression."
+        )
+    finally:
+        ms._CONCRETE_TYPES[:] = saved
+
+
+def test_propose_regeneration_matches_sampler_on_polymorphic_grammar(grammar):
+    """
+    Weak empirical check that the forward proposal density `log_q_forward`
+    matches the distribution from which `new_subtree` was actually drawn.
+
+    Strategy: pick a fixed site in a sampled program, repeatedly resample
+    the subtree at that site via `propose_regeneration`, collect the
+    empirical distribution over distinct subtrees, and compare to the
+    scored density. For each observed subtree, exp(log_q_forward) should
+    lie within a factor of ~3x of the empirical frequency (loose bound;
+    this is a sanity check, not a goodness-of-fit test).
+    """
+    # Build a simple base program whose first site we'll regenerate.
+    base = sample_program(
+        grammar, Arrow(HAND, BOOL), max_depth=3, seed=42,
+    )
+    sites = collect_subtree_sites(base, Arrow(HAND, BOOL))
+    if not sites:
+        pytest.skip("No sites in base program; resample a different seed.")
+
+    N = 400
+    counts = {}
+    scored_cache = {}
+    for seed in range(N):
+        try:
+            new_prog, log_q_fwd, _ = propose_regeneration(
+                grammar, base, Arrow(HAND, BOOL),
+                max_depth=4, seed=seed,
+            )
+            key = str(new_prog)
+            counts[key] = counts.get(key, 0) + 1
+            if key not in scored_cache:
+                scored_cache[key] = log_q_fwd
+        except Exception:
+            pass
+
+    if not counts:
+        pytest.skip("All proposals failed — likely sampler edge case.")
+
+    # Check the top-2 distinct proposals have scored densities consistent
+    # with their empirical frequencies. Use loose 3x bound.
+    sorted_keys = sorted(counts.keys(), key=lambda k: -counts[k])[:2]
+    for key in sorted_keys:
+        empirical = counts[key] / N
+        if empirical < 0.05:
+            continue  # too few samples to compare meaningfully
+        scored = math.exp(scored_cache[key]) if scored_cache[key] != float('-inf') else 0.0
+        # Scored includes log_pick = -log(n_sites) so should match empirical.
+        # Use multiplicative tolerance: 0.33 <= scored / empirical <= 3.0.
+        if scored == 0.0:
+            pytest.fail(
+                f"Proposal {key!r} seen {counts[key]}/{N} times but scored "
+                f"probability is 0. log_q_forward says this can't happen."
+            )
+        ratio = scored / empirical
+        assert 0.33 < ratio < 3.0, (
+            f"Proposal {key!r}: empirical={empirical:.4f}, scored={scored:.4f}, "
+            f"ratio={ratio:.2f}. Expected ratio in [0.33, 3.0]."
+        )
+
+
+def test_proposal_retry_loop_disabled_in_sample_program():
+    """
+    `propose_regeneration` must call `sample_program(allow_retries=False)`.
+    With retries enabled, the effective distribution of generated subtrees
+    is `_sample | typecheck_passes`, which has a different normalization
+    constant than `_score_subtree_under_sampler` computes — violating
+    detailed balance.
+    """
+    import inspect
+    from gallery_analysis import mcmc_search
+    src = inspect.getsource(mcmc_search.propose_regeneration)
+    assert 'allow_retries=False' in src, (
+        "propose_regeneration must call sample_program with allow_retries=False "
+        "to keep the forward proposal distribution consistent with "
+        "_score_subtree_under_sampler."
+    )

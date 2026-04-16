@@ -44,6 +44,7 @@ import sys
 import math
 import random
 import logging
+import itertools
 from dataclasses import dataclass, field, replace as dc_replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -73,6 +74,7 @@ def sample_program(
     max_depth: int = 6,
     seed: Optional[int] = None,
     env: Optional[List[Type]] = None,
+    allow_retries: bool = True,
 ) -> Program:
     """
     Sample a complete, type-correct program from the grammar prior.
@@ -87,52 +89,55 @@ def sample_program(
         request_type: The type of program to generate (e.g., Arrow(HAND, BOOL)).
         max_depth:    Soft depth limit for non-lambda AST nodes. Beyond this
                       depth, sampling strongly prefers terminal productions and
-                      variables. If no terminals exist for the required type
-                      (e.g., bool has no constants in the gallery grammar),
-                      non-terminal productions with the fewest arguments are
-                      selected to minimize further recursion.
+                      variables.
         seed:         If provided, seeds a local Random instance for
-                      reproducibility. Each call gets its own RNG so
-                      concurrent calls don't interfere.
+                      reproducibility.
         env:          Type environment for bound variables (de Bruijn indices).
-                      env[i] = type of $i. Callers should leave this as None;
-                      it is extended internally when entering lambdas.
-
-    Returns:
-        A complete Program AST with no Hole nodes.
-
-    Raises:
-        RuntimeError: If no valid production or variable exists for a required
-                      type, or if the absolute depth limit is reached.
-
-    How it works, step by step:
-        1. If request_type is an arrow (A -> B), emit an Abstraction node,
-           push A onto the environment, and recurse on B. Lambdas don't
-           consume depth budget.
-        2. Otherwise (base type), collect all type-compatible productions
-           via grammar.candidates_for_type() and all matching bound variables
-           via grammar.variable_candidates().
-        3. If depth >= max_depth, prefer terminals (zero-argument productions)
-           and variables. If none exist, fall back to the shallowest non-
-           terminal productions (fewest arguments) to minimize further depth.
-        4. Sample one candidate proportional to exp(log_probability).
-        5. If sampled a variable, return Index(i).
-        6. If sampled a production, build the Application chain by recursing
-           on each argument type: Application(Application(f, arg1), arg2).
+        allow_retries: If True (default), retry with incremented seed on
+                      RuntimeError (depth limit) or infer_type failure (up to
+                      10 attempts). Appropriate for init paths and one-shot
+                      prior sampling. Must be False in MCMC proposal paths
+                      (`propose_regeneration`) so the forward proposal law
+                      exactly matches `_score_subtree_under_sampler`: under
+                      retries, the effective distribution is `_sample`
+                      conditioned on type-check success (with a different
+                      normalization constant than the scorer computes). With
+                      retries disabled, failures propagate as RuntimeError
+                      and the MH loop treats them as natural rejections.
     """
     if env is None:
         env = []
 
-    # Retry loop: polymorphic type variable resolution is heuristic and
-    # can occasionally produce ill-typed programs (~1-2% of samples).
-    # When this happens, we advance the RNG seed and retry. The number
-    # of retries is bounded, and each attempt uses a deterministic seed
-    # derived from the original, so reproducibility is preserved.
+    if not allow_retries:
+        # Single-shot mode: the caller needs the returned program to be drawn
+        # from the exact same distribution `_score_subtree_under_sampler`
+        # scores, so no retry-conditioning is allowed. Any failure propagates.
+        rng = random.Random(seed)
+        program = _sample(
+            grammar, request_type, max_depth, depth=0, env=env, rng=rng
+        )
+        # We deliberately do NOT call infer_type here. `_sample` occasionally
+        # constructs programs whose `rng.choice(_CONCRETE_TYPES)` resolution
+        # of free type variables disagrees with a global infer_type unification;
+        # those programs are still legitimate draws from the sampler's actual
+        # distribution, and the scorer knows how to assign them probabilities
+        # (or returns -inf, yielding a natural MH rejection).
+        return program
+
+    # Retry path (init / one-shot prior sampling). We retry up to
+    # `max_retries` times to produce a program that satisfies `infer_type`;
+    # if none succeed, we RAISE rather than silently return an ill-typed
+    # program. The prior behaviour fell through to a bare `_sample` call,
+    # which occasionally produced programs whose inner polymorphic type
+    # resolution disagreed with global type inference. Those programs
+    # propagated into downstream consumers (e.g. `collect_subtree_sites`)
+    # and manifested as mysterious unification errors. Raising keeps the
+    # init contract explicit: callers relying on well-typed initial states
+    # should either increase `max_retries`, widen the grammar, or catch
+    # the RuntimeError and treat it as a failed init.
     max_retries = 10
+    last_exc: Optional[BaseException] = None
     for attempt in range(max_retries):
-        # Each call gets its own Random instance so that:
-        #   (a) a fixed seed guarantees the same program, and
-        #   (b) concurrent calls don't share state.
         effective_seed = seed + attempt if seed is not None else None
         rng = random.Random(effective_seed)
 
@@ -140,21 +145,18 @@ def sample_program(
             program = _sample(
                 grammar, request_type, max_depth, depth=0, env=env, rng=rng
             )
-            # Verify the program is well-typed before returning.
             ctx = TypeContext()
             program.infer_type(ctx, env)
             return program
-        except RuntimeError:
-            # Absolute depth limit hit — retry with different seed.
-            continue
-        except Exception:
-            # Type error from infer_type — retry with different seed.
+        except Exception as e:
+            last_exc = e
             continue
 
-    # All retries exhausted. Fall back to the last sample without type check.
-    # This should be extremely rare (probability < (0.02)^10).
-    rng = random.Random(seed)
-    return _sample(grammar, request_type, max_depth, depth=0, env=env, rng=rng)
+    raise RuntimeError(
+        f"sample_program exhausted {max_retries} retries for "
+        f"request_type={request_type} (seed={seed}, max_depth={max_depth}). "
+        f"Last failure: {type(last_exc).__name__}: {last_exc}"
+    )
 
 
 # Concrete types available for resolving free type variables.
@@ -589,6 +591,201 @@ def _sample(
 # =========================================================================== #
 
 
+def _env_resolve_free_vars(
+    arg_type: Type,
+    env: List[Type],
+) -> dict:
+    """
+    Deterministic env-based resolution mirroring `_resolve_free_type_vars`.
+
+    Tries to unify arg_type with each env type in order; the first successful
+    unification extracts bindings for the arg_type's free variables. Returns
+    a substitution dict {var_id -> concrete Type} covering env-resolvable vars.
+    Variables that env cannot resolve are left out of the returned dict (the
+    caller then marginalizes over them via _CONCRETE_TYPES).
+    """
+    free_vars = arg_type.free_type_variables()
+    if not free_vars:
+        return {}
+
+    subst: dict = {}
+    for env_type in env:
+        try:
+            ctx = TypeContext()
+            ctx.unify(arg_type, env_type)
+            for var_id in free_vars:
+                resolved = ctx.apply(TypeVariable(var_id))
+                if not isinstance(resolved, TypeVariable) and var_id not in subst:
+                    subst[var_id] = resolved
+            return subst
+        except Exception:
+            continue
+    return subst
+
+
+# Cap on the number of free type variables marginalized per argument.
+# With |_CONCRETE_TYPES|=5, a cap of 3 yields at most 125 enumerated branches
+# per argument — tight enough to keep the scorer fast but generous enough to
+# handle every polymorphic pattern observed in the gallery grammar.
+_MARGINALIZATION_FREE_VAR_CAP = 3
+
+
+def _score_arg_marginalizing_free_vars(
+    grammar: Grammar,
+    arg_observed: Program,
+    arg_type: Type,
+    outer_subst: dict,
+    env: List[Type],
+    max_depth: int,
+    depth: int,
+) -> float:
+    """
+    Score `arg_observed` under `_sample`'s distribution at a polymorphic hole.
+
+    Mirrors `_sample`'s per-argument resolution in `_sample` lines 527-537:
+    apply outer_subst, then call `_resolve_free_type_vars` which performs
+    env-based unification and falls back to uniform rng.choice over
+    `_CONCRETE_TYPES` for any remaining free vars.
+
+    EXACT MARGINALIZATION: for each of the C^k possible rng choices (with
+    k = number of still-free vars after env resolution), compute the
+    conditional score and log-sum-exp with uniform weight 1/C^k. This
+    replaces the prior tier-2 (output-conditioned backsolve) and tier-3
+    (single sentinel with -log C) heuristics, which could incorrectly
+    report P=1.0 when the true marginal was partial (e.g., choose/is_zero
+    counterexample: P=1.0 reported vs 992/2000 ≈ 0.496 emitted).
+
+    If k exceeds `_MARGINALIZATION_FREE_VAR_CAP`, we fall back to the
+    conservative sentinel behavior (this is a defensive guard; in gallery
+    grammars k is almost always 0 or 1, rarely 2).
+    """
+    concrete_arg_type = arg_type.apply_substitution(outer_subst)
+
+    # Env-based resolution: deterministic, cheap, fully covers programs
+    # where the bound-variable type narrows the free var.
+    env_subst = _env_resolve_free_vars(concrete_arg_type, env)
+    concrete_after_env = concrete_arg_type.apply_substitution(env_subst)
+    remaining_free = sorted(concrete_after_env.free_type_variables())
+
+    if not remaining_free:
+        # Fully resolved by outer subst + env. No rng contribution.
+        return _score_subtree_under_sampler(
+            grammar, arg_observed, concrete_after_env, max_depth, depth, env,
+        )
+
+    k = len(remaining_free)
+    C = len(_CONCRETE_TYPES)
+
+    if k > _MARGINALIZATION_FREE_VAR_CAP:
+        # Defensive fallback: enumerate only via a single representative
+        # assignment and charge -k*log(C). Retains the (biased but bounded)
+        # prior behavior for pathological polymorphic patterns.
+        sentinel_subst = {v: _CONCRETE_TYPES[0] for v in remaining_free}
+        final_type = concrete_after_env.apply_substitution(sentinel_subst)
+        cond = _score_subtree_under_sampler(
+            grammar, arg_observed, final_type, max_depth, depth, env,
+        )
+        if cond == float('-inf'):
+            return float('-inf')
+        return -k * math.log(C) + cond
+
+    # Exact marginalization via itertools.product over C^k assignments.
+    branch_scores: List[float] = []
+    for assignment in itertools.product(_CONCRETE_TYPES, repeat=k):
+        rng_subst = dict(zip(remaining_free, assignment))
+        resolved_type = concrete_after_env.apply_substitution(rng_subst)
+        cond = _score_subtree_under_sampler(
+            grammar, arg_observed, resolved_type, max_depth, depth, env,
+        )
+        branch_scores.append(cond)
+
+    # log-sum-exp with uniform weight (1/C^k) per branch = -k*log(C) + LSE.
+    finite = [s for s in branch_scores if s != float('-inf')]
+    if not finite:
+        return float('-inf')
+    max_s = max(finite)
+    lse = max_s + math.log(
+        sum(math.exp(s - max_s) for s in finite)
+    )
+    return -k * math.log(C) + lse
+
+
+def _log_prob_prod_survives_depth_cap_filter(
+    grammar: Grammar,
+    inst_type: Type,
+    env: List[Type],
+) -> float:
+    """
+    Log-probability a production survives `_sample`'s lookahead filter at
+    the depth cap (R1-Fix3).
+
+    `_sample` enters the lookahead branch only when NO terminal productions
+    and NO variables match the target type. For each surviving production
+    candidate it runs:
+        resolved_args = _resolve_free_type_vars(inst_type.arguments, env, rng)
+        include if _all_args_terminable(grammar, resolved_args, env)
+
+    Because `_resolve_free_type_vars` uses rng for unresolved free vars,
+    the filter decision per production is a Bernoulli indicator whose
+    parameter is (# assignments making prod terminable) / |_CONCRETE_TYPES|^k.
+    Crucially, inclusion indicators ARE independent across productions in
+    `_sample` (each call to `_resolve_free_type_vars` draws fresh rng).
+
+    This helper computes that survival log-probability. The scorer then
+    folds it into each production's effective log-weight, so the joint
+    softmax marginalizes over filter outcomes in a mean-field sense
+    (exact when k=0 for all prods; a bounded approximation otherwise).
+
+    Returns float('-inf') if no assignment makes the production
+    terminable; 0.0 if every assignment does (including the k=0 case
+    where env alone resolves all free vars and terminability holds).
+    """
+    arg_types = list(inst_type.arguments)
+    if not arg_types:
+        return 0.0  # Zero-arg productions are already terminal.
+
+    # Env-only resolution: deterministic mirror of `_resolve_free_type_vars`
+    # minus the rng fallback. `_env_resolve_free_vars` is single-arg; merge
+    # per-arg substitutions (first binding wins, as in _resolve_free_type_vars
+    # which uses `setdefault` semantics via `var_id not in subst`).
+    env_subst: dict = {}
+    for arg_type in arg_types:
+        per_arg = _env_resolve_free_vars(arg_type, env)
+        for var_id, concrete in per_arg.items():
+            env_subst.setdefault(var_id, concrete)
+
+    resolved_args = [a.apply_substitution(env_subst) for a in arg_types]
+
+    remaining_free: set = set()
+    for a in resolved_args:
+        remaining_free |= a.free_type_variables()
+
+    if not remaining_free:
+        return 0.0 if _all_args_terminable(grammar, resolved_args, env) else float('-inf')
+
+    k = len(remaining_free)
+    C = len(_CONCRETE_TYPES)
+
+    if k > _MARGINALIZATION_FREE_VAR_CAP:
+        # Defensive: assume the production always survives (liberal).
+        # This errs toward accepting proposals at the branch rather than
+        # truncating them, matching the sampler's inclusion-biased regime
+        # for pathological polymorphic patterns.
+        return 0.0
+
+    survive = 0
+    remaining_free_sorted = sorted(remaining_free)
+    for assignment in itertools.product(_CONCRETE_TYPES, repeat=k):
+        rng_subst = dict(zip(remaining_free_sorted, assignment))
+        final_args = [a.apply_substitution(rng_subst) for a in resolved_args]
+        if _all_args_terminable(grammar, final_args, env):
+            survive += 1
+
+    if survive == 0:
+        return float('-inf')
+    return math.log(survive) - k * math.log(C)
+
+
 def _score_subtree_under_sampler(
     grammar: Grammar,
     subtree: Program,
@@ -629,14 +826,21 @@ def _score_subtree_under_sampler(
     behavior: the reverse proposal cannot have been drawn from an
     impossible state, so Q(old | new) = 0 and the move is rejected.
 
-    Polymorphic-type resolution:
+    Polymorphic-type resolution (EXACT MARGINALIZATION, R2 fix):
       `_sample` resolves free type variables either from the environment
-      (deterministic) or by random choice from `_CONCRETE_TYPES`. We score
-      only the random-choice contribution: for each free type var that
-      cannot be resolved from the environment, we charge -log(|_CONCRETE_TYPES|)
-      under the observed concrete assignment. This is correct so long as the
-      sampler is consistent between forward and reverse (it is), and any
-      imprecision cancels to leading order.
+      (deterministic) or by random choice from `_CONCRETE_TYPES` with weight
+      1/|_CONCRETE_TYPES| per free variable. The scorer CANNOT observe the
+      sampler's random choice directly, so we marginalize exactly:
+
+          P(arg_observed) = sum over all C^k assignments of
+                              (1/|C|^k) * P(arg_observed | resolved_type)
+
+      where k is the number of free vars still unresolved after env-based
+      unification, and |C| = |_CONCRETE_TYPES|. Implemented via
+      `itertools.product` + log-sum-exp. The prior tier-2 / tier-3 heuristics
+      (which backsolved from arg_observed's inferred type or charged a single
+      sentinel) could inflate probabilities to P=1.0 when the true marginal
+      was ~0.5; the exact marginalization eliminates that bias.
 
     Args:
         grammar:     PCFG grammar used by `_sample`.
@@ -680,21 +884,27 @@ def _score_subtree_under_sampler(
     var_candidates = grammar.variable_candidates(target_type, ctx, env)
 
     # -------------------------------------------------------------------- #
-    # Step 3 mirror: apply depth-limit restriction. We cannot use an rng here
-    # (scoring is deterministic), and `_resolve_free_type_vars` in the
-    # lookahead branch uses rng for unresolved free vars. Our strategy is:
-    #   - If the restricted candidate list under the "env-only" resolution
-    #     (no random fallback) already contains the observed head, score
-    #     within that restricted set (matches what _sample would have done
-    #     for most non-edge cases).
-    #   - Otherwise, fall back to the unrestricted set — this is the case
-    #     where `_sample`'s random type-var fallback let a candidate survive
-    #     that env-only scoring would reject. Scoring against the wider set
-    #     is a slight under-count of the true log_q (the true denominator
-    #     should be narrower); for MH purposes, this means we slightly
-    #     over-reward the proposed move. The bias is bounded by the ratio
-    #     of candidate set sizes and is symmetric forward/reverse in the
-    #     common case where both proposals use the same rule path.
+    # Step 3 mirror (R1-Fix3): apply depth-limit restriction, including the
+    # previously-skipped lookahead branch. `_sample`'s flow at depth >= max:
+    #   1. If terminal productions OR bound variables match, keep ONLY
+    #      terminal productions (variables are always kept via var_candidates).
+    #   2. Otherwise, enter the lookahead branch:
+    #        - Filter productions to those whose args are terminable under
+    #          `_resolve_free_type_vars(env, rng)`. Since rng resolves the
+    #          remaining-free type vars uniformly over `_CONCRETE_TYPES`,
+    #          survival is a Bernoulli indicator with parameter
+    #          p_i = (# terminable assignments) / C^k_i. We fold log(p_i)
+    #          into each production's effective log-weight so the downstream
+    #          softmax marginalizes over filter outcomes.
+    #        - If all productions have p_i = 0, fall back to non-recursive
+    #          productions (match `_sample`'s second fallback).
+    #        - If those are empty too, keep everything (absolute limit will
+    #          catch runaway recursion — matches `_sample`'s behavior).
+    #
+    # Previously the scorer skipped this branch entirely and scored observed
+    # programs against the unrestricted candidate set, biasing the MH ratio
+    # whenever proposals entered the lookahead (GPT-5.4 R1 measured this at
+    # 23.5% of calls in gallery HAND->BOOL, max_depth=5).
     # -------------------------------------------------------------------- #
     if depth >= max_depth:
         terminal_prods = [
@@ -704,13 +914,34 @@ def _score_subtree_under_sampler(
         ]
         if terminal_prods or var_candidates:
             production_candidates = terminal_prods
-        # We intentionally skip the lookahead-based restriction
-        # (_all_args_terminable branch) because it depends on rng via
-        # _resolve_free_type_vars; scoring under that branch would require
-        # tracking which concrete-type assignment _sample used, which is
-        # unobservable from the final program alone. In practice, this
-        # branch is only entered when NO terminals or variables exist for
-        # the target type — a rare edge case in the gallery grammar.
+        else:
+            # Lookahead branch (mirror _sample lines 438-462): include each
+            # production with its rng-marginalized filter-survival probability.
+            restricted = []
+            for prod, inst_type, lp in production_candidates:
+                log_p_survive = _log_prob_prod_survives_depth_cap_filter(
+                    grammar, inst_type, env,
+                )
+                if log_p_survive != float('-inf'):
+                    restricted.append((prod, inst_type, lp + log_p_survive))
+
+            if restricted:
+                production_candidates = restricted
+            else:
+                # Second fallback: non-recursive productions (mirror _sample
+                # lines 452-461). A production is "recursive" if any of its
+                # args contain the target type as a substructure.
+                non_recursive = [
+                    (p, it, lp) for p, it, lp in production_candidates
+                    if not any(
+                        _contains_type(arg_t, target_type)
+                        for arg_t in it.arguments
+                    )
+                ]
+                if non_recursive:
+                    production_candidates = non_recursive
+                # Else: keep full unrestricted set; `_sample` would too, and
+                # both sides then rely on `_ABSOLUTE_DEPTH_LIMIT` to terminate.
 
     # -------------------------------------------------------------------- #
     # Step 4 mirror: build unified (choice, log_prob) list.
@@ -777,79 +1008,20 @@ def _score_subtree_under_sampler(
 
             # Recurse on each argument, mirroring _sample's forward-propagation
             # of the substitution learned from already-sampled arguments.
+            # Free type variables still unresolved after env-based unification
+            # are marginalized exactly: _sample picks rng.choice(_CONCRETE_TYPES)
+            # with weight 1/|C|, so we enumerate C^k and log-sum-exp the
+            # conditional scores.
             log_p_args = 0.0
             subst: dict = {}
             for j, (arg_type, arg_observed) in enumerate(zip(arg_types, args_observed)):
-                concrete_arg_type = arg_type.apply_substitution(subst)
-
-                # Mirror `_sample`'s free-variable resolution: the sampler
-                # calls `_resolve_free_type_vars(concrete_arg_type, env, rng)`
-                # to pick a concrete type via env-unification, falling back
-                # to rng over _CONCRETE_TYPES. We mirror that here, preferring
-                # the observed arg's inferred type over a default sentinel,
-                # and charging -log(|_CONCRETE_TYPES|) for any truly free var.
-                free_vars = concrete_arg_type.free_type_variables()
-                resolution_log_p = 0.0
-                if free_vars:
-                    resolved_subst: dict = {}
-
-                    # 1) Env-based resolution (deterministic in sampler too).
-                    for env_type in env:
-                        try:
-                            ctx2 = TypeContext()
-                            ctx2.unify(concrete_arg_type, env_type)
-                            for var_id in free_vars:
-                                resolved = ctx2.apply(TypeVariable(var_id))
-                                if (not isinstance(resolved, TypeVariable)
-                                        and var_id not in resolved_subst):
-                                    resolved_subst[var_id] = resolved
-                            break
-                        except Exception:
-                            continue
-
-                    # 2) For vars still unresolved, try to read the observed
-                    #    subtree's inferred type — if the body uses the bound
-                    #    var, type inference will have revealed its concrete
-                    #    type through unification with a primitive.
-                    unresolved = [v for v in free_vars if v not in resolved_subst]
-                    if unresolved:
-                        try:
-                            infer_ctx = TypeContext()
-                            observed_type = arg_observed.infer_type(infer_ctx, env)
-                            observed_type = infer_ctx.apply(observed_type)
-                            uctx = TypeContext()
-                            uctx.unify(concrete_arg_type, observed_type)
-                            for var_id in unresolved:
-                                resolved = uctx.apply(TypeVariable(var_id))
-                                if not isinstance(resolved, TypeVariable):
-                                    resolved_subst[var_id] = resolved
-                        except Exception:
-                            pass
-
-                    # 3) Any truly-free var (observed body doesn't constrain it)
-                    #    gets a sentinel concrete assignment. This mirrors the
-                    #    sampler's rng.choice(_CONCRETE_TYPES) — we cannot know
-                    #    which concrete it picked, but since the body doesn't
-                    #    use it, scoring is invariant under the choice. Charge
-                    #    -log(|_CONCRETE_TYPES|) for each such var (cancels
-                    #    forward/reverse to leading order).
-                    still_unresolved = [v for v in free_vars if v not in resolved_subst]
-                    if still_unresolved:
-                        resolution_log_p = (
-                            -len(still_unresolved) * math.log(len(_CONCRETE_TYPES))
-                        )
-                        for var_id in still_unresolved:
-                            resolved_subst[var_id] = _CONCRETE_TYPES[0]
-
-                    concrete_arg_type = concrete_arg_type.apply_substitution(resolved_subst)
-
-                log_p_this_arg = _score_subtree_under_sampler(
-                    grammar, arg_observed, concrete_arg_type,
-                    max_depth, depth + 1, env,
+                log_p_this_arg = _score_arg_marginalizing_free_vars(
+                    grammar, arg_observed, arg_type, subst, env,
+                    max_depth, depth + 1,
                 )
                 if log_p_this_arg == float('-inf'):
                     return float('-inf')
-                log_p_args += resolution_log_p + log_p_this_arg
+                log_p_args += log_p_this_arg
 
                 # Update substitution from observed type to carry into
                 # subsequent arguments (mirror of _sample lines 557-579).
@@ -907,6 +1079,26 @@ class SubtreeSite:
     subtree: Program
 
 
+# Module-level counter for silent failures inside `collect_subtree_sites`.
+# Each time a `try: ... infer_type(...) ... except` block swallows a failure
+# during AST descent, this counter increments. Under the gallery grammar on
+# well-typed sampled programs the counter must stay at 0; if it drifts,
+# sites are being dropped and `n_sites` in the MH ratio becomes an estimate
+# of the wrong quantity.
+_collect_subtree_sites_failures: int = 0
+
+
+def get_collect_subtree_sites_failures() -> int:
+    """Return the silent-failure counter for `collect_subtree_sites`."""
+    return _collect_subtree_sites_failures
+
+
+def reset_collect_subtree_sites_failures() -> None:
+    """Reset the silent-failure counter (test helper)."""
+    global _collect_subtree_sites_failures
+    _collect_subtree_sites_failures = 0
+
+
 def collect_subtree_sites(
     program: Program,
     request_type: Type,
@@ -937,6 +1129,50 @@ def collect_subtree_sites(
     """
     sites: List[SubtreeSite] = []
 
+    # Pre-compute each subtree's resolved type by running a SINGLE root
+    # infer_type whose TypeContext threads unification constraints across all
+    # subtrees. We record each AST node's type under that context, keyed by
+    # object identity. Subsequent walker lookups use this map instead of
+    # re-running local infer_type calls that would lose sibling constraints.
+    # Produces `(node_id, type)` entries; when the root infer fails, the map
+    # is empty and the walker falls back to isolated inference (preserving
+    # legacy behaviour on edge cases).
+    node_types: dict = {}
+
+    def _annotate(ctx: TypeContext, node: Program, env: List[Type]) -> Type:
+        t = node.infer_type(ctx, env)
+        node_types[id(node)] = t
+        if isinstance(node, Abstraction):
+            t_applied = ctx.apply(t)
+            if isinstance(t_applied, Arrow):
+                _annotate(ctx, node.body, [t_applied.arg] + env)
+        elif isinstance(node, Application):
+            _annotate(ctx, node.f, env)
+            _annotate(ctx, node.x, env)
+        return t
+
+    try:
+        root_ctx = TypeContext()
+        _annotate(root_ctx, program, [])
+        node_types = {
+            k: root_ctx.apply(v) for k, v in node_types.items()
+        }
+    except Exception:
+        root_ctx = None
+        node_types = {}
+
+    def _lookup_or_infer(node: Program, env: List[Type]) -> Optional[Type]:
+        """Return node's resolved type from the root-threaded map, or infer
+        locally as a fallback. Returns None on total failure."""
+        t = node_types.get(id(node))
+        if t is not None:
+            return t
+        try:
+            ctx = TypeContext()
+            return ctx.apply(node.infer_type(ctx, env))
+        except Exception:
+            return None
+
     def _walk_without_collect(
         node: Program,
         current_type: Type,
@@ -949,17 +1185,15 @@ def collect_subtree_sites(
         without treating bare primitives or partial applications as valid
         regeneration targets.
         """
+        global _collect_subtree_sites_failures
         if isinstance(node, Application):
-            try:
-                ctx = TypeContext()
-                f_type = node.f.infer_type(ctx, env)
-                f_type = ctx.apply(f_type)
-                if isinstance(f_type, Arrow):
-                    arg_type = f_type.arg
-                    _walk_without_collect(node.f, f_type, env, path + ('f',))
-                    _walk(node.x, arg_type, env, path + ('x',), False)
-            except Exception:
-                pass
+            f_type = _lookup_or_infer(node.f, env)
+            if f_type is None or not isinstance(f_type, Arrow):
+                _collect_subtree_sites_failures += 1
+                return
+            arg_type = f_type.arg
+            _walk_without_collect(node.f, f_type, env, path + ('f',))
+            _walk(node.x, arg_type, env, path + ('x',), False)
 
     def _walk(
         node: Program,
@@ -978,6 +1212,7 @@ def collect_subtree_sites(
             path:         Path from root to this node.
             is_root:      True only for the top-level call (skip collecting).
         """
+        global _collect_subtree_sites_failures
         # Collect this node as a site (unless it's the root).
         if not is_root:
             sites.append(SubtreeSite(
@@ -998,34 +1233,20 @@ def collect_subtree_sites(
             # we skip recursing — can't determine child types safely.
 
         elif isinstance(node, Application):
-            # Application (f x): infer f's type to get arg_type.
-            # f has type Arrow(arg_type, current_type), x has type arg_type.
+            # Application (f x): look up f's type from the root-threaded
+            # annotation map (built once with cross-subtree unification),
+            # with local re-inference as a fallback.
             #
             # Note: we DESCEND into node.f to reach deeper .x positions (for
             # left-nested Application chains like `(((f x1) x2) x3)`), but
-            # we do NOT collect intermediate .f nodes as sites. The sampler
-            # `_sample` never produces a bare primitive or a partial
-            # Application as a subtree at an Arrow-typed hole — Arrow holes
-            # always yield Abstractions. Including .f positions as sites
-            # would break C1's detailed-balance correction because the
-            # reverse proposal density for a bare primitive under
-            # `_score_subtree_under_sampler` is always -inf.
-            try:
-                ctx = TypeContext()
-                f_type = node.f.infer_type(ctx, env)
-                f_type = ctx.apply(f_type)
-
-                if isinstance(f_type, Arrow):
-                    arg_type = f_type.arg
-                    # Descend into f WITHOUT collecting the bare head as a site.
-                    # Any .x positions deeper inside (from nested Applications)
-                    # will still be collected by the recursion.
-                    _walk_without_collect(node.f, f_type, env, path + ('f',))
-                    # Recurse into x with the argument type — collects .x as a site.
-                    _walk(node.x, arg_type, env, path + ('x',), False)
-            except Exception:
-                # Type inference failed (e.g., polymorphic edge case).
-                pass
+            # we do NOT collect intermediate .f nodes as sites.
+            f_type = _lookup_or_infer(node.f, env)
+            if f_type is None or not isinstance(f_type, Arrow):
+                _collect_subtree_sites_failures += 1
+                return
+            arg_type = f_type.arg
+            _walk_without_collect(node.f, f_type, env, path + ('f',))
+            _walk(node.x, arg_type, env, path + ('x',), False)
 
         # Primitives and Indices are leaves — no children to recurse into.
 
@@ -1173,9 +1394,12 @@ def propose_regeneration(
 
     # Sample a new subtree of the appropriate type, using the site's
     # environment so that bound variables are available.
+    # allow_retries=False: the MH ratio needs the forward proposal to be
+    # drawn from exactly the distribution `_score_subtree_under_sampler`
+    # scores. Retrying on failure changes the effective distribution.
     new_subtree = sample_program(
         grammar, site.type, max_depth=regen_depth, seed=rng.randint(0, 2**31),
-        env=site.env,
+        env=site.env, allow_retries=False,
     )
 
     # Step 4: Replace the old subtree with the new one.
@@ -1528,6 +1752,10 @@ class MCMCChain:
             current_log_lik, current_ext_frac = compute_mcmc_log_likelihood(
                 current, exemplar_hands, config.noise_epsilon, ext_probe_hands,
             )
+            # Vacuity is encoded as -inf in the target; make init consistent
+            # with the MH body's handling so the first non-vacuous proposal
+            # always accepts via the `current_annealed == -inf` branch.
+            current_log_prior = float('-inf')
         current_log_posterior = current_log_prior + current_log_lik
 
         if V >= 1:
@@ -1579,24 +1807,24 @@ class MCMCChain:
                 trajectory.append(current_str)
                 continue
 
-            # (b) Reject if program is too large.
-            if proposed.size() > config.max_nodes:
-                current_str = str(current)
-                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
-                trajectory.append(current_str)
-                continue
+            # (b) Layer 1a (size cap): encoded as log π = -∞ below so the MH
+            # ratio handles the rejection. Previously this was a pre-MH hard
+            # reject; the target density now carries the full truncation so
+            # the acceptance operator is self-consistent (identical treatment
+            # to the vacuous-lambda case).
 
-            # (b2) Layer 1: Reject vacuous lambdas -- programs that ignore their input.
-            if is_vacuous_lambda(proposed):
-                current_str = str(current)
-                visit_counts[current_str] = visit_counts.get(current_str, 0) + 1
-                trajectory.append(current_str)
-                continue
+            # (b2) Layer 1b (vacuous lambdas): same encoding — the target
+            # assigns log π = −∞, so MH rejects the move naturally and the
+            # acceptance operator remains symmetric.
 
             # (c) Compute proposed posterior.
             proposed_log_prior = grammar.program_log_likelihood(
                 proposed, request_type
             )
+            if proposed.size() > config.max_nodes:
+                proposed_log_prior = float('-inf')
+            if is_vacuous_lambda(proposed):
+                proposed_log_prior = float('-inf')
             proposed_log_lik, proposed_ext_frac = compute_mcmc_log_likelihood(
                 proposed, exemplar_hands, config.noise_epsilon, ext_probe_hands,
             )

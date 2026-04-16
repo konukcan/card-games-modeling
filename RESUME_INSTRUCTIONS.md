@@ -1,5 +1,7 @@
 # Resume Instructions (if the overnight session died)
 
+**Night context:** This is Night 2 of the MCMC review (continuation of Night 1 which terminated early at 6.5/10 after 3 rounds). Night 1 artifacts are archived at `night1-archive/`. Tonight's active state lives under `review-stage/`.
+
 If you come back (from commute, from sleep, from a Wi-Fi drop) and the run appears stopped, use one of these two prompts depending on what you see.
 
 ## Scenario A — The `claude` session is still open but stuck on an error
