@@ -266,6 +266,65 @@ def test_likelihood_returns_tuple(grammar, exemplars):
     assert 0.0 <= ext_frac <= 1.0, f"ext_fraction should be in [0,1], got {ext_frac}"
 
 
+def test_likelihood_rejects_empty_extension(grammar, exemplars):
+    """Regression test for C4: 'accepts nothing' programs must not be rewarded.
+
+    Prior bug: when n_hits_probe == 0, ext_size was set to 1.0 (smallest
+    possible), so if any exemplar happened to be accepted via the noise
+    floor, the per-exemplar probability was (1 - ε)/1.0 ≈ 1.0 — the
+    HIGHEST possible. This rewarded programs that accept nothing on probes
+    but luckily accept an exemplar.
+
+    Fix: Jeffreys-smoothed ext_fraction (n_hits+0.5)/(n_probes+1) with a
+    one-probe floor ensures ext_size >= TOTAL_HANDS / n_probes, so the
+    per-exemplar probability is bounded above by n_probes/TOTAL_HANDS,
+    which for n_probes=1000 and TOTAL_HANDS≈1.47e10 is ~7e-8 — very low.
+    An "accepts nothing" program should have lower likelihood than a
+    program that actually fits the exemplars.
+    """
+    from dreamcoder_core.program import Abstraction, Application
+
+    hands = exemplars['all_red']['hands_primary']
+    probes = generate_probe_set(n_probes=1000, seed=42)
+
+    # Look up primitives by string name from the grammar's production list.
+    prims_by_name = {str(p): p for p in grammar.primitives()}
+    required = ('lt', '0', '5')
+    for name in required:
+        if name not in prims_by_name:
+            import pytest
+            pytest.skip(f"Grammar missing primitive {name!r}")
+
+    lt = prims_by_name['lt']
+    zero = prims_by_name['0']
+    five = prims_by_name['5']
+
+    # (lambda (lt 5 0)) — constant-false (5 < 0 is always False).
+    empty = Abstraction(Application(Application(lt, five), zero))
+    ll_empty, frac_empty = compute_mcmc_log_likelihood(
+        empty, hands, noise_epsilon=0.01, ext_probe_hands=probes,
+    )
+    assert frac_empty == 0.0, f"'accepts nothing' should have ext_fraction=0, got {frac_empty}"
+
+    # (lambda (lt 0 5)) — constant-true tautology.
+    taut = Abstraction(Application(Application(lt, zero), five))
+    ll_taut, frac_taut = compute_mcmc_log_likelihood(
+        taut, hands, noise_epsilon=0.01, ext_probe_hands=probes,
+    )
+    assert frac_taut == 1.0
+
+    # The "accepts nothing" program must NOT have higher likelihood than the
+    # tautology. Prior bug: n_hits==0 set ext_size=1.0, inflating per-exemplar
+    # probability to ~1.0 on any noise-accepted exemplar, making the empty
+    # program *more* attractive than a tautology. With Jeffreys smoothing +
+    # one-probe floor, ext_size is bounded below at TOTAL_HANDS/n_probes so
+    # per-exemplar probability stays tiny.
+    assert ll_empty <= ll_taut + 1e-6, (
+        f"'accepts nothing' likelihood {ll_empty} exceeds tautology "
+        f"likelihood {ll_taut} — empty-extension pathology returned?"
+    )
+
+
 def test_likelihood_noise_prevents_neg_inf(grammar, exemplars):
     """With noise_epsilon > 0, likelihood should be finite (not -inf)
     for programs that can at least be evaluated, even if they miss all exemplars."""

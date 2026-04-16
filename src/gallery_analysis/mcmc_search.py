@@ -1053,15 +1053,29 @@ def compute_mcmc_log_likelihood(
             # Program crashes on this hand — treat as non-member.
             continue
 
+    # Raw (unsmoothed) extension fraction for human-readable reporting and
+    # the post-hoc Layer-2 tautology filter. Jeffreys-smoothed fraction is
+    # used for the likelihood calculation below.
     ext_fraction = n_hits_probe / n_probes if n_probes > 0 else 0.0
 
-    # Extension size estimate. Guard against zero (program accepts nothing).
-    if n_hits_probe == 0:
-        # The program's extension is empty (or nearly so).
-        # Every exemplar is a "miss," so likelihood is driven entirely by noise.
-        ext_size = 1.0  # Minimal extension to avoid division by zero.
+    # Jeffreys-prior smoothed extension estimate:
+    # ext_fraction_smoothed = (n_hits + 0.5) / (n_probes + 1.0)
+    # Avoids the (n_hits == 0 → ext_size = 1.0) pathology which previously
+    # REWARDED programs accepting nothing by making per-exemplar probability
+    # (1 - ε)/1.0 + ε/TOTAL_HANDS ≈ 1.0 for any hit (even via noise).
+    # One-probe resolution floor: ext_size >= TOTAL_HANDS / n_probes,
+    # acknowledging that a Monte-Carlo estimate cannot resolve extension
+    # smaller than one probe's worth of the hypothesis space.
+    if n_probes > 0:
+        ext_fraction_smoothed = (n_hits_probe + 0.5) / (n_probes + 1.0)
+        ext_size = max(
+            ext_fraction_smoothed * TOTAL_HANDS,
+            TOTAL_HANDS / n_probes,
+        )
     else:
-        ext_size = (n_hits_probe / n_probes) * TOTAL_HANDS
+        # Defensive: should not happen in practice (ext_probe_hands is
+        # generated with n_probes=10_000).
+        ext_size = float(TOTAL_HANDS)
 
     # Compute log-likelihood for each exemplar hand.
     total_log_lik = 0.0
