@@ -99,3 +99,42 @@ See `review-stage/round_2_review.txt` for verbatim text, including rulings on al
 ### Status
 - Proceeding to Round 3 implementing priorities 1-3 (priority 4 is hardware-bounded).
 - Difficulty: hard.
+
+---
+
+## Round 3 (2026-04-16T16:05:00Z)
+
+### Assessment (Summary)
+- **Score:** 7.0/10 (+1.5 from Round 2)
+- **Verdict:** Almost
+- **Threshold met:** `positive_threshold_effective: "score>=6 AND rounds_completed>=3"` — SATISFIED.
+- **Key ruling:** `C2-cap` OVERRULED (exact depth-cap scorer stress-tested on 3-competitor case: empirical 0.58085 vs scored 0.58333). `max_nodes init` OVERRULED. Remaining weaknesses are no longer fatal MH-ratio defects — they are boundary conditions + methodology choices.
+
+### Reviewer Raw Response
+
+<details>
+<summary>Click to expand full reviewer response (saved in review-stage/round_3_review.txt)</summary>
+
+See `review-stage/round_3_review.txt` for verbatim text.
+
+</details>
+
+### Rulings summary
+- **Overruled (3):** C2-cap depth-cap, max_nodes init, hidden free-type draws (gallery grammar only).
+- **Partially sustained (6):** init resampling, calibration support, weak proposal test, C1-gallery depth=2, C5 init retries, H-n_sites-invariance.
+- **Sustained (1):** H5 sequential chains.
+
+### New weaknesses surfaced in Round 3
+1. **Explicit approximation caps** (`_DEPTH_CAP_EXACT_ENUM_CAP=16`, `_MARGINALIZATION_FREE_VAR_CAP=3`). Not hit in gallery regime but still approximation boundaries.
+2. **Scalability risk**: exact depth-cap scorer is exponential in competing lookahead productions.
+
+### Round 4 priority (from reviewer)
+1. Add a tiny full-kernel normalization test for `propose_regeneration` (site-pick × regeneration, not just root scorer).
+2. Decide whether paper makes first-passage / cognitive-timing claims. If yes, fix init resampling or exclude early trajectory explicitly.
+3. If hardware permits, depth-3 calibration run; if not, document the limitation clearly.
+
+### Status
+- Positive threshold SATISFIED (7.0/10 ≥ 6, 3 rounds ≥ 3).
+- Per launch prompt, still aiming for 4 rounds ("aim 4 rounds even if score ≥6/10 is reached").
+- Proceeding to Round 4 implementing priorities 1-3 where feasible.
+- Difficulty: hard.

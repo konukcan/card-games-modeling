@@ -1,0 +1,36 @@
+**Score:** 7.0/10
+**READY for submission?** Almost
+
+**Direct answers**
+1. The new depth-cap scorer looks correct for the current gallery regime. The logic in mcmc_search.py:876 matches `_sample`'s branch structure, and I stress-checked it on an additional 3-competitor synthetic case: empirical `0.58085` vs scored `0.58333`. The key assumptions you listed are fine.
+2. `-inf` fallback on exhausted init is acceptable. It preserves a valid MH kernel because the chain can recover via the `current_annealed == -inf` branch. Raising would be cleaner operationally, but it is not required for correctness.
+3. The new normalization test is a real improvement, but it is not a full `∑_{s'} Q(s'|s)=1` test for `propose_regeneration`. It validates the root scorer, not the entire subtree-regeneration kernel with site-pick terms.
+4. Init resampling is acceptable only as burn-in/documentation territory. It does not break stationarity, but it does bias first-passage / early-trajectory analyses if you report them.
+5. Remaining off-book behavior is now mostly initialization-only: tautology-skipping at init and retry-based init sampling. The MH kernel itself is much cleaner.
+
+**Round-2 weaknesses**
+- `C2-cap depth-cap`: **overrule**. The mean-field defect is fixed for the current regime. The exact subset enumeration is in mcmc_search.py:796 and integrated at mcmc_search.py:1047. I also checked sampled gallery states: max lookahead candidate count was `16`, exactly the cap, so the fallback was not triggered there.
+- `max_nodes init`: **overrule**. Fixed at mcmc_search.py:1974.
+- `init resampling`: **partially sustain**. Still skips tautological starts at mcmc_search.py:1992. Fine for stationary sampling after burn-in, not fine for first-passage style claims.
+- `calibration support`: **partially sustain**. The kernel evidence is much better, but calibration is still depth-2 and not exact full-support depth-3.
+- `weak proposal test`: **partially sustain**. The new tests at test_mcmc_search.py:1113 and test_mcmc_search.py:1156 are good scorer regressions, but they are not a full proposal-kernel normalization test.
+- `C1-gallery depth=2`: **partially sustain**. Better than before, still not the full depth-3 sign-off run.
+- `C5 init retries`: **partially sustain**. No longer a proposal-law problem, still an init-policy choice.
+- `H-n_sites-invariance`: **partially sustain**. Site-drop bug is fixed, but no direct `propose_regeneration` normalization test yet.
+- `hidden free-type draws`: **overrule** for the gallery grammar. Max free vars in gallery production args is `2`, below `_MARGINALIZATION_FREE_VAR_CAP = 3`, so the exact marginalization path is active.
+- `H5 sequential chains`: **sustain**. Still sequential at mcmc_search.py:2219, but low priority for tonight's goal.
+
+**New weaknesses introduced by R2 fixes**
+- The code is now exact only within explicit caps: `_DEPTH_CAP_EXACT_ENUM_CAP = 16` and `_MARGINALIZATION_FREE_VAR_CAP = 3` in mcmc_search.py:630. I do not see evidence these caps are hit in the current gallery regime, but they are still approximation boundaries.
+- The new exact depth-cap scorer is exponentially expensive in the number of competing lookahead productions. That is a scalability risk, not a current correctness blocker.
+
+**Memory update**
+- Addressed: exact depth-cap scorer/sampler agreement, init-path `max_nodes` inconsistency, scorer normalization regression strength.
+- Still open: init resampling biases early trajectory / first-passage analyses; calibration remains depth-2; no full `∑_{s'}Q(s'|s)=1` test for subtree regeneration.
+- Pattern update: the remaining issues are no longer fatal MH-ratio defects; they are now boundary-condition and methodology issues.
+- Next-round priority:
+  1. Add a tiny full-kernel normalization test for `propose_regeneration`, not just the scorer.
+  2. Decide whether the paper will make first-passage / cognitive timing claims. If yes, fix init resampling or exclude early trajectory explicitly.
+  3. If hardware permits, do the depth-3 calibration run; if not, document the limitation clearly.
+
+If the paper's central claim is only that the chain targets a posterior after burn-in, this is close. If it also leans on early discovery timing or strong "full gallery" calibration language, it is still not ready.

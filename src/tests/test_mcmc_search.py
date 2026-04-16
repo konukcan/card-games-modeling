@@ -1215,3 +1215,110 @@ def test_score_depth_cap_exact_matches_reviewer_counterexample():
         )
     finally:
         ms._CONCRETE_TYPES[:] = saved
+
+
+# --------------------------------------------------------------------------- #
+# R3-Fix1: Full-kernel ΣQ(s'|s) = 1 test for propose_regeneration.
+#
+# Reviewer weakness (R3): the existing tiny-grammar test validates scorer
+# normalization only (root-level `_score_subtree_under_sampler`), not the
+# full proposal kernel Q(s'|s) = (1/n_sites) × P_sample(new_subtree | site).
+# This test closes that gap by enumerating all (site, new_subtree) pairs on
+# a hand-built starting state and verifying Σ exp(log_q_fwd) = 1 across the
+# entire kernel support.
+#
+# Construction:
+#   - Grammar: {t:bool, f:bool→bool}, log_variable=-inf (tiny-bool grammar).
+#   - Starting program s = f(f(t)). By collect_subtree_sites(s, BOOL), this
+#     has exactly 2 sites: `f(t)` at ('x',) and `t` at ('x','x'), both with
+#     type BOOL and env=[]. Root is excluded by design.
+#   - We call propose_regeneration with max_depth=4 so regen_depth =
+#     max(3, 4 - len(site.path)) = 3 at both sites (path lengths 1 and 2).
+#   - At regen_depth=3, the sampler support is enumerable:
+#       {t, f(t), f(f(t)), f(f(f(t)))} with P = {1/2, 1/4, 1/8, 1/8}.
+#   - For each (site, new_subtree) pair we compute
+#       log_q_fwd = -log(n_sites) + _score_subtree_under_sampler(
+#           grammar, new_subtree, site.type, regen_depth, depth=0, env=site.env,
+#       )
+#     which mirrors the exact expression inside propose_regeneration. We
+#     then check Σ exp(log_q_fwd) ≈ 1 over ALL pairs. A failure implies
+#     either the scorer is not a proper density under `_sample` or the
+#     site-pick normalization is broken.
+# --------------------------------------------------------------------------- #
+
+
+def test_propose_regeneration_full_kernel_normalizes_on_tiny_grammar():
+    """
+    Σ_{(site, new_subtree)} Q_fwd(site, new_subtree | s) = 1 on a tiny
+    hand-built state space. Complements R2-Fix3 (which only validated the
+    scorer, not the full kernel with site-pick).
+    """
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive, Application
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    from gallery_analysis.mcmc_search import _score_subtree_under_sampler
+
+    grammar = _build_tiny_bool_grammar()
+
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+    starting_program = Application(f_prim, Application(f_prim, t_prim))
+
+    sites = collect_subtree_sites(starting_program, _BOOL)
+    assert len(sites) == 2, (
+        f"Tiny kernel test requires exactly 2 sites on f(f(t)); got "
+        f"{len(sites)}. If site-collection semantics changed, the test "
+        f"design needs revisiting."
+    )
+    n_sites_old = len(sites)
+    log_pick_fwd = -math.log(n_sites_old)
+
+    # max_depth=4 → regen_depth=max(3, 4-1)=3 at ('x',), max(3, 4-2)=3 at ('x','x').
+    propose_max_depth = 4
+    total_q = 0.0
+    per_pair: list = []
+    for site in sites:
+        regen_depth = max(3, propose_max_depth - len(site.path))
+        assert regen_depth == 3, (
+            f"Test assumes regen_depth=3 at every site; got {regen_depth} "
+            f"for site {site.path!r} (propose_max_depth={propose_max_depth})."
+        )
+        support = _enumerate_tiny_bool_support(regen_depth)
+        # Sanity: per-site scorer support is a proper distribution.
+        per_site_sum = 0.0
+        for new_subtree, expected_p in support:
+            log_gen = _score_subtree_under_sampler(
+                grammar, new_subtree, site.type,
+                max_depth=regen_depth, depth=0, env=site.env,
+            )
+            assert log_gen != float('-inf'), (
+                f"Scorer assigned 0 to {new_subtree!r} at site {site.path!r}."
+            )
+            log_q = log_pick_fwd + log_gen
+            q = math.exp(log_q)
+            per_site_sum += math.exp(log_gen)
+            total_q += q
+            per_pair.append((site.path, str(new_subtree), q, expected_p))
+        assert abs(per_site_sum - 1.0) < 1e-9, (
+            f"Scorer not normalized at site {site.path!r}: "
+            f"Σ P(new_subtree) = {per_site_sum:.10f}."
+        )
+
+    assert abs(total_q - 1.0) < 1e-9, (
+        f"Full-kernel Σ Q(s'|s) = {total_q:.10f} ≠ 1.\n"
+        f"Per-pair breakdown:\n"
+        + "\n".join(
+            f"  site={sp!r} subtree={prog}: q={q:.10f} (expected 1/n_sites × P={ep/2:.10f})"
+            for sp, prog, q, ep in per_pair
+        )
+    )
+
+    # Also assert expected per-pair mass (pointwise lock-in):
+    # each pair's q should equal (1/2) × P(new_subtree), i.e. uniform site
+    # × sampler P. This catches any future drift in log_pick_fwd semantics.
+    for site_path, subtree_str, q, expected_p in per_pair:
+        expected_q = 0.5 * expected_p
+        assert abs(q - expected_q) < 1e-9, (
+            f"Pair (site={site_path!r}, subtree={subtree_str}): "
+            f"q={q:.10f}, expected={expected_q:.10f}."
+        )

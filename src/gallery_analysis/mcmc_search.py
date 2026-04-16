@@ -1977,6 +1977,21 @@ class MCMCChain:
         # so the chain never starts outside its stated support with finite
         # prior. GPT-5.4 R2 measured 57/100 initialized gallery states
         # exceeding max_nodes=25 before this fix).
+        #
+        # R3-Fix2: Init distribution caveat.
+        # This retry loop filters vacuous/tautological/oversized draws. It does
+        # NOT draw from the posterior π or from π restricted to the accepted
+        # support — it draws from an *ad hoc* prior-with-rejection over starts.
+        # This does NOT break MH stationarity (the chain still targets π after
+        # burn-in), but it DOES bias:
+        #   (a) early-step visit counts,
+        #   (b) first-passage / first-discovery times,
+        #   (c) any cognitive-timing claim that treats early trajectory as a
+        #       sample from π.
+        # Downstream analyses that depend on these must either (i) discard a
+        # burn-in prefix long relative to chain mixing time, or (ii) explicitly
+        # document that early-trajectory statistics reflect this init prior.
+        # See REVIEWER_MEMORY.md Round 3 ruling on `init resampling`.
         for _retry in range(20):
             current = sample_program(
                 grammar, request_type, max_depth=config.init_max_depth,

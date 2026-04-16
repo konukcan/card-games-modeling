@@ -75,3 +75,36 @@ Persistent memory across rounds for the external GPT-5.4 reviewer (Codex MCP, `x
 >   2. Apply `max_nodes` consistently at init or state clearly that init is arbitrary and excluded from all timing/visit analyses.
 >   3. Add a true proposal-normalization test on a tiny hand-built state space.
 >   4. If possible, rerun calibration at depth 3 on a machine that can enumerate the support exactly.
+
+---
+
+## Round 3 — Score: 7.0/10, Verdict: Almost
+
+**Reviewer read commit `23134f4` directly; stress-tested R2-Fix1 on extra 3-competitor case (empirical 0.58085 vs scored 0.58333).**
+
+### Rulings on Round 2 weaknesses
+- `C2-cap depth-cap`: **OVERRULED** — exact subset enumeration at mcmc_search.py:796 integrated at :1047. Gallery lookahead candidate count max = 16 (exactly cap); fallback not triggered.
+- `max_nodes init`: **OVERRULED** — fixed at mcmc_search.py:1974.
+- `init resampling`: **PARTIALLY SUSTAINED** — still skips tautological starts (mcmc_search.py:1992). Fine for stationary sampling after burn-in, NOT fine for first-passage/cognitive-timing claims.
+- `calibration support`: **PARTIALLY SUSTAINED** — kernel evidence much better, but calibration still depth-2, not exact full-support depth-3.
+- `weak proposal test`: **PARTIALLY SUSTAINED** — new tests (test_mcmc_search.py:1113, :1156) are good scorer regressions but NOT full proposal-kernel normalization test (no site-pick term coverage).
+- `C1-gallery depth=2`: **PARTIALLY SUSTAINED** — better, not full depth-3 sign-off run.
+- `C5 init retries`: **PARTIALLY SUSTAINED** — no longer a proposal-law problem, still an init-policy choice.
+- `H-n_sites-invariance`: **PARTIALLY SUSTAINED** — site-drop bug fixed, no direct `propose_regeneration` normalization test yet.
+- `hidden free-type draws`: **OVERRULED** for gallery (max free vars in gallery arg = 2, below `_MARGINALIZATION_FREE_VAR_CAP=3`).
+- `H5 sequential chains`: **SUSTAINED** — still sequential (mcmc_search.py:2219), low priority.
+
+### NEW weaknesses introduced by R2 fixes
+- Code is exact only within explicit caps (`_DEPTH_CAP_EXACT_ENUM_CAP=16`, `_MARGINALIZATION_FREE_VAR_CAP=3`). Not hit in current gallery but still approximation boundaries.
+- Exact depth-cap scorer is exponential in competing lookahead productions — scalability risk, not current correctness blocker.
+
+### Reviewer memory update for future rounds (verbatim from GPT-5.4, Round 3)
+> Addressed: exact depth-cap scorer/sampler agreement, init-path `max_nodes` inconsistency, scorer normalization regression strength.
+> Still open: init resampling biases early trajectory / first-passage analyses; calibration remains depth-2; no full `∑_{s'}Q(s'|s)=1` test for subtree regeneration.
+> Pattern update: the remaining issues are no longer fatal MH-ratio defects; they are now boundary-condition and methodology issues.
+> Next-round priority:
+>   1. Add a tiny full-kernel normalization test for `propose_regeneration`, not just the scorer.
+>   2. Decide whether the paper will make first-passage / cognitive timing claims. If yes, fix init resampling or exclude early trajectory explicitly.
+>   3. If hardware permits, do the depth-3 calibration run; if not, document the limitation clearly.
+
+**Bottom line:** "If the paper's central claim is only that the chain targets a posterior after burn-in, this is close. If it also leans on early discovery timing or strong 'full gallery' calibration language, it is still not ready."
