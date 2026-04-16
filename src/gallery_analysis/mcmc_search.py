@@ -44,7 +44,7 @@ import sys
 import math
 import random
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace as dc_replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -980,6 +980,11 @@ class MCMCResult:
     first_passage: Dict[str, int] = field(default_factory=dict)
     trajectory: List[str] = field(default_factory=list)  # Step-by-step sequence of program strings
     ext_fractions: Dict[str, float] = field(default_factory=dict)  # Extension fraction per program string
+    # Per-chain first-passage distributions (populated by run_parallel_chains).
+    # Each element is one chain's first_passage dict; step indices are
+    # within-chain (0..n_steps), NOT offset into a concatenated timeline.
+    # Needed for honest per-chain cognitive-timing analysis.
+    per_chain_first_passage: List[Dict[str, int]] = field(default_factory=list)
 
 
 # =========================================================================== #
@@ -1440,16 +1445,10 @@ def run_parallel_chains(
     for i in range(n_chains):
         # Each chain gets a unique seed spaced 1000 apart to avoid overlap.
         chain_seed = base_seed + seed_offset + i * 1000
-        chain_config = MCMCConfig(
-            n_steps=config.n_steps,
-            max_depth=config.max_depth,
-            noise_epsilon=config.noise_epsilon,
-            max_nodes=config.max_nodes,
-            top_k=config.top_k,
-            seed=chain_seed,
-            verbose=config.verbose,
-            init_max_depth=config.init_max_depth,
-        )
+        # Propagate ALL fields from caller's config, only override seed.
+        # (Previous bug: beta_start/beta_end were silently dropped, so every
+        # gallery run ignored --beta-start/--beta-end and ran at β=1.0.)
+        chain_config = dc_replace(config, seed=chain_seed)
         if config.verbose >= 1:
             print(f"\n  --- Chain {i+1}/{n_chains} (seed={chain_seed}) ---")
         chain = MCMCChain(grammar, chain_config)
@@ -1471,22 +1470,23 @@ def run_parallel_chains(
     merged_log_posteriors: Dict[str, float] = {}
     merged_ext_fractions: Dict[str, float] = {}
     merged_trajectory: List[str] = []
+    ext_fraction_accum: Dict[str, Tuple[float, int]] = {}  # (sum, count) for averaging
     total_accepted = 0
 
     for i, result in enumerate(chain_results):
-        # Offset for this chain's position in the merged timeline.
-        # Chain i's steps map to [i * n_steps, (i+1) * n_steps).
-        step_offset = i * config.n_steps
-
         # Sum visit counts.
         for prog, count in result.visit_counts.items():
             merged_visit_counts[prog] = merged_visit_counts.get(prog, 0) + count
 
-        # Take earliest first passage (with offset).
+        # First-passage merge: chains are INDEPENDENT trajectories, NOT a
+        # concatenated timeline. Report the true min step across chains
+        # (i.e., "fastest chain to reach this program"), not step + i*n_steps
+        # which would bias low-index chains to appear faster for any hypothesis
+        # that appears in multiple chains. Per-chain first_passage is still
+        # available via chain_results for downstream analysis.
         for prog, step in result.first_passage.items():
-            offset_step = step + step_offset
-            if prog not in merged_first_passage or offset_step < merged_first_passage[prog]:
-                merged_first_passage[prog] = offset_step
+            if prog not in merged_first_passage or step < merged_first_passage[prog]:
+                merged_first_passage[prog] = step
 
         # Track best log posterior per program.
         for hyp in result.top_hypotheses:
@@ -1495,9 +1495,12 @@ def run_parallel_chains(
             if prog not in merged_log_posteriors or lp > merged_log_posteriors[prog]:
                 merged_log_posteriors[prog] = lp
 
-        # Merge extension fractions (keep latest value per program).
+        # Accumulate extension fractions for averaging across chains.
+        # (Prior "latest value" merge silently preferred the last chain's
+        # estimate. Averaging pools Monte-Carlo noise across chains.)
         for prog, frac in result.ext_fractions.items():
-            merged_ext_fractions[prog] = frac
+            ext_sum, ext_n = ext_fraction_accum.get(prog, (0.0, 0))
+            ext_fraction_accum[prog] = (ext_sum + frac, ext_n + 1)
 
         total_accepted += result.n_accepted
         merged_trajectory.extend(result.trajectory)
@@ -1533,6 +1536,17 @@ def run_parallel_chains(
     n_unique = len(merged_visit_counts)
     acceptance_rate = total_accepted / total_steps if total_steps > 0 else 0.0
 
+    # Average ext_fractions across chains (one estimate per chain in which
+    # the program was visited; pools Monte-Carlo noise).
+    merged_ext_fractions = {
+        prog: ext_sum / ext_n
+        for prog, (ext_sum, ext_n) in ext_fraction_accum.items()
+    }
+
+    # Per-chain first-passage (raw within-chain step indices) for honest
+    # downstream cognitive-timing analysis.
+    per_chain_first_passage = [dict(r.first_passage) for r in chain_results]
+
     return MCMCResult(
         n_steps=total_steps,
         n_accepted=total_accepted,
@@ -1545,4 +1559,5 @@ def run_parallel_chains(
         first_passage=merged_first_passage,
         trajectory=merged_trajectory,
         ext_fractions=merged_ext_fractions,
+        per_chain_first_passage=per_chain_first_passage,
     )

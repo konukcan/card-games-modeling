@@ -432,6 +432,74 @@ def test_parallel_chains_merge_ext_fractions(grammar, exemplars):
         assert 0.0 <= frac <= 1.0
 
 
+def test_parallel_chains_first_passage_no_offset(grammar, exemplars):
+    """Regression test for C6: merged first_passage must not offset by chain-index.
+
+    Prior bug: merged_first_passage[prog] = min(step + i*n_steps, ...) caused
+    chain-0 to always appear "fastest" for any program seen in multiple chains.
+    The merged min must lie within a single chain's step range [0, n_steps).
+    """
+    config = MCMCConfig(n_steps=200, max_depth=5, seed=42)
+    hands = exemplars['all_red']['hands_primary']
+    result = run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=4,
+    )
+    # All first-passage steps must be within a single chain's range.
+    # If the buggy offset were present, chain-3's first-seen programs would
+    # have step >= 3*200 = 600.
+    assert len(result.first_passage) > 0
+    for prog, step in result.first_passage.items():
+        assert 0 <= step < config.n_steps, (
+            f"First-passage step {step} for {prog[:60]!r} lies outside "
+            f"single-chain range [0, {config.n_steps}) — offset bug returned?"
+        )
+    # Per-chain first-passage should be exposed for honest timing analysis.
+    assert len(result.per_chain_first_passage) == 4
+    for pc_fp in result.per_chain_first_passage:
+        for step in pc_fp.values():
+            assert 0 <= step < config.n_steps
+
+
+def test_parallel_chains_propagates_beta_annealing(grammar, exemplars, monkeypatch):
+    """Regression test for C2: each chain config must carry caller's beta_start/beta_end.
+
+    Prior bug: run_parallel_chains re-instantiated MCMCConfig from a hand-picked
+    subset of fields, silently dropping beta_start/beta_end so every chain ran
+    at the dataclass default β=1.0 despite the caller setting β-annealing.
+    """
+    import gallery_analysis.mcmc_search as mcmc_module
+
+    captured_configs = []
+    original_init = mcmc_module.MCMCChain.__init__
+
+    def spy_init(self, grammar_arg, config_arg):
+        captured_configs.append(config_arg)
+        return original_init(self, grammar_arg, config_arg)
+
+    monkeypatch.setattr(mcmc_module.MCMCChain, "__init__", spy_init)
+
+    config = MCMCConfig(
+        n_steps=50, max_depth=5, seed=42,
+        beta_start=0.1, beta_end=0.9,
+    )
+    hands = exemplars['all_red']['hands_primary']
+    run_parallel_chains(
+        grammar, config,
+        request_type=Arrow(HAND, BOOL),
+        exemplar_hands=hands,
+        n_chains=3,
+    )
+    assert len(captured_configs) == 3
+    for cfg in captured_configs:
+        assert cfg.beta_start == 0.1, f"beta_start lost in propagation: {cfg.beta_start}"
+        assert cfg.beta_end == 0.9, f"beta_end lost in propagation: {cfg.beta_end}"
+        assert cfg.n_steps == 50
+        assert cfg.max_depth == 5
+
+
 # =========================================================================== #
 # Integration tests on real gallery rules
 # =========================================================================== #
