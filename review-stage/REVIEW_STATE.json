@@ -9,9 +9,23 @@
   "hard_time_budget_hours": 10,
   "codex_mcp_available": false,
   "fallback_reviewer": "claude-general-purpose",
-  "current_round": 0,
-  "rounds": [],
-  "last_checkpoint_action": "baseline_tests_green",
-  "last_checkpoint_at": "2026-04-16T05:10:00Z",
+  "current_round": 1,
+  "rounds": [
+    {
+      "round": 1,
+      "verdict": "major revision",
+      "score": 4,
+      "critical_issues": 6,
+      "high_issues": 6,
+      "medium_issues": 8,
+      "review_agent_id": "aeb9b1200669b676e",
+      "prior_failed_agent_id": "ab9a0f705ef731f77",
+      "review_received_at": "2026-04-16T05:15:00Z",
+      "priority_fixes_ordered": ["C2", "C6", "C3", "C4", "C1", "H5"],
+      "notes": "MH density mismatch (C1) and dropped β-annealing (C2) are soundness bugs. Tests assert runtime, not correctness of MH ratio or posterior. Not ready for CogSci claim."
+    }
+  ],
+  "last_checkpoint_action": "round_1_review_received",
+  "last_checkpoint_at": "2026-04-16T05:55:25Z",
   "baseline_tests_status": "green_40_of_40_in_1173s"
 }
