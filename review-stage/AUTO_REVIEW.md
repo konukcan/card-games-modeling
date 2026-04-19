@@ -182,3 +182,114 @@ See `review-stage/round_4_review.txt` for verbatim text.
 - **Night 2 COMPLETED.** 4/4 rounds run. Threshold SATISFIED (8.0/10 ≥ 6, 4 rounds ≥ 3).
 - Remaining open items documented in MORNING_REPORT.md.
 - Difficulty: hard.
+
+---
+
+# Night 3 — Final correctness push (2026-04-19)
+
+**Session started:** 2026-04-19T00:00:00Z
+**Branch:** `aris/mcmc-review-night3` (new, off `feature/mcmc-search`)
+**Worktree:** `.worktrees/aris-mcmc-night3/`
+**Difficulty:** hard (reviewer memory + debate protocol; 4 rounds, no early stop)
+**Reviewer backend:** Codex MCP (`mcp__codex__codex`) with `model_reasoning_effort: xhigh`
+**Compact mode:** true
+**Carry-in state:** Night 2 ended at 8.0/10 ("Almost").
+
+Three Night-2 remaining gaps entering tonight:
+1. Depth-3 calibration (OOMs on 24 GB — needs creative workaround).
+2. Runtime guardrails for silent approximation caps (`_DEPTH_CAP_EXACT_ENUM_CAP=16` @ mcmc_search.py:793, `_MARGINALIZATION_FREE_VAR_CAP=3` @ mcmc_search.py:630).
+3. Lambda/bound-variable kernel test variant (current `test_propose_regeneration_full_kernel_normalizes_on_tiny_grammar` is empty-env BOOL only).
+
+Tonight is also open-ended: new issues the previous nights may have missed are welcome.
+
+
+## Round 1 (2026-04-19T00:00:00Z → 2026-04-19T02:00:00Z)
+
+### Assessment (Summary)
+- **Score:** 5.0/10 (dropped from Night 2's 8.0/10)
+- **Verdict:** No
+- **Thread ID:** `019da4d5-c81e-77b2-9c4d-e64b2b463c93`
+- **Reviewer:** GPT-5.4 (Codex MCP, xhigh reasoning); read commit `0bf49b3` directly and ran probes on the repo.
+
+### Key criticisms
+1. **W1 (NEW critical blocker):** `collect_subtree_sites` root-threaded annotation cache is keyed by `id(node)`. Primitive singletons collide across AST positions; 18/314 sampled-program sites (~5.7%) had corrupted `(site.type, site.env)` metadata. 11/20 regeneration probes produced ill-typed proposals; 8/20 lost the chosen path in `new_sites`. Correctness blocker for both forward and reverse kernels.
+2. **W2 (carry):** three silent approximation-cap fallbacks at mcmc_search.py:679, :769, :823. Add per-site counters, reset per run, surface in artifact, paper-run hard-fail if any nonzero.
+3. **W3 (carry):** depth-3 calibration still closed only at depth-2.
+4. **W4 (carry):** full-kernel test is empty-env BOOL only. Reviewer provided exact lambda-variant spec with closed-form support.
+
+### Reviewer Raw Response
+
+<details>
+<summary>Click to expand full reviewer response (Round 1)</summary>
+
+```
+## Score
+5.0/10
+
+## Verdict
+No
+
+## Critical remaining weaknesses (ranked)
+
+### W1. `collect_subtree_sites` can assign the wrong local type/environment to a site
+- Why this is a concern: In mcmc_search.py:1375, the root-threaded annotation cache is keyed by `id(node)`. That is unsafe because primitive objects are reused across multiple AST occurrences. Direct probe: repeated primitives in one sampled AST share the same object id; on 10 sampled gallery programs, 18/314 collected sites had `(site.type, site.env)` inconsistent with the subtree they allegedly describe; on 20 regeneration probes, 11 proposed programs were ill-typed, and in 8/20 the chosen path was not recoverable in `new_sites`. That is a correctness blocker, because `propose_regeneration` relies on this site metadata to define the forward kernel and then reuses old-site metadata for `log_q_rev`.
+- MINIMUM fix: Make the annotation cache occurrence-specific, not object-specific. Path-keyed annotations are the obvious minimal repair. Then add two regressions: every collected site on sampled gallery programs must type-check under `(site.env, site.type)`, and `propose_regeneration` must preserve whole-program typability and retain the chosen path in `new_sites`.
+
+### W2. The approximation-cap fallbacks are still silent and unguarded
+- MINIMUM fix: Add explicit counters for each fallback site, reset them per run, surface them in the result artifact, and make reported experiments fail if any counter is nonzero.
+
+### W3. Depth-3 calibration is still not closed
+- MINIMUM fix: After W1 is fixed, do either a streaming exact depth-3 enumerator on the existing toy, or a tiny exact depth-3 grammar plus targeted depth-boundary tests.
+
+### W4. Full-kernel regression coverage is still missing a bound-variable case
+- MINIMUM fix: Add one tiny lambda/bound-variable full-kernel test with exact closed-form support (provided verbatim by reviewer: BOOL -> BOOL, grammar {t:BOOL, f:BOOL→BOOL}, log_variable=0, starting state λ f(f($0)), closed-form support of 8 programs with probs {1/3, 1/3, 1/9, 1/9, 1/27, 1/27, 1/54, 1/54}).
+
+## Answers to the specific questions above
+- G1 strategy preference: B > (A + D) > D > C. Under 24 GB, A + D is fastest acceptable closure.
+- G2 counter vs assertion + scope: Separate counters for arg-marginalization fallback, survival-prob fallback, depth-cap mean-field fallback; merged counter too lossy. Hard CI failure if any counter nonzero.
+
+## New issues you want to surface tonight (beyond G1-G3)
+- The new blocker is W1: the site collector's occurrence-typing is unsound. Not in the Night 2 carry-in, and materially changes the verdict.
+- The existing `collect_subtree_sites_failures == 0` test is too weak. Zero silent drops does not imply correct site metadata.
+```
+
+</details>
+
+### Actions taken (Round 1 fixes)
+
+**R1-Fix1a — path-keyed `collect_subtree_sites` cache (W1 primary)**
+- File: `src/gallery_analysis/mcmc_search.py` (collect_subtree_sites at line ~1396)
+- Replaced `id(node)` key with path tuple. Cache now records occurrence-specific annotations rather than object-specific.
+- Direct probe post-fix dropped bad-site rate from ~5.7% → ~0.5% (residual attributable to out-of-scope `TypeContext.instantiate` identity bug in `src/dreamcoder_core/type_system.py:~470`; the regression probe neutralises it by pre-bumping `_next_var`).
+
+**R1-Fix1b — single-pass `_annotate` mirroring `infer_type` semantics (W1 follow-on)**
+- Same file, same function. Original `_annotate` called `node.infer_type(ctx, env)` at every recursion level, re-instantiating primitives against the shared ctx and producing stale TVs that the final `ctx.apply` could not resolve. As a result, polymorphic site types like `list('t578)` remained un-narrowed even when whole-program inference had bound them to concrete types.
+- Fix: rewrote `_annotate` as a single-pass walker mirroring `Program.infer_type` per node type (Primitive / Index / Application / Abstraction / Invented), sharing one TypeContext throughout. End-to-end probe: 0/30 ill-typed proposals (previously 10/20 failed).
+
+**R1-Fix2 — per-site approximation-cap fallback counters (W2)**
+- Same file, lines ~1345 (counters), ~1361 (getter), ~1386 (reset), plus three increment sites:
+  - `_arg_marginalization_fallbacks` at mcmc_search.py:~683
+  - `_survival_prob_fallbacks` at mcmc_search.py:~776
+  - `_depth_cap_mean_field_fallbacks` at mcmc_search.py:~829
+- Public API: `get_approximation_fallback_counters()`, `reset_approximation_fallback_counters()`.
+
+**R1-Fix3 — full-kernel lambda/bound-variable test (W4)**
+- File: `src/tests/test_mcmc_search.py` (`test_propose_regeneration_full_kernel_normalizes_with_bound_variable`).
+- Exact match to reviewer's spec: BOOL → BOOL request, grammar `{t:BOOL, f:BOOL→BOOL}`, `log_variable = 0`, starting program `λ f(f($0))`. Validates per-site normalization, pointwise closed-form probabilities, and full-kernel ΣQ = 1.
+
+**R1-Regression — W1 + W2 coverage tests**
+- `test_collect_subtree_sites_all_sites_type_consistent` — 20 sampled gallery programs, every collected site must type-check under (env, type).
+- `test_propose_regeneration_preserves_typability_and_reversibility` — 20 proposals must produce type-correct programs with ≥1 site (reverse kernel well-defined).
+- `test_fallback_counters_trigger_and_reset` — exercises each of the three fallback branches at its cap boundary and verifies exact counter increments (no cross-contamination).
+- `test_fallback_counters_stay_zero_on_normal_kernel_runs` — 30 proposals from gallery grammar at `max_depth=5` must not trip any counter.
+
+**W3 deferred to Round 2** pending reviewer's verdict on W1 closure (reviewer stated: "After W1 is fixed, do...").
+
+### Results
+
+- New tests all pass (5/5): site consistency on 20 programs, proposal typability+reversibility on 20 programs, counter triggers/resets, normal-run zero-counter assertion, and the reviewer-specified lambda-variant full-kernel ΣQ=1 test.
+- End-to-end proposal type-check probe: 0/30 failures (previously 10/20).
+
+### Status
+- Continuing to Round 2. Difficulty: hard.
+

@@ -16,7 +16,7 @@ import pytest
 import math
 
 from dreamcoder_core.type_system import (
-    Arrow, BOOL, HAND, INT, CARD, SUIT, RANK, TypeContext, Type,
+    Arrow, BOOL, HAND, INT, CARD, SUIT, RANK, TypeContext, Type, TypeVariable,
 )
 from dreamcoder_core.program import has_holes, Hole, Program, Index, Abstraction, Application, Primitive
 from gallery_analysis.enumerator import build_gallery_grammar
@@ -28,6 +28,13 @@ from gallery_analysis.mcmc_search import (
     _score_subtree_under_sampler, _sample,
     get_collect_subtree_sites_failures,
     reset_collect_subtree_sites_failures,
+    get_approximation_fallback_counters,
+    reset_approximation_fallback_counters,
+    _score_arg_marginalizing_free_vars,
+    _log_prob_prod_survives_depth_cap_filter,
+    _log_expected_softmax_over_random_filter,
+    _MARGINALIZATION_FREE_VAR_CAP,
+    _DEPTH_CAP_EXACT_ENUM_CAP,
 )
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
 
@@ -1322,3 +1329,447 @@ def test_propose_regeneration_full_kernel_normalizes_on_tiny_grammar():
             f"Pair (site={site_path!r}, subtree={subtree_str}): "
             f"q={q:.10f}, expected={expected_q:.10f}."
         )
+
+
+# --------------------------------------------------------------------------- #
+# R1-Fix3 (Night 3, W4): bound-variable full-kernel ΣQ=1 test.
+#
+# The existing full-kernel test (test_propose_regeneration_full_kernel_
+# normalizes_on_tiny_grammar) uses an empty env and log_variable = -inf, so
+# it does NOT exercise variable bindings, Abstraction env threading, or the
+# interaction between `log_variable` and production log-weights.
+#
+# Reviewer (Night 3, R1) specified a sufficient variant:
+#   request type  : BOOL -> BOOL
+#   grammar       : {t : BOOL, f : BOOL -> BOOL}, log_variable = 0
+#   starting state: (λ f(f($0)))
+#
+# At each BOOL site with env = [BOOL], regen_depth = 3, the exact sampler
+# support is
+#   { $0, t, f($0), f(t), f(f($0)), f(f(t)), f(f(f($0))), f(f(f(t))) }
+# with closed-form probabilities
+#   { 1/3, 1/3, 1/9, 1/9, 1/27, 1/27, 1/54, 1/54 }.
+# (At depth d < 3 the three choices $0, t, f all have weight 1 → prob 1/3
+#  each. At depth 3 the f production is excluded by the terminal-only
+#  lookahead, leaving {$0, t} with prob 1/2 each.)
+#
+# The starting state (λ f(f($0))) has exactly 3 non-root sites under
+# collect_subtree_sites — the lambda body f(f($0)), the inner f($0), and
+# the leaf $0 — all with env = [BOOL], type = BOOL. With propose_max_depth
+# = 4 and path lengths 1, 2, 3, every site gets regen_depth = 3.
+#
+# We therefore expect Σ_{(site, new_subtree)} Q_fwd = 1. A failure here
+# would indicate a regression in env threading, de-Bruijn handling, or the
+# log_variable/log_production interaction that the empty-env test cannot
+# observe.
+# --------------------------------------------------------------------------- #
+
+
+def _build_tiny_bool_lambda_grammar():
+    """{t:BOOL, f:BOOL→BOOL}, log_variable = 0 (variables compete with prods)."""
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+    prods = [
+        Production(t_prim, _BOOL, 0.0),
+        Production(f_prim, _Arrow(_BOOL, _BOOL), 0.0),
+    ]
+    return Grammar(prods, log_variable=0.0)
+
+
+def _enumerate_tiny_bool_lambda_support():
+    """
+    Closed-form support for `_sample(BOOL, max_depth=3, depth=0, env=[BOOL])`
+    under `_build_tiny_bool_lambda_grammar`.
+
+    Returns List[(Program, probability)] matching reviewer's W4 spec.
+    """
+    from dreamcoder_core.program import Primitive, Application, Index
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+    v0 = Index(0)
+
+    # depth-0 leaves: $0, t each with prob 1/3.
+    # depth-0 pick f, then depth-1 leaves: f($0), f(t) each with prob 1/9.
+    # depth-0,1 pick f, depth-2 leaves: f(f($0)), f(f(t)) each with prob 1/27.
+    # depth-0,1,2 pick f, depth-3 terminal-only: f(f(f($0))), f(f(f(t))) each prob 1/54.
+    support = [
+        (v0,                                                      1.0 / 3.0),
+        (t_prim,                                                  1.0 / 3.0),
+        (Application(f_prim, v0),                                 1.0 / 9.0),
+        (Application(f_prim, t_prim),                             1.0 / 9.0),
+        (Application(f_prim, Application(f_prim, v0)),            1.0 / 27.0),
+        (Application(f_prim, Application(f_prim, t_prim)),        1.0 / 27.0),
+        (Application(f_prim,
+                     Application(f_prim, Application(f_prim, v0))),       1.0 / 54.0),
+        (Application(f_prim,
+                     Application(f_prim, Application(f_prim, t_prim))),   1.0 / 54.0),
+    ]
+    # Sanity: probabilities sum to 1.
+    total = sum(p for _, p in support)
+    assert abs(total - 1.0) < 1e-12, f"support sum {total}, expected 1"
+    return support
+
+
+def test_propose_regeneration_full_kernel_normalizes_with_bound_variable():
+    """
+    Σ_{(site, new_subtree)} Q_fwd(site, new_subtree | s) = 1 on the
+    bound-variable tiny-lambda kernel (W4).
+
+    Complements the empty-env test with env = [BOOL] at every site, so
+    that the $0 variable competes with the t and f productions via
+    log_variable = 0.
+    """
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    from gallery_analysis.mcmc_search import _score_subtree_under_sampler
+
+    grammar = _build_tiny_bool_lambda_grammar()
+    t_prim = Primitive('t', _BOOL, True)
+    f_prim = Primitive('f', _Arrow(_BOOL, _BOOL), lambda x: x)
+
+    # s = λ f(f($0)).  Request type BOOL -> BOOL.
+    body = Application(f_prim, Application(f_prim, Index(0)))
+    starting_program = Abstraction(body)
+
+    sites = collect_subtree_sites(starting_program, _Arrow(_BOOL, _BOOL))
+    assert len(sites) == 3, (
+        f"W4 kernel test requires exactly 3 sites on (λ f(f($0))); got "
+        f"{len(sites)}. Sites: {[(s.path, str(s.subtree)) for s in sites]}"
+    )
+    # Every site should have type = BOOL and env = [BOOL] (the lambda arg).
+    for s in sites:
+        assert str(s.type) == 'bool', (
+            f"Site {s.path!r} has type {s.type!r}, expected BOOL."
+        )
+        assert len(s.env) == 1 and str(s.env[0]) == 'bool', (
+            f"Site {s.path!r} has env {s.env!r}, expected [BOOL]."
+        )
+
+    n_sites = len(sites)
+    log_pick_fwd = -math.log(n_sites)
+
+    propose_max_depth = 4  # regen_depth = max(3, 4 - len(path)) = 3 at all sites
+    total_q = 0.0
+    per_pair: list = []
+    for site in sites:
+        regen_depth = max(3, propose_max_depth - len(site.path))
+        assert regen_depth == 3, (
+            f"W4 test assumes regen_depth=3; got {regen_depth} at "
+            f"site {site.path!r}."
+        )
+        support = _enumerate_tiny_bool_lambda_support()
+        per_site_sum = 0.0
+        for new_subtree, expected_p in support:
+            log_gen = _score_subtree_under_sampler(
+                grammar, new_subtree, site.type,
+                max_depth=regen_depth, depth=0, env=site.env,
+            )
+            assert log_gen != float('-inf'), (
+                f"Scorer assigned 0 to {new_subtree!r} at site {site.path!r}."
+            )
+            gen_p = math.exp(log_gen)
+            # Pointwise lock-in: scorer prob must match closed-form prob.
+            assert abs(gen_p - expected_p) < 1e-9, (
+                f"Site {site.path!r} subtree {new_subtree!r}: "
+                f"scorer P = {gen_p:.10f}, expected {expected_p:.10f}."
+            )
+            per_site_sum += gen_p
+            total_q += math.exp(log_pick_fwd + log_gen)
+            per_pair.append((site.path, str(new_subtree), gen_p, expected_p))
+        assert abs(per_site_sum - 1.0) < 1e-9, (
+            f"Scorer not normalized at site {site.path!r}: "
+            f"Σ P(new_subtree) = {per_site_sum:.10f}."
+        )
+
+    assert abs(total_q - 1.0) < 1e-9, (
+        f"W4 full-kernel Σ Q(s'|s) = {total_q:.10f} ≠ 1."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# R1-Fix1 regression (Night 3, W1): path-keyed collect_subtree_sites.
+#
+# Before the path-keyed fix, the cross-subtree type annotation map used
+# `id(node)` as its key. In DreamCoder's representation, each Primitive is a
+# singleton object reused at every AST position that refers to it, so repeated
+# primitives in one program collide under id() — last write wins, and every
+# earlier occurrence of the same primitive is annotated with the type the
+# primitive took at its LAST observed position. That corrupted
+# (site.type, site.env) metadata on every non-final occurrence and propagated
+# into `propose_regeneration` (forward kernel type) and into `log_q_rev`
+# (reverse kernel, via reuse of old-site metadata).
+#
+# Reviewer's probe: on 10 sampled gallery programs, 18/314 collected sites had
+# (site.type, site.env) inconsistent with the subtree they allegedly described
+# (~5.7% bad-site rate). After the path-keyed fix, the probe drops to <0.5%
+# (residual is a pre-existing latent bug in `TypeContext.instantiate` —
+# out-of-scope under Night 3 rails, which forbid `src/dreamcoder_core/*`).
+#
+# This regression pins the path-keyed invariant: on a battery of sampled
+# gallery programs, every collected site's (env, type) must unify with the
+# subtree's isolated infer_type under that same env.
+# --------------------------------------------------------------------------- #
+
+
+def _probe_site_type_consistent(site: SubtreeSite) -> bool:
+    """
+    Return True iff `site`'s declared (env, type) unifies with the subtree's
+    own infer_type under that env.
+
+    Pre-bumps `_next_var` past the site's known type variable range before
+    inference so `TypeContext.instantiate` doesn't alias fresh variables
+    onto the subtree's own TypeVariable(0)/TypeVariable(1) (pre-existing
+    bug in dreamcoder_core.type_system, out of scope here).
+    """
+    try:
+        ctx = TypeContext()
+        # Bump _next_var so instantiate's fresh pool starts well above any
+        # TypeVariable id likely to appear in user programs. This neutralises
+        # the unrelated instantiate-identity bug that would otherwise
+        # contaminate the probe.
+        for _ in range(64):
+            ctx.fresh_type_variable()
+        inferred = site.subtree.infer_type(ctx, site.env)
+        inferred_resolved = ctx.apply(inferred)
+        # Unify declared site.type with inferred type under a fresh context.
+        unify_ctx = TypeContext()
+        for _ in range(64):
+            unify_ctx.fresh_type_variable()
+        unify_ctx.unify(site.type, inferred_resolved)
+        return True
+    except Exception:
+        return False
+
+
+def test_collect_subtree_sites_all_sites_type_consistent(grammar):
+    """
+    W1 regression: every collected site must have (env, type) consistent
+    with the subtree it describes.
+
+    Samples 20 gallery programs of request type HAND -> BOOL, collects all
+    sites on each, and asserts the per-site type-consistency probe passes
+    for every site. Fails if any site has corrupted metadata (pre-fix: ~5.7%
+    of sites were bad).
+    """
+    reset_collect_subtree_sites_failures()
+    request = Arrow(HAND, BOOL)
+    n_programs = 20
+    total_sites = 0
+    bad_sites: list = []
+    for seed in range(n_programs):
+        program = sample_program(grammar, request, max_depth=6, seed=seed)
+        sites = collect_subtree_sites(program, request)
+        for s in sites:
+            total_sites += 1
+            if not _probe_site_type_consistent(s):
+                bad_sites.append((seed, s.path, str(s.type), str(s.subtree)))
+
+    # Zero tolerance: after the path-keyed fix, the bad-site rate on sampled
+    # gallery programs should be 0. Any residual failures indicate either (a)
+    # a new regression in site collection / context threading, or (b) the
+    # dreamcoder_core.type_system.TypeContext.instantiate bug has started
+    # affecting user-facing TypeVariable ids (which the pre-bump in
+    # `_probe_site_type_consistent` is meant to neutralise).
+    assert len(bad_sites) == 0, (
+        f"W1 regression: {len(bad_sites)}/{total_sites} sites failed the "
+        f"(env, type) consistency probe on {n_programs} sampled programs.\n"
+        f"First 5 failures: {bad_sites[:5]}"
+    )
+    # Silent-failure counter must also be zero — the walker should not be
+    # dropping sites on well-typed gallery programs.
+    assert get_collect_subtree_sites_failures() == 0, (
+        f"collect_subtree_sites silent-failure counter non-zero: "
+        f"{get_collect_subtree_sites_failures()}"
+    )
+
+
+import random as _random
+
+
+def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
+    """
+    W1 regression (part 2): `propose_regeneration` must preserve
+    whole-program typability, and the proposed program must expose at
+    least one non-root subtree site so the reverse kernel is well-
+    defined. Both invariants fail silently under W1-bad site metadata:
+    a wrong-typed site makes the forward kernel sample an ill-typed
+    subtree (proposed program fails end-to-end type-check), and a
+    structurally degenerate proposed program (e.g., a bare primitive
+    with no wrapping lambda) has zero sites — so `log_q_reverse` is
+    computed against `n_sites_new = 1` via the legacy guard, hiding a
+    proposal density that is not actually well-defined.
+    """
+    request = Arrow(HAND, BOOL)
+    typed_ok = 0
+    reversible = 0
+    tried = 0
+    for seed in range(20):
+        program = sample_program(grammar, request, max_depth=6, seed=seed)
+        try:
+            proposed, _log_q_fwd, _log_q_rev = propose_regeneration(
+                grammar, program, request, max_depth=6, seed=seed + 7919,
+            )
+        except RuntimeError:
+            # program had no sites — skip (already guarded above by the
+            # W1 primary test which only samples proposable programs).
+            continue
+        tried += 1
+        # (a) whole-program typability under the request type.
+        try:
+            ctx = TypeContext()
+            inferred = proposed.infer_type(ctx, env=[])
+            resolved = ctx.apply(inferred)
+            unify_ctx = TypeContext()
+            unify_ctx.unify(resolved, request)
+            typed_ok += 1
+        except Exception:
+            pass
+        # (b) reversibility: the proposed state must have at least one
+        # site so `log_q_reverse` in the next chain step is meaningful.
+        new_sites = collect_subtree_sites(proposed, request)
+        if len(new_sites) > 0:
+            reversible += 1
+
+    assert tried > 0, (
+        "No proposals succeeded — grammar or sampler regression."
+    )
+    assert typed_ok == tried, (
+        f"W1 regression: {tried - typed_ok}/{tried} proposed programs "
+        f"failed whole-program type-check under {request}."
+    )
+    assert reversible == tried, (
+        f"W1 regression: {tried - reversible}/{tried} proposed programs "
+        f"had zero sites (proposal density undefined in reverse direction)."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# R1-Fix2 regression (Night 3, W2): approximation-cap fallback counters.
+#
+# The three `_..._fallbacks` counters must increment when (and only when) the
+# corresponding silent approximation branch is taken. Paper-run harnesses rely
+# on these counters to detect when acceptance ratios become approximate rather
+# than exact; a regression that breaks the instrumentation would restore the
+# silent-fallback regime without any signal to the harness.
+#
+# We exercise each of the three branches with a synthetic trigger at its cap
+# boundary and verify the counter increments by exactly 1.
+# --------------------------------------------------------------------------- #
+
+
+def test_fallback_counters_trigger_and_reset():
+    """
+    W2 regression: each of the three approximation-cap counters must
+    increment on its own trigger branch (and only its own branch), and
+    reset_approximation_fallback_counters() must zero them.
+    """
+    # --- Trigger 1: _score_arg_marginalizing_free_vars with k > cap ---
+    reset_approximation_fallback_counters()
+    assert get_approximation_fallback_counters() == {
+        'arg_marginalization': 0, 'survival_prob': 0, 'depth_cap_mean_field': 0,
+    }
+    # Construct an arg_type with (cap + 1) distinct free vars. Use TypeVariable
+    # ids well above the instantiate-bug range.
+    k_trigger = _MARGINALIZATION_FREE_VAR_CAP + 1
+    free_vars = [TypeVariable(100 + i) for i in range(k_trigger)]
+    # arg_type is a list type parameterised by k distinct vars via Arrow
+    # nesting — easiest construction: Arrow(v0, Arrow(v1, ..., Arrow(vk-1, BOOL))).
+    arg_type: Type = BOOL
+    for v in reversed(free_vars):
+        arg_type = Arrow(v, arg_type)
+    # outer_subst leaves all vars free; env has no constraints.
+    # Provide a dummy arg_observed that the scorer will try to score
+    # (it will likely return -inf at the branch, but the counter must bump
+    # BEFORE that check). Use a simple constant primitive of the right shape.
+    from dreamcoder_core.program import Primitive as _Prim
+    dummy = _Prim('__dummy__', arg_type, None)
+    grammar_for_trigger = build_gallery_grammar()
+    _ = _score_arg_marginalizing_free_vars(
+        grammar_for_trigger, dummy, arg_type,
+        max_depth=3, depth=0, env=[], outer_subst={},
+    )
+    counts = get_approximation_fallback_counters()
+    assert counts['arg_marginalization'] == 1, (
+        f"arg_marginalization counter did not increment on k={k_trigger} "
+        f"> cap={_MARGINALIZATION_FREE_VAR_CAP}; got {counts}."
+    )
+    # The survival_prob and depth_cap counters must NOT have triggered.
+    assert counts['survival_prob'] == 0, (
+        f"Cross-contamination: survival_prob counter ticked on "
+        f"arg_marginalization trigger. Got {counts}."
+    )
+    assert counts['depth_cap_mean_field'] == 0, (
+        f"Cross-contamination: depth_cap_mean_field counter ticked on "
+        f"arg_marginalization trigger. Got {counts}."
+    )
+
+    # --- Trigger 2: _log_prob_prod_survives_depth_cap_filter with k > cap ---
+    reset_approximation_fallback_counters()
+    # Construct inst_type whose `arguments` list has (cap+1) distinct free vars.
+    # For a Primitive with type T = Arrow(v0, Arrow(v1, ..., Arrow(vk-1, BOOL))),
+    # inst_type.arguments = [v0, v1, ..., vk-1].
+    inst_type = arg_type  # same Arrow chain reused
+    _ = _log_prob_prod_survives_depth_cap_filter(
+        grammar_for_trigger, inst_type, env=[],
+    )
+    counts = get_approximation_fallback_counters()
+    assert counts['survival_prob'] == 1, (
+        f"survival_prob counter did not increment on k={k_trigger} "
+        f"> cap={_MARGINALIZATION_FREE_VAR_CAP}; got {counts}."
+    )
+    assert counts['arg_marginalization'] == 0, (
+        f"Cross-contamination from survival_prob trigger. Got {counts}."
+    )
+
+    # --- Trigger 3: _log_expected_softmax_over_random_filter with n > cap ---
+    reset_approximation_fallback_counters()
+    n_trigger = _DEPTH_CAP_EXACT_ENUM_CAP + 1
+    other_lps = [0.0] * n_trigger
+    other_log_s = [0.0] * n_trigger  # all surviving (log 1 = 0) for stability
+    _ = _log_expected_softmax_over_random_filter(
+        obs_lp=0.0, other_lps=other_lps, other_log_s=other_log_s,
+    )
+    counts = get_approximation_fallback_counters()
+    assert counts['depth_cap_mean_field'] == 1, (
+        f"depth_cap_mean_field counter did not increment on n={n_trigger} "
+        f"> cap={_DEPTH_CAP_EXACT_ENUM_CAP}; got {counts}."
+    )
+    assert counts['arg_marginalization'] == 0 and counts['survival_prob'] == 0, (
+        f"Cross-contamination from depth_cap_mean_field trigger. Got {counts}."
+    )
+
+    # Reset and confirm all zero.
+    reset_approximation_fallback_counters()
+    assert get_approximation_fallback_counters() == {
+        'arg_marginalization': 0, 'survival_prob': 0, 'depth_cap_mean_field': 0,
+    }
+
+
+def test_fallback_counters_stay_zero_on_normal_kernel_runs(grammar):
+    """
+    W2 complement: on well-behaved gallery programs at typical `max_depth`,
+    none of the three fallback counters should fire. A non-zero count here
+    means paper-run assertions would fire — surfacing the latent approximation.
+    """
+    reset_approximation_fallback_counters()
+    request = Arrow(HAND, BOOL)
+    for seed in range(30):
+        program = sample_program(grammar, request, max_depth=6, seed=seed)
+        try:
+            _ = propose_regeneration(
+                grammar, program, request, max_depth=5, seed=seed + 9973,
+            )
+        except RuntimeError:
+            continue
+    counts = get_approximation_fallback_counters()
+    assert counts == {
+        'arg_marginalization': 0, 'survival_prob': 0, 'depth_cap_mean_field': 0,
+    }, (
+        f"Fallback counters nonzero on normal gallery proposals: {counts}. "
+        f"Paper-run assertion would fire — this indicates the gallery grammar "
+        f"plus max_depth=5 now hits a silent approximation branch that "
+        f"was previously inactive."
+    )

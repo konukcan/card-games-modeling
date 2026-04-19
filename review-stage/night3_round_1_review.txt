@@ -1,0 +1,48 @@
+## Score
+5.0/10
+
+## Verdict
+No
+
+## Critical remaining weaknesses (ranked)
+
+### W1. `collect_subtree_sites` can assign the wrong local type/environment to a site
+- Why this is a concern: In [mcmc_search.py](/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-mcmc-night3/src/gallery_analysis/mcmc_search.py:1375), the root-threaded annotation cache is keyed by `id(node)`. That is unsafe because primitive objects are reused across multiple AST occurrences. Direct probe: repeated primitives in one sampled AST share the same object id; on 10 sampled gallery programs, 18/314 collected sites had `(site.type, site.env)` inconsistent with the subtree they allegedly describe; on 20 regeneration probes, 11 proposed programs were ill-typed, and in 8/20 the chosen path was not recoverable in `new_sites`. That is a correctness blocker, because `propose_regeneration` relies on this site metadata to define the forward kernel and then reuses old-site metadata for `log_q_rev`.
+- MINIMUM fix: Make the annotation cache occurrence-specific, not object-specific. Path-keyed annotations are the obvious minimal repair. Then add two regressions: every collected site on sampled gallery programs must type-check under `(site.env, site.type)`, and `propose_regeneration` must preserve whole-program typability and retain the chosen path in `new_sites`.
+- Rulings vs your carry-in memory: new
+
+### W2. The approximation-cap fallbacks are still silent and unguarded
+- Why this is a concern: The fallback branches at [mcmc_search.py:679], [mcmc_search.py:769], and [mcmc_search.py:823] still quietly switch to approximate behavior. If a reported run hits them, the correctness claim becomes conditional again.
+- MINIMUM fix: Add explicit counters for each fallback site, reset them per run, surface them in the result artifact, and make reported experiments fail if any counter is nonzero.
+- Rulings vs your carry-in memory: still open
+
+### W3. Depth-3 calibration is still not closed
+- Why this is a concern: The exact posterior calibration evidence is still depth-2 only, while [posterior_calibration_v2.py:215] still relies on exhaustive materialization that does not scale to the desired depth.
+- MINIMUM fix: After W1 is fixed, do either a streaming exact depth-3 enumerator on the existing toy, or a tiny exact depth-3 grammar plus targeted depth-boundary tests.
+- Rulings vs your carry-in memory: still open
+
+### W4. Full-kernel regression coverage is still missing a bound-variable case
+- Why this is a concern: The current full-kernel normalization test at [test_mcmc_search.py:1250] is empty-env BOOL only. It would not catch env-threading / de Bruijn regressions.
+- MINIMUM fix: Add one tiny lambda/bound-variable full-kernel test with exact closed-form support.
+- Rulings vs your carry-in memory: still open
+
+## Answers to the specific questions above
+- G1 strategy preference: W1 is now the main blocker. After W1, I would rank closure options as `B > (A + D) > D > C`. Under the 24 GB constraint, `A + D` is the fastest acceptable closure. `C` alone is not enough for this code-level correctness claim.
+- G2 counter vs assertion + scope: Prefer counters in core code, hard failure in CI and in the paper-run harness if any counter is nonzero. Trigger on every fallback, aggregate over the run, and report the totals. I want separate counters for `arg-marginalization fallback`, `survival-prob fallback`, and `depth-cap mean-field fallback`; one merged counter is too lossy.
+- G3 lambda variant shape: A sufficient test is request type `BOOL -> BOOL`, grammar `{t:BOOL, f:BOOL→BOOL}`, `log_variable=0`, starting state `λ f(f($0))`. At each BOOL site with env=`[BOOL]`, exact support should be `{ $0, t, f($0), f(t), f(f($0)), f(f(t)), f(f(f($0))), f(f(f(t))) }` with closed-form probabilities `{1/3, 1/3, 1/9, 1/9, 1/27, 1/27, 1/54, 1/54}`. That is enough.
+
+## New issues you want to surface tonight (beyond G1-G3)
+- The new blocker is W1: the site collector's occurrence-typing is unsound. This was not in the Night 2 carry-in, and it materially changes the verdict.
+- The existing `collect_subtree_sites_failures == 0` test is too weak. Zero silent drops does not imply the site metadata is correct; I found wrong-but-finite site annotations on sampled programs.
+- I do not see a new correctness blocker from the `gallery_rules.py` sync itself. The renamed and added rules are present, and the file loads 61 rules.
+
+## Memory update for Round 2
+- Addressed: Night-2 scorer/proposal normalization fixes still look intact; the tiny-bool full-kernel test still supports the claim that the local scorer math is much improved.
+- Still open: depth-3 closure, cap guardrails, lambda full-kernel coverage, init-resampling manuscript scoping.
+- New suspicions: `collect_subtree_sites` is using occurrence-unsafe type caching; site metadata can be wrong even when the failure counter is zero; reverse-site recollection can fail on proposed states.
+- Pattern: the remaining serious bugs are now in operational bookkeeping around site collection and context threading, not in the local softmax/marginalization algebra.
+
+I could not run `pytest` end-to-end here because the sandbox has no writable temp directory, but the probes above were run directly against the repo with read-only `python -c` checks.
+
+---
+Thread ID: 019da4d5-c81e-77b2-9c4d-e64b2b463c93

@@ -52,7 +52,7 @@ from typing import Any, Dict, List, Optional, Tuple
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dreamcoder_core.type_system import (
-    Type, Arrow, ListType, TypeContext, TypeVariable,
+    Type, Arrow, ListType, TypeContext, TypeVariable, UnificationError,
     BOOL, INT, CARD, SUIT, RANK,
 )
 from dreamcoder_core.grammar import Grammar
@@ -680,6 +680,8 @@ def _score_arg_marginalizing_free_vars(
         # Defensive fallback: enumerate only via a single representative
         # assignment and charge -k*log(C). Retains the (biased but bounded)
         # prior behavior for pathological polymorphic patterns.
+        global _arg_marginalization_fallbacks
+        _arg_marginalization_fallbacks += 1
         sentinel_subst = {v: _CONCRETE_TYPES[0] for v in remaining_free}
         final_type = concrete_after_env.apply_substitution(sentinel_subst)
         cond = _score_subtree_under_sampler(
@@ -771,6 +773,8 @@ def _log_prob_prod_survives_depth_cap_filter(
         # This errs toward accepting proposals at the branch rather than
         # truncating them, matching the sampler's inclusion-biased regime
         # for pathological polymorphic patterns.
+        global _survival_prob_fallbacks
+        _survival_prob_fallbacks += 1
         return 0.0
 
     survive = 0
@@ -822,6 +826,8 @@ def _log_expected_softmax_over_random_filter(
 
     if n > _DEPTH_CAP_EXACT_ENUM_CAP:
         # Defensive: mean-field shift (old R1-Fix3 behavior).
+        global _depth_cap_mean_field_fallbacks
+        _depth_cap_mean_field_fallbacks += 1
         shifted = [
             other_lps[j] + other_log_s[j]
             for j in range(n)
@@ -1331,6 +1337,16 @@ class SubtreeSite:
 _collect_subtree_sites_failures: int = 0
 
 
+# Night 3 R1-Fix2: per-site counters for the three "silent approximation cap"
+# fallback branches. When a reported run hits any of these, the correctness
+# claim becomes conditional on the corresponding approximation being benign.
+# Paper-run harnesses MUST reset these at run start and assert zero at run end;
+# otherwise the reported MH acceptance ratios are conditional rather than exact.
+_arg_marginalization_fallbacks: int = 0       # mcmc_search.py:~690
+_survival_prob_fallbacks: int = 0             # mcmc_search.py:~775
+_depth_cap_mean_field_fallbacks: int = 0      # mcmc_search.py:~828
+
+
 def get_collect_subtree_sites_failures() -> int:
     """Return the silent-failure counter for `collect_subtree_sites`."""
     return _collect_subtree_sites_failures
@@ -1340,6 +1356,41 @@ def reset_collect_subtree_sites_failures() -> None:
     """Reset the silent-failure counter (test helper)."""
     global _collect_subtree_sites_failures
     _collect_subtree_sites_failures = 0
+
+
+def get_approximation_fallback_counters() -> dict:
+    """
+    Return per-site counts of silent approximation-cap fallbacks.
+
+    Keys:
+      - 'arg_marginalization':  k > _MARGINALIZATION_FREE_VAR_CAP inside
+            `_score_arg_marginalizing_free_vars`; biased-but-bounded
+            single-assignment estimator replaces exact C^k enumeration.
+      - 'survival_prob':        k > _MARGINALIZATION_FREE_VAR_CAP inside
+            `_log_prob_prod_survives_depth_cap_filter`; survival assumed
+            1.0 (liberal) rather than computed exactly.
+      - 'depth_cap_mean_field': n > _DEPTH_CAP_EXACT_ENUM_CAP inside
+            `_log_expected_softmax_over_random_filter`; mean-field shift
+            replaces exact 2^n subset enumeration.
+
+    A run hitting any of these has acceptance ratios that are no longer
+    exact. Paper-run harnesses should assert all counts == 0.
+    """
+    return {
+        'arg_marginalization': _arg_marginalization_fallbacks,
+        'survival_prob': _survival_prob_fallbacks,
+        'depth_cap_mean_field': _depth_cap_mean_field_fallbacks,
+    }
+
+
+def reset_approximation_fallback_counters() -> None:
+    """Zero all three approximation-cap fallback counters."""
+    global _arg_marginalization_fallbacks
+    global _survival_prob_fallbacks
+    global _depth_cap_mean_field_fallbacks
+    _arg_marginalization_fallbacks = 0
+    _survival_prob_fallbacks = 0
+    _depth_cap_mean_field_fallbacks = 0
 
 
 def collect_subtree_sites(
@@ -1375,28 +1426,72 @@ def collect_subtree_sites(
     # Pre-compute each subtree's resolved type by running a SINGLE root
     # infer_type whose TypeContext threads unification constraints across all
     # subtrees. We record each AST node's type under that context, keyed by
-    # object identity. Subsequent walker lookups use this map instead of
-    # re-running local infer_type calls that would lose sibling constraints.
-    # Produces `(node_id, type)` entries; when the root infer fails, the map
-    # is empty and the walker falls back to isolated inference (preserving
-    # legacy behaviour on edge cases).
+    # PATH from root (not by id(node)): because primitives and indices are
+    # singleton objects in DreamCoder's representation, id(node) collides
+    # across distinct AST positions sharing the same primitive, and the last
+    # write wins — corrupting site metadata for every earlier occurrence.
+    # (Night 3 R1-Fix1: path keying; direct-probe baseline was 21/357 sites
+    # with inconsistent (site.type, site.env) across 10 gallery programs.)
+    # Subsequent walker lookups use this map instead of re-running local
+    # infer_type calls that would lose sibling constraints. When the root
+    # infer fails, the map is empty and the walker falls back to isolated
+    # inference (preserving legacy behaviour on edge cases).
     node_types: dict = {}
 
-    def _annotate(ctx: TypeContext, node: Program, env: List[Type]) -> Type:
-        t = node.infer_type(ctx, env)
-        node_types[id(node)] = t
+    def _annotate(
+        ctx: TypeContext, node: Program, env: List[Type],
+        path: Tuple[str, ...],
+    ) -> Type:
+        """
+        Single-pass type annotation. Mirrors the canonical infer_type
+        semantics in dreamcoder_core.program (Primitive/Index/Application/
+        Abstraction) EXACTLY, but records each node's inferred type under
+        its path while using a SINGLE shared TypeContext.
+
+        The previous implementation called `node.infer_type(ctx, env)` at
+        every recursion level, which re-instantiates primitives against
+        the same ctx — each re-entry draws fresh type variables that
+        were never unified with the siblings' constraints. As a result,
+        `node_types[path]` held stale TVs that `ctx.apply` could not
+        resolve, so polymorphic site types like `list('t578)` stayed
+        un-narrowed even when the whole-program inference had bound them
+        to concrete types like `list(list(bool))`. That is the residual
+        source of ill-typed proposals (~50% of the seeds tested).
+        """
         if isinstance(node, Abstraction):
-            t_applied = ctx.apply(t)
-            if isinstance(t_applied, Arrow):
-                _annotate(ctx, node.body, [t_applied.arg] + env)
+            arg_type = ctx.fresh_type_variable()
+            new_env = [arg_type] + env
+            body_type = _annotate(ctx, node.body, new_env, path + ('body',))
+            t = Arrow(ctx.apply(arg_type), ctx.apply(body_type))
         elif isinstance(node, Application):
-            _annotate(ctx, node.f, env)
-            _annotate(ctx, node.x, env)
+            f_type = _annotate(ctx, node.f, env, path + ('f',))
+            x_type = _annotate(ctx, node.x, env, path + ('x',))
+            ret_type = ctx.fresh_type_variable()
+            ctx.unify(f_type, Arrow(x_type, ret_type))
+            t = ctx.apply(ret_type)
+        elif isinstance(node, Primitive):
+            t = ctx.instantiate(node.tp)
+        elif isinstance(node, Index):
+            if node.i >= len(env):
+                raise UnificationError(
+                    f"Index ${node.i} not in type environment"
+                )
+            t = env[node.i]
+        elif isinstance(node, Invented):
+            # Invented are closed expressions; their body is walked but
+            # we annotate the Invented node itself as a single leaf for
+            # path-indexing purposes. Recursion into body preserves
+            # self-consistent typing without creating site paths inside
+            # an Invented (which the proposer should not edit anyway).
+            t = node.infer_type(ctx, env)
+        else:
+            t = node.infer_type(ctx, env)
+        node_types[path] = t
         return t
 
     try:
         root_ctx = TypeContext()
-        _annotate(root_ctx, program, [])
+        _annotate(root_ctx, program, [], ())
         node_types = {
             k: root_ctx.apply(v) for k, v in node_types.items()
         }
@@ -1404,10 +1499,13 @@ def collect_subtree_sites(
         root_ctx = None
         node_types = {}
 
-    def _lookup_or_infer(node: Program, env: List[Type]) -> Optional[Type]:
-        """Return node's resolved type from the root-threaded map, or infer
-        locally as a fallback. Returns None on total failure."""
-        t = node_types.get(id(node))
+    def _lookup_or_infer(
+        path: Tuple[str, ...], node: Program, env: List[Type],
+    ) -> Optional[Type]:
+        """Return node's resolved type from the root-threaded map (indexed
+        by AST path), or infer locally as a fallback. Returns None on total
+        failure."""
+        t = node_types.get(path)
         if t is not None:
             return t
         try:
@@ -1430,7 +1528,7 @@ def collect_subtree_sites(
         """
         global _collect_subtree_sites_failures
         if isinstance(node, Application):
-            f_type = _lookup_or_infer(node.f, env)
+            f_type = _lookup_or_infer(path + ('f',), node.f, env)
             if f_type is None or not isinstance(f_type, Arrow):
                 _collect_subtree_sites_failures += 1
                 return
@@ -1483,7 +1581,7 @@ def collect_subtree_sites(
             # Note: we DESCEND into node.f to reach deeper .x positions (for
             # left-nested Application chains like `(((f x1) x2) x3)`), but
             # we do NOT collect intermediate .f nodes as sites.
-            f_type = _lookup_or_infer(node.f, env)
+            f_type = _lookup_or_infer(path + ('f',), node.f, env)
             if f_type is None or not isinstance(f_type, Arrow):
                 _collect_subtree_sites_failures += 1
                 return

@@ -140,3 +140,38 @@ Persistent memory across rounds for the external GPT-5.4 reviewer (Codex MCP, `x
 > Pattern update: the fatal MH-ratio defects appear resolved. Remaining risk is now claim scope and silent future regression outside the current gallery regime.
 
 **Final bottom line:** "If the paper says 'this MH implementation targets the post-burn-in posterior under the current gallery grammar' and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape. If it claims full-gallery calibration, or uses early discovery timing as evidence, it is still not ready."
+
+---
+
+## Night 3 Round 1 — Score: 5.0/10, Verdict: No
+
+**Thread ID:** `019da4d5-c81e-77b2-9c4d-e64b2b463c93`
+**Reviewer read commit `0bf49b3` directly; ran direct probes on the repo.**
+
+### New critical blocker (W1)
+- `collect_subtree_sites` site-metadata corruption. Root-threaded type-annotation cache keyed on `id(node)`, which collides on Primitive singletons shared across AST positions. Direct probe: 18/314 collected sites (~5.7%) had `(site.type, site.env)` inconsistent with the subtree on 10 sampled gallery programs; 11/20 regeneration probes produced ill-typed proposals; 8/20 lost the chosen path in `new_sites`. Correctness blocker because the forward kernel uses site metadata for density, and reverse kernel reuses old-site metadata.
+
+### Reviewer's Round 1 rulings
+- **W1 (new blocker):** path-keyed (not id-keyed) annotation cache. Regression tests: every collected site on sampled gallery programs must type-check under `(site.env, site.type)`; `propose_regeneration` must preserve whole-program typability and retain the chosen path in `new_sites`.
+- **W2 (still open, Night 2 carry):** three silent approximation-cap fallbacks at mcmc_search.py:679, :769, :823. Add explicit per-site counters, reset per run, surface in result artifact, paper-run fails if any counter is nonzero.
+- **W3 (still open, Night 2 carry):** depth-3 calibration still closed only at depth-2. After W1, do either a streaming exact depth-3 enumerator on the toy OR a tiny exact depth-3 grammar + targeted depth-boundary tests.
+- **W4 (still open, Night 2 carry):** full-kernel test is empty-env BOOL only. Add one tiny lambda / bound-variable full-kernel test with exact closed-form support. Reviewer provided exact spec: `BOOL -> BOOL`, grammar `{t:BOOL, f:BOOL→BOOL}`, `log_variable=0`, starting state `λ f(f($0))`, closed-form support of 8 programs with probabilities `{1/3, 1/3, 1/9, 1/9, 1/27, 1/27, 1/54, 1/54}`.
+
+### Reviewer's rankings
+- **G1 strategy preference (depth-3):** `B > (A + D) > D > C`. `A + D` is fastest acceptable closure under 24 GB.
+- **G2 counter format:** Separate counters for arg-marginalization, survival-prob, depth-cap mean-field. Merged counter too lossy. Hard CI failure if any counter nonzero at run end.
+- **G3 lambda kernel spec:** provided verbatim (above).
+
+### Reviewer memory update for Round 2 (verbatim)
+> Addressed: Night-2 scorer/proposal normalization fixes still look intact; the tiny-bool full-kernel test still supports the claim that the local scorer math is much improved.
+> Still open: depth-3 closure, cap guardrails, lambda full-kernel coverage, init-resampling manuscript scoping.
+> New suspicions: `collect_subtree_sites` is using occurrence-unsafe type caching; site metadata can be wrong even when the failure counter is zero; reverse-site recollection can fail on proposed states.
+> Pattern: the remaining serious bugs are now in operational bookkeeping around site collection and context threading, not in the local softmax/marginalization algebra.
+
+### Claude's Round 1 fixes (for Round 2 review)
+- **W1 — path-keyed cache.** Replaced `id(node)` key with path tuple. Direct probe post-fix: ≤0.5% residual (attributable to an out-of-scope pre-existing `TypeContext.instantiate` identity bug in dreamcoder_core/type_system.py, which the probe neutralises by pre-bumping `_next_var`).
+- **W1 — follow-on bug found and fixed in the same walker.** The original `_annotate` called `node.infer_type(ctx, env)` at every recursion level, re-instantiating primitives and producing stale TVs in the path map. Root-threaded `ctx.apply` could then not resolve polymorphic site types (e.g., `list('t578)` stayed un-narrowed). Fix: rewrote `_annotate` to mirror `infer_type`'s per-node semantics exactly in a single pass, sharing one TypeContext. End-to-end probe: 0/30 ill-typed proposals (previously 10/20).
+- **W2 — three separate counters** `_arg_marginalization_fallbacks`, `_survival_prob_fallbacks`, `_depth_cap_mean_field_fallbacks`. Accessors `get_approximation_fallback_counters` / `reset_approximation_fallback_counters`. All three call sites wired.
+- **W4 — lambda kernel test** on reviewer's exact spec. Passes: per-site sum = 1, pointwise probabilities match closed-form, full-kernel ΣQ = 1.
+- **W1, W2 regression tests added.** Type-consistency probe on sampled gallery programs; propose-preserves-typability; counter triggers and stays-zero tests.
+- **W3 deferred to Round 2** pending reviewer's verdict on the W1 fix.
