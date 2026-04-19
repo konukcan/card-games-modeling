@@ -47,7 +47,11 @@ from dreamcoder_core.type_system import (
 
 import gallery_analysis.mcmc_search as ms
 from gallery_analysis.mcmc_search import (
-    _score_subtree_under_sampler, propose_regeneration, sample_program,
+    _score_subtree_under_sampler,
+    get_approximation_fallback_counters,
+    propose_regeneration,
+    reset_approximation_fallback_counters,
+    sample_program,
 )
 
 
@@ -386,6 +390,12 @@ def run_mh_one_seed(
 ) -> Dict:
     rng = random.Random(seed)
 
+    # W2 guardrail: zero the silent-approximation fallback counters before
+    # this chain so we can assert they stay zero on the toy calibration
+    # grammar (max_depth=2, small support). A nonzero reading here would
+    # mean the acceptance ratios are no longer exact.
+    reset_approximation_fallback_counters()
+
     # Seed a starting program with ≥1 regen site and finite target.
     tries = 0
     while True:
@@ -452,12 +462,17 @@ def run_mh_one_seed(
                 modal_count = visits[k]
             indicator_seq.append(1.0 if k == modal else 0.0)
 
+    # W2 guardrail: surface any silent approximation-cap fallback taken
+    # during this chain. On the calibration grammar (max_depth=2, toy
+    # support ≤ ~30) we expect all three counters to be exactly zero.
+    fallback_counters = dict(get_approximation_fallback_counters())
     return {
         'visits': dict(visits),
         'accept': accept,
         'proposed': proposed,
         'indicator_seq': indicator_seq,
         'modal': modal,
+        'approximation_fallback_counters': fallback_counters,
     }
 
 
@@ -532,18 +547,43 @@ def main():
                 'mc_bound_95': mc_bound,
                 'outside_mass': outside,
                 'pass': tv < 2 * mc_bound and outside < 0.01,
+                'approximation_fallback_counters':
+                    res['approximation_fallback_counters'],
             })
             log(f"  TV={tv:.4f} ESS={ess:.0f} accept={accept_rate:.3f} "
-                f"outside={outside:.4f} pass={per_seed[-1]['pass']}")
+                f"outside={outside:.4f} pass={per_seed[-1]['pass']} "
+                f"fallbacks={res['approximation_fallback_counters']}")
 
         # Aggregate.
         mean_tv = sum(s['tv'] for s in per_seed) / len(per_seed)
         max_tv = max(s['tv'] for s in per_seed)
         n_pass = sum(1 for s in per_seed if s['pass'])
+
+        # W2 guardrail (R3-Fix2): every seed's silent-approximation counters
+        # must be exactly zero. A nonzero reading on the toy calibration
+        # grammar would mean acceptance ratios became approximate without
+        # any user signal — a correctness regression.
+        expected_zero = {
+            'arg_marginalization': 0,
+            'survival_prob': 0,
+            'depth_cap_mean_field': 0,
+        }
+        fallback_summary = dict(expected_zero)
+        for s in per_seed:
+            for k, v in s['approximation_fallback_counters'].items():
+                fallback_summary[k] = fallback_summary.get(k, 0) + v
+        all_zero = fallback_summary == expected_zero
         log("")
         log("=== SUMMARY (5 seeds, polymorphic INT→BOOL, independent prior) ===")
         log(f"Mean TV: {mean_tv:.4f}, max TV: {max_tv:.4f}, "
             f"passed {n_pass}/{len(per_seed)} seeds")
+        log(f"Fallback-counter sum across seeds: {fallback_summary} "
+            f"(all-zero={all_zero})")
+        assert all_zero, (
+            "W2 guardrail failed: approximation_fallback_counters "
+            f"nonzero across seeds: {fallback_summary}. Acceptance ratios "
+            "are no longer exact — investigate before trusting TV."
+        )
 
         OUT_LOG.write_text("\n".join(log_lines) + "\n")
         OUT_JSON.write_text(json.dumps({
@@ -562,6 +602,8 @@ def main():
             'max_tv': max_tv,
             'n_seeds_pass': n_pass,
             'n_seeds_total': len(per_seed),
+            'approximation_fallback_counters_sum': fallback_summary,
+            'approximation_fallback_counters_all_zero': all_zero,
             'wall_seconds': time.time() - t0,
         }, indent=2))
         log(f"Results written to {OUT_JSON.name}, {OUT_LOG.name}")

@@ -1382,6 +1382,223 @@ def test_score_subtree_under_sampler_normalizes_on_tiny_binary_grammar(
     )
 
 
+def _build_tiny_no_terminal_bool_grammar(include_non_terminable=False):
+    """
+    Build a grammar where BOOL has NO direct terminal production, forcing
+    `_score_depth_cap_lookahead_exact` to fire when target=BOOL at
+    depth >= max_depth.
+
+    Grammar: {p: INT->BOOL, q: INT->BOOL, zero: INT, one: INT}.
+    log_variable=-inf, uniform log_prob=0.
+
+    When `include_non_terminable=True`, also adds r: LIST_INT->BOOL.
+    LIST_INT has no terminal or variable in this grammar, so r is filtered
+    out by the survival check. This tests that the scorer correctly
+    excludes filtered productions from the head distribution.
+
+    Returns (grammar, [p, q, r_or_None], [zero, one]).
+    """
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive
+    from dreamcoder_core.type_system import BOOL as _BOOL, INT as _INT, Arrow as _Arrow, LIST_INT as _LIST_INT
+    p = Primitive('p', _Arrow(_INT, _BOOL), lambda x: True)
+    q = Primitive('q', _Arrow(_INT, _BOOL), lambda x: False)
+    zero = Primitive('zero', _INT, 0)
+    one = Primitive('one', _INT, 1)
+    prods = [
+        Production(p, _Arrow(_INT, _BOOL), 0.0),
+        Production(q, _Arrow(_INT, _BOOL), 0.0),
+        Production(zero, _INT, 0.0),
+        Production(one, _INT, 1.0 if False else 0.0),  # keep uniform
+    ]
+    r = None
+    if include_non_terminable:
+        r = Primitive('r', _Arrow(_LIST_INT, _BOOL), lambda x: True)
+        prods.insert(2, Production(r, _Arrow(_LIST_INT, _BOOL), 0.0))
+    return Grammar(prods, log_variable=float('-inf')), [p, q, r], [zero, one]
+
+
+def _no_terminal_program_key(prog):
+    """Structural key for the no-terminal-BOOL grammar's programs.
+
+    Shape: (head_name, arg_name). Head in {p, q, r}; arg in {zero, one, ...}.
+    """
+    from dreamcoder_core.program import Primitive, Application
+    if isinstance(prog, Application) and isinstance(prog.f, Primitive) and isinstance(prog.x, Primitive):
+        return (prog.f.name, prog.x.name)
+    raise AssertionError(f"Unexpected no-terminal-BOOL program shape: {prog!r}")
+
+
+@pytest.mark.parametrize('include_non_terminable', [False, True])
+def test_score_subtree_normalizes_on_no_terminal_bool_lookahead_grammar(
+    include_non_terminable
+):
+    """
+    R3-Fix1: direct coverage of the no-terminal-BOOL lookahead branch
+    (`_score_depth_cap_lookahead_exact`).
+
+    The reviewer flagged (R3/F1) that the binary-grammar test does NOT
+    exercise this branch because its BOOL-terminal `c` short-circuits to
+    the terminal-only path. The gallery's critical BOOL regime at
+    `HAND->BOOL` frequently has no BOOL terminal at the cap, so the
+    lookahead-exact branch must be directly tested.
+
+    Grammar: {p, q: INT->BOOL; zero, one: INT} (+ r: LIST_INT->BOOL when
+    `include_non_terminable=True`). log_variable=-inf.
+
+    At depth=0, max_depth=0, target=BOOL:
+      - terminal_prods[BOOL] = [] (both p, q are arity-1).
+      - var_candidates = [].
+      - → `_score_depth_cap_lookahead_exact` fires.
+      - p survives (INT has terminals zero, one). Survival prob 1.
+      - q survives. Survival prob 1.
+      - r (if present): arg LIST_INT not terminable. Survival prob 0.
+      - So effective head distribution: P(p) = P(q) = 1/2, P(r) = 0.
+      - arg INT at depth=1 > cap: terminal branch → zero, one each 1/2.
+    Expected support: 4 programs {(p, zero), (p, one), (q, zero), (q, one)},
+    each with probability 1/4.
+    """
+    from dreamcoder_core.type_system import BOOL as _BOOL
+    import gallery_analysis.mcmc_search as ms
+    grammar, [p, q, r], [zero, one] = _build_tiny_no_terminal_bool_grammar(
+        include_non_terminable=include_non_terminable,
+    )
+
+    from dreamcoder_core.program import Application
+    # Enumerate expected support.
+    expected = {
+        ('p', 'zero'): 0.25,
+        ('p', 'one'): 0.25,
+        ('q', 'zero'): 0.25,
+        ('q', 'one'): 0.25,
+    }
+    # If include_non_terminable=True, r-headed programs are in principle
+    # "in the support of the full grammar" but MUST get probability 0 from
+    # both `_sample` and the scorer because LIST_INT is not terminable.
+    if include_non_terminable:
+        # These should not be sampled nor scored with nonzero mass.
+        forbidden_keys = {('r', 'zero'), ('r', 'one')}
+    else:
+        forbidden_keys = set()
+
+    # Instrument `_score_depth_cap_lookahead_exact` to confirm the branch fires.
+    call_count = [0]
+    original = ms._score_depth_cap_lookahead_exact
+
+    def instrumented(*args, **kwargs):
+        call_count[0] += 1
+        return original(*args, **kwargs)
+
+    ms._score_depth_cap_lookahead_exact = instrumented
+    try:
+        total_scored = 0.0
+        for (head_name, arg_name), expected_p in expected.items():
+            head = {'p': p, 'q': q}[head_name]
+            arg = {'zero': zero, 'one': one}[arg_name]
+            prog = Application(head, arg)
+            log_q = _score_subtree_under_sampler(
+                grammar, prog, _BOOL, max_depth=0, depth=0, env=[],
+            )
+            if log_q == float('-inf'):
+                pytest.fail(
+                    f"Scorer assigned P=0 to {head_name}({arg_name}) under "
+                    f"the no-terminal-BOOL lookahead grammar. "
+                    f"`_score_depth_cap_lookahead_exact` is misfiring."
+                )
+            scored_p = math.exp(log_q)
+            total_scored += scored_p
+            assert abs(scored_p - expected_p) < 1e-9, (
+                f"Pointwise mismatch on lookahead grammar for "
+                f"{head_name}({arg_name}): scored={scored_p:.10f}, "
+                f"expected={expected_p:.10f}, diff={scored_p - expected_p:.2e}."
+            )
+
+        assert abs(total_scored - 1.0) < 1e-9, (
+            f"Σ exp(log_q) = {total_scored:.10f} ≠ 1 on the no-terminal-"
+            f"BOOL lookahead grammar. Scorer is not a proper density."
+        )
+
+        # Forbidden (r-headed) programs must score -inf or 0.
+        for (head_name, arg_name) in forbidden_keys:
+            head = r
+            arg = {'zero': zero, 'one': one}[arg_name]
+            prog = Application(head, arg)
+            log_q = _score_subtree_under_sampler(
+                grammar, prog, _BOOL, max_depth=0, depth=0, env=[],
+            )
+            assert log_q == float('-inf'), (
+                f"Scorer assigned nonzero probability exp({log_q:.3f}) to "
+                f"r({arg_name}) whose LIST_INT arg cannot terminate. The "
+                f"survival filter is not excluding non-terminable prods."
+            )
+
+        # Confirm the branch actually fired (4 scored programs + forbidden).
+        expected_calls = 4 + len(forbidden_keys)
+        assert call_count[0] == expected_calls, (
+            f"`_score_depth_cap_lookahead_exact` fired {call_count[0]} "
+            f"times, expected {expected_calls}. The lookahead branch is "
+            f"not being exercised as intended."
+        )
+    finally:
+        ms._score_depth_cap_lookahead_exact = original
+
+
+def test_sample_matches_lookahead_scorer_empirics_on_no_terminal_bool():
+    """
+    R3-Fix1 complement: `_sample` at depth=0, max_depth=0, target=BOOL
+    under the no-terminal-BOOL grammar must produce programs in the
+    expected 4-program support with uniform 1/4 frequencies. This
+    catches sampler / scorer divergence on the exact code path
+    `_score_depth_cap_lookahead_exact` claims to mirror.
+    """
+    import random as _random
+    from dreamcoder_core.type_system import BOOL as _BOOL
+    grammar, [p, q, r], [zero, one] = _build_tiny_no_terminal_bool_grammar(
+        include_non_terminable=True,
+    )
+
+    expected = {
+        ('p', 'zero'): 0.25,
+        ('p', 'one'): 0.25,
+        ('q', 'zero'): 0.25,
+        ('q', 'one'): 0.25,
+    }
+    N = 20_000
+    rng = _random.Random(909090)
+    counts = {k: 0 for k in expected}
+    oos = 0
+    r_headed = 0
+    for _ in range(N):
+        prog = _sample(grammar, _BOOL, max_depth=0, depth=0, env=[], rng=rng)
+        key = _no_terminal_program_key(prog)
+        if key in counts:
+            counts[key] += 1
+        elif key[0] == 'r':
+            r_headed += 1
+        else:
+            oos += 1
+
+    assert oos == 0, (
+        f"`_sample` produced {oos}/{N} programs outside the enumerated "
+        f"4-program support on the no-terminal-BOOL lookahead grammar."
+    )
+    assert r_headed == 0, (
+        f"`_sample` produced {r_headed}/{N} r-headed programs whose "
+        f"LIST_INT arg cannot terminate. The lookahead filter in `_sample` "
+        f"is not excluding non-terminable productions."
+    )
+    for key, n_obs in counts.items():
+        expected_p = expected[key]
+        empirical_p = n_obs / N
+        sigma = math.sqrt(expected_p * (1 - expected_p) / N)
+        diff = abs(empirical_p - expected_p)
+        assert diff <= 4 * sigma, (
+            f"Sampler/expected mismatch on no-terminal-BOOL lookahead "
+            f"grammar for {key}: empirical={empirical_p:.5f}, "
+            f"expected={expected_p:.5f}, |diff|={diff:.2e}, 4σ={4*sigma:.2e}."
+        )
+
+
 def test_score_matches_sampler_empirics_on_tiny_binary_grammar():
     """
     R2-Fix4 Monte Carlo agreement: `_sample` empirics at max_depth=3 must
@@ -1818,11 +2035,29 @@ def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
     """
     W1 regression (part 2): when `propose_regeneration` returns a
     well-typed proposed program, that program must expose at least one
-    non-root subtree site so the reverse kernel is well-defined. A
-    structurally degenerate proposed program (e.g. a bare primitive
+    non-root subtree site so the reverse kernel has non-empty support.
+    A structurally degenerate proposed program (e.g. a bare primitive
     with no wrapping lambda) would have zero sites — `log_q_reverse`
-    would be computed against a phantom `n_sites_new` hiding a
+    would then be computed against a phantom `n_sites_new` hiding a
     proposal density that is not actually well-defined.
+
+    Scope note (Night 3, Round 3): this test pins a STRICTLY WEAKER
+    invariant than "the reverse density is finite". `log_q_rev` can
+    legitimately be -inf even when (a) the proposed program type-checks
+    AND (b) `collect_subtree_sites(proposed, request)` returns a
+    non-empty list: the reverse site-draw must hit the SPECIFIC site
+    whose type/env match the original subtree, and the non-terminal
+    scorer may assign that subtree-at-that-site density zero under the
+    no-retry sampler. Those -inf draws are still legitimate draws from
+    the kernel — they just have posterior-mass-zero reverse support,
+    which MH rejects via the ratio, not via a structural bug.
+
+    What this test encodes: `collect_subtree_sites(proposed, request)`
+    returns a non-empty list for every typable proposal. That is the
+    W1 structural invariant the site-metadata fix was meant to restore
+    — it does NOT claim log_q_rev is finite, and callers relying on a
+    finite reverse density must check `math.isfinite(log_q_rev)`
+    themselves.
 
     Scope note (Night 3, Round 2): `propose_regeneration` calls
     `sample_program(allow_retries=False)` so that the forward proposal
@@ -1833,13 +2068,13 @@ def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
     loop naturally rejects them via `log_prior = -inf`. The invariant
     this test encodes is NOT "every proposed program type-checks";
     that would overstate the implementation's contract. The invariant
-    is: when the proposed program type-checks, it must be reversible,
-    AND the typed-OK rate must be high enough that MH does not spend
-    most of its time on -inf rejections.
+    is: when the proposed program type-checks, it must have non-empty
+    reverse-site support, AND the typed-OK rate must be high enough
+    that MH does not spend most of its time on -inf rejections.
     """
     request = Arrow(HAND, BOOL)
     typed_ok = 0
-    reversible_given_typed = 0
+    has_reverse_sites_given_typed = 0
     tried = 0
     for seed in range(20):
         program = sample_program(grammar, request, max_depth=6, seed=seed)
@@ -1865,20 +2100,22 @@ def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
             pass
         if typed:
             typed_ok += 1
-            # Reversibility is only required when the proposed state is
-            # well-typed. Ill-typed proposals get -inf prior and are
-            # never actually accepted into the chain, so their reverse
-            # density is unused.
+            # Reverse-site existence is only required when the proposed
+            # state is well-typed. Ill-typed proposals get -inf prior
+            # and are never actually accepted into the chain, so their
+            # reverse density is unused. Note: non-empty reverse sites
+            # is weaker than `math.isfinite(_log_q_rev)`; see docstring.
             new_sites = collect_subtree_sites(proposed, request)
             if len(new_sites) > 0:
-                reversible_given_typed += 1
+                has_reverse_sites_given_typed += 1
 
     assert tried > 0, (
         "No proposals succeeded — grammar or sampler regression."
     )
     # Reverse-support existence when proposed program type-checks.
-    assert reversible_given_typed == typed_ok, (
-        f"W1 regression: {typed_ok - reversible_given_typed}/{typed_ok} "
+    assert has_reverse_sites_given_typed == typed_ok, (
+        f"W1 regression: "
+        f"{typed_ok - has_reverse_sites_given_typed}/{typed_ok} "
         f"type-checking proposals had zero reverse sites "
         f"(proposal density undefined in reverse direction)."
     )
