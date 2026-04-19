@@ -293,3 +293,128 @@ No
 ### Status
 - Continuing to Round 2. Difficulty: hard.
 
+
+## Round 2 (2026-04-19T05:00:00Z → 2026-04-19T08:00:00Z)
+
+### Assessment (Summary)
+- Score: 7.5/10
+- Verdict: Almost
+- Reviewer commit: `7f14a2f`
+
+### Key criticisms (raw response in `review-stage/night3_round_2_review.txt`)
+- W1 (site-metadata) OVERRULED — 0/3256 bad sites over 50 sampled programs via 64-var-offset probe.
+- W2 (approximation counters) PARTIALLY SUSTAINED — counters exist but not wired into any experiment/result artifact.
+- W4 (bound-variable full kernel) OVERRULED — ΣQ=1 reproduced at `{1/3, 1/3, 1/9, ...}`.
+- **NEW F-R2-1 (Medium)**: `sample_program(allow_retries=True)` retry path at `mcmc_search.py:148` only checks `infer_type` returns, not that resolved type unifies with request_type. 1/100 seeds at max_depth ∈ {5,6} returned ill-typed programs.
+- **NEW F-R2-2 (Low/Medium)**: `test_propose_regeneration_preserves_typability_and_reversibility` overclaims — asserts every regeneration should whole-program type-check, but `propose_regeneration` uses `allow_retries=False` by design.
+
+### Actions taken (Round 2 fixes, commit `a05a59c` → later `7f14a2f`)
+
+**R2-Fix1 — root-type agreement in `sample_program(allow_retries=True)`**
+- `src/gallery_analysis/mcmc_search.py:~148`: added `ctx.unify(inferred, ctx.instantiate(request_type))` before returning from retry path.
+- Regression test `test_sample_program_retry_path_enforces_root_type_agreement`: pins seed 1001 at max_depth=6 + 0-leak assertion on seeds 900..1199 at max_depth ∈ {5,6}.
+
+**R2-Fix2 — W2 counters attached to MCMCResult**
+- `MCMCResult.approximation_fallback_counters: Dict[str, int] = field(default_factory=dict)`.
+- `MCMCChain.run` (line ~2079): `reset_approximation_fallback_counters()` at start; captures via `get_approximation_fallback_counters()` on return.
+- `run_parallel_chains` (line ~2545): sums `merged_fallback_counters` across chain results.
+
+**R2-Fix3 — weakened W1 proposal-typability test to actual invariant**
+- Docstring + assertion now pin: "when proposed program type-checks, it must have ≥1 reverse site" AND typed-OK ≥ tried // 2 smoke bound. Explicitly disclaims "every regeneration type-checks".
+
+**R2-Fix4 — W3 A+D tiny exact binary grammar + boundary tests**
+- `_build_tiny_bool_binary_grammar()` returns `(grammar, c_prim, g_prim)` with `c:BOOL, g:BOOL→BOOL→BOOL`.
+- `_binary_program_key(prog)` structural key (avoids Primitive lambda-hex-address repr collisions).
+- Parameterized `test_score_subtree_under_sampler_normalizes_on_tiny_binary_grammar[1-2, 2-5, 3-26]`: closed-form normalization at each depth.
+- `test_score_matches_sampler_empirics_on_tiny_binary_grammar`: N=20000 Monte Carlo with 4σ tolerance.
+
+### Results
+- All new tests pass. R2 addresses three-of-four R1 carry-forwards cleanly.
+
+### Status
+- Continuing to Round 3. Difficulty: hard.
+
+---
+
+## Round 3 (2026-04-19T08:30:00Z → 2026-04-19T11:30:00Z)
+
+### Assessment (Summary)
+- Score: 8.5/10
+- Verdict: Almost
+- Reviewer commit: `9d97392`
+
+### Key criticisms (raw response in `review-stage/night3_round_3_review.txt`)
+- R2-Fix1 (root-type agreement): **OVERRULED**.
+- R2-Fix2 (MCMCResult counters): **PARTIALLY SUSTAINED** — harness clean, experiment-artifact not asserted.
+- R2-Fix3 (weakened typability test): **PARTIALLY SUSTAINED** — prose/variable still overstates invariant.
+- R2-Fix4 (tiny binary grammar): **OVERRULED**.
+- **F1 — Medium**: `_score_depth_cap_lookahead_exact` branch uncovered — no test with zero terminal productions at target type.
+- **F2 — Medium**: experiment-side W2 assertion missing in `review-stage/experiments/round_1/posterior_calibration_v2.py`.
+- **F3 — Low/Medium**: prose/assert mismatch — `reversible_given_typed` only checks non-empty reverse sites, not finite `log_q_rev`. Reviewer reproduced `log_q_rev=-inf` on seed=10+7919 where both invariants hold.
+
+### Actions taken (Round 3 fixes, commit `26f55f4`)
+
+**R3-Fix1 (F1) — no-terminal-BOOL lookahead grammar + tests**
+- `src/tests/test_mcmc_search.py`:
+  - `_build_tiny_no_terminal_bool_grammar(include_non_terminable=False)` returns `{p:INT→BOOL, q:INT→BOOL, zero:INT, one:INT}` plus optional `r:LIST_INT→BOOL`.
+  - `_no_terminal_program_key(prog)` structural key.
+  - Parameterized `test_score_subtree_normalizes_on_no_terminal_bool_lookahead_grammar[False, True]`: monkeypatches `ms._score_depth_cap_lookahead_exact` to count invocations, asserts 4-program 1/4 support, forbidden r-headed programs score `-inf`, branch fires exactly `4 + len(forbidden_keys)` times.
+  - `test_sample_matches_lookahead_scorer_empirics_on_no_terminal_bool`: N=20000 MC draws from `_sample` at `depth=0, max_depth=0`, 0 out-of-support, 0 r-headed, 4σ tolerance per program.
+
+**R3-Fix2 (F2) — experiment-side W2 assertion**
+- `review-stage/experiments/round_1/posterior_calibration_v2.py`:
+  - Imports `reset_approximation_fallback_counters`, `get_approximation_fallback_counters`.
+  - `run_mh_one_seed()` resets counters at chain start; records per-seed in return dict.
+  - `main()` aggregates across seeds; asserts sum equals `{arg_marginalization: 0, survival_prob: 0, depth_cap_mean_field: 0}`; writes `approximation_fallback_counters_sum` + `approximation_fallback_counters_all_zero` to JSON artifact.
+
+**R3-Fix3 (F3) — prose/assert rename**
+- `src/tests/test_mcmc_search.py::test_propose_regeneration_preserves_typability_and_reversibility`:
+  - Variable `reversible_given_typed` → `has_reverse_sites_given_typed`.
+  - Docstring now explicitly disclaims that `log_q_rev` may legitimately be `-inf` even when typability and non-empty reverse sites both hold; callers must check `math.isfinite(log_q_rev)` themselves.
+  - Inline comment + assertion message updated.
+
+### Results
+- 13/13 R2+R3 regression tests pass in 24.7s (root-type agreement, fallback counters, no-terminal lookahead, full-kernel normalizes, proposal typability, tiny binary grammar).
+
+### Status
+- Continuing to Round 4 (final). Difficulty: hard.
+
+---
+
+## Round 4 (FINAL) (2026-04-19T12:00:00Z)
+
+### Assessment (Summary)
+- Score: **9.0/10**
+- Verdict: **Ready**
+- Reviewer commit: `26f55f4`
+
+### Rulings (raw response in `review-stage/night3_round_4_review.txt`)
+- F1: **OVERRULED** — monkeypatch counter fires exactly `6` times (4 valid + 2 forbidden); scored masses exactly 1/4 and -inf; sampler companion N=2000 probe produces only the 4 expected keys.
+- F2: **OVERRULED** — guardrail on live reported-result path; reviewer monkeypatched `run_mh_one_seed()` to return nonzero fallback and `main()` raised assertion as intended.
+- F3: **OVERRULED** — docstring matches assertion; reviewer reproduced `log_q_rev=-inf` on (seed=10, proposal seed=7929) with typed proposal + non-empty reverse sites.
+- **No new regressions introduced by R3.**
+
+### Still-open non-blockers
+- Depth-2 calibration must stay honestly scoped in manuscript (Night 2 carry).
+- Init-resampling caveat must stay in writeup (Night 2 carry).
+- `run_parallel_chains` still sequential (H5, Night 2 carry).
+
+These are claim-scoping and benchmark-engineering items, not forward/reverse-density soundness defects.
+
+### Final bottom line
+> "If the paper says 'this MH implementation targets the post-burn-in posterior under the current gallery grammar' and is honest about the depth-2 calibration limit, the theoretical-correctness section is now in good shape."
+
+**Loop terminated: positive verdict reached at Round 4/4.**
+
+### Score trajectory (Night 3)
+- Round 1: 5.0 (No) — new W1 blocker introduced by reviewer's site-metadata probe
+- Round 2: 7.5 (Almost) — W1 closed, three new findings
+- Round 3: 8.5 (Almost) — R2 fixes clean, three closure gaps (F1/F2/F3)
+- Round 4: 9.0 (Ready) — F1/F2/F3 all OVERRULED, no new regressions
+
+### Files changed across Night 3
+- `src/gallery_analysis/mcmc_search.py`: path-keyed cache + single-pass `_annotate` (R1), 3 approximation-cap counters + accessors (R1), root-type unify in retry path (R2), MCMCResult counter field + run-level reset/capture + parallel sum (R2).
+- `src/tests/test_mcmc_search.py`: +~400 lines of regression tests (W1 site consistency, W4 bound-variable full kernel, fallback triggers, binary grammar at depth ∈ {1,2,3}, no-terminal-BOOL lookahead, root-type retry agreement) + docstring/variable rename (R3).
+- `review-stage/experiments/round_1/posterior_calibration_v2.py`: fallback-counter reset + record + aggregate zero-assert + JSON fields (R3).
+- `review-stage/{REVIEWER_MEMORY.md, REVIEW_STATE.json, night3_round_{1,2,3,4}_review.txt, AUTO_REVIEW.md, findings.md}`: full audit trail.
+

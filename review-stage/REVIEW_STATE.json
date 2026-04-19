@@ -9,27 +9,30 @@
   "human_checkpoint": false,
   "max_rounds": 4,
   "positive_threshold_effective": "score>=6 AND rounds_completed>=3",
-  "positive_threshold_met": false,
+  "positive_threshold_met": true,
   "hard_time_budget_hours": 10,
   "codex_mcp_available": true,
   "reviewer_model": "gpt-5.4",
   "reviewer_reasoning_effort": "xhigh",
   "thread_id": "019da4d5-c81e-77b2-9c4d-e64b2b463c93",
-  "round": 1,
-  "status": "in_progress",
-  "last_score": 5.0,
-  "last_verdict": "No",
+  "round": 4,
+  "status": "completed",
+  "last_score": 9.0,
+  "last_verdict": "Ready",
   "pending_experiments": [],
-  "baseline_tests": "passing (47/47 + 5 new regression = 52 total)",
+  "baseline_tests": "passing (13/13 R2+R3 regression tests in 24.7s; 60 collected total)",
   "carry_in_score": 8.0,
   "carry_in_verdict": "almost",
-  "score_trajectory": [5.0],
-  "timestamp": "2026-04-19T02:00:00Z",
+  "score_trajectory": [5.0, 7.5, 8.5, 9.0],
+  "verdict_trajectory": ["No", "Almost", "Almost", "Ready"],
+  "timestamp": "2026-04-19T12:09:32Z",
+  "final_commit": "26f55f4",
   "rounds": [
     {
       "round": 1,
       "score": 5.0,
       "verdict": "No",
+      "commit_reviewed": "0bf49b3",
       "key_fixes": [
         "W1a: path-keyed collect_subtree_sites cache (id → path)",
         "W1b: single-pass _annotate mirroring infer_type semantics (eliminates stale TVs)",
@@ -37,6 +40,58 @@
         "W4: lambda/bound-variable full-kernel ΣQ=1 test on reviewer spec",
         "W1+W2 regression tests added (site consistency, proposal typability, counter triggers)"
       ]
+    },
+    {
+      "round": 2,
+      "score": 7.5,
+      "verdict": "Almost",
+      "commit_reviewed": "7f14a2f",
+      "key_fixes": [
+        "R2-Fix1: sample_program retry path enforces root-type agreement",
+        "R2-Fix2: W2 counters attached to MCMCResult + run_parallel_chains sum",
+        "R2-Fix3: weakened W1 proposal-typability test to actual invariant",
+        "R2-Fix4: W3 A+D tiny exact binary grammar + boundary tests (parametric [1-2, 2-5, 3-26]) + Monte Carlo N=20000 with 4σ tolerance"
+      ]
+    },
+    {
+      "round": 3,
+      "score": 8.5,
+      "verdict": "Almost",
+      "commit_reviewed": "9d97392",
+      "new_findings": [
+        "F1: no-terminal lookahead branch uncovered",
+        "F2: experiment-side W2 assertion missing",
+        "F3: prose/assert mismatch in R2-Fix3 typability test"
+      ],
+      "rulings_on_r2_fixes": {
+        "R2-Fix1": "OVERRULED",
+        "R2-Fix2": "PARTIALLY SUSTAINED (harness clean, experiment-side missing)",
+        "R2-Fix3": "PARTIALLY SUSTAINED (prose overclaims)",
+        "R2-Fix4": "OVERRULED"
+      }
+    },
+    {
+      "round": 4,
+      "score": 9.0,
+      "verdict": "Ready",
+      "commit_reviewed": "26f55f4",
+      "rulings_on_r3_findings": {
+        "F1": "OVERRULED",
+        "F2": "OVERRULED",
+        "F3": "OVERRULED"
+      },
+      "key_fixes": [
+        "R3-Fix1: tiny no-terminal-BOOL lookahead grammar + monkeypatch-counter test + N=20000 Monte Carlo",
+        "R3-Fix2: wired reset_approximation_fallback_counters/get into posterior_calibration_v2.py with aggregate zero-assertion + JSON record",
+        "R3-Fix3: renamed reversible_given_typed → has_reverse_sites_given_typed, docstring disclaims finite log_q_rev"
+      ],
+      "no_new_regressions": true
     }
-  ]
+  ],
+  "open_non_blockers": [
+    "depth-2 calibration must stay honestly scoped in manuscript",
+    "init-resampling caveat must stay in writeup",
+    "run_parallel_chains is still sequential (H5)"
+  ],
+  "claim_scope": "this MH implementation targets the post-burn-in posterior under the current gallery grammar, with depth-2 calibration"
 }

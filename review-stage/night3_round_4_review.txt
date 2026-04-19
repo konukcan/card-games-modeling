@@ -1,0 +1,50 @@
+## Score
+9.0/10
+
+## Ready
+Yes (Ready)
+
+## Reviewer commit inspected
+26f55f4 (via direct python -c probes)
+
+## Rulings on Round 3 findings
+
+### F1 (no-terminal lookahead branch coverage): OVERRULED
+The new no-terminal-BOOL test really does force the exact lookahead branch, not just a mock path.
+- Monkeypatch counter at test_mcmc_search.py:1484 wraps ms._score_depth_cap_lookahead_exact.
+- Reviewer's probe: branch fires exactly 6 times on the include_non_terminable=True variant (4 valid + 2 forbidden).
+- Scored masses exactly 1/4 for p/q × zero/one; -inf for r(zero), r(one).
+- Sampler companion at test_mcmc_search.py:1546 is also on the right code path; 2000-draw probe produced only the expected four keys.
+
+### F2 (experiment-side W2 assertion): OVERRULED
+The experiment-side W2 guardrail is now on the live reported-result path.
+- run_mh_one_seed() resets counters at posterior_calibration_v2.py:397.
+- Records per-seed counters at posterior_calibration_v2.py:468.
+- per_seed entries carry counters at posterior_calibration_v2.py:541.
+- main() aggregates and asserts zero at posterior_calibration_v2.py:562.
+- Reviewer monkeypatched run_mh_one_seed() to return a nonzero fallback count — main() raised the new assertion exactly as intended.
+
+### F3 (prose/assert mismatch): OVERRULED
+The prose/assert mismatch is closed.
+- Docstring at test_mcmc_search.py:2044 explicitly says this is weaker than "finite reverse density" and tells callers to check math.isfinite(log_q_rev) themselves.
+- Inline comment at test_mcmc_search.py:2106 matches.
+- Reviewer rechecked underlying behavior: with gallery seed=10 and proposal seed=7929, still gets a typed proposal with log_q_rev=-inf, so the new wording matches reality rather than papering over it.
+
+## New regressions
+None. Reviewer found no silent regression introduced by commit 26f55f4.
+
+## Still-open non-blockers
+- Depth-2 calibration must stay honestly scoped in the manuscript.
+- Init-resampling caveat must stay in the writeup.
+- run_parallel_chains is still sequential.
+
+These are claim-scoping and benchmark-engineering items, not forward/reverse-density soundness defects.
+
+## Reviewer memory update (verbatim, FINAL)
+> Addressed: F1 is closed by the new no-terminal-BOOL lookahead tests, which genuinely hit _score_depth_cap_lookahead_exact; F2 is closed by wiring the fallback counters into the live calibration script path with a repo-visible zero-counter assertion and JSON/log reporting; F3 is closed because the proposal regression test now states exactly the weaker invariant it actually checks, and it explicitly warns that log_q_rev may be -inf even for typed proposals. Still open: no new correctness blockers under the scoped claim; only non-blocking scope/performance caveats remain, namely depth-2 calibration must stay honestly scoped in the manuscript, the init-resampling caveat must stay in the writeup, and run_parallel_chains is still sequential. Pattern: the Night 3 fixes resolved the remaining MH-kernel correctness risks; what remains is claim-scoping and benchmark-engineering, not a forward/reverse-density soundness defect.
+
+## Final bottom line
+Theoretical-correctness section is ready for submission under the claim scope "this MH implementation targets the post-burn-in posterior under the current gallery grammar, with depth-2 calibration." Non-blocking caveats (depth-2 scope, init-resampling language, sequential parallel chains) must be reflected in the manuscript.
+
+---
+Thread ID: 019da4d5-c81e-77b2-9c4d-e64b2b463c93
