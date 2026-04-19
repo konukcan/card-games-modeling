@@ -1225,6 +1225,231 @@ def test_score_depth_cap_exact_matches_reviewer_counterexample():
 
 
 # --------------------------------------------------------------------------- #
+# R2-Fix4 (W3 A+D): Tiny exact depth-3 binary grammar.
+#
+# Reviewer preferred path at R2: "add a tiny exact depth-3 grammar that
+# forces the depth-3 code paths, then add targeted boundary tests around
+# the depth cap / lookahead transitions."
+#
+# The existing tiny-bool grammar uses a unary `f: bool->bool`, so depth
+# accumulates linearly and the support is a chain. A binary production
+# `g: bool->bool->bool` stresses the scorer's depth-cap lookahead much
+# harder because at every depth a `g`-choice branches into a product of
+# two independent sub-distributions, and the survival-probability filter
+# must correctly weigh `g` against the terminal `c` at each depth.
+#
+# Grammar: {c:bool (terminal), g:bool->bool->bool}, log_variable=-inf,
+# uniform log_prob=0. At depth d < max_depth, both c and g are candidates
+# (g always survives the lookahead because c terminates at any depth).
+# At depth == max_depth, only c survives (exact enumeration branch).
+#
+# Exact support sizes:
+#   max_depth=1: {c, g(c,c)} — 2 programs, probs {1/2, 1/2}
+#   max_depth=2: 5 programs (see `_enumerate_tiny_bool_binary_support`)
+#   max_depth=3: 26 programs
+#
+# Tests verify:
+#   (a) Σ exp(log_q_scored) = 1 across the full support (normalization),
+#   (b) |scored - expected| ≤ 1e-9 pointwise (exact agreement),
+#   (c) `_sample` empirics match the scorer within 4σ Monte Carlo tolerance
+#       at max_depth=3 (catches subtle sampler/scorer divergence that might
+#       individually preserve ΣQ=1 but mis-allocate probability mass).
+# --------------------------------------------------------------------------- #
+
+
+def _build_tiny_bool_binary_grammar():
+    """Build {c:bool, g:bool->bool->bool}, each lp=0. log_variable=-inf.
+
+    Returns (grammar, c_prim, g_prim) so the enumerator can reuse the exact
+    same Primitive instances — critical because Primitive is a dataclass
+    whose repr includes function id() for the value lambda, and `_sample`
+    returns the grammar's Primitives verbatim.
+    """
+    from dreamcoder_core.grammar import Grammar, Production
+    from dreamcoder_core.program import Primitive
+    from dreamcoder_core.type_system import BOOL as _BOOL, Arrow as _Arrow
+    c_prim = Primitive('c', _BOOL, True)
+    g_prim = Primitive('g', _Arrow(_BOOL, _Arrow(_BOOL, _BOOL)), lambda a: lambda b: a)
+    prods = [
+        Production(c_prim, _BOOL, 0.0),
+        Production(g_prim, _Arrow(_BOOL, _Arrow(_BOOL, _BOOL)), 0.0),
+    ]
+    return Grammar(prods, log_variable=float('-inf')), c_prim, g_prim
+
+
+def _binary_program_key(prog):
+    """Structural key for tiny-binary programs: 'c' or ('g', key_a, key_b).
+
+    Needed because Primitive's repr embeds the lambda's hex address, and
+    Application is a plain dataclass without structural __eq__, so identical
+    structures still compare unequal across instances.
+    """
+    from dreamcoder_core.program import Primitive, Application
+    if isinstance(prog, Primitive):
+        return prog.name
+    if isinstance(prog, Application):
+        # Curried: g(a, b) = Application(Application(g, a), b)
+        inner = prog.f
+        if isinstance(inner, Application) and isinstance(inner.f, Primitive):
+            return (inner.f.name, _binary_program_key(inner.x), _binary_program_key(prog.x))
+    raise AssertionError(f"Unexpected tiny-binary program shape: {prog!r}")
+
+
+def _enumerate_tiny_bool_binary_support(max_depth, c_prim, g_prim):
+    """
+    Closed-form sampler distribution for `_sample(BOOL, max_depth=D, depth=0)`
+    under `_build_tiny_bool_binary_grammar`.
+
+    Recurrence:
+      - At depth == D: only c survives. p(D) = {c: 1.0}.
+      - At depth < D: both c and g are valid (g survives the lookahead because
+        any arg at depth+1 has at least one terminal — c — reachable within
+        the remaining budget). Uniform log_prob gives:
+          p(d)[c] = 1/2
+          p(d)[g(a,b)] = 1/2 * p(d+1)[a] * p(d+1)[b]  for all a,b in support(p(d+1))
+
+    Reuses the grammar's c_prim and g_prim so the scorer / sampler see the
+    exact same Primitive instances as the enumerator.
+
+    Returns List[(Program, probability)] at depth=0.
+    """
+    from dreamcoder_core.program import Application
+
+    def at_depth(d):
+        if d == max_depth:
+            return [(c_prim, 1.0)]
+        sub = at_depth(d + 1)
+        support = [(c_prim, 0.5)]
+        for (a_prog, a_p) in sub:
+            for (b_prog, b_p) in sub:
+                prog = Application(Application(g_prim, a_prog), b_prog)
+                prob = 0.5 * a_p * b_p
+                support.append((prog, prob))
+        return support
+
+    return at_depth(0)
+
+
+@pytest.mark.parametrize('max_depth,expected_support_size', [
+    (1, 2),    # {c, g(c,c)}
+    (2, 5),    # depth=2 forces c at leaves
+    (3, 26),   # depth=3 — the primary reviewer-requested case
+])
+def test_score_subtree_under_sampler_normalizes_on_tiny_binary_grammar(
+    max_depth, expected_support_size
+):
+    """
+    R2-Fix4 (W3 A+D): ΣQ=1 + pointwise exactness on the binary-branching
+    tiny grammar, across the three depth regimes (cap at depth 0, cap at
+    depth 1, cap at depth 2). Catches depth-cap lookahead bugs that the
+    unary tiny grammar cannot surface because its support is a single chain.
+    """
+    from dreamcoder_core.type_system import BOOL as _BOOL
+    grammar, c_prim, g_prim = _build_tiny_bool_binary_grammar()
+    support = _enumerate_tiny_bool_binary_support(max_depth, c_prim, g_prim)
+
+    assert len(support) == expected_support_size, (
+        f"Enumerator bug: max_depth={max_depth} produced "
+        f"{len(support)} programs, expected {expected_support_size}."
+    )
+    assert abs(sum(p for _, p in support) - 1.0) < 1e-12, (
+        "Enumerator bug: expected probabilities do not sum to 1."
+    )
+
+    # Score every program in the support and compare to expected.
+    total_scored = 0.0
+    for prog, expected_p in support:
+        log_q = _score_subtree_under_sampler(
+            grammar, prog, _BOOL, max_depth=max_depth, depth=0, env=[],
+        )
+        if log_q == float('-inf'):
+            pytest.fail(
+                f"Scorer assigned P=0 to {prog!r} at max_depth={max_depth}, "
+                f"which should have P = {expected_p}. Scorer/sampler divergence."
+            )
+        scored_p = math.exp(log_q)
+        total_scored += scored_p
+        assert abs(scored_p - expected_p) < 1e-9, (
+            f"Pointwise mismatch at max_depth={max_depth} for {prog!r}: "
+            f"scored {scored_p:.10f}, expected {expected_p:.10f}, "
+            f"diff {scored_p - expected_p:.2e}."
+        )
+
+    assert abs(total_scored - 1.0) < 1e-9, (
+        f"Σ exp(log_q) = {total_scored:.10f} ≠ 1 at max_depth={max_depth}. "
+        f"Scorer is not a proper density over `_sample`'s support on the "
+        f"binary grammar — a depth-cap lookahead regression."
+    )
+
+
+def test_score_matches_sampler_empirics_on_tiny_binary_grammar():
+    """
+    R2-Fix4 Monte Carlo agreement: `_sample` empirics at max_depth=3 must
+    match the scorer's predicted distribution within 4σ per program.
+
+    Rationale: ΣQ=1 and pointwise scorer checks are analytical (closed form),
+    but they could in principle mask a bug where `_sample` and the scorer
+    share the same incorrect lookahead formula. Drawing N=20,000 samples and
+    comparing empirical frequencies to `_score_subtree_under_sampler` catches
+    any divergence between the two code paths.
+
+    Tolerance: for each program with expected prob p, stddev of count is
+    sqrt(N*p*(1-p)); we allow |empirical - expected| ≤ 4σ (≈1.25e-4 survival
+    of 26-program × 4σ two-sided test → well under 1% flake rate).
+    """
+    import random as _random
+    from dreamcoder_core.type_system import BOOL as _BOOL
+    grammar, c_prim, g_prim = _build_tiny_bool_binary_grammar()
+    max_depth = 3
+    support = _enumerate_tiny_bool_binary_support(max_depth, c_prim, g_prim)
+    support_by_key = {
+        _binary_program_key(prog): (prog, expected_p) for prog, expected_p in support
+    }
+
+    # Draw samples via `_sample` (the internal recursive sampler that the
+    # scorer is trying to approximate).
+    N = 20_000
+    rng = _random.Random(424242)
+    counts = {k: 0 for k in support_by_key}
+    unseen = 0
+    for _ in range(N):
+        prog = _sample(grammar, _BOOL, max_depth=max_depth, depth=0, env=[], rng=rng)
+        key = _binary_program_key(prog)
+        if key in counts:
+            counts[key] += 1
+        else:
+            # `_sample` produced a program outside the enumerated support —
+            # an enumerator bug (incomplete) OR a sampler bug (oversupport).
+            unseen += 1
+
+    assert unseen == 0, (
+        f"`_sample` produced {unseen}/{N} programs outside the enumerated "
+        f"support. Either the enumerator is incomplete or `_sample` is "
+        f"oversupporting (probable depth-cap lookahead bug)."
+    )
+
+    # Compare empirical frequencies to scorer predictions.
+    for key, n_obs in counts.items():
+        prog, expected_p = support_by_key[key]
+        log_q = _score_subtree_under_sampler(
+            grammar, prog, _BOOL, max_depth=max_depth, depth=0, env=[],
+        )
+        scored_p = math.exp(log_q)
+        # Sanity: scorer and analytical enumerator already agree (tested above).
+        assert abs(scored_p - expected_p) < 1e-9
+
+        empirical_p = n_obs / N
+        sigma = math.sqrt(max(scored_p * (1 - scored_p) / N, 1e-30))
+        diff = abs(empirical_p - scored_p)
+        assert diff <= 4 * sigma, (
+            f"Sampler/scorer empirical mismatch for {prog!r}: "
+            f"empirical={empirical_p:.5f}, scored={scored_p:.5f}, "
+            f"|diff|={diff:.2e}, 4σ={4*sigma:.2e}. `_sample` and "
+            f"`_score_subtree_under_sampler` disagree beyond Monte Carlo noise."
+        )
+
+
+# --------------------------------------------------------------------------- #
 # R3-Fix1: Full-kernel ΣQ(s'|s) = 1 test for propose_regeneration.
 #
 # Reviewer weakness (R3): the existing tiny-grammar test validates scorer
@@ -1591,20 +1816,30 @@ import random as _random
 
 def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
     """
-    W1 regression (part 2): `propose_regeneration` must preserve
-    whole-program typability, and the proposed program must expose at
-    least one non-root subtree site so the reverse kernel is well-
-    defined. Both invariants fail silently under W1-bad site metadata:
-    a wrong-typed site makes the forward kernel sample an ill-typed
-    subtree (proposed program fails end-to-end type-check), and a
-    structurally degenerate proposed program (e.g., a bare primitive
-    with no wrapping lambda) has zero sites — so `log_q_reverse` is
-    computed against `n_sites_new = 1` via the legacy guard, hiding a
+    W1 regression (part 2): when `propose_regeneration` returns a
+    well-typed proposed program, that program must expose at least one
+    non-root subtree site so the reverse kernel is well-defined. A
+    structurally degenerate proposed program (e.g. a bare primitive
+    with no wrapping lambda) would have zero sites — `log_q_reverse`
+    would be computed against a phantom `n_sites_new` hiding a
     proposal density that is not actually well-defined.
+
+    Scope note (Night 3, Round 2): `propose_regeneration` calls
+    `sample_program(allow_retries=False)` so that the forward proposal
+    law exactly matches `_score_subtree_under_sampler`. A small
+    fraction of proposed programs therefore fail end-to-end
+    `infer_type` unification with the request type — those are
+    legitimate draws from the sampler's actual distribution and the MH
+    loop naturally rejects them via `log_prior = -inf`. The invariant
+    this test encodes is NOT "every proposed program type-checks";
+    that would overstate the implementation's contract. The invariant
+    is: when the proposed program type-checks, it must be reversible,
+    AND the typed-OK rate must be high enough that MH does not spend
+    most of its time on -inf rejections.
     """
     request = Arrow(HAND, BOOL)
     typed_ok = 0
-    reversible = 0
+    reversible_given_typed = 0
     tried = 0
     for seed in range(20):
         program = sample_program(grammar, request, max_depth=6, seed=seed)
@@ -1617,32 +1852,45 @@ def test_propose_regeneration_preserves_typability_and_reversibility(grammar):
             # W1 primary test which only samples proposable programs).
             continue
         tried += 1
-        # (a) whole-program typability under the request type.
+        # Whole-program typability under the request type.
+        typed = False
         try:
             ctx = TypeContext()
             inferred = proposed.infer_type(ctx, env=[])
             resolved = ctx.apply(inferred)
             unify_ctx = TypeContext()
             unify_ctx.unify(resolved, request)
-            typed_ok += 1
+            typed = True
         except Exception:
             pass
-        # (b) reversibility: the proposed state must have at least one
-        # site so `log_q_reverse` in the next chain step is meaningful.
-        new_sites = collect_subtree_sites(proposed, request)
-        if len(new_sites) > 0:
-            reversible += 1
+        if typed:
+            typed_ok += 1
+            # Reversibility is only required when the proposed state is
+            # well-typed. Ill-typed proposals get -inf prior and are
+            # never actually accepted into the chain, so their reverse
+            # density is unused.
+            new_sites = collect_subtree_sites(proposed, request)
+            if len(new_sites) > 0:
+                reversible_given_typed += 1
 
     assert tried > 0, (
         "No proposals succeeded — grammar or sampler regression."
     )
-    assert typed_ok == tried, (
-        f"W1 regression: {tried - typed_ok}/{tried} proposed programs "
-        f"failed whole-program type-check under {request}."
+    # Reverse-support existence when proposed program type-checks.
+    assert reversible_given_typed == typed_ok, (
+        f"W1 regression: {typed_ok - reversible_given_typed}/{typed_ok} "
+        f"type-checking proposals had zero reverse sites "
+        f"(proposal density undefined in reverse direction)."
     )
-    assert reversible == tried, (
-        f"W1 regression: {tried - reversible}/{tried} proposed programs "
-        f"had zero sites (proposal density undefined in reverse direction)."
+    # Typed-OK rate. The threshold is a smoke-test bound, not a
+    # correctness claim: if it drops below 50% we want the CI to
+    # surface a regression in site-metadata / sampler agreement before
+    # the behaviour degrades to the W1-pre-fix regime (10/20 ill-typed
+    # on the same seeds).
+    assert typed_ok >= tried // 2, (
+        f"Typed-OK rate regression: only {typed_ok}/{tried} proposed "
+        f"programs type-check under {request}. Pre-W1-fix rate was "
+        f"10/20; post-fix rate should be substantially higher."
     )
 
 
@@ -1746,6 +1994,57 @@ def test_fallback_counters_trigger_and_reset():
     assert get_approximation_fallback_counters() == {
         'arg_marginalization': 0, 'survival_prob': 0, 'depth_cap_mean_field': 0,
     }
+
+
+# --------------------------------------------------------------------------- #
+# R2-Fix1 regression (Night 3 Round 2 finding): `sample_program` must not
+# return a root-mistyped program on the retry path. The reviewer's direct
+# probe found that `sample_program(allow_retries=True)` at mcmc_search.py:148
+# only called `infer_type` without unifying the inferred type with
+# `request_type`. Seed 1001 on gallery grammar / HAND->BOOL produced a
+# program whose `grammar.program_log_likelihood` returns -inf. Probe rate was
+# 1/100 seeds at both max_depth=5 and max_depth=6.
+#
+# The fix adds an explicit `ctx.unify(inferred, ctx.instantiate(request_type))`
+# at the end of the retry-path loop. This test pins the seed-1001 behaviour
+# and exercises a wider seed range at both depths.
+# --------------------------------------------------------------------------- #
+
+
+def test_sample_program_retry_path_enforces_root_type_agreement(grammar):
+    """
+    R2-Fix1 regression: after the retry-path fix, `sample_program(
+    allow_retries=True)` must NEVER return a program whose inferred
+    root type disagrees with `request_type`. Previously such programs
+    were silently returned and only caught later by scorer -inf.
+    """
+    request = Arrow(HAND, BOOL)
+    # Pinpoint regression on the reviewer's exact seed.
+    program = sample_program(grammar, request, max_depth=6, seed=1001)
+    ll = grammar.program_log_likelihood(program, request)
+    assert ll != float('-inf'), (
+        f"seed=1001 max_depth=6 regression: grammar.program_log_likelihood "
+        f"returned -inf on sampled program {program}. "
+        f"sample_program leaked a root-mistyped program."
+    )
+    # Broader coverage — reviewer probed 1000:1099; we cover a larger
+    # window at both max_depths to make the regression robust to grammar
+    # tweaks that might shift which seeds trip the bug.
+    for max_depth in (5, 6):
+        leak_count = 0
+        for seed in range(900, 1200):
+            try:
+                p = sample_program(grammar, request, max_depth=max_depth, seed=seed)
+                if grammar.program_log_likelihood(p, request) == float('-inf'):
+                    leak_count += 1
+            except RuntimeError:
+                # Retries exhausted — acceptable outcome (not a leak).
+                pass
+        assert leak_count == 0, (
+            f"R2-Fix1 regression: sample_program leaked {leak_count} "
+            f"root-mistyped programs at max_depth={max_depth} "
+            f"across seeds 900..1199."
+        )
 
 
 def test_fallback_counters_stay_zero_on_normal_kernel_runs(grammar):

@@ -1,0 +1,53 @@
+## Score
+7.5/10
+
+## Ready
+Almost
+
+## Rulings
+
+### W1: OVERRULED
+Site-metadata corruption fixed. With the 64-var-offset probe strategy, 0/3256 bad sites over 50 sampled programs and 0 silent drops.
+
+### W2: PARTIALLY SUSTAINED
+Counters implemented correctly at `mcmc_search.py:1361` and stay zero on normal gallery probes. NOT wired into any experiment or result artifact — reported runs can still ignore them.
+
+### W4: OVERRULED
+Bound-variable kernel test at `test_mcmc_search.py:1417` matches the requested shape. Spot checks reproduced `{1/3, 1/3, 1/9, ...}` masses and `ΣQ=1`.
+
+## New findings (Round 2)
+
+### Medium: `sample_program(allow_retries=True)` root-type agreement
+- Location: `mcmc_search.py:148`
+- Only checks that `infer_type` returns, then returns program at line 150. Does not unify resolved type with `request_type`.
+- Probe: `sample_program(build_gallery_grammar(), HAND->BOOL, max_depth=6, seed=1001)` returns a program that fails `HAND->BOOL` unification and gets `grammar.program_log_likelihood = -inf`.
+- Rate: 1/100 seeds on `1000:1099` at `max_depth=6` AND 1/100 at `max_depth=5`.
+- MINIMUM fix: after inference, unify the resolved type with `request_type` before returning, and add a regression on seed 1001.
+
+### Low/Medium: `test_propose_regeneration_preserves_typability_and_reversibility` overclaims
+- Location: `test_mcmc_search.py:1592`
+- Assumes every regeneration proposal should whole-program type-check, but `propose_regeneration` intentionally calls `sample_program(allow_retries=False)` at `mcmc_search.py:1743`.
+- Reproduced typed-start cases where sampled replacement does not even unify locally with `site.type`.
+- Does not resurrect W1. Means the test is not a durable closure test.
+- MINIMUM fix: weaken to the actual invariant needed for W1 closure (correct site metadata + reverse-support existence), or explicitly scope as seed-limited smoke test.
+
+## W2 minimum additional closure
+Either:
+1. Reset and attach counters inside `MCMCChain.run` / `MCMCResult`, then assert zero in paper scripts, OR
+2. Explicitly reset, record, and assert in every reported `review-stage/experiments/*` run.
+
+## W3 preferred path
+`A + D` — tiny exact depth-3 grammar forcing depth-3 code paths + targeted boundary tests around depth cap / lookahead transitions. NOT streaming enumerator first.
+
+Cheap side fix before W3: patch `sample_program` root-unification bug.
+
+## Memory update for Round 3 (verbatim)
+> Addressed: W1 site-metadata corruption is fixed; W4 bound-variable full-kernel coverage is fixed; W2 per-fallback counters now exist.
+> Still open: W2 harness/result wiring; W3 depth-3 closure; init-resampling manuscript caveat.
+> New suspicions: `sample_program` retry mode still admits occasional root-mistyped programs; the new proposal-typability regression is stronger than the implementation's actual contract.
+> Pattern: the fatal MH-ratio/site-context bug appears resolved. Remaining risk is now experiment guardrails plus helper-path type-contract slippage, not the core forward/reverse kernel math.
+
+Reviewer inspected commit `7f14a2f` directly with `python -c` probes.
+
+---
+Thread ID: 019da4d5-c81e-77b2-9c4d-e64b2b463c93

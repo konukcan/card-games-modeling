@@ -146,7 +146,16 @@ def sample_program(
                 grammar, request_type, max_depth, depth=0, env=env, rng=rng
             )
             ctx = TypeContext()
-            program.infer_type(ctx, env)
+            inferred = program.infer_type(ctx, env)
+            # Enforce root-type agreement with request_type. Without this,
+            # _sample's per-argument free-type-variable resolution can drift
+            # from the global unification constraint (e.g. a polymorphic
+            # primitive resolves 'a to INT in one branch and to BOOL in
+            # another), producing a program whose inferred root type does
+            # not unify with request_type. Callers of the retry path
+            # (init / one-shot prior) require root-type agreement because
+            # downstream consumers score the program as if it had that type.
+            ctx.unify(inferred, ctx.instantiate(request_type))
             return program
         except Exception as e:
             last_exc = e
@@ -1888,6 +1897,14 @@ class MCMCResult:
     # within-chain (0..n_steps), NOT offset into a concatenated timeline.
     # Needed for honest per-chain cognitive-timing analysis.
     per_chain_first_passage: List[Dict[str, int]] = field(default_factory=list)
+    # Approximation-cap fallback counters (W2).
+    # Each entry counts how many times the kernel fell back to an approximate
+    # branch during this run. Paper-run harness MUST assert all zero; any
+    # nonzero value means the reported experiment hit a silent approximation.
+    #   arg_marginalization: exact C^k enumeration gave up at the free-var cap
+    #   survival_prob:       depth-cap exact subset enum gave up at 2^n cap
+    #   depth_cap_mean_field: scorer fell back to mean-field survival weighting
+    approximation_fallback_counters: Dict[str, int] = field(default_factory=dict)
 
 
 # =========================================================================== #
@@ -2056,6 +2073,10 @@ class MCMCChain:
         config = self.config
         grammar = self.grammar
         rng = random.Random(config.seed)
+
+        # W2: reset per-run approximation-cap counters so the returned
+        # MCMCResult carries an unambiguous per-chain count.
+        reset_approximation_fallback_counters()
 
         # Generate probe hands if not provided.
         if ext_probe_hands is None:
@@ -2309,6 +2330,10 @@ class MCMCChain:
         n_unique = len(visit_counts)
         acceptance_rate = n_accepted / config.n_steps if config.n_steps > 0 else 0.0
 
+        # W2: capture approximation-cap counters for this run before returning
+        # (a subsequent chain's reset will clobber them).
+        approximation_fallback_counters = get_approximation_fallback_counters()
+
         return MCMCResult(
             n_steps=config.n_steps,
             n_accepted=n_accepted,
@@ -2321,6 +2346,7 @@ class MCMCChain:
             first_passage=first_passage,
             trajectory=trajectory,
             ext_fractions=ext_fractions,
+            approximation_fallback_counters=approximation_fallback_counters,
         )
 
 
@@ -2517,6 +2543,13 @@ def run_parallel_chains(
     # downstream cognitive-timing analysis.
     per_chain_first_passage = [dict(r.first_passage) for r in chain_results]
 
+    # W2: sum approximation-cap counters across chains (each chain resets its
+    # own counters at run start, so per-chain counts are independent).
+    merged_fallback_counters: Dict[str, int] = {}
+    for r in chain_results:
+        for key, val in r.approximation_fallback_counters.items():
+            merged_fallback_counters[key] = merged_fallback_counters.get(key, 0) + val
+
     return MCMCResult(
         n_steps=total_steps,
         n_accepted=total_accepted,
@@ -2530,4 +2563,5 @@ def run_parallel_chains(
         trajectory=merged_trajectory,
         ext_fractions=merged_ext_fractions,
         per_chain_first_passage=per_chain_first_passage,
+        approximation_fallback_counters=merged_fallback_counters,
     )
