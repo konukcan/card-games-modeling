@@ -1,12 +1,15 @@
 """
-Complete catalogue of 45 card game rules (core experimental set).
+Complete catalogue of 55 card game rules for the DreamCoder wake-sleep experiments.
 
-Each rule is implemented as a predicate (Hand → bool) using the compositional primitives.
+Each rule is implemented as a predicate (Hand → bool) using the compositional primitives,
+with CompositionNode trees describing how they are built from the DSL.
 This module demonstrates the compositional structure and enables analysis of
 shared subprograms across rules.
 
-NOTE: This catalogue matches the 45 core rules in card-games/js/rules.js exactly.
-For pre-training rules (used for model warm-up), see pretraining_rules.py.
+NOTE: This catalogue is used by dreamcoder_core/, experiments/, and analysis/ code.
+It is NOT the rule set used by the MCMC/Bayesian analysis in gallery_analysis/.
+For the MCMC gallery rules (61 rules ported from the behavioral experiment),
+see gallery_analysis/gallery_rules.py.
 
 COMPOSITIONAL NOTATION:
 - We express each rule as a composition of primitives

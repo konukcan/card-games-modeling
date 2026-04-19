@@ -1,14 +1,21 @@
 """
-All 60 gallery rules ported from card-games/rule-gallery/gallery-rules.js.
+All 61 gallery rules ported from card-games/rule-gallery/gallery-rules.js.
 
 Each rule is a function: Hand -> bool
 where Hand = List[Card] (6 cards).
 
-These are ground truth predicates for the Bayesian rule induction analysis.
-They are NOT expressed in the DSL — they serve as reference evaluators to
-check whether enumerated hypotheses match the true rule.
+These are ground truth predicates for the Bayesian rule induction analysis
+(MCMC program search in gallery_analysis/). They are NOT expressed in the
+DSL — they serve as reference evaluators to check whether enumerated
+hypotheses match the true rule.
 
 Rules are organized by difficulty group (1=easy, 2=medium, 3=hard).
+
+NOTE: This file is distinct from src/rules/catalogue.py, which defines 55
+rules for the DreamCoder wake-sleep experiments. That catalogue uses
+CompositionNode trees and DSL primitives. This file uses raw Python
+predicates. The two files serve different subsystems and should not be
+confused.
 """
 import sys
 from pathlib import Path
@@ -419,15 +426,15 @@ def no_adjacent_same_suit(hand: Hand) -> bool:
             return False
     return True
 
-def radial_decreasing(hand: Hand) -> bool:
-    """Ranks decrease outward from center: center (3,4) > middle (2,5) > outer (1,6)."""
+def radial_increasing(hand: Hand) -> bool:
+    """Ranks increase outward from center: center (3,4) < middle (2,5) < outer (1,6)."""
     if len(hand) < 6:
         return False
-    outer_max = max(rv(hand[0]), rv(hand[5]))
-    mid_min = min(rv(hand[1]), rv(hand[4]))
+    outer_min = min(rv(hand[0]), rv(hand[5]))
     mid_max = max(rv(hand[1]), rv(hand[4]))
-    inner_min = min(rv(hand[2]), rv(hand[3]))
-    return outer_max < mid_min and mid_max < inner_min
+    mid_min = min(rv(hand[1]), rv(hand[4]))
+    center_max = max(rv(hand[2]), rv(hand[3]))
+    return center_max < mid_min and mid_max < outer_min
 
 def zigzag_ranks(hand: Hand) -> bool:
     """Ranks alternate between local minima and maxima (zigzag pattern)."""
@@ -499,6 +506,11 @@ def suit_brackets_interleaved(hand: Hand) -> bool:
             return False
     return count_a == 0 and count_b == 0
 
+def right_half_diamonds(hand: Hand) -> bool:
+    """The last three cards are all diamonds."""
+    _, right = halves(hand)
+    return all(c.suit == Suit.DIAMONDS for c in right)
+
 def suits_nonincreasing(hand: Hand) -> bool:
     """Suits follow D≥S≥C≥H from left to right, stepping down by at most one level.
     Ordering: D=4, S=3, C=2, H=1. Non-increasing AND no jumps (diff >= -1)."""
@@ -564,6 +576,7 @@ _register("halves_copy_ranks", 2, "Left and right halves share rank sequence", h
 _register("halves_copy_suits", 2, "Left and right halves share suit sequence", halves_copy_suits)
 _register("both_halves_have_pair_rank", 2, "Each half has at least one rank pair", both_halves_have_pair_rank)
 _register("both_halves_uniform_color", 2, "Each half has uniform color", both_halves_uniform_color)
+_register("right_half_diamonds", 2, "The last three cards are all diamonds", right_half_diamonds)
 
 # Group 3
 _register("even_odd_pos_color_split", 3, "Even/odd positions have opposite uniform colors", even_odd_pos_color_split)
@@ -580,7 +593,7 @@ _register("straight5_same_color", 3, "5-card straight same color", straight5_sam
 _register("ranks_palindrome", 3, "Rank values form a palindrome", ranks_palindrome)
 _register("skip2_same_rank_or_suit", 3, "Every card at distance 2 shares rank or suit", skip2_same_rank_or_suit)
 _register("no_adjacent_same_suit", 3, "No adjacent cards share a suit", no_adjacent_same_suit)
-_register("radial_decreasing", 3, "Ranks decrease outward from center", radial_decreasing)
+_register("radial_increasing", 3, "Ranks increase outward from center", radial_increasing)
 _register("zigzag_ranks", 3, "Ranks alternate peaks and valleys", zigzag_ranks)
 _register("suit_brackets_no_cross", 3, "Suits form non-crossing nested brackets", suit_brackets_no_cross)
 _register("suit_brackets_nested", 3, "Suits form properly nested brackets", suit_brackets_nested)
