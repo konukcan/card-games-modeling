@@ -422,9 +422,9 @@ TRUE_RULE_DSL: Dict[str, str] = {
     "no_adjacent_same_suit":
         "(λ all (λ not (eq (get_suit (head $0)) (get_suit (last $0)))) (adjacent_pairs $0))",
 
-    # Ranks decrease outward from center: max(outer) < min(middle) < min(inner)
+    # Ranks increase outward from center: max(center) < min(middle) < min(outer)
     # outer = (0,5), middle = (1,4), inner = (2,3)
-    "radial_decreasing":
+    "radial_increasing":
         "(λ and (lt (if (ge (rank_val (at $0 0)) (rank_val (at $0 5))) (rank_val (at $0 0)) (rank_val (at $0 5))) "
         "(if (le (rank_val (at $0 1)) (rank_val (at $0 4))) (rank_val (at $0 1)) (rank_val (at $0 4)))) "
         "(lt (if (ge (rank_val (at $0 1)) (rank_val (at $0 4))) (rank_val (at $0 1)) (rank_val (at $0 4))) "
