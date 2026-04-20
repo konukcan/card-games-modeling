@@ -1,45 +1,52 @@
-# Resume Instructions — ARIS Bayesian Review
+# Resume Instructions — ARIS Bayesian Review (Night 2)
 
-**Start timestamp:** 2026-04-19T20:32:32Z
-**Hard deadline:** 10 hours from start → 2026-04-20T06:32:32Z
+**Night 2 start:** 2026-04-20T06:55Z
+**Hard deadline:** 10 hours from start → 2026-04-20T16:55Z
 **Branch:** `aris/bayesian-review` (worktree at `.worktrees/aris-bayesian-review`)
-**Safety tag:** `bayesian-pre-review` marks pre-review state of `feat/grammar-comparison`.
+
+## Night 1 status (completed)
+- 4 rounds complete, score 2 → 4 → 5 → 6 ("almost").
+- All Night 1 fixes committed in `4a8bd60`. Review artifacts in `0f1a17d`.
+- MCMC files cherry-picked in `d525079`.
+- See `review-stage/AUTO_REVIEW.md` for full Night 1 log.
+- See `REVIEWER_MEMORY.md` for accumulated reviewer state.
+
+## Night 2 workstreams
+1. **Full-scale sensitivity audit** (background compute)
+2. **Adversarial hand generation** (BALD entropy proxy)
+3. **Enumeration-vs-MCMC posterior comparison**
+4. **Visualization end-to-end stress test**
 
 ## If this session dies, resume with:
-
 1. `cd /Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-bayesian-review`
-2. Read `review-stage/REVIEW_STATE.json` to see where the loop left off.
-3. Read `review-stage/AUTO_REVIEW.md` to see the in-progress log.
-4. Check which round was active: `ls review-stage/experiments/`
-5. Check running experiments: `ls review-stage/experiments/round_*/*.pid` and `ps -p $(cat <pid file>)`
-6. If a round was mid-way: re-invoke `/auto-review-loop` with `--resume` or launch the next round manually.
-
-## Baseline state
-
-- 83/84 tests pass.
-- **Pre-existing failure:** `tests/test_injection.py::test_merge_updates_summed_prior`
-  - `-2.0 != -1.6867383124817772` — summed-prior merge appears to overwrite rather than log-sum-exp with existing class members.
-  - This is likely a real bug in summed-prior mode and is in-scope for review. Flag in round 1.
+2. Read `review-stage/REVIEW_STATE.json` for last loop state.
+3. Read `review-stage/AUTO_REVIEW.md` for chronological log (will be appended to during Night 2).
+4. Check active experiments:
+   - `ls review-stage/experiments/night2/*.pid`
+   - `ps -p $(cat review-stage/experiments/night2/<exp>.pid)` per pid file
+   - `tail -50 review-stage/experiments/night2/<exp>.log` for progress
+5. Sensitivity audit incremental dump: `review-stage/experiments/night2/full_sensitivity_partial.json`
+6. To continue: re-launch the auto-review skill, pointing to the round you were in.
 
 ## Codex MCP
-
-- Connected: `codex: codex mcp-server - ✓ Connected` (verified at launch).
+- Connected: `codex: codex mcp-server - ✓ Connected`
+- Thread: `019da777-8714-71e3-9784-5bea4a10bed1` (Night 1 thread; reuse if appropriate or start fresh for Night 2)
 - Fallback: spawn Claude general-purpose sub-agent as harsh-NeurIPS reviewer if any Codex call fails.
 
 ## Loop parameters
-
 - MAX_ROUNDS = 4, no early stop.
-- POSITIVE_THRESHOLD: score ≥ 6 AND ≥ 3 rounds completed.
-- Nested engineering reviews per round: kieran-python-reviewer, performance-oracle, code-simplicity-reviewer (cap 2 passes).
+- POSITIVE_THRESHOLD: score >= 6 AND >= 3 rounds.
+- Nested engineering reviews: kieran-python-reviewer, performance-oracle, code-simplicity-reviewer (cap 2 passes).
 
-## Scope reminders (STRICT)
+## Scope (STRICT)
+- FREE: all files Night 1 modified, plus new files under `src/gallery_analysis/` for Night 2 work.
+- import-only adjustments OK on `analyze_mcmc.py` and `mcmc_hypothesis_collector.py`.
+- FORBIDDEN: `mcmc_search.py` (cherry-picked verbatim, no logic changes).
+- Same Night 1 forbidden list otherwise.
 
-- FREE: `src/gallery_analysis/*.py` (except mcmc_*), `src/tests/`, `review-stage/`, new diagnostic files.
-- CONSERVATIVE: `src/dreamcoder_core/grammar.py` production probs only.
-- FORBIDDEN: `src/rules/catalogue.py`, `src/dreamcoder_core/primitives.py`, `lean_primitives.py`, `type_system.py`, anything under `archived/`, MCMC files.
-- If forbidden change is needed: append to `NOTES_FOR_HUMAN.md` with justification + workaround.
+## Test baseline
+- 83/84 pass. Pre-existing failure: `tests/test_injection.py::test_merge_updates_summed_prior`.
 
-## Critical question to answer by end
-
-**Is post-hoc tier re-scoring mathematically equivalent to enumerating under the weighted grammar?**
-Prove or give counterexample. Tier weights: CHEAP −3.0, STANDARD −4.0, AGGREGATE −5.5, ULTRA_SHALLOW −9.0. Engine enumerates under uniform grammar then re-scores.
+## Memory monitoring
+- 24GB shared between background audit and review compute.
+- Pause audit if `top -l 1 -s 0 | grep PhysMem` shows <2GB free.
