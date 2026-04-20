@@ -2,9 +2,11 @@
 CLI for hand diagnosticity analysis.
 
 Rates how diagnostic (easy/hard to classify) random candidate hands are for
-each gallery rule, given the Bayesian posterior over hypotheses from the
-exemplar hands. Produces a "diagnostic spectrum" showing the distribution
-of classification confidence across random hands.
+each gallery rule, given the (optionally tempered) posterior over hypotheses
+from the exemplar hands. When ``--likelihood-exponent != 1`` the distribution
+is a power / tempered posterior π_k(h|D) ∝ π(h)·P(D|h)^k, not the standard
+Bayesian posterior (Finding 7). Produces a "diagnostic spectrum" showing the
+distribution of classification confidence across random hands.
 
 Usage:
     cd src
@@ -112,7 +114,23 @@ def _spectrum_to_dict(spectrum: DiagnosticSpectrum) -> Dict[str, Any]:
         "easy_reject_hands": [_report_to_dict(r) for r in spectrum.easy_reject_hands],
         "ambiguous_hands": [_report_to_dict(r) for r in spectrum.ambiguous_hands],
         "balanced_reports": [_report_to_dict(r) for r in spectrum.balanced_reports],
+        # Round 3 Finding 4: ``balanced_n`` now reports the achieved
+        # balanced count, not the target. ``balanced_n_target`` preserves
+        # the requested value; _accept_actual / _reject_actual break down
+        # what was obtained; _attempts is the total rejection-sampling
+        # attempts. Downstream readers can detect time-outs via
+        # balanced_n < balanced_n_target.
         "balanced_n": spectrum.balanced_n,
+        "balanced_n_target": spectrum.balanced_n_target,
+        "balanced_n_accept_actual": spectrum.balanced_n_accept_actual,
+        "balanced_n_reject_actual": spectrum.balanced_n_reject_actual,
+        "balanced_attempts": spectrum.balanced_attempts,
+        # Finding 5 (R1) + Finding 4 (R2): serialize the pruning truncation
+        # so the JSON artefact carries the total-variation bound on the
+        # reported posterior. Downstream readers should treat retained mass
+        # < 1.0 as the posterior being conditional on "survived threshold".
+        "retained_posterior_mass": round(spectrum.retained_posterior_mass, 6),
+        "discarded_posterior_mass": round(spectrum.discarded_posterior_mass, 6),
     }
 
 
@@ -131,6 +149,14 @@ def print_spectrum_report(spectrum: DiagnosticSpectrum, verbose: int = 1):
     print(f"  High confidence: {spectrum.fraction_high_confidence*100:.1f}% (conf > 0.8)")
     print(f"  Ambiguous:       {spectrum.fraction_ambiguous*100:.1f}% (conf < 0.2)")
     print(f"  Accuracy:        {spectrum.accuracy*100:.1f}%")
+    # Finding 5 (R1) + Finding 4 (R2): surface pruning truncation so it's
+    # not hidden in the JSON.
+    if spectrum.discarded_posterior_mass > 0:
+        print(
+            f"  Pruned posterior: retained={spectrum.retained_posterior_mass:.4f}, "
+            f"discarded={spectrum.discarded_posterior_mass:.4f} "
+            f"(TV bound on reported posterior ≤ discarded)"
+        )
 
     # Histogram
     print(f"\n  P(accept) distribution:")
@@ -182,7 +208,9 @@ def main():
     )
     parser.add_argument(
         "--depth", type=int, default=6,
-        help="Max AST depth for enumeration (default: 6)"
+        help=("Enumeration depth BUDGET passed to the top-down enumerator "
+              "(application-depth budget, NOT Program.depth()). Emitted "
+              "programs can reach Program.depth() == max_depth+1. Default: 6.")
     )
     parser.add_argument(
         "--max-programs", type=int, default=500_000,
@@ -233,6 +261,21 @@ def main():
         "--targeted-probes", action="store_true", default=False,
         help="Use Config I probes (targeted + near-miss) instead of random"
     )
+    parser.add_argument(
+        "--enumeration-grammar", choices=["uniform", "weighted"],
+        default="uniform",
+        help="Grammar driving top-down enumeration (Finding 2). Combine with "
+             "--grammar weighted for honest weighted-model runs."
+    )
+    parser.add_argument(
+        "--strict-priors", action="store_true",
+        help="Fail fast on non-finite per-program priors (Finding 3). "
+             "Recommended for official runs."
+    )
+    parser.add_argument(
+        "--n-probes", type=int, default=500,
+        help="Random probe hands for fingerprinting (ignored when --targeted-probes)"
+    )
     args = parser.parse_args()
 
     # Determine which rules to analyze
@@ -261,35 +304,71 @@ def main():
           f"Mass threshold: {args.mass_threshold}{balanced_info}", flush=True)
 
     # Step 1: Build hypothesis pool
+    # Finding 2 (R2): honour --enumeration-grammar so weighted scoring runs
+    # use a weighted-enumerated pool rather than post-hoc rescoring a uniform
+    # pool (those supports differ under truncation).
     equiv_classes, pipeline_stats = build_hypothesis_pool(
         max_depth=args.depth,
         max_programs=args.max_programs,
+        n_probes=args.n_probes,
         verbose=args.verbose,
         use_targeted_probes=getattr(args, 'targeted_probes', False),
+        enumeration_grammar=args.enumeration_grammar,
     )
     print(f"  {len(equiv_classes):,} equivalence classes", flush=True)
 
+    # Reuse the exact probes and exemplars stashed by build_hypothesis_pool
+    # (Finding 4 + Finding 1 R2). Falling back to a fresh random set would
+    # use different fingerprints than the pool was built on.
+    probes = pipeline_stats.get("_probes") or generate_probe_set(
+        n_probes=args.n_probes, seed=42
+    )
+    exemplar_hands_for_split = pipeline_stats.get("_exemplar_hands") or []
+
     # Step 2: Inject hypotheses (if provided)
     if args.inject:
+        from gallery_analysis.analyze import _strict_split_classes
         grammar = build_gallery_grammar()
         print(f"\nInjecting from {args.inject}...", flush=True)
-        probes = generate_probe_set(500, seed=42)
         injected = load_and_validate_injections(args.inject, grammar=grammar)
         n_before = len(equiv_classes)
         equiv_classes = merge_injected(equiv_classes, injected, probes)
         print(f"  {len(equiv_classes) - n_before} novel classes added", flush=True)
 
-    # Step 3: Extension sizes
+        # Finding 1 R2: re-run strict split after injection merge — injection
+        # can reintroduce mixed classes that the first split rejected.
+        if exemplar_hands_for_split:
+            equiv_classes, resplit_stats = _strict_split_classes(
+                equiv_classes,
+                exemplar_hands=exemplar_hands_for_split,
+                main_probes=probes,
+                verbose=args.verbose,
+            )
+            if resplit_stats["n_split"] > 0 and args.verbose >= 1:
+                print(
+                    f"  [Finding 1 R2] Post-injection strict split: "
+                    f"{resplit_stats['n_split']} classes disagreed → "
+                    f"{resplit_stats['n_subclasses']} sub-classes; "
+                    f"total now {len(equiv_classes):,}",
+                    flush=True,
+                )
+
+    # Step 3: Extension sizes (Finding 4 R2: pass probe_hash so stale cache
+    # reuse is detected when probes change).
+    from gallery_analysis.provenance import compute_probe_hash
+    probe_hash = compute_probe_hash(probes)
     print(f"\nEstimating extension sizes...", flush=True)
     extensions = estimate_extensions(
-        equiv_classes, verbose=args.verbose, cache_path=args.extension_cache,
+        equiv_classes,
+        verbose=args.verbose,
+        cache_path=args.extension_cache,
+        _probe_hash=probe_hash,
     )
 
-    # Compute provenance metadata
-    probes = generate_probe_set(n_probes=500, seed=42)
+    # Compute provenance metadata using the real probes used above.
     provenance = compute_provenance(
         probe_seed=42,
-        n_probes=500,
+        n_probes=len(probes),
         probes=probes,
         inject_path=args.inject if args.inject else None,
         n_equiv_classes=len(equiv_classes),
@@ -318,19 +397,32 @@ def main():
         rule_info = GALLERY_RULES[rule_id]
         exemplar_hands = exemplars[rule_id]["hands_primary"]
 
-        # Compute posteriors for this rule (with mass threshold pruning)
-        posteriors = compute_posteriors_for_rule(
+        # Compute posteriors for this rule (with mass threshold pruning).
+        # Finding 5: capture retained_mass so we can report the pruning error.
+        posteriors, retained_mass = compute_posteriors_for_rule(
             equiv_classes, extensions, exemplar_hands,
             epsilon=0.01,
             prior_mode=args.prior,
             mass_threshold=args.mass_threshold,
             grammar=scoring_grammar_obj,
             likelihood_exponent=args.likelihood_exponent,
+            return_retained_mass=True,
+            strict_priors=args.strict_priors,
         )
+        discarded_mass = 1.0 - retained_mass
 
         if args.verbose >= 2:
             print(f"\n  {rule_id}: {len(posteriors)} hypotheses above "
-                  f"{args.mass_threshold*100:.1f}% mass threshold", flush=True)
+                  f"{args.mass_threshold*100:.1f}% mass threshold "
+                  f"(retained={retained_mass:.4f}, "
+                  f"TV-error bound={discarded_mass:.4f})", flush=True)
+        # Warn loudly if a material fraction of the posterior was discarded.
+        # 0.01 is a soft threshold — anything below this means the published
+        # p_accept numbers have non-negligible truncation error.
+        if discarded_mass > 0.01 and args.verbose >= 1:
+            print(f"  WARNING: {rule_id} discarded {discarded_mass*100:.2f}% "
+                  f"posterior mass during pruning (threshold={args.mass_threshold}). "
+                  f"p_accept TV-error is bounded by this fraction.", flush=True)
 
         # Generate diagnostic spectrum
         spectrum = generate_diagnostic_spectrum(
@@ -343,6 +435,7 @@ def main():
             group=rule_info["group"],
             balanced_n=args.balanced,
             verbose=args.verbose,
+            retained_mass=retained_mass,
         )
 
         all_spectrums[rule_id] = spectrum

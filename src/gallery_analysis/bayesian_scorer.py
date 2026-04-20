@@ -174,6 +174,62 @@ def compute_log_likelihood_noisy(
     return log_lik
 
 
+# ---------------------------------------------------------------------------
+# Base-rate-direct variants (Finding 6, Round 1 review)
+# ---------------------------------------------------------------------------
+# The int-based likelihood functions above accept `extension_size: int`.
+# Upstream, `hypothesis_table.estimate_extension_size()` computes
+# `extension_size = int(base_rate * TOTAL_HANDS)`, which floors the precise
+# float value. That rounding breaks the exact cancellation of TOTAL_HANDS in
+# the posterior normalization and can silently collapse very-small base
+# rates to zero (where the formulas fall back to `-inf` / uniform).
+#
+# The `*_from_base_rate` variants below compute the likelihood from the
+# unrounded `base_rate` directly, keeping TOTAL_HANDS as a (now-exact)
+# multiplicative factor inside the logs. They are mathematically identical
+# to the int-based versions whenever `base_rate * TOTAL_HANDS >= 1`, and
+# strictly more faithful when it doesn't.
+# ---------------------------------------------------------------------------
+
+def compute_log_likelihood_strict_from_base_rate(
+    n_hits: int,
+    n_exemplars: int,
+    base_rate: float,
+) -> float:
+    """Strict size-principle likelihood scored from base_rate (no int rounding)."""
+    if n_hits < n_exemplars:
+        return float('-inf')
+    if base_rate <= 0.0:
+        return float('-inf')
+    # Equivalent to `-n_exemplars * log(base_rate * TOTAL_HANDS)` without
+    # the upstream int() floor on `base_rate * TOTAL_HANDS`.
+    return -n_exemplars * (math.log(base_rate) + math.log(TOTAL_HANDS))
+
+
+def compute_log_likelihood_noisy_from_base_rate(
+    n_hits: int,
+    n_exemplars: int,
+    base_rate: float,
+    epsilon: float = 0.01,
+) -> float:
+    """Noisy size-principle likelihood scored from base_rate (no int rounding)."""
+    if base_rate <= 0.0:
+        # MC estimator found zero hits — treat as maximally permissive
+        # (uniform over TOTAL_HANDS), matching the int-based fallback
+        # semantics so that base_rate=0 hypotheses get a consistent score.
+        return -n_exemplars * math.log(TOTAL_HANDS)
+    n_misses = n_exemplars - n_hits
+    ext_precise = base_rate * TOTAL_HANDS  # float; not rounded
+    p_hit = (1 - epsilon) / ext_precise + epsilon / TOTAL_HANDS
+    p_miss = epsilon / TOTAL_HANDS
+    log_lik = 0.0
+    if n_hits > 0:
+        log_lik += n_hits * math.log(p_hit)
+    if n_misses > 0:
+        log_lik += n_misses * math.log(p_miss)
+    return log_lik
+
+
 def score_hypotheses(
     equivalence_classes: List[Dict[str, Any]],
     n_exemplars: int,
@@ -216,12 +272,14 @@ def score_hypotheses(
 
         n_hits = cls["n_hits"]
 
-        # Compute likelihoods
-        log_lik_strict = compute_log_likelihood_strict(
-            n_hits, n_exemplars, ext_size
+        # Compute likelihoods. Score from base_rate directly so that the
+        # int(base_rate * TOTAL_HANDS) rounding in ext_size does not break
+        # the exact P(52,6)/C(52,6) cancellation (Finding 6).
+        log_lik_strict = compute_log_likelihood_strict_from_base_rate(
+            n_hits, n_exemplars, base_rate
         )
-        log_lik_noisy = compute_log_likelihood_noisy(
-            n_hits, n_exemplars, ext_size, epsilon
+        log_lik_noisy = compute_log_likelihood_noisy_from_base_rate(
+            n_hits, n_exemplars, base_rate, epsilon
         )
 
         # Select prior

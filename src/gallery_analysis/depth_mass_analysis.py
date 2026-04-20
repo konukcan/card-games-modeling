@@ -1,10 +1,23 @@
 """
-Depth-stratified posterior mass analysis.
+Paren-nesting-stratified posterior mass analysis.
 
 For each rule, compute what fraction of posterior mass comes from hypotheses
-at each AST depth level (1–6). This reveals whether the posterior is dominated
-by shallow/simple hypotheses or whether deeper programs contribute meaningfully,
-informing whether depth 7 enumeration is worth the cost.
+at each paren-nesting level. This reveals whether the posterior is dominated
+by shallow / simple hypotheses or whether deeper programs contribute meaningfully,
+informing whether raising the enumeration-depth budget is worth the cost.
+
+NOTE: The metric used here is max parenthesis nesting of the canonical
+printed s-expression (see ``paren_nesting_depth`` below). It is NOT the
+``Program.depth()`` defined by ``dreamcoder_core``: parent nesting does
+not count Abstractions and is 1 on primitives like ``has_color $0 RED``
+whereas ``Program.depth()`` is 4 on the same expression. Paren nesting
+is a structural proxy only. It is also NOT the enumeration-depth
+budget (``max_depth`` in the enumerator), which is an application-depth
+budget on the search tree. All three quantities can differ by small
+constants. Round 3 reviewer flagged this; the relabel here avoids a
+false "AST depth" claim. A follow-up could reparse each canonical
+program via ``parse_program`` + ``Program.depth()`` if an exact metric
+is ever needed.
 
 Also produces detailed confusion profiles for selected rules.
 
@@ -31,8 +44,12 @@ from gallery_analysis.analyze import (
     load_exemplars,
     estimate_extensions,
     build_hypothesis_pool,
+    merge_injections_and_extend,
     compute_log_likelihood_noisy,
     compute_log_likelihood_strict,
+)
+from gallery_analysis.bayesian_scorer import (
+    compute_log_likelihood_noisy_from_base_rate,
 )
 from gallery_analysis.enumerator import build_gallery_grammar
 from gallery_analysis.injection import load_and_validate_injections, merge_injected
@@ -40,8 +57,13 @@ from gallery_analysis.exemplars import generate_probe_set
 from gallery_analysis.provenance import compute_provenance
 
 
-def ast_depth(program_str: str) -> int:
-    """Compute AST depth as max parenthesis nesting in an s-expression."""
+def paren_nesting_depth(program_str: str) -> int:
+    """Max parenthesis nesting in an s-expression.
+
+    This is a CHEAP structural proxy, NOT ``Program.depth()`` from
+    ``dreamcoder_core``. Lambda/abstraction and primitive application
+    without explicit parens are ignored. Do not use as a true AST depth.
+    """
     max_d = 0
     d = 0
     for c in program_str:
@@ -53,6 +75,10 @@ def ast_depth(program_str: str) -> int:
     return max_d
 
 
+# Backwards-compat alias for any external caller; relabelled in Round 3.
+ast_depth = paren_nesting_depth
+
+
 def compute_depth_mass_table(
     equivalence_classes: List[Dict],
     extensions: List[Tuple[int, float]],
@@ -62,17 +88,19 @@ def compute_depth_mass_table(
     verbose: int = 1,
 ) -> Dict[str, Any]:
     """
-    For each rule, compute posterior mass stratified by AST depth.
+    For each rule, compute posterior mass stratified by paren-nesting depth
+    (NOT Program.depth(); see module docstring and ``paren_nesting_depth``).
 
     Returns a dict keyed by rule_id, each containing:
-    - depth_mass: {depth: fraction_of_posterior} for depths 1–6+
-    - cumulative_mass: {depth: cumulative_fraction} (mass at depth <= d)
-    - top_competitors: list of top 20 hypotheses with depth, mass, program
+    - depth_mass: {paren_nesting: fraction_of_posterior} for nestings 1–6+
+    - cumulative_mass: {paren_nesting: cumulative_fraction} (mass at <= d)
+    - top_competitors: list of top 20 hypotheses with paren_nesting, mass, program
     - true_rule_rank, true_rule_mass
     - confusion_profile: for top competitors, per-exemplar agreement
     """
-    # Precompute AST depth for each equivalence class's canonical program
-    depths = [ast_depth(cls["canonical_program"]) for cls in equivalence_classes]
+    # Paren-nesting depth per equivalence class (structural proxy, not
+    # Program.depth() — see module docstring).
+    depths = [paren_nesting_depth(cls["canonical_program"]) for cls in equivalence_classes]
 
     # Build true-rule fingerprint lookup
     true_rule_fps = {}
@@ -112,8 +140,9 @@ def compute_depth_mass_table(
                 except Exception:
                     hit_vector.append(False)
 
-            log_lik = compute_log_likelihood_noisy(
-                n_hits, n_exemplars, ext_size, epsilon
+            # Score from base_rate directly to avoid int() rounding (Finding 6).
+            log_lik = compute_log_likelihood_noisy_from_base_rate(
+                n_hits, n_exemplars, base_rate, epsilon
             )
 
             if prior_mode == "canonical":
@@ -205,7 +234,9 @@ def print_depth_mass_report(results: Dict[str, Any], verbose: int = 1):
     )
 
     print("\n" + "=" * 100)
-    print("DEPTH-STRATIFIED POSTERIOR MASS ANALYSIS")
+    print("PAREN-NESTING-STRATIFIED POSTERIOR MASS ANALYSIS")
+    print("(d1..d6 = max paren nesting of canonical printed program,")
+    print(" NOT Program.depth() and NOT the enumeration-depth budget.)")
     print("=" * 100)
 
     # Header for depth mass table
@@ -311,7 +342,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="Depth-stratified posterior mass analysis"
     )
-    parser.add_argument("--depth", type=int, default=6)
+    parser.add_argument(
+        "--depth", type=int, default=6,
+        help=("Enumeration depth BUDGET (application-depth, NOT "
+              "Program.depth()). Stratification columns d1..d6 in the "
+              "output are paren-nesting of the canonical printed program, "
+              "which is a different structural proxy. Default: 6."),
+    )
     parser.add_argument("--max-programs", type=int, default=500_000)
     parser.add_argument("--inject", type=str, default=None)
     parser.add_argument("--extension-cache", type=str, default=None)
@@ -338,25 +375,21 @@ def main():
     )
     print(f"  {len(equiv_classes):,} equivalence classes", flush=True)
 
-    # Step 3b: Inject
-    if args.inject:
-        grammar = build_gallery_grammar()
-        print(f"\nInjecting from {args.inject}...", flush=True)
-        probes = generate_probe_set(500, seed=42)
-        injected = load_and_validate_injections(args.inject, grammar=grammar)
-        equiv_classes = merge_injected(equiv_classes, injected, probes)
-
-    # Step 3: Extension sizes
-    print(f"\nStep 3: Extension sizes...", flush=True)
-    extensions = estimate_extensions(
-        equiv_classes, verbose=args.verbose, cache_path=args.extension_cache,
+    # Step 3b+3: Inject → strict re-split → extensions via shared helper
+    # (Round 2 ruling, Findings 1/2/4): reuses the exact probes used during
+    # fingerprinting, re-runs _strict_split_classes after merge, and passes
+    # the probe hash so stale extension caches are detected.
+    equiv_classes, extensions, probes, probe_hash = merge_injections_and_extend(
+        equiv_classes,
+        pipeline_stats,
+        inject_path=args.inject,
+        extension_cache=args.extension_cache,
+        verbose=args.verbose,
     )
 
-    # Compute provenance metadata
-    probes = generate_probe_set(n_probes=500, seed=42)
     provenance = compute_provenance(
         probe_seed=42,
-        n_probes=500,
+        n_probes=len(probes),
         probes=probes,
         inject_path=args.inject if args.inject else None,
         n_equiv_classes=len(equiv_classes),

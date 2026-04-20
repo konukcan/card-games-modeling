@@ -1,6 +1,9 @@
 """
 Hand diagnosticity: rate how diagnostic (easy/hard to classify) candidate hands
-are for a given rule, based on the Bayesian posterior over hypotheses.
+are for a given rule, based on the (optionally tempered) posterior over
+hypotheses. When ``likelihood_exponent != 1`` the distribution is a power /
+tempered posterior π_k(h|D) ∝ π(h)·P(D|h)^k, not the standard Bayesian
+posterior (Finding 7, Round 1 review).
 
 Given a rule and its 6 exemplar hands, the posterior distribution tells us which
 hypotheses the ideal learner considers plausible. For a new candidate hand, we
@@ -28,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from rules.cards import Card, Hand, Suit, Rank
 from gallery_analysis.bayesian_scorer import (
     compute_log_likelihood_noisy,
+    compute_log_likelihood_noisy_from_base_rate,
     TOTAL_HANDS,
 )
 
@@ -75,7 +79,22 @@ class DiagnosticSpectrum:
     balanced_hand_summaries: List[Dict[str, Any]] = field(default_factory=list)
     # Balanced sampling (accept + reject hands in equal numbers)
     balanced_reports: List[DiagnosticityReport] = field(default_factory=list)
+    # ``balanced_n`` reports the number actually achieved per class before
+    # ``MAX_ATTEMPTS`` (Round 3 Finding 4: previously reported the target
+    # rather than the achieved count, which silently lied when rare rules
+    # timed out the balanced-sample loop).
     balanced_n: int = 0
+    balanced_n_target: int = 0         # requested target per class
+    balanced_n_accept_actual: int = 0  # accept hands obtained
+    balanced_n_reject_actual: int = 0  # reject hands obtained
+    balanced_attempts: int = 0         # total hand-sampling attempts
+    # Pruning bookkeeping (Finding 5): retained_mass is the fraction of
+    # true posterior carried by hypotheses kept after mass_threshold pruning.
+    # discarded_mass = 1 − retained_mass bounds the TV-error of p_accept
+    # induced by pruning. Must be included in official numbers; 1.0 means
+    # no pruning error (no mass_threshold applied).
+    retained_posterior_mass: float = 1.0
+    discarded_posterior_mass: float = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +110,8 @@ def compute_posteriors_for_rule(
     mass_threshold: float = 0.001,
     grammar=None,
     likelihood_exponent: float = 1.0,
+    return_retained_mass: bool = False,
+    strict_priors: bool = False,
 ) -> List[Tuple[float, int, List[bool]]]:
     """
     Compute normalized posteriors for all equivalence classes given exemplar hands.
@@ -111,11 +132,27 @@ def compute_posteriors_for_rule(
         grammar: Optional grammar object for re-scoring priors. When provided,
             priors are recomputed under this grammar (e.g. weighted 4-tier)
             instead of using the stored uniform priors.
-        likelihood_exponent: Exponent k on P(D|h)^k. k>1 inflates size principle.
+        likelihood_exponent: Tempering exponent. k=1 is the standard Bayesian
+            posterior; k≠1 is a tempered / power posterior π_k(h|D) ∝
+            π(h)·P(D|h)^k and MUST be labelled as such in reports (Finding 7).
+        return_retained_mass: If True, return (posteriors, retained_mass) where
+            retained_mass is the pre-renormalization mass of kept hypotheses.
+            Finding 5 (Round 1 review): pruning silently changed semantics from
+            "full posterior" to "posterior conditional on survival" and then
+            renormalized. The discarded mass is the tightest upper bound on
+            the predictive error (TV distance). Must be reported for official
+            numbers.
 
     Returns:
-        List of (probability, cls_idx, hit_vector) tuples, sorted by probability
-        descending. Only includes hypotheses above mass_threshold.
+        If return_retained_mass=False (default, back-compat):
+            List of (probability, cls_idx, hit_vector) tuples, sorted by
+            probability descending. Only includes hypotheses above mass_threshold.
+            Probabilities are RENORMALIZED to sum to 1.0.
+        If return_retained_mass=True:
+            Tuple (posteriors, retained_mass) where retained_mass ∈ [0, 1] is
+            the fraction of total posterior mass carried by the returned
+            (kept) hypotheses before renormalization. 1 − retained_mass is
+            the upper bound on p_accept TV-error induced by pruning.
     """
     # Lazy import to avoid circular dependency
     if grammar is not None:
@@ -140,20 +177,24 @@ def compute_posteriors_for_rule(
             except Exception:
                 hit_vector.append(False)
 
-        # Likelihood (noisy size principle)
-        log_lik = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size, epsilon)
+        # Likelihood (noisy size principle) — score from base_rate directly to
+        # avoid the int(base_rate * TOTAL_HANDS) rounding (Finding 6).
+        log_lik = compute_log_likelihood_noisy_from_base_rate(
+            n_hits, n_exemplars, base_rate, epsilon
+        )
 
-        # Prior: recompute under provided grammar, or use stored prior
-        if grammar is not None and prior_mode == "canonical":
-            # Canonical under new grammar: use only the single cheapest program
-            from gallery_analysis.dsl_prior import compute_log_prior
-            try:
-                log_prior = compute_log_prior(cls["canonical_program"], grammar)
-            except Exception:
-                log_prior = float('-inf')
-        elif grammar is not None:
-            # Summed under new grammar: log-sum-exp across all programs
-            log_prior = _recompute_class_prior(cls, grammar)
+        # Prior: delegate to the same helper ``score_rule`` uses so the
+        # diagnosticity tool agrees with the main pipeline under the
+        # weighted grammar. (Round 3 Finding 2: previously this branch
+        # computed canonical priors only on the stored ``canonical_program``
+        # string, which was chosen under the uniform grammar; the main
+        # scorer instead takes max over ALL class members under the new
+        # grammar. They disagreed for any class whose weighted-canonical
+        # was not the uniform-canonical.)
+        if grammar is not None:
+            log_prior = _recompute_class_prior(
+                cls, grammar, prior_mode=prior_mode, strict=strict_priors
+            )
         elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
         else:
@@ -173,14 +214,22 @@ def compute_posteriors_for_rule(
         if prob >= mass_threshold:
             posteriors.append((prob, cls_idx, hit_vec))
 
+    # Measure retained mass BEFORE renormalization (Finding 5).
+    # retained_mass ∈ [0, 1]: fraction of true posterior mass carried by
+    # the kept hypotheses. 1 − retained_mass is the tightest universal
+    # upper bound on the predictive-error TV distance introduced by
+    # pruning. Callers publishing official numbers must report it.
+    retained_mass = sum(p for p, _, _ in posteriors) if posteriors else 0.0
+
     # Renormalize after pruning so posteriors sum to 1.0.
     # Without this, p_accept in rate_hand would be biased downward
-    # by the missing tail mass.
-    if posteriors:
-        total_mass = sum(p for p, _, _ in posteriors)
-        if total_mass > 0 and total_mass < 1.0:
-            posteriors = [(p / total_mass, idx, hv) for p, idx, hv in posteriors]
+    # by the missing tail mass. Note: renormalization DOES NOT eliminate
+    # the truncation error — it re-packages it by conditioning on survival.
+    if posteriors and 0.0 < retained_mass < 1.0:
+        posteriors = [(p / retained_mass, idx, hv) for p, idx, hv in posteriors]
 
+    if return_retained_mass:
+        return posteriors, retained_mass
     return posteriors
 
 
@@ -309,6 +358,7 @@ def generate_diagnostic_spectrum(
     n_representative: int = 5,
     balanced_n: int = 0,
     verbose: int = 0,
+    retained_mass: float = 1.0,
 ) -> DiagnosticSpectrum:
     """
     Sample random hands and rate them to produce a diagnosticity spectrum.
@@ -386,6 +436,9 @@ def generate_diagnostic_spectrum(
     # --- Balanced sampling (rejection sampling for accept + reject hands) ---
     balanced_reports: List[DiagnosticityReport] = []
     actual_balanced_n = 0
+    n_accept_actual = 0
+    n_reject_actual = 0
+    attempts = 0
 
     if balanced_n > 0:
         MAX_ATTEMPTS = 1_000_000
@@ -427,7 +480,13 @@ def generate_diagnostic_spectrum(
         balanced_reports = rate_hand_set(
             rule_id, balanced_hands, posteriors, equiv_classes, ground_truth_pred,
         )
-        actual_balanced_n = balanced_n
+        # Round 3 Finding 4: report the achieved balanced count, not the
+        # target. ``balanced_n`` on the spectrum is now
+        # ``min(n_accept_actual, n_reject_actual)``; rare rules that time
+        # out the MAX_ATTEMPTS loop will have balanced_n < balanced_n_target.
+        n_accept_actual = len(accept_hands)
+        n_reject_actual = len(reject_hands)
+        actual_balanced_n = min(n_accept_actual, n_reject_actual)
 
     # --- Ground-truth-split histogram (uniform sampling) ---
     gt_histogram: Dict[str, Dict[str, int]] = {
@@ -479,4 +538,10 @@ def generate_diagnostic_spectrum(
         ambiguous_hands=ambiguous,
         balanced_reports=balanced_reports,
         balanced_n=actual_balanced_n,
+        balanced_n_target=balanced_n,
+        balanced_n_accept_actual=n_accept_actual,
+        balanced_n_reject_actual=n_reject_actual,
+        balanced_attempts=attempts,
+        retained_posterior_mass=retained_mass,
+        discarded_posterior_mass=max(0.0, 1.0 - retained_mass),
     )

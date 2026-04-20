@@ -29,6 +29,7 @@ import sys
 import time
 import json
 import math
+import hashlib
 import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Tuple, Callable
@@ -47,6 +48,8 @@ from gallery_analysis.provenance import compute_provenance
 from gallery_analysis.bayesian_scorer import (
     compute_log_likelihood_strict,
     compute_log_likelihood_noisy,
+    compute_log_likelihood_strict_from_base_rate,
+    compute_log_likelihood_noisy_from_base_rate,
     normalize_posteriors,
     compute_rule_difficulty,
     ScoredHypothesis,
@@ -68,6 +71,7 @@ def build_hypothesis_pool(
     max_list_chain: int = 2,
     verbose: int = 1,
     use_targeted_probes: bool = False,
+    enumeration_grammar: str = "uniform",
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Build the shared pool of equivalence classes (rule-independent).
@@ -75,7 +79,16 @@ def build_hypothesis_pool(
     Pipeline: enumerate → syntactic filter → trivial filter → fingerprint → deduplicate
 
     Args:
-        max_depth: Maximum AST depth for enumeration.
+        max_depth: Enumeration depth BUDGET passed to ``TopDownEnumerator``.
+            This is the enumerator's application-depth budget (see
+            ``enumerator.py``), NOT the emitted program's ``Program.depth()``
+            as defined in ``program.py`` (leaf=1, app=1+max(f,x), abs=1+body).
+            A program emitted with ``max_depth=k`` can reach
+            ``Program.depth() == k+1``. Reports and papers should refer to
+            this as the "enumeration depth budget", and separately report
+            actual ``Program.depth()`` distribution if a hypothesis-space
+            size claim is needed. (Round 2 review, Finding 3 OVERRULED —
+            relabel rather than re-enforce.)
         max_programs: Maximum programs to enumerate.
         max_cost: Maximum cost (-log probability) to explore.
         timeout: Enumeration timeout in seconds.
@@ -101,18 +114,45 @@ def build_hypothesis_pool(
               flush=True)
 
     t0 = time.time()
+    # Finding 2 (Round 1 review, Q2 ruling): when a weighted-grammar variant
+    # is requested, enumerate under the weighted grammar. Post-hoc rescoring
+    # of a uniform-enumerated pool is NOT equivalent to weighted enumeration
+    # under any truncation (c_U and c_W are not affine-related). That path is
+    # still available but must be labelled as a "rescore-only ablation".
+    if enumeration_grammar == "weighted":
+        from gallery_analysis.enumerator import build_weighted_gallery_grammar
+        enum_grammar = build_weighted_gallery_grammar()
+        if verbose >= 1:
+            print("  [Finding 2] Enumerating under WEIGHTED grammar", flush=True)
+    elif enumeration_grammar == "uniform":
+        enum_grammar = None  # enumerator builds the uniform default
+    else:
+        raise ValueError(
+            f"Unknown enumeration_grammar={enumeration_grammar!r}; "
+            f"expected 'uniform' or 'weighted'."
+        )
     programs, enum_stats = enumerate_hypotheses_with_stats(
         max_depth=max_depth,
         max_programs=max_programs,
         max_cost=max_cost,
         timeout=timeout,
         max_list_chain=max_list_chain,
+        grammar=enum_grammar,
     )
     t_enum = time.time() - t0
 
     pipeline_stats["enumeration"] = {
         **enum_stats,
         "time_seconds": round(t_enum, 1),
+        "enumeration_grammar": enumeration_grammar,
+        # Round 2 Finding 3 (OVERRULED): make the depth semantics explicit
+        # in the JSON artefact so no downstream claim conflates this with
+        # Program.depth().
+        "depth_budget_semantics": (
+            "application-depth budget passed to TopDownEnumerator; "
+            "emitted programs can reach Program.depth() == max_depth+1"
+        ),
+        "max_depth_budget": max_depth,
     }
     if verbose >= 1:
         print(f"  Yielded: {enum_stats['total_yielded']:,}, "
@@ -207,6 +247,13 @@ def build_hypothesis_pool(
             "all_programs": [p for p, _, _ in group],
             "fingerprint": fp,
             "predicate": canonical_pred,
+            # Finding 1 (Round 1 review): carry all member predicates/priors
+            # so strict splitting can re-fingerprint members on curated
+            # exemplars + held-out probes and split disagreeing classes.
+            # Without this, the canonical-only evaluation silently spoke for
+            # every member, even when members disagreed on the data.
+            "_all_predicates": [pred for _, pred, _ in group],
+            "_all_priors": [lp for _, _, lp in group],
         })
 
     # Safety dedup: merge any classes that share a fingerprint.
@@ -222,6 +269,14 @@ def build_hypothesis_pool(
             existing = deduped[fp_index[fp]]
             existing["all_programs"].extend(cls.get("all_programs", []))
             existing["n_expressions"] += cls["n_expressions"]
+            # Finding 1: merge member-level predicate/prior lists too so
+            # strict splitting later has access to every member.
+            if "_all_predicates" in cls:
+                existing.setdefault("_all_predicates", []).extend(
+                    cls["_all_predicates"]
+                )
+            if "_all_priors" in cls:
+                existing.setdefault("_all_priors", []).extend(cls["_all_priors"])
             # Keep the higher (less negative) canonical prior.
             if cls["canonical_prior"] > existing["canonical_prior"]:
                 existing["canonical_prior"] = cls["canonical_prior"]
@@ -262,10 +317,144 @@ def build_hypothesis_pool(
               f"(dedup {pipeline_stats['fingerprinting']['dedup_ratio']*100:.1f}%) "
               f"({t_fp:.1f}s)", flush=True)
 
+    # --- Step 4b (Finding 1): strict split on curated exemplars + held-out probes ---
+    # Codex R1 Q1 ruling: "require strict splitting". Fingerprint collisions
+    # were found to contaminate 14/813 groups on the 360 curated exemplars.
+    # Split any class whose members disagree on exemplars OR on a held-out
+    # probe set (different seed from the main probes so the check is
+    # informative even when main probes already cover the exemplars).
+    t_split = time.time()
+    equivalence_classes, split_stats = _strict_split_classes(
+        equivalence_classes,
+        exemplar_hands=all_exemplar_hands,
+        main_probes=probes,
+        verbose=verbose,
+    )
+    pipeline_stats["strict_split"] = {
+        **split_stats,
+        "time_seconds": round(time.time() - t_split, 1),
+    }
+    if verbose >= 1 and split_stats["n_split"] > 0:
+        print(
+            f"  Strict split: {split_stats['n_split']} classes disagreed on "
+            f"exemplars+held-out probes → {split_stats['n_subclasses']} sub-classes; "
+            f"total now {len(equivalence_classes):,}",
+            flush=True,
+        )
+
     pipeline_stats["total_time_seconds"] = round(time.time() - t_start, 1)
     # Store probes so injection merge can reuse the exact same set.
     pipeline_stats["_probes"] = probes
+    # Finding 1 (Round 2): stash exemplar hands so run_analysis can re-split
+    # after injection merge (injection can reintroduce mixed classes that the
+    # first strict split rejected).
+    pipeline_stats["_exemplar_hands"] = all_exemplar_hands
     return equivalence_classes, pipeline_stats
+
+
+def _strict_split_classes(
+    equivalence_classes: List[Dict[str, Any]],
+    exemplar_hands: List,
+    main_probes: List,
+    holdout_seed: int = 9999,
+    n_holdout: int = 1000,
+    verbose: int = 1,
+) -> Tuple[List[Dict[str, Any]], Dict[str, int]]:
+    """Finding 1 fix: split any class whose members disagree on curated
+    exemplars or a fresh held-out probe set.
+
+    The original fingerprint collapses members that agree on the main probe
+    set. Codex found 14/813 groups on the 60k-yield prefix where members
+    disagreed on the 360 curated exemplars — i.e. canonical-only scoring
+    spoke for members that voted differently on the actual data. We now
+    re-fingerprint each member on (exemplars ∪ held-out probes) and split
+    whenever two members produce different output vectors.
+
+    The held-out probe set is distinct from the main probes (different seed)
+    so disagreement on probes can surface that the main set did not stress.
+
+    Each surviving sub-class records a ``split_reason`` for provenance.
+    """
+    holdout = generate_probe_set(n_probes=n_holdout, seed=holdout_seed)
+    check_hands = list(exemplar_hands) + list(holdout)
+
+    def _member_fp(pred):
+        # Distinct output vector per member on (exemplars ∪ holdout). Errors
+        # are represented as "E" to distinguish from True/False.
+        bits = []
+        for h in check_hands:
+            try:
+                bits.append("1" if pred(h) else "0")
+            except Exception:
+                bits.append("E")
+        return "".join(bits)
+
+    result: List[Dict[str, Any]] = []
+    n_split = 0
+    n_subclasses = 0
+    n_checked = 0
+    for cls in equivalence_classes:
+        preds = cls.get("_all_predicates")
+        priors = cls.get("_all_priors")
+        programs = cls.get("all_programs")
+        if not preds or len(preds) <= 1:
+            result.append(cls)
+            continue
+        n_checked += 1
+        # Group members by their (exemplar+holdout) output vector
+        sub_groups: Dict[str, List[int]] = {}
+        for i, p in enumerate(preds):
+            sub_fp = _member_fp(p)
+            sub_groups.setdefault(sub_fp, []).append(i)
+        if len(sub_groups) == 1:
+            result.append(cls)
+            continue
+        # Split into sub-classes, one per distinct output vector
+        n_split += 1
+        # Use (original_fp, sub_fp) to keep fingerprints globally unique
+        orig_fp = cls["fingerprint"]
+        for sub_fp, idxs in sub_groups.items():
+            sub_preds = [preds[i] for i in idxs]
+            sub_priors = [priors[i] for i in idxs]
+            sub_progs = [programs[i] for i in idxs] if programs else []
+            best = sub_priors.index(max(sub_priors))
+            # Canonical member of the sub-class
+            sub_summed = math.log(sum(math.exp(lp) for lp in sub_priors))
+            # Compose a new fingerprint so downstream code (extension cache,
+            # injection merge) stays keyed correctly.
+            new_fp = hashlib.sha256(
+                f"{orig_fp}|{sub_fp}".encode()
+            ).hexdigest()
+            sub_class: Dict[str, Any] = {
+                "canonical_program": sub_progs[best] if sub_progs else cls["canonical_program"],
+                "canonical_prior": sub_priors[best],
+                "summed_prior": sub_summed,
+                "n_expressions": len(idxs),
+                "all_programs": sub_progs,
+                "fingerprint": new_fp,
+                "predicate": sub_preds[best],
+                "_all_predicates": sub_preds,
+                "_all_priors": sub_priors,
+                "split_reason": "strict_exemplar_holdout_split",
+                "parent_fingerprint": orig_fp,
+            }
+            # Carry through any extra metadata except the old member lists.
+            for key in cls:
+                if key in sub_class:
+                    continue
+                if key in ("_all_predicates", "_all_priors"):
+                    continue
+                sub_class[key] = cls[key]
+            result.append(sub_class)
+            n_subclasses += 1
+
+    return result, {
+        "n_classes_checked": n_checked,
+        "n_split": n_split,
+        "n_subclasses": n_subclasses,
+        "n_holdout": n_holdout,
+        "holdout_seed": holdout_seed,
+    }
 
 
 # =========================================================================
@@ -387,43 +576,191 @@ def estimate_extensions(
 
 
 # =========================================================================
+# Step 5b: Shared inject → resplit → extension helper (Round 2 ruling)
+# =========================================================================
+
+def merge_injections_and_extend(
+    equiv_classes: List[Dict[str, Any]],
+    pipeline_stats: Dict[str, Any],
+    inject_path: str = None,
+    extension_cache: str = None,
+    n_probes: int = 500,
+    extension_samples: int = 100_000,
+    inject_true_only: bool = False,
+    verbose: int = 1,
+) -> Tuple[List[Dict[str, Any]], List[Tuple[int, float]], List, str]:
+    """
+    Factor the injection → strict-split → probe-hash → extensions sequence
+    out of ``run_analysis`` so diagnosticity / depth-mass / prior-comparison
+    sidecars can use the same corrected flow (Round 2 ruling, Finding 2+6).
+
+    Contract:
+      * Reuses ``pipeline_stats['_probes']`` (the probes actually used for
+        fingerprinting) — NEVER regenerates a fresh random probe set.
+      * If ``inject_path`` is set, merges injections then re-runs
+        ``_strict_split_classes`` (Finding 1 R2) to restore the
+        members-agree-on-(exemplars ∪ holdout) invariant.
+      * Computes ``probe_hash`` and passes it to ``estimate_extensions`` so
+        a stale cache keyed by a different probe set is detected and
+        discarded.
+
+    Returns
+    -------
+    (equiv_classes_after_inject, extensions, probes, probe_hash)
+    """
+    probes = pipeline_stats.get("_probes")
+    if probes is None:
+        probes = generate_probe_set(n_probes=n_probes, seed=42)
+
+    if inject_path:
+        from gallery_analysis.injection import (
+            load_and_validate_injections,
+            merge_injected,
+        )
+        from gallery_analysis.enumerator import build_gallery_grammar
+
+        grammar = build_gallery_grammar()
+        if equiv_classes:
+            enum_priors = [c["canonical_prior"] for c in equiv_classes]
+            enumerated_prior_range = (min(enum_priors), max(enum_priors))
+        else:
+            enumerated_prior_range = None
+
+        injected = load_and_validate_injections(
+            inject_path, grammar=grammar,
+            enumerated_prior_range=enumerated_prior_range,
+        )
+        if inject_true_only:
+            injected = [e for e in injected if e.get("id", "").startswith("true__")]
+        if verbose >= 1:
+            print(f"  Merging {len(injected)} injected hypotheses "
+                  f"using {len(probes)} shared probes...", flush=True)
+        n_before = len(equiv_classes)
+        equiv_classes = merge_injected(equiv_classes, injected, probes)
+        if verbose >= 1:
+            print(f"  {len(equiv_classes) - n_before} novel classes added", flush=True)
+
+        # Finding 1 R2: injection can reintroduce mixed classes.
+        exemplar_hands_for_split = pipeline_stats.get("_exemplar_hands") or []
+        if exemplar_hands_for_split:
+            equiv_classes, resplit_stats = _strict_split_classes(
+                equiv_classes,
+                exemplar_hands=exemplar_hands_for_split,
+                main_probes=probes,
+                verbose=verbose,
+            )
+            if verbose >= 1 and resplit_stats["n_split"] > 0:
+                print(
+                    f"  [Finding 1 R2] Post-injection strict split: "
+                    f"{resplit_stats['n_split']} classes disagreed → "
+                    f"{resplit_stats['n_subclasses']} sub-classes; "
+                    f"total now {len(equiv_classes):,}",
+                    flush=True,
+                )
+            pipeline_stats["strict_split_post_inject"] = resplit_stats
+
+    # Finding 4 R2: probe_hash gate on extension cache.
+    from gallery_analysis.provenance import compute_probe_hash
+    probe_hash = compute_probe_hash(probes)
+
+    extensions = estimate_extensions(
+        equiv_classes,
+        n_samples=extension_samples,
+        verbose=verbose,
+        cache_path=extension_cache,
+        _probe_hash=probe_hash,
+    )
+    return equiv_classes, extensions, probes, probe_hash
+
+
+# =========================================================================
 # Step 6: Per-rule scoring
 # =========================================================================
 
-def _recompute_class_prior(cls: Dict[str, Any], grammar, prior_mode: str = "summed") -> float:
+_NONFINITE_PRIOR_WARN_EMITTED = False
+
+
+def _recompute_class_prior(
+    cls: Dict[str, Any],
+    grammar,
+    prior_mode: str = "summed",
+    strict: bool = False,
+) -> float:
     """
     Recompute the log-prior for an equivalence class under a new grammar.
+
+    Finding 3 (Round 1 review): drop non-finite (nan, -inf) log-priors before
+    reduction. A -inf member leaking into the log-sum-exp produced ``nan``. We
+    now filter them out and warn once. When ``strict=True`` we raise on any
+    non-finite prior, so official runs fail fast rather than quietly masking
+    a type/grammar bug.
 
     Args:
         cls: Equivalence class dict with 'all_programs' and 'canonical_program'.
         grammar: Grammar object for computing per-program log-priors.
         prior_mode: "canonical" uses the best (shortest/cheapest) program's prior.
                     "summed" sums exp(log_prior) across all programs (log-sum-exp).
+        strict: If True, raise ValueError on any non-finite prior. Used for
+                official runs where a -inf indicates a real scoring bug
+                (e.g., a program outside the grammar's support).
     """
+    global _NONFINITE_PRIOR_WARN_EMITTED
     from gallery_analysis.dsl_prior import compute_log_prior
 
-    log_probs = []
+    raw = []
+    dropped = []
     for prog_str in cls["all_programs"]:
         try:
             lp = compute_log_prior(prog_str, grammar)
-            log_probs.append(lp)
+        except Exception:
+            dropped.append((prog_str, "exception"))
+            continue
+        if not math.isfinite(lp):
+            dropped.append((prog_str, f"non-finite={lp}"))
+            continue
+        raw.append(lp)
+
+    if dropped and strict:
+        first_bad, reason = dropped[0]
+        raise ValueError(
+            f"Non-finite log-prior in class "
+            f"(canonical='{cls.get('canonical_program','?')}', "
+            f"n_members={len(cls['all_programs'])}, n_dropped={len(dropped)}): "
+            f"first offender '{first_bad}' [{reason}]. "
+            f"Fix the prior computation (not a silent drop) for official runs."
+        )
+
+    if dropped and not _NONFINITE_PRIOR_WARN_EMITTED:
+        first_bad, reason = dropped[0]
+        print(
+            f"[WARN] _recompute_class_prior dropped non-finite log-priors; "
+            f"e.g. '{first_bad}' [{reason}]. "
+            f"Subsequent drops will be silent. Set strict=True to fail fast.",
+            flush=True,
+        )
+        _NONFINITE_PRIOR_WARN_EMITTED = True
+
+    if not raw:
+        # All members were non-finite. Try the canonical only; if that also
+        # fails, report -inf (class is outside this grammar's support).
+        try:
+            lp = compute_log_prior(cls["canonical_program"], grammar)
+            if math.isfinite(lp):
+                return lp
         except Exception:
             pass
-
-    if not log_probs:
-        # Fallback: try canonical only
-        try:
-            return compute_log_prior(cls["canonical_program"], grammar)
-        except Exception:
-            return float('-inf')
+        if strict:
+            raise ValueError(
+                f"Class has no finite log-prior under this grammar: "
+                f"canonical='{cls.get('canonical_program','?')}'"
+            )
+        return float('-inf')
 
     if prior_mode == "canonical":
-        # Best (least negative) log-prior across all programs in the class.
-        return max(log_probs)
-    else:
-        # Summed: log(Σ exp(log_prior_i)) — marginalizes over syntax.
-        max_lp = max(log_probs)
-        return max_lp + math.log(sum(math.exp(lp - max_lp) for lp in log_probs))
+        return max(raw)
+    # Summed: log(Σ exp(log_prior_i)) — marginalizes over syntax.
+    max_lp = max(raw)
+    return max_lp + math.log(sum(math.exp(lp - max_lp) for lp in raw))
 
 
 def score_rule(
@@ -438,6 +775,7 @@ def score_rule(
     likelihood_exponent: float = 1.0,
     likelihood_mode: str = "noisy",
     precomputed_priors: List[float] = None,
+    strict_priors: bool = False,
 ) -> Dict[str, Any]:
     """
     Score all hypotheses for a single rule and compute difficulty.
@@ -452,14 +790,27 @@ def score_rule(
         true_rule_fingerprint: Fingerprint of the equivalence class containing the
             true rule for this gallery rule. Used for true-rule tracking, confusion
             profiles, and diagnosticity analysis.
-        likelihood_exponent: Exponent k applied to the likelihood term.
-            P(D|h)^k — k>1 inflates the size principle, penalising hypotheses
-            with large extensions more aggressively. k=1 is standard Bayes.
+        likelihood_exponent: Tempering exponent k applied to the likelihood
+            (power posterior): π_k(h|D) ∝ π(h) · P(D|h)^k. Only k=1 is the
+            standard Bayesian posterior; k≠1 is a tempered / power posterior
+            (Friel & Pettitt 2008) and MUST be labelled as such in reports —
+            do not call the resulting distribution "the Bayesian posterior".
+            k>1 sharpens the size principle (stronger preference for small
+            extensions); k<1 softens it. Finding 7 (Round 1 review).
 
     Returns:
         Dict with: rule_id, difficulty_metrics, top_hypotheses, n_hypotheses_scored,
         n_with_any_hit, n_with_all_hits, plus true_rule_* fields and
         exemplar_diagnosticity when true_rule_fingerprint is provided.
+
+    Note:
+        Finding 1 (Round 1 review): the canonical predicate is used to compute
+        the hit vector. This is correct *after* ``_strict_split_classes`` has
+        run, because splitting guarantees every member of every class agrees on
+        the 360 curated exemplars and a 1k held-out probe set. For exemplar
+        hands outside that verified set (e.g. arbitrary candidate hands in the
+        diagnosticity tool), member disagreement remains possible and must be
+        handled separately.
     """
     n_exemplars = len(exemplar_hands)
     scored = []
@@ -486,15 +837,22 @@ def score_rule(
         if n_hits == n_exemplars:
             n_with_all_hits += 1
 
-        # Compute likelihoods
-        log_lik_strict = compute_log_likelihood_strict(n_hits, n_exemplars, ext_size)
-        log_lik_noisy = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size, epsilon)
+        # Compute likelihoods from base_rate directly (Finding 6, Round 1 review):
+        # avoids int() rounding on extension_size at the MC-boundary.
+        log_lik_strict = compute_log_likelihood_strict_from_base_rate(
+            n_hits, n_exemplars, base_rate
+        )
+        log_lik_noisy = compute_log_likelihood_noisy_from_base_rate(
+            n_hits, n_exemplars, base_rate, epsilon
+        )
 
         # Select prior
         if precomputed_priors is not None:
             log_prior = precomputed_priors[i_cls]
         elif grammar is not None:
-            log_prior = _recompute_class_prior(cls, grammar, prior_mode=prior_mode)
+            log_prior = _recompute_class_prior(
+                cls, grammar, prior_mode=prior_mode, strict=strict_priors,
+            )
         elif prior_mode == "canonical":
             log_prior = cls["canonical_prior"]
         else:
@@ -683,12 +1041,26 @@ def run_analysis(
     verbose: int = 1,
     use_targeted_probes: bool = False,
     inject_true_only: bool = False,
+    strict_priors: bool = False,
+    enumeration_grammar: str = "uniform",
 ) -> Dict[str, Any]:
     """
     Run the full Bayesian rule induction analysis over all 60 gallery rules.
 
     Returns a results dict with pipeline_stats, per-rule results, and
     difficulty rankings.
+
+    ``strict_priors=True`` (Finding 3) makes ``_recompute_class_prior`` raise
+    on any non-finite per-program prior. Use for official runs where a -inf
+    indicates a real bug (e.g., a program outside the scoring grammar's
+    support). Off by default so exploratory runs still complete.
+
+    ``enumeration_grammar`` (Finding 2): choose which grammar drives
+    enumeration. "uniform" (default) enumerates under the uniform grammar;
+    combined with ``scoring_grammar="weighted"`` this is a RESCORE-ONLY
+    ablation (label accordingly — not equivalent to weighted enumeration
+    under truncation). "weighted" enumerates under the 4-tier weighted
+    grammar; this is the correct pool for any claim about the weighted model.
     """
     t_total_start = time.time()
 
@@ -702,6 +1074,7 @@ def run_analysis(
         max_list_chain=max_list_chain,
         verbose=verbose,
         use_targeted_probes=use_targeted_probes,
+        enumeration_grammar=enumeration_grammar,
     )
 
     # --- Step 3b: Merge injected hypotheses (if provided) ---
@@ -756,16 +1129,53 @@ def run_analysis(
             "n_merged": len(injected) - (n_after - n_before),
         }
 
+        # Finding 1 (Round 2 review): injection can reintroduce mixed classes
+        # that the first strict split rejected (a merged class whose canonical
+        # member + injected member agree on main probes but disagree on
+        # exemplars or held-out hands). Re-run the strict split so the
+        # post-injection pool obeys the same invariant as the pre-injection
+        # pool: every class's members agree on (exemplars ∪ holdout).
+        exemplar_hands_for_split = pipeline_stats.get("_exemplar_hands") or []
+        if exemplar_hands_for_split:
+            t_resplit = time.time()
+            equiv_classes, resplit_stats = _strict_split_classes(
+                equiv_classes,
+                exemplar_hands=exemplar_hands_for_split,
+                main_probes=probes,
+                verbose=verbose,
+            )
+            pipeline_stats["strict_split_post_inject"] = {
+                **resplit_stats,
+                "time_seconds": round(time.time() - t_resplit, 1),
+            }
+            if verbose >= 1 and resplit_stats["n_split"] > 0:
+                print(
+                    f"  [Finding 1 R2] Post-injection strict split: "
+                    f"{resplit_stats['n_split']} classes disagreed → "
+                    f"{resplit_stats['n_subclasses']} sub-classes; "
+                    f"total now {len(equiv_classes):,}",
+                    flush=True,
+                )
+
+    # Compute probe hash up-front so it can be passed to both the extension
+    # cache (for invalidation on probe-set change) and the provenance block.
+    # Finding 4 (Round 1 review): estimate_extensions supported _probe_hash
+    # but run_analysis never passed it, so changing probes could silently
+    # reuse stale cached extension sizes keyed by now-invalid fingerprints.
+    from gallery_analysis.provenance import compute_probe_hash
+    probes = pipeline_stats.get("_probes") or generate_probe_set(n_probes=n_probes, seed=42)
+    probe_hash = compute_probe_hash(probes)
+
     # Estimate extension sizes (shared, with optional cache)
     extensions = estimate_extensions(
         equiv_classes,
         n_samples=extension_samples,
         verbose=verbose,
         cache_path=extension_cache,
+        _probe_hash=probe_hash,
     )
 
     # Compute provenance metadata — use the actual probes from fingerprinting.
-    probes = pipeline_stats.get("_probes") or generate_probe_set(n_probes=n_probes, seed=42)
     provenance = compute_provenance(
         probe_seed=42,
         n_probes=n_probes,
@@ -806,7 +1216,12 @@ def run_analysis(
         print(f"Using STRICT likelihood (zero tolerance for misses)", flush=True)
 
     if likelihood_exponent != 1.0 and verbose >= 1:
-        print(f"Using likelihood exponent k={likelihood_exponent} (inflated size principle)", flush=True)
+        print(
+            f"[WARN] likelihood_exponent k={likelihood_exponent} != 1 — this is "
+            f"a TEMPERED / POWER posterior π_k(h|D) ∝ π(h)·P(D|h)^k, NOT the "
+            f"standard Bayesian posterior. Reports must label accordingly.",
+            flush=True,
+        )
 
     # Precompute priors under the scoring grammar (rule-independent).
     # This avoids re-parsing every program for every rule.
@@ -817,7 +1232,10 @@ def run_analysis(
         t_prior = time.time()
         precomputed_priors = []
         for cls in equiv_classes:
-            lp = _recompute_class_prior(cls, scoring_grammar_obj, prior_mode=prior_mode)
+            lp = _recompute_class_prior(
+                cls, scoring_grammar_obj,
+                prior_mode=prior_mode, strict=strict_priors,
+            )
             precomputed_priors.append(lp)
         if verbose >= 1:
             print(f"  Done in {time.time() - t_prior:.1f}s", flush=True)
@@ -848,6 +1266,7 @@ def run_analysis(
             likelihood_exponent=likelihood_exponent,
             likelihood_mode=likelihood_mode,
             precomputed_priors=precomputed_priors,
+            strict_priors=strict_priors,
         )
         result["group"] = rule_info["group"]
         result["answer"] = rule_info["answer"]
@@ -909,6 +1328,14 @@ def run_analysis(
             "scoring_grammar": scoring_grammar,
             "likelihood_exponent": likelihood_exponent,
             "likelihood_mode": likelihood_mode,
+            "strict_priors": strict_priors,
+            # Finding 7: flag tempered / power posterior so downstream
+            # reporters label the distribution correctly.
+            "is_tempered_posterior": likelihood_exponent != 1.0,
+            "posterior_kind": (
+                "standard_bayesian" if likelihood_exponent == 1.0
+                else "tempered_power_posterior"
+            ),
         },
         "provenance": provenance,
     }
@@ -1116,7 +1543,11 @@ def print_difficulty_report(results: Dict[str, Any], verbose: int = 1):
 def build_argument_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser (extracted for testability)."""
     parser = argparse.ArgumentParser(description="Bayesian rule induction analysis")
-    parser.add_argument("--depth", type=int, default=7, help="Max AST depth")
+    parser.add_argument(
+        "--depth", type=int, default=7,
+        help="Enumeration depth BUDGET (application-depth, NOT Program.depth(); "
+             "emitted programs can reach Program.depth() == depth+1)"
+    )
     parser.add_argument("--max-programs", type=int, default=300_000, help="Max programs to enumerate")
     parser.add_argument("--max-cost", type=float, default=35.0, help="Max cost to explore")
     parser.add_argument("--timeout", type=float, default=600.0, help="Enumeration timeout")
@@ -1148,6 +1579,15 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--likelihood-mode", choices=["noisy", "strict"], default="noisy",
                         help="Likelihood model: 'noisy' (default, soft penalty for misses) or "
                              "'strict' (zero posterior for any miss)")
+    parser.add_argument("--strict-priors", action="store_true",
+                        help="Fail fast on non-finite per-program log-priors in "
+                             "class reduction (Finding 3). Use for official runs.")
+    parser.add_argument("--enumeration-grammar", choices=["uniform", "weighted"],
+                        default="uniform",
+                        help="Grammar driving top-down enumeration (Finding 2). "
+                             "'uniform' (default) combined with --grammar weighted is a "
+                             "RESCORE-ONLY ablation; 'weighted' enumerates under the "
+                             "4-tier weighted grammar (required for weighted-model claims).")
     return parser
 
 
@@ -1183,6 +1623,8 @@ def main():
         verbose=args.verbose,
         use_targeted_probes=args.targeted_probes and not args.no_targeted_probes,
         inject_true_only=args.inject_true_only,
+        strict_priors=args.strict_priors,
+        enumeration_grammar=args.enumeration_grammar,
     )
 
     print_difficulty_report(results, verbose=args.verbose)

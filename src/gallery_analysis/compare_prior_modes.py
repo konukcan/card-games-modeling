@@ -8,10 +8,16 @@ This script answers three questions:
    summed prior = log(sum(exp(lp_i))) across all i programs, while canonical
    prior = max(lp_i). More programs → bigger gap.
 
-2. How does Phase 1b injection interact with summed priors?
-   → When 165 injected hypotheses merge into existing classes, they increase
-   n_expressions and thus the summed prior. We show top-20 classes by
-   n_expressions with and without injection.
+2. How does Phase 1b injection interact with the class prior?
+   → By design (Round 1 Finding 1 fix in `injection.py`), merging an injected
+   hypothesis into an existing class does NOT inflate `summed_prior`: the
+   enumerated summed prior encodes grammar expressibility only, not LLM
+   agreement. `summed_prior_with_injections` is tracked separately for
+   diagnostic use. For merged classes, membership changes (n_expressions
+   increases); the prior does not. For novel classes, the new injected
+   class contributes a full new mass term. We therefore show, per class,
+   (i) the unchanged enumerated `summed_prior`, (ii) the diagnostic
+   `summed_prior_with_injections`, and (iii) the class-membership delta.
 
 3. Would posterior rankings change meaningfully under canonical priors?
    → For ~10 rules spanning easy/medium/hard, compare true rule rank, top-1
@@ -30,7 +36,12 @@ from typing import Dict, List, Any, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from gallery_analysis.analyze import build_hypothesis_pool, estimate_extensions, score_rule
+from gallery_analysis.analyze import (
+    build_hypothesis_pool,
+    estimate_extensions,
+    merge_injections_and_extend,
+    score_rule,
+)
 from gallery_analysis.injection import load_and_validate_injections, merge_injected
 from gallery_analysis.enumerator import build_gallery_grammar
 from gallery_analysis.exemplars import load_exemplars, generate_probe_set
@@ -151,7 +162,7 @@ def score_rule_both_modes(
 
         # For a cleaner entropy calculation, we'll score manually:
         from gallery_analysis.bayesian_scorer import (
-            compute_log_likelihood_noisy, ScoredHypothesis,
+            compute_log_likelihood_noisy_from_base_rate, ScoredHypothesis,
         )
 
         scored = []
@@ -166,7 +177,9 @@ def score_rule_both_modes(
                     pass
             n_exemplars = len(exemplar_hands)
 
-            log_lik = compute_log_likelihood_noisy(n_hits, n_exemplars, ext_size)
+            log_lik = compute_log_likelihood_noisy_from_base_rate(
+                n_hits, n_exemplars, base_rate
+            )
 
             if mode == "canonical":
                 log_prior = cls["canonical_prior"]
@@ -249,38 +262,30 @@ def main():
     print(f"\nBase equivalence classes: {n_base:,}")
 
     # ------------------------------------------------------------------
-    # Step 2: Build injection-augmented pool
+    # Step 2+3: Injected pool + extensions via shared helper
+    # (Round 2 ruling, Findings 1/2/4): reuses the exact probes used during
+    # fingerprinting, re-runs _strict_split_classes after merge, and passes
+    # the probe hash so stale extension caches are detected.
     # ------------------------------------------------------------------
-    print_header("MERGING PHASE 1b INJECTIONS")
+    print_header("MERGING PHASE 1b INJECTIONS + ESTIMATING EXTENSIONS")
 
-    grammar = build_gallery_grammar()
-    enum_priors = [c["canonical_prior"] for c in equiv_classes_base]
-    enumerated_prior_range = (min(enum_priors), max(enum_priors))
+    # Shallow copy of pipeline_stats so the base-pool build_hypothesis_pool
+    # invocation above isn't mutated by the helper's strict_split_post_inject
+    # bookkeeping.
+    stats_for_injected = dict(stats)
 
-    injected = load_and_validate_injections(
-        INJECT_PATH,
-        grammar=grammar,
-        enumerated_prior_range=enumerated_prior_range,
+    equiv_classes_injected, extensions_injected, probes, _ = merge_injections_and_extend(
+        list(equiv_classes_base),
+        stats_for_injected,
+        inject_path=INJECT_PATH,
+        verbose=1,
     )
-    print(f"Loaded {len(injected)} injected hypotheses")
-
-    probes = generate_probe_set(n_probes=N_PROBES, seed=42)
-    equiv_classes_injected = merge_injected(equiv_classes_base, injected, probes)
     n_injected = len(equiv_classes_injected)
-
-    # ------------------------------------------------------------------
-    # Step 3: Estimate extensions for both pools
-    # ------------------------------------------------------------------
-    print_header("ESTIMATING EXTENSIONS")
+    print(f"Injected pool: {n_injected:,} classes "
+          f"({n_injected - n_base:+d} vs base)")
 
     extensions_base = estimate_extensions(
         equiv_classes_base,
-        n_samples=EXTENSION_SAMPLES,
-        verbose=1,
-    )
-
-    extensions_injected = estimate_extensions(
-        equiv_classes_injected,
         n_samples=EXTENSION_SAMPLES,
         verbose=1,
     )
@@ -337,12 +342,16 @@ def main():
         print(f"    >= {threshold:<3}: {count:>6} classes ({100*count/len(gaps):.1f}%)")
 
     # ------------------------------------------------------------------
-    # ANALYSIS 2: Phase 1b injection impact on summed priors
+    # ANALYSIS 2: Phase 1b injection impact on class membership and priors
     # ------------------------------------------------------------------
-    print_header("ANALYSIS 2: PHASE 1b INJECTION IMPACT ON SUMMED PRIORS")
+    print_header("ANALYSIS 2: PHASE 1b INJECTION — MEMBERSHIP + DIAGNOSTIC PRIOR DELTA")
 
     print("Top 20 classes by n_expressions AFTER injection.")
-    print("Columns show base vs injected counts and the summed prior change.")
+    print("By design (Round 1 Finding 1 fix), `summed_prior` on merged")
+    print("classes is UNCHANGED by injection. `SumLP+inj` shows the")
+    print("diagnostic `summed_prior_with_injections`; the `LP+inj delta`")
+    print("column reports the difference. Membership changes appear in the")
+    print("n_base / n_inj / delta columns.")
     print()
 
     # Build lookup from fingerprint to base class
@@ -355,9 +364,9 @@ def main():
     )
 
     print(f"{'Rank':<5} {'n_base':<8} {'n_inj':<8} {'delta':<7} "
-          f"{'Base SumLP':<11} {'Inj SumLP':<11} {'LP delta':<9} "
+          f"{'Base SumLP':<11} {'SumLP+inj':<11} {'LP+inj delta':<13} "
           f"{'Source':<10} {'Program'}")
-    print("-" * 130)
+    print("-" * 136)
 
     for i, cls in enumerate(injected_sorted[:20]):
         fp = cls["fingerprint"]
@@ -371,7 +380,10 @@ def main():
 
         n_inj = cls["n_expressions"]
         delta_n = n_inj - n_base
-        inj_sum_lp = cls["summed_prior"]
+        # Use the diagnostic `summed_prior_with_injections` when present;
+        # fall back to enumerated `summed_prior` when no injection touched
+        # the class. Injection does NOT inflate `summed_prior` itself.
+        inj_sum_lp = cls.get("summed_prior_with_injections", cls["summed_prior"])
         delta_lp = inj_sum_lp - base_sum_lp if math.isfinite(base_sum_lp) else float('inf')
 
         source = cls.get("source", "enumerated")
@@ -380,7 +392,7 @@ def main():
         base_lp_str = f"{base_sum_lp:.2f}" if math.isfinite(base_sum_lp) else "N/A"
 
         print(f"{i+1:<5} {n_base:<8} {n_inj:<8} {'+' + str(delta_n):<7} "
-              f"{base_lp_str:<11} {inj_sum_lp:<11.2f} {delta_lp_str:<9} "
+              f"{base_lp_str:<11} {inj_sum_lp:<11.2f} {delta_lp_str:<13} "
               f"{source:<10} {fmt_program(cls['canonical_program'], 45)}")
 
     # Count how many classes were affected by injection

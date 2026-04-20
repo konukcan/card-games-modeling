@@ -239,6 +239,15 @@ def merge_injected(
             ec["all_programs"].append(inj["dsl_program"])
             ec["n_expressions"] += 1
 
+            # Finding 1: keep _all_predicates / _all_priors in sync so strict
+            # splitting (if re-run) can see the injected member. These fields
+            # may be absent on legacy classes — initialise from canonical.
+            if "_all_predicates" not in ec:
+                ec["_all_predicates"] = [ec["predicate"]]
+                ec["_all_priors"] = [ec["canonical_prior"]]
+            ec["_all_predicates"].append(inj["predicate"])
+            ec["_all_priors"].append(inj["log_prior"])
+
             # DO NOT add injected programs' priors into summed_prior.
             # summed_prior should reflect only enumerated programs
             # (grammar expressibility), not LLM agreement. Injected
@@ -281,6 +290,9 @@ def merge_injected(
                 "predicate": inj["predicate"],
                 "source": "injected",
                 "injection_ids": [inj.get("id", "unknown")],
+                # Finding 1: member-level lists for strict-split compatibility.
+                "_all_predicates": [inj["predicate"]],
+                "_all_priors": [inj["log_prior"]],
             }
             if inj.get("true_for_rule"):
                 new_class["true_for_rule"] = inj["true_for_rule"]

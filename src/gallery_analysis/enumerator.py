@@ -457,7 +457,13 @@ def enumerate_hypotheses(
     and applies syntactic pruning to reject provably trivial programs.
 
     Args:
-        max_depth: Maximum AST depth for enumeration
+        max_depth: Enumeration depth budget for ``TopDownEnumerator``.
+            IMPORTANT: this is the enumerator's application-depth budget
+            (cost of unexpanded application nodes), NOT the final program's
+            ``Program.depth()`` as defined in ``program.py`` (leaf=1,
+            app=1+max(f,x), abs=1+body). A program emitted with
+            ``max_depth=k`` can reach ``Program.depth() == k+1``.
+            (Round 2 review, Finding 3 — OVERRULED, paper claim relabelled.)
         max_programs: Maximum number of complete programs to yield
         max_cost: Maximum cost (-log probability) to explore
         timeout: Wall clock timeout in seconds
