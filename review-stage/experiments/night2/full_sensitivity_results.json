@@ -1,0 +1,970 @@
+{
+  "n_mixed_classes": 9,
+  "n_rules_done": 55,
+  "pool_build_seconds": 418.749587059021,
+  "pool_size_orig": 2670,
+  "pool_size_split": 2679,
+  "args": {
+    "depth": 7,
+    "max_programs": 300000,
+    "audit_n": 2000,
+    "rules": "ALL",
+    "max_rules": null,
+    "n_exemplars": 6,
+    "exemplar_seed": 12345,
+    "extension_samples": 5000,
+    "inject": "src/gallery_analysis/data/injected_hypotheses.json",
+    "prior_modes": "summed",
+    "output_dir": "review-stage/experiments/night2"
+  },
+  "summary": {
+    "summed": {
+      "n_rules_valid": 55,
+      "max_delta_true_rank": 9,
+      "max_delta_true_prob": 6.236025270139889e-06,
+      "max_mixed_class_posterior_mass": 1.7238728851796579,
+      "n_top1_changed": 0
+    }
+  },
+  "results": {
+    "summed": {
+      "all_red": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.990472376930892,
+        "true_prob_split": 0.9904723769309061,
+        "delta_rank": 0,
+        "delta_prob": 1.4099832412739488e-14,
+        "top1_orig": "(\u03bb not (has_color $0 BLACK))",
+        "top1_split": "(\u03bb not (has_color $0 BLACK))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 9.986251427961138e-12,
+        "rule_answer": "All cards are red (hearts or diamonds)"
+      },
+      "all_clubs_or_hearts": {
+        "true_rank_orig": 10,
+        "true_rank_split": 10,
+        "true_prob_orig": 4.5684389485011265e-05,
+        "true_prob_split": 4.568438951515818e-05,
+        "delta_rank": 0,
+        "delta_prob": 3.0146912256053676e-14,
+        "top1_orig": "(\u03bb lt (n_unique_suits $0) 3)",
+        "top1_split": "(\u03bb lt (n_unique_suits $0) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 2.0687157039464125e-06,
+        "rule_answer": "Every card is a club or a heart"
+      },
+      "all_same_suit": {
+        "true_rank_orig": 2,
+        "true_rank_split": 2,
+        "true_prob_orig": 0.2397865065632905,
+        "true_prob_split": 0.2397865065632905,
+        "delta_rank": 0,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt 5 (max_suit_count $0))",
+        "top1_split": "(\u03bb lt 5 (max_suit_count $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 3.692723996205197e-23,
+        "rule_answer": "All six cards share the same suit"
+      },
+      "all_4s_or_queens": {
+        "true_rank_orig": 202,
+        "true_rank_split": 203,
+        "true_prob_orig": 4.86995290471486e-24,
+        "true_prob_split": 4.8714460080153544e-24,
+        "delta_rank": 1,
+        "delta_prob": 1.493103300494548e-27,
+        "top1_orig": "(\u03bb lt (n_unique_ranks $0) 3)",
+        "top1_split": "(\u03bb lt (n_unique_ranks $0) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 1.7238728851796579,
+        "rule_answer": "Every card is a 4 or a Queen"
+      },
+      "all_4s_8s_or_9s": {
+        "true_rank_orig": 146,
+        "true_rank_split": 146,
+        "true_prob_orig": 1.6564760639836362e-13,
+        "true_prob_split": 1.656476063983707e-13,
+        "delta_rank": 0,
+        "delta_prob": 7.068193710780266e-27,
+        "top1_orig": "(\u03bb lt (n_unique_ranks $0) 4)",
+        "top1_split": "(\u03bb lt (n_unique_ranks $0) 4)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 1.0737291913031933e-10,
+        "rule_answer": "Every card is a 4, 8, or 9"
+      },
+      "triple_2s_pos234": {
+        "true_rank_orig": 1495,
+        "true_rank_split": 1500,
+        "true_prob_orig": 9.85358149554133e-23,
+        "true_prob_split": 9.85358149554133e-23,
+        "delta_rank": 5,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt (max_rank (first_half (sort_by_rank $0))) 3)",
+        "top1_split": "(\u03bb lt (max_rank (first_half (sort_by_rank $0))) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 4.748206594490333e-12,
+        "rule_answer": "Positions 2, 3, and 4 are all 2s"
+      },
+      "triple_any_pos345": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.9879693267755347,
+        "true_prob_split": 0.9879693267870474,
+        "delta_rank": 0,
+        "delta_prob": 1.1512679698455486e-11,
+        "top1_orig": "(\u03bb eq (n_unique_ranks (take 3 (drop 2 $0))) 1)",
+        "top1_split": "(\u03bb eq (n_unique_ranks (take 3 (drop 2 $0))) 1)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 3.656673256013239e-08,
+        "rule_answer": "Positions 3, 4, and 5 share the same rank"
+      },
+      "four_of_a_kind_adjacent": {
+        "true_rank_orig": 466,
+        "true_rank_split": 467,
+        "true_prob_orig": 1.1584160908563133e-16,
+        "true_prob_split": 1.1584160908563133e-16,
+        "delta_rank": 1,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt (n_unique_ranks (drop 1 $0)) 3)",
+        "top1_split": "(\u03bb lt (n_unique_ranks (drop 1 $0)) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 3.703156098189302e-12,
+        "rule_answer": "Four consecutive cards share the same rank"
+      },
+      "all_but_one_same_color": {
+        "true_rank_orig": 779,
+        "true_rank_split": 783,
+        "true_prob_orig": 2.6395446994789857e-08,
+        "true_prob_split": 2.639733155315417e-08,
+        "delta_rank": 4,
+        "delta_prob": 1.8845583643124223e-12,
+        "top1_orig": "(\u03bb gt (count_color $0 (get_color (head $0))) 4)",
+        "top1_split": "(\u03bb gt (count_color $0 (get_color (head $0))) 4)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.22380276188093598,
+        "rule_answer": "All cards except at most one are the same color"
+      },
+      "three_or_more_same_suit": {
+        "true_rank_orig": 6,
+        "true_rank_split": 6,
+        "true_prob_orig": 0.08447797803632576,
+        "true_prob_split": 0.0844842140615959,
+        "delta_rank": 0,
+        "delta_prob": 6.236025270139889e-06,
+        "top1_orig": "(\u03bb has_suit $0 CLUBS)",
+        "top1_split": "(\u03bb has_suit $0 CLUBS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.2313919121409946,
+        "rule_answer": "At least 3 cards share the same suit"
+      },
+      "all_same_color": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.9990454758251212,
+        "true_prob_split": 0.9990454758251496,
+        "delta_rank": 0,
+        "delta_prob": 2.842170943040401e-14,
+        "top1_orig": "(\u03bb lt (n_unique_colors $0) 2)",
+        "top1_split": "(\u03bb lt (n_unique_colors $0) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 4.1495700978173074e-11,
+        "rule_answer": "All cards share the same color"
+      },
+      "pair_jacks_pos45": {
+        "true_rank_orig": null,
+        "true_rank_split": 2660,
+        "true_prob_orig": 0.0,
+        "true_prob_split": 5.060377081382436e-93,
+        "delta_rank": null,
+        "delta_prob": 5.060377081382436e-93,
+        "top1_orig": "(\u03bb lt (n_unique_ranks (second_half $0)) 3)",
+        "top1_split": "(\u03bb lt (n_unique_ranks (second_half $0)) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.005810066610920074,
+        "rule_answer": "Positions 4 and 5 are both Jacks"
+      },
+      "triple_3s_adjacent": {
+        "true_rank_orig": 2653,
+        "true_rank_split": 2662,
+        "true_prob_orig": 1.989231522045361e-93,
+        "true_prob_split": 1.989231525871131e-93,
+        "delta_rank": 9,
+        "delta_prob": 3.8257701035115794e-102,
+        "top1_orig": "(\u03bb eq (length (filter (\u03bb eq (rank_val $0) 3) $0)) 3)",
+        "top1_split": "(\u03bb eq (length (filter (\u03bb eq (rank_val $0) 3) $0)) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 6.0290350304693516e-06,
+        "rule_answer": "Three consecutive cards are all 3s"
+      },
+      "four_kind_adjacent_any": {
+        "true_rank_orig": 4,
+        "true_rank_split": 4,
+        "true_prob_orig": 0.020709146245857273,
+        "true_prob_split": 0.020709146245857863,
+        "delta_rank": 0,
+        "delta_prob": 5.898059818321144e-16,
+        "top1_orig": "(\u03bb lt (n_unique_ranks $0) 4)",
+        "top1_split": "(\u03bb lt (n_unique_ranks $0) 4)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 1.0035148687774239e-10,
+        "rule_answer": "Four positions share the same rank (any position)"
+      },
+      "three_clubs_adjacent": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 2.9066164369066415e-88,
+        "true_prob_split": 2.906625770306265e-88,
+        "delta_rank": 9,
+        "delta_prob": 9.333399623665902e-94,
+        "top1_orig": "(\u03bb gt (count_suit $0 CLUBS) 2)",
+        "top1_split": "(\u03bb gt (count_suit $0 CLUBS) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.010066859704010325,
+        "rule_answer": "Three consecutive clubs in a row"
+      },
+      "every_other_ace": {
+        "true_rank_orig": 2482,
+        "true_rank_split": 2489,
+        "true_prob_orig": 1.128078275110686e-25,
+        "true_prob_split": 1.1280782751342836e-25,
+        "delta_rank": 7,
+        "delta_prob": 2.3597589915276632e-36,
+        "top1_orig": "(\u03bb lt (n_unique_ranks (second_half (sort_by_rank $0))) 2)",
+        "top1_split": "(\u03bb lt (n_unique_ranks (second_half (sort_by_rank $0))) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 6.617027399441088e-08,
+        "rule_answer": "Positions 1, 3, 5 are all Aces"
+      },
+      "pos135_same_rank": {
+        "true_rank_orig": 38,
+        "true_rank_split": 38,
+        "true_prob_orig": 1.5888831273227764e-05,
+        "true_prob_split": 1.5888835485271222e-05,
+        "delta_rank": 0,
+        "delta_prob": 4.212043457481286e-12,
+        "top1_orig": "(\u03bb lt (n_unique_ranks $0) 5)",
+        "top1_split": "(\u03bb lt (n_unique_ranks $0) 5)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.0008310299274314866,
+        "rule_answer": "Positions 1, 3, 5 share the same rank"
+      },
+      "left_red_right_black": {
+        "true_rank_orig": 486,
+        "true_rank_split": 487,
+        "true_prob_orig": 9.757476534061043e-09,
+        "true_prob_split": 9.757477769331165e-09,
+        "delta_rank": 1,
+        "delta_prob": 1.2352701214339496e-15,
+        "top1_orig": "(\u03bb not (has_color (second_half $0) RED))",
+        "top1_split": "(\u03bb not (has_color (second_half $0) RED))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.000396862701443015,
+        "rule_answer": "Left half red, right half black"
+      },
+      "some_half_red_other_black": {
+        "true_rank_orig": 1966,
+        "true_rank_split": 1971,
+        "true_prob_orig": 1.2783990321036944e-17,
+        "true_prob_split": 1.2784113225320237e-17,
+        "delta_rank": 5,
+        "delta_prob": 1.2290428329247646e-22,
+        "top1_orig": "(\u03bb lt (n_unique_colors (second_half $0)) 2)",
+        "top1_split": "(\u03bb lt (n_unique_colors (second_half $0)) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.030139752722774166,
+        "rule_answer": "One half all red, other half all black"
+      },
+      "both_halves_uniform_suit": {
+        "true_rank_orig": 7,
+        "true_rank_split": 7,
+        "true_prob_orig": 0.0004082692277969356,
+        "true_prob_split": 0.0004082692278131112,
+        "delta_rank": 0,
+        "delta_prob": 1.617559168207161e-14,
+        "top1_orig": "(\u03bb gt (max_suit_count (second_half $0)) (n_unique_suits $0))",
+        "top1_split": "(\u03bb gt (max_suit_count (second_half $0)) (n_unique_suits $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 1.2403259508476044e-07,
+        "rule_answer": "Each half has uniform suit"
+      },
+      "all_even": {
+        "true_rank_orig": 4,
+        "true_rank_split": 4,
+        "true_prob_orig": 0.006732871670356412,
+        "true_prob_split": 0.00673287400358754,
+        "delta_rank": 0,
+        "delta_prob": 2.3332311274021356e-09,
+        "top1_orig": "(\u03bb lt (mod (max_rank $0) 5) 1)",
+        "top1_split": "(\u03bb lt (mod (max_rank $0) 5) 1)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.0010960417470195333,
+        "rule_answer": "Every card is even (2,4,6,8,10)"
+      },
+      "all_odd": {
+        "true_rank_orig": 925,
+        "true_rank_split": 930,
+        "true_prob_orig": 4.3347413459684e-11,
+        "true_prob_split": 4.33474147700473e-11,
+        "delta_rank": 5,
+        "delta_prob": 1.3103632975118984e-18,
+        "top1_orig": "(\u03bb gt (+ 5 5) (max_rank $0))",
+        "top1_split": "(\u03bb gt (+ 5 5) (max_rank $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 9.477021582977055e-05,
+        "rule_answer": "Every card is odd (3,5,7,9)"
+      },
+      "pair_5s_adjacent": {
+        "true_rank_orig": 369,
+        "true_rank_split": 370,
+        "true_prob_orig": 2.2470139284837595e-06,
+        "true_prob_split": 2.2471185338310713e-06,
+        "delta_rank": 1,
+        "delta_prob": 1.0460534731176132e-10,
+        "top1_orig": "(\u03bb has_suit $0 HEARTS)",
+        "top1_split": "(\u03bb has_suit $0 HEARTS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.1459389369737784,
+        "rule_answer": "Two adjacent cards are both 5s"
+      },
+      "triple_any_adjacent": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 4.31205701991008e-79,
+        "true_prob_split": 4.312058565850157e-79,
+        "delta_rank": 9,
+        "delta_prob": 1.5459400764463574e-85,
+        "top1_orig": "(\u03bb lt (n_unique_ranks $0) 5)",
+        "top1_split": "(\u03bb lt (n_unique_ranks $0) 5)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.0011238901859977396,
+        "rule_answer": "Three consecutive cards share the same rank"
+      },
+      "three_spades": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.8085069609887297,
+        "true_prob_split": 0.8085090618162123,
+        "delta_rank": 0,
+        "delta_prob": 2.100827482642842e-06,
+        "top1_orig": "(\u03bb gt (count_suit $0 SPADES) 2)",
+        "top1_split": "(\u03bb gt (count_suit $0 SPADES) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.008218173924564134,
+        "rule_answer": "At least 3 cards are spades"
+      },
+      "three_any_suit_adjacent": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 1.865258161435277e-88,
+        "true_prob_split": 1.8653865108177566e-88,
+        "delta_rank": 9,
+        "delta_prob": 1.283493824796772e-92,
+        "top1_orig": "(\u03bb has_suit $0 CLUBS)",
+        "top1_split": "(\u03bb has_suit $0 CLUBS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.21569527590336407,
+        "rule_answer": "Three consecutive cards share the same suit"
+      },
+      "four_hearts_adjacent": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 1.0137988902856615e-87,
+        "true_prob_split": 1.013798890295804e-87,
+        "delta_rank": 9,
+        "delta_prob": 1.0142450419556172e-98,
+        "top1_orig": "(\u03bb gt (count_suit $0 HEARTS) 3)",
+        "top1_split": "(\u03bb gt (count_suit $0 HEARTS) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 3.1277032847684984e-08,
+        "rule_answer": "Four consecutive hearts"
+      },
+      "four_diamonds_anywhere": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.9950030461705309,
+        "true_prob_split": 0.9950030463104872,
+        "delta_rank": 0,
+        "delta_prob": 1.399562687964817e-10,
+        "top1_orig": "(\u03bb gt (count_suit $0 DIAMONDS) 3)",
+        "top1_split": "(\u03bb gt (count_suit $0 DIAMONDS) 3)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 4.4095904080501557e-07,
+        "rule_answer": "At least 4 diamonds"
+      },
+      "four_any_suit_adjacent": {
+        "true_rank_orig": 2655,
+        "true_rank_split": 2664,
+        "true_prob_orig": 3.6204627007159717e-99,
+        "true_prob_split": 3.6204627467676183e-99,
+        "delta_rank": 9,
+        "delta_prob": 4.605164658255498e-107,
+        "top1_orig": "(\u03bb lt 3 (max_suit_count $0))",
+        "top1_split": "(\u03bb lt 3 (max_suit_count $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 3.982334294950987e-05,
+        "rule_answer": "Four consecutive cards share the same suit"
+      },
+      "four_any_suit_anywhere": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.8315892572196256,
+        "true_prob_split": 0.8315892710018004,
+        "delta_rank": 0,
+        "delta_prob": 1.3782174734799923e-08,
+        "top1_orig": "(\u03bb lt 3 (max_suit_count $0))",
+        "top1_split": "(\u03bb lt 3 (max_suit_count $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 5.188776991130642e-05,
+        "rule_answer": "At least 4 cards share the same suit"
+      },
+      "even_pos_red_odd_pos_black": {
+        "true_rank_orig": 2621,
+        "true_rank_split": 2629,
+        "true_prob_orig": 6.540905652662164e-34,
+        "true_prob_split": 6.541213191796391e-34,
+        "delta_rank": 8,
+        "delta_prob": 3.075391342271103e-38,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.1487003225340159,
+        "rule_answer": "Even positions red, odd positions black"
+      },
+      "colors_palindrome": {
+        "true_rank_orig": 2605,
+        "true_rank_split": 2613,
+        "true_prob_orig": 1.16852947722122e-26,
+        "true_prob_split": 1.1685712288919493e-26,
+        "delta_rank": 8,
+        "delta_prob": 4.1751670729305895e-31,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.11381589306304062,
+        "rule_answer": "Color sequence is a palindrome"
+      },
+      "halves_copy_colors": {
+        "true_rank_orig": 2607,
+        "true_rank_split": 2615,
+        "true_prob_orig": 1.776017593524953e-26,
+        "true_prob_split": 1.7761357752790467e-26,
+        "delta_rank": 8,
+        "delta_prob": 1.1818175409367278e-30,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.2119334013119921,
+        "rule_answer": "Left and right halves share color sequence"
+      },
+      "two_pairs_ranks": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.7616096273530807,
+        "true_prob_split": 0.7616096668820953,
+        "delta_rank": 0,
+        "delta_prob": 3.952901461712344e-08,
+        "top1_orig": "(\u03bb lt 1 (n_repeated_ranks $0))",
+        "top1_split": "(\u03bb lt 1 (n_repeated_ranks $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.00016249476847719606,
+        "rule_answer": "At least two pairs of matching ranks"
+      },
+      "two_pairs_suits": {
+        "true_rank_orig": 9,
+        "true_rank_split": 9,
+        "true_prob_orig": 0.020471920707341825,
+        "true_prob_split": 0.020473652978646877,
+        "delta_rank": 0,
+        "delta_prob": 1.7322713050521577e-06,
+        "top1_orig": "(\u03bb has_suit $0 DIAMONDS)",
+        "top1_split": "(\u03bb has_suit $0 DIAMONDS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.2652551643147879,
+        "rule_answer": "Two different suits each appear at least twice"
+      },
+      "ap_len3_step1_anywhere": {
+        "true_rank_orig": 2608,
+        "true_rank_split": 2616,
+        "true_prob_orig": 7.091093062102372e-27,
+        "true_prob_split": 7.091613376897243e-27,
+        "delta_rank": 8,
+        "delta_prob": 5.203147948715426e-31,
+        "top1_orig": "(\u03bb has_suit $0 DIAMONDS)",
+        "top1_split": "(\u03bb has_suit $0 DIAMONDS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.23000485394547862,
+        "rule_answer": "Contains 3 cards forming AP with step 1"
+      },
+      "halves_copy_ranks": {
+        "true_rank_orig": 102,
+        "true_rank_split": 102,
+        "true_prob_orig": 6.422289248718676e-17,
+        "true_prob_split": 6.422289248718676e-17,
+        "delta_rank": 0,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt 2 (n_repeated_ranks $0))",
+        "top1_split": "(\u03bb lt 2 (n_repeated_ranks $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 2.1485809655927798e-14,
+        "rule_answer": "Left and right halves share rank sequence"
+      },
+      "halves_copy_suits": {
+        "true_rank_orig": 2577,
+        "true_rank_split": 2585,
+        "true_prob_orig": 2.3562252567246234e-22,
+        "true_prob_split": 2.356226745359128e-22,
+        "delta_rank": 8,
+        "delta_prob": 1.4886345044076108e-28,
+        "top1_orig": "(\u03bb le (n_unique_suits $0) (n_repeated_suits $0))",
+        "top1_split": "(\u03bb le (n_unique_suits $0) (n_repeated_suits $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.0018967343829487382,
+        "rule_answer": "Left and right halves share suit sequence"
+      },
+      "both_halves_have_pair_rank": {
+        "true_rank_orig": 2648,
+        "true_rank_split": 2657,
+        "true_prob_orig": 2.4159656137820724e-73,
+        "true_prob_split": 2.415965816695846e-73,
+        "delta_rank": 9,
+        "delta_prob": 2.029137734640226e-80,
+        "top1_orig": "(\u03bb lt 1 (n_repeated_ranks $0))",
+        "top1_split": "(\u03bb lt 1 (n_repeated_ranks $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.00026563825885886794,
+        "rule_answer": "Each half has at least one rank pair"
+      },
+      "both_halves_uniform_color": {
+        "true_rank_orig": 178,
+        "true_rank_split": 179,
+        "true_prob_orig": 2.8085697681854427e-06,
+        "true_prob_split": 2.808571096215709e-06,
+        "delta_rank": 1,
+        "delta_prob": 1.3280302663399017e-12,
+        "top1_orig": "(\u03bb lt (n_unique_colors (second_half $0)) 2)",
+        "top1_split": "(\u03bb lt (n_unique_colors (second_half $0)) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.00141959568566731,
+        "rule_answer": "Each half has uniform color"
+      },
+      "even_odd_pos_color_split": {
+        "true_rank_orig": 7,
+        "true_rank_split": 7,
+        "true_prob_orig": 0.040915457485066475,
+        "true_prob_split": 0.04091807392700411,
+        "delta_rank": 0,
+        "delta_prob": 2.616441937636216e-06,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.2022393896669366,
+        "rule_answer": "Even/odd positions have opposite uniform colors"
+      },
+      "strict_increasing": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.9999974799099143,
+        "true_prob_split": 0.9999974799106817,
+        "delta_rank": 0,
+        "delta_prob": 7.673861546209082e-13,
+        "top1_orig": "(\u03bb all (\u03bb lt (rank_val (head $0)) (rank_val (last $0))) (adjacent_pairs $0))",
+        "top1_split": "(\u03bb all (\u03bb lt (rank_val (head $0)) (rank_val (last $0))) (adjacent_pairs $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 2.4354003382440308e-09,
+        "rule_answer": "Ranks strictly increase left to right"
+      },
+      "adjacent_share_rank_or_suit": {
+        "true_rank_orig": 2,
+        "true_rank_split": 2,
+        "true_prob_orig": 0.14164262853108694,
+        "true_prob_split": 0.14164264083773073,
+        "delta_rank": 0,
+        "delta_prob": 1.2306643787374227e-08,
+        "top1_orig": "(\u03bb lt (n_unique_suits (second_half $0)) 2)",
+        "top1_split": "(\u03bb lt (n_unique_suits (second_half $0)) 2)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.0002608442003356336,
+        "rule_answer": "Every adjacent pair shares rank or suit"
+      },
+      "ap_step1_len3_adj_ordered": {
+        "true_rank_orig": 2663,
+        "true_rank_split": 2672,
+        "true_prob_orig": 1.1071988325677956e-114,
+        "true_prob_split": 1.107246230979156e-114,
+        "delta_rank": 9,
+        "delta_prob": 4.7398411360417015e-119,
+        "top1_orig": "(\u03bb gt (+ 5 5) (max_rank $0))",
+        "top1_split": "(\u03bb gt (+ 5 5) (max_rank $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.13420319332968292,
+        "rule_answer": "3 consecutive ascending cards with step 1"
+      },
+      "ap_step2_len4_adj_ordered": {
+        "true_rank_orig": 2667,
+        "true_rank_split": 2676,
+        "true_prob_orig": 1.046133218085242e-130,
+        "true_prob_split": 1.0462393499711348e-130,
+        "delta_rank": 9,
+        "delta_prob": 1.0613188589279177e-134,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.3208371563860651,
+        "rule_answer": "4 consecutive ascending cards with step 2"
+      },
+      "ap_step1_len3_adj": {
+        "true_rank_orig": 2669,
+        "true_rank_split": 2678,
+        "true_prob_orig": 2.078423271822889e-168,
+        "true_prob_split": 2.0785779029828734e-168,
+        "delta_rank": 9,
+        "delta_prob": 1.5463115998431977e-172,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.23528840987233932,
+        "rule_answer": "3 consecutive cards forming AP step 1 (any order)"
+      },
+      "ap_step2_len4_adj": {
+        "true_rank_orig": 2669,
+        "true_rank_split": 2678,
+        "true_prob_orig": 1.584074391353543e-179,
+        "true_prob_split": 1.5841935485375468e-179,
+        "delta_rank": 9,
+        "delta_prob": 1.1915718400398218e-183,
+        "top1_orig": "(\u03bb has_suit $0 CLUBS)",
+        "top1_split": "(\u03bb has_suit $0 CLUBS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.23579124345125455,
+        "rule_answer": "4 consecutive cards forming AP step 2 (any order)"
+      },
+      "straight5": {
+        "true_rank_orig": 2643,
+        "true_rank_split": 2652,
+        "true_prob_orig": 3.207836057470563e-49,
+        "true_prob_split": 3.207889957495291e-49,
+        "delta_rank": 9,
+        "delta_prob": 5.390002472783306e-54,
+        "top1_orig": "(\u03bb lt 5 (n_unique_ranks $0))",
+        "top1_split": "(\u03bb lt 5 (n_unique_ranks $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.05267267555065839,
+        "rule_answer": "5 cards with consecutive ranks"
+      },
+      "straight5_same_suit": {
+        "true_rank_orig": 100,
+        "true_rank_split": 100,
+        "true_prob_orig": 3.5157695800250583e-14,
+        "true_prob_split": 3.5157695800250583e-14,
+        "delta_rank": 0,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt 4 (max_suit_count $0))",
+        "top1_split": "(\u03bb lt 4 (max_suit_count $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 4.0403664927426503e-13,
+        "rule_answer": "5-card straight flush"
+      },
+      "straight5_same_color": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 3.0656560414942236e-74,
+        "true_prob_split": 3.0656670325471995e-74,
+        "delta_rank": 9,
+        "delta_prob": 1.099105297584771e-79,
+        "top1_orig": "(\u03bb gt (count_color $0 (get_color (head $0))) 4)",
+        "top1_split": "(\u03bb gt (count_color $0 (get_color (head $0))) 4)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.010674311234475955,
+        "rule_answer": "5-card straight same color"
+      },
+      "ranks_palindrome": {
+        "true_rank_orig": 117,
+        "true_rank_split": 117,
+        "true_prob_orig": 6.422289171372016e-17,
+        "true_prob_split": 6.422289171372016e-17,
+        "delta_rank": 0,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb lt 2 (n_repeated_ranks $0))",
+        "top1_split": "(\u03bb lt 2 (n_repeated_ranks $0))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 4.162935309756254e-14,
+        "rule_answer": "Rank values form a palindrome"
+      },
+      "skip2_same_rank_or_suit": {
+        "true_rank_orig": 2650,
+        "true_rank_split": 2659,
+        "true_prob_orig": 4.68289442366752e-78,
+        "true_prob_split": 4.683166666444195e-78,
+        "delta_rank": 9,
+        "delta_prob": 2.7224277667529236e-82,
+        "top1_orig": "(\u03bb lt (n_unique_suits $0) 4)",
+        "top1_split": "(\u03bb lt (n_unique_suits $0) 4)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.18200056381240687,
+        "rule_answer": "Every card at distance 2 shares rank or suit"
+      },
+      "no_adjacent_same_suit": {
+        "true_rank_orig": 826,
+        "true_rank_split": 831,
+        "true_prob_orig": 1.4556665236959648e-07,
+        "true_prob_split": 1.455798510489538e-07,
+        "delta_rank": 5,
+        "delta_prob": 1.3198679357314402e-11,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.28674710025797945,
+        "rule_answer": "No adjacent cards share a suit"
+      },
+      "suit_brackets_no_cross": {
+        "true_rank_orig": null,
+        "true_rank_split": null,
+        "true_prob_orig": 0.0,
+        "true_prob_split": 0.0,
+        "delta_rank": null,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb has_suit $0 SPADES)",
+        "top1_split": "(\u03bb has_suit $0 SPADES)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.16035014673190173,
+        "rule_answer": "Suits form non-crossing nested brackets"
+      },
+      "suit_brackets_nested": {
+        "true_rank_orig": null,
+        "true_rank_split": null,
+        "true_prob_orig": 0.0,
+        "true_prob_split": 0.0,
+        "delta_rank": null,
+        "delta_prob": 0.0,
+        "top1_orig": "(\u03bb has_suit $0 HEARTS)",
+        "top1_split": "(\u03bb has_suit $0 HEARTS)",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 0.1129908818744446,
+        "rule_answer": "Suits form properly nested brackets"
+      }
+    }
+  },
+  "timings": [
+    [
+      "all_red",
+      176.61567091941833
+    ],
+    [
+      "all_clubs_or_hearts",
+      176.48983025550842
+    ],
+    [
+      "all_same_suit",
+      176.38213682174683
+    ],
+    [
+      "all_4s_or_queens",
+      176.11134505271912
+    ],
+    [
+      "all_4s_8s_or_9s",
+      176.4540150165558
+    ],
+    [
+      "triple_2s_pos234",
+      176.22744607925415
+    ],
+    [
+      "triple_any_pos345",
+      175.4903748035431
+    ],
+    [
+      "four_of_a_kind_adjacent",
+      176.2248408794403
+    ],
+    [
+      "all_but_one_same_color",
+      175.3167691230774
+    ],
+    [
+      "three_or_more_same_suit",
+      176.5016520023346
+    ],
+    [
+      "all_same_color",
+      176.52142906188965
+    ],
+    [
+      "pair_jacks_pos45",
+      176.86908388137817
+    ],
+    [
+      "triple_3s_adjacent",
+      176.38655304908752
+    ],
+    [
+      "four_kind_adjacent_any",
+      175.72724604606628
+    ],
+    [
+      "three_clubs_adjacent",
+      176.02310180664062
+    ],
+    [
+      "every_other_ace",
+      174.75290703773499
+    ],
+    [
+      "pos135_same_rank",
+      174.65488171577454
+    ],
+    [
+      "left_red_right_black",
+      174.30291604995728
+    ],
+    [
+      "some_half_red_other_black",
+      174.88381004333496
+    ],
+    [
+      "both_halves_uniform_suit",
+      174.2657778263092
+    ],
+    [
+      "all_even",
+      174.52672696113586
+    ],
+    [
+      "all_odd",
+      174.35087203979492
+    ],
+    [
+      "pair_5s_adjacent",
+      174.79349184036255
+    ],
+    [
+      "triple_any_adjacent",
+      174.47021532058716
+    ],
+    [
+      "three_spades",
+      174.81448817253113
+    ],
+    [
+      "three_any_suit_adjacent",
+      174.66772508621216
+    ],
+    [
+      "four_hearts_adjacent",
+      174.78319907188416
+    ],
+    [
+      "four_diamonds_anywhere",
+      174.4731798171997
+    ],
+    [
+      "four_any_suit_adjacent",
+      174.5908522605896
+    ],
+    [
+      "four_any_suit_anywhere",
+      174.30912709236145
+    ],
+    [
+      "even_pos_red_odd_pos_black",
+      174.96014714241028
+    ],
+    [
+      "colors_palindrome",
+      175.64964604377747
+    ],
+    [
+      "halves_copy_colors",
+      174.90150094032288
+    ],
+    [
+      "two_pairs_ranks",
+      174.40328979492188
+    ],
+    [
+      "two_pairs_suits",
+      174.62111711502075
+    ],
+    [
+      "ap_len3_step1_anywhere",
+      174.65774202346802
+    ],
+    [
+      "halves_copy_ranks",
+      174.8045027256012
+    ],
+    [
+      "halves_copy_suits",
+      174.5700888633728
+    ],
+    [
+      "both_halves_have_pair_rank",
+      174.4506938457489
+    ],
+    [
+      "both_halves_uniform_color",
+      174.46226286888123
+    ],
+    [
+      "even_odd_pos_color_split",
+      174.82632184028625
+    ],
+    [
+      "strict_increasing",
+      174.40575408935547
+    ],
+    [
+      "adjacent_share_rank_or_suit",
+      174.65495705604553
+    ],
+    [
+      "ap_step1_len3_adj_ordered",
+      174.554860830307
+    ],
+    [
+      "ap_step2_len4_adj_ordered",
+      174.8535280227661
+    ],
+    [
+      "ap_step1_len3_adj",
+      174.74816989898682
+    ],
+    [
+      "ap_step2_len4_adj",
+      174.7735571861267
+    ],
+    [
+      "straight5",
+      174.77898025512695
+    ],
+    [
+      "straight5_same_suit",
+      174.2758388519287
+    ],
+    [
+      "straight5_same_color",
+      174.44266200065613
+    ],
+    [
+      "ranks_palindrome",
+      174.7538402080536
+    ],
+    [
+      "skip2_same_rank_or_suit",
+      174.779767036438
+    ],
+    [
+      "no_adjacent_same_suit",
+      174.32079410552979
+    ],
+    [
+      "suit_brackets_no_cross",
+      174.05733704566956
+    ],
+    [
+      "suit_brackets_nested",
+      174.28733015060425
+    ]
+  ]
+}

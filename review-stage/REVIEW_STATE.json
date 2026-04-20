@@ -36,11 +36,16 @@
         "key_finding": "Real-data run on 7 rules: ALL 7 fail comparison_valid filter (mass_in_full_list 0.13-0.52). Framework correctly refuses to certify compatibility. Three remediations documented."
       },
       "sensitivity_audit": {
-        "status": "in_progress",
-        "monitor_id": "b418qgapj",
-        "last_event": "[AUDIT] 14/55 four_kind_adjacent_any (175.7s) summed: rank 4->4 (delta 0) prob 0.0207->0.0207 top1_chg=False mass=1e-10",
-        "scope": "depth=7, max_programs=300k, 55 rules, summed prior",
-        "preliminary_finding": "Through 14/55 rules, all show delta_rank in [0,9] with no top1 changes; consistent with Night 1 reduced-scale stability claim."
+        "status": "completed",
+        "scope": "depth=7, max_programs=300k, 55 rules, summed prior, audit_n=2000",
+        "result": {
+          "n_rules_valid": 55,
+          "n_top1_changed": 0,
+          "max_delta_rank": 9,
+          "max_delta_prob": 6.236e-06,
+          "max_mixed_class_posterior_mass_unnormalised": 1.724
+        },
+        "verdict": "Night 1 R3 F1 bound holds at full scale; 0/55 top1 flips. Cleared per Codex N1 R4 condition."
       },
       "visualization_e2e": {
         "status": "completed",
