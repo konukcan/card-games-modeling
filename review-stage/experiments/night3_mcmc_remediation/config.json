@@ -1,0 +1,73 @@
+{
+  "run_date": "2026-04-20T22:21:40Z",
+  "branch": "aris/bayesian-review",
+  "goal": "Depth-6 MCMC vs enumeration posterior compatibility, no injections, uniform grammar",
+  "rules_night2": [
+    "all_red",
+    "all_same_suit",
+    "all_even",
+    "triple_any_adjacent",
+    "strict_increasing",
+    "four_of_a_kind_adjacent",
+    "ranks_palindrome"
+  ],
+  "rules_new": [
+    "all_same_color",
+    "three_or_more_same_suit",
+    "all_odd",
+    "all_clubs_or_hearts",
+    "four_hearts_adjacent",
+    "three_clubs_adjacent",
+    "ap_step1_len3_adj",
+    "pair_5s_adjacent",
+    "pos135_same_rank",
+    "suits_nonincreasing",
+    "colors_palindrome",
+    "left_red_right_black",
+    "right_half_diamonds"
+  ],
+  "enumeration": {
+    "depth": 6,
+    "max_programs": 300000,
+    "max_cost": 35.0,
+    "timeout_seconds": 1800,
+    "grammar": "uniform",
+    "injections": false,
+    "n_probes": 500,
+    "probe_seed": 42
+  },
+  "mcmc": {
+    "n_steps": 20000,
+    "n_chains": 4,
+    "max_depth": 6,
+    "max_nodes": 25,
+    "noise_epsilon": 0.01,
+    "beta_start": 0.3,
+    "beta_end": 1.0,
+    "init_max_depth": 3,
+    "base_seed": 42,
+    "n_checkpoints": 10,
+    "ext_probes_native": 2000,
+    "_note_budget": "Cut from 50k/10k-probes to 20k/2k-probes after smoke measured 171 ms/step at 2k probes. Full 50k/10k-probes config would have taken ~15 h; 20k/2k-probes is ~6-7 h on 12 cores, leaves headroom for comparison + report overnight."
+  },
+  "comparison": {
+    "n_probes": 5000,
+    "probe_seed": 99,
+    "top_k_summary": 50,
+    "shared_ext_base_probes": 100000,
+    "shared_ext_escalated_probes": 1000000,
+    "escalation_threshold_base_rate": 0.001
+  },
+  "validity_thresholds": {
+    "min_mass_in_full_list": 0.90,
+    "min_mass_in_top_k": 0.80,
+    "max_mass_dropped_parse": 0.05,
+    "min_enum_retained_mass": 0.95,
+    "min_probe_hit_rate_either": 0.001,
+    "max_predicate_exceptions": 0
+  },
+  "parallelism": {
+    "n_mcmc_workers": 10,
+    "n_enum_jobs": 1
+  }
+}
