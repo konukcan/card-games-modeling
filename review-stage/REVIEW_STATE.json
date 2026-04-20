@@ -1,0 +1,15 @@
+{
+  "round": 4,
+  "threadId": "019da777-8714-71e3-9784-5bea4a10bed1",
+  "status": "completed",
+  "difficulty": "hard",
+  "last_score": 6.0,
+  "last_verdict": "almost",
+  "pending_experiments": [],
+  "timestamp": "2026-04-20T04:14:19Z",
+  "score_progression": [2.0, 4.0, 5.0, 6.0],
+  "verdict_progression": ["not ready", "not ready", "not ready / almost", "almost"],
+  "positive_threshold_met": true,
+  "max_rounds": 4,
+  "single_pre_submission_recommendation": "Full-scale residual mixed-class sensitivity audit at depth=7 / 300k / all 60 rules / all official variants."
+}
