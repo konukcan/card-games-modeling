@@ -15,6 +15,7 @@ import sys
 import os
 import time
 import json
+import zlib
 import argparse
 from pathlib import Path
 
@@ -143,16 +144,29 @@ def main():
         print(f"  posterior: {len(posteriors)} hyps survive prune (retained={retained_mass:.4f}) "
               f"in {time.time()-t2:.2f}s", flush=True)
 
+        # Per-rule deterministic seed derivation (Round 1 finding #6, fixed
+        # in Round 2 finding #1). We use zlib.crc32 because Python's built-in
+        # ``hash()`` is per-process randomized (PEP 456) unless
+        # PYTHONHASHSEED is fixed — that would silently drift the candidate
+        # set across overnight runs.
+        rule_crc = zlib.crc32(rule_id.encode("utf-8"))
+        seed_diag = (12345 + rule_crc) & 0xFFFFFFFF
+        seed_adv = (23456 + rule_crc) & 0xFFFFFFFF
+
         # ============================================================
-        # 1. Most diagnostic hands (BALD entropy)
+        # 1. Most diagnostic hands (BALD-on-survivors)
         # ============================================================
+        # ``retained_mass`` is threaded through so the search both warns
+        # (UserWarning) when below floor and stamps each returned hand with
+        # the parent posterior's mass — required by Round 1 finding #1.
         t3 = time.time()
         diag = find_most_diagnostic_hands(
             posteriors, equiv,
             n_candidates=args.n_candidates,
             top_k=args.top_k_diagnostic,
             ground_truth_pred=rule_predicate,
-            seed=12345,
+            seed=seed_diag,
+            retained_mass=retained_mass,
         )
         print(f"  diagnostic: {len(diag)} hands (top entropy={diag[0].entropy_bits:.4f} "
               f"p_accept={diag[0].p_accept:.3f}) in {time.time()-t3:.2f}s", flush=True)
@@ -167,7 +181,8 @@ def main():
             n_candidates=args.n_candidates,
             top_k=args.top_k_adversarial,
             confidence_threshold=args.confidence_threshold,
-            seed=23456,
+            seed=seed_adv,
+            retained_mass=retained_mass,
         )
         n_fp = len(adv["false_positives"])
         n_fn = len(adv["false_negatives"])
