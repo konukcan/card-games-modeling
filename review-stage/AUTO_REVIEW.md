@@ -414,3 +414,74 @@ The final method is a Bayesian program-induction pipeline for card-game rule ind
 7. **Posterior predictive diagnosticity** — `DiagnosticSpectrum` computes p(accept | hand) with retained / discarded-mass reporting for pruned variants, and truthful balanced-sample counts (actual achieved, not target).
 
 8. **Variant configuration / visualization** — 10-variant official config matrix (uniform vs weighted grammar, summed vs canonical prior, strict vs noisy likelihood, etc.); `compare_variants.py`, `depth_mass_analysis.py` (paren-nesting-stratified), `compare_prior_modes.py` sidecars all use the shared `merge_injections_and_extend()` helper so fixes propagate uniformly.
+
+---
+
+# Auto Review — Bayesian Enumeration Pipeline (Night 2)
+
+**Start:** 2026-04-20T06:55Z
+**Hard deadline:** 2026-04-20T16:55Z (10h budget)
+**MAX_ROUNDS:** 4, no early stop.
+**Difficulty:** hard.
+**POSITIVE_THRESHOLD:** score ≥ 6/10 AND ≥ 3 rounds.
+
+**Test baseline:** 92/93 pass. Same pre-existing failure as Night 1 (`tests/test_injection.py::test_merge_updates_summed_prior`). 9 new tests added in `test_adversarial_hands.py`.
+
+**Branch state at Night 2 start:** `aris/bayesian-review` @ `dc6b449`
+- `dc6b449` feat(night2): adversarial hand generation via BALD entropy proxy
+- `1c87b57` chore: initialize review-stage scaffolding and resume instructions
+- (Night 1 commits: `4a8bd60`, `0f1a17d`, `d525079`)
+
+**Workstreams:**
+1. Full-scale residual sensitivity audit (background compute)
+2. Adversarial hand generation (BALD entropy proxy + confidence-wrong probe)
+3. Enumeration-vs-MCMC posterior comparison
+4. Visualization end-to-end stress test
+
+
+---
+
+## Round 1 of Night 2 — Adversarial hand generation (2026-04-20T07:18Z…07:42Z)
+
+**Reviewer thread:** `019da9c1-da9f-78e1-9c7b-6410ddac7b06`
+**Subject:** `src/gallery_analysis/adversarial_hands.py` + `run_adversarial_hands.py` + 22 unit tests.
+**Three-turn trajectory:** 5/10 → 8/10 → 9/10. Verdict: **needs work** → **almost** → **accept**.
+
+Detail in `review-stage/night2_round1/codex_round{1,2,3}_response.md`.
+
+Final ACCEPT contingent on these substantive fixes:
+- Stable hashes via `zlib.crc32` instead of process-randomized `hash()` (PEP 456).
+- "TV-bound on p_accept" wording replaced "lower-bound on entropy" everywhere.
+- Stale `__post_init__` invariant claim removed from `splitting_hypotheses` field.
+- Empty-posterior + tie-convention + uniform-MC scope-box documented + tested.
+- Exact-tie splitter test added.
+
+Test suite: 22/22 adversarial-hands tests pass; full repo suite 205 pass + 1 pre-existing fail.
+
+---
+
+## Round 2 of Night 2 — MCMC comparison framework (2026-04-20T07:25Z…08:05Z)
+
+**Reviewer thread:** `019da9dd-efac-75b0-934b-5b4c0805c077`
+**Subject:** `review-stage/experiments/night2/compare_enum_vs_mcmc.py` (extensional comparison of enumeration posterior vs MCMC visit-frequency posterior on uniform 6-card probe distribution).
+**Four-turn trajectory:** 6/10 → 8/10 → 9/10 → 9/10. Verdict: **needs work** → **almost** → **almost** → **accept**.
+
+Detail in `review-stage/night2_round2/codex_round{1,2,3,4}_response.md`.
+
+Final ACCEPT after addressing:
+- Removed unimplemented "Top-K coverage" claim, added KNOWN LIMITATIONS block.
+- Predicate exceptions surfaced as counts (`predicate_exception_count_*`).
+- Top-K parse-failure mass tracked (`mcmc_parse_audit` with 4 fields).
+- Probe-set blind spot exposed as `probe_hit_rate_enum/_mcmc`.
+- Schema validated explicitly (`--allow-legacy-schema` for flat form).
+- Removed dead `frequency_ranking` fallback.
+- `mass_in_full_list` (pre-truncation) added so MCMC payload completeness is auditable.
+- HARD claim-gating via `validity_flags: {6 booleans}` + `comparison_valid: bool`.
+- Optional add-on applied: `enum_truncation_excessive` flag for symmetry with MCMC-side gating.
+
+Pre-registered `VALIDITY_THRESHOLDS` for Night 2 paper appendix:
+- `min_mass_in_full_list = 0.90`, `min_mass_in_top_k = 0.80`, `max_mass_dropped_parse = 0.05`
+- `min_enum_retained_mass = 0.95`, `min_probe_hit_rate_either = 0.001`, `max_predicate_exceptions = 0`
+
+Smoke test on synthetic 3-program MCMC (top-K=2): `mass_in_full_list=1.0, mass_in_top_k=0.9, comparison_valid=True`. All 6 flags emit; truncation gap (0.1) visible in audit.
+

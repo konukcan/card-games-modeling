@@ -1,15 +1,52 @@
 {
-  "round": 4,
-  "threadId": "019da777-8714-71e3-9784-5bea4a10bed1",
-  "status": "completed",
-  "difficulty": "hard",
-  "last_score": 6.0,
-  "last_verdict": "almost",
-  "pending_experiments": [],
-  "timestamp": "2026-04-20T04:14:19Z",
-  "score_progression": [2.0, 4.0, 5.0, 6.0],
-  "verdict_progression": ["not ready", "not ready", "not ready / almost", "almost"],
-  "positive_threshold_met": true,
-  "max_rounds": 4,
-  "single_pre_submission_recommendation": "Full-scale residual mixed-class sensitivity audit at depth=7 / 300k / all 60 rules / all official variants."
+  "night1": {
+    "round": 4,
+    "threadId": "019da777-8714-71e3-9784-5bea4a10bed1",
+    "status": "completed",
+    "difficulty": "hard",
+    "last_score": 6.0,
+    "last_verdict": "almost",
+    "pending_experiments": [],
+    "timestamp": "2026-04-20T04:14:19Z",
+    "score_progression": [2.0, 4.0, 5.0, 6.0],
+    "verdict_progression": ["not ready", "not ready", "not ready / almost", "almost"],
+    "positive_threshold_met": true,
+    "max_rounds": 4,
+    "single_pre_submission_recommendation": "Full-scale residual mixed-class sensitivity audit at depth=7 / 300k / all 60 rules / all official variants."
+  },
+  "night2": {
+    "deadline": "2026-04-20T16:55:00Z",
+    "started": "2026-04-20T06:55:00Z",
+    "max_rounds": 4,
+    "workstreams": {
+      "adversarial_hands": {
+        "rounds_used": 1,
+        "score_progression": [9.0],
+        "verdict_progression": ["accept"],
+        "status": "completed",
+        "subject": "review-stage/experiments/night2/run_adversarial_hands.py"
+      },
+      "mcmc_vs_enumeration": {
+        "rounds_used": 4,
+        "threadId": "019da9dd-efac-75b0-934b-5b4c0805c077",
+        "score_progression": [6.0, 8.0, 9.0, 9.0],
+        "verdict_progression": ["needs work", "almost", "almost", "accept"],
+        "status": "completed",
+        "subject": "review-stage/experiments/night2/compare_enum_vs_mcmc.py",
+        "key_finding": "Real-data run on 7 rules: ALL 7 fail comparison_valid filter (mass_in_full_list 0.13-0.52). Framework correctly refuses to certify compatibility. Three remediations documented."
+      },
+      "sensitivity_audit": {
+        "status": "in_progress",
+        "monitor_id": "b418qgapj",
+        "last_event": "[AUDIT] 14/55 four_kind_adjacent_any (175.7s) summed: rank 4->4 (delta 0) prob 0.0207->0.0207 top1_chg=False mass=1e-10",
+        "scope": "depth=7, max_programs=300k, 55 rules, summed prior",
+        "preliminary_finding": "Through 14/55 rules, all show delta_rank in [0,9] with no top1 changes; consistent with Night 1 reduced-scale stability claim."
+      },
+      "visualization_e2e": {
+        "status": "completed",
+        "result": "1 passed, 1 warning in 1.59s; symlink fix from prior session still working"
+      }
+    },
+    "summary": "MCMC framework promoted Codex 6 -> 8 -> 9 -> 9 with verdict needs-work -> almost -> almost -> accept across 4 rounds. Adversarial hands ACCEPT R1. Real MCMC comparison surfaced validity-gating success: all 7 tested rules failed pre-registered filter, demonstrating the framework catches the failure mode it was designed to catch."
+  }
 }

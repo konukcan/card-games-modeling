@@ -1,0 +1,52 @@
+{
+  "args": {
+    "depth": 4,
+    "max_programs": 10000,
+    "mcmc_results": "/tmp/fake_mcmc_results.json",
+    "rules": "all_red",
+    "inject": "src/gallery_analysis/data/injected_hypotheses.json",
+    "n_probes": 1000,
+    "probe_seed": 99,
+    "top_k": 2,
+    "output": "/tmp/cmp_smoke5.json",
+    "allow_legacy_schema": false
+  },
+  "n_rules": 1,
+  "rules": {
+    "all_red": {
+      "rule_id": "all_red",
+      "extensional": {
+        "n_probes": 1000,
+        "mean_abs_diff": 0.005067442985407728,
+        "max_abs_diff": 0.33333333333333315,
+        "spearman_rank_corr": 0.847701184424181,
+        "fraction_disagreement_above_0_5": 0.0,
+        "probe_hit_rate_enum": 0.015067442985407728,
+        "probe_hit_rate_mcmc": 0.010000000000000002
+      },
+      "n_enum_classes_in_posterior": 2,
+      "n_mcmc_programs_used": 2,
+      "mcmc_top_k_requested": 2,
+      "mcmc_top_k_parsed": 2,
+      "mcmc_parse_audit": {
+        "mass_in_full_list": 1.0,
+        "mass_in_top_k": 0.8999999999999999,
+        "n_dropped_parse": 0,
+        "mass_dropped_parse": 0.0,
+        "mass_used": 0.8999999999999999
+      },
+      "predicate_exception_count_enum": 0,
+      "predicate_exception_count_mcmc": 0,
+      "validity_flags": {
+        "mcmc_payload_truncated": false,
+        "topk_truncation_excessive": false,
+        "parse_drop_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      },
+      "comparison_valid": true,
+      "enum_retained_mass": 0.9999737853330615
+    }
+  }
+}
