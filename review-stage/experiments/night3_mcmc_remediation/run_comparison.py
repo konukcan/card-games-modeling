@@ -138,9 +138,46 @@ def _jensen_shannon(p: List[float], q: List[float]) -> float:
 
 def _build_fingerprint_index(
     equiv_classes: List[Dict[str, Any]],
-) -> Dict[str, int]:
-    """fingerprint → cls_idx lookup."""
-    return {c["fingerprint"]: i for i, c in enumerate(equiv_classes)}
+) -> Tuple[Dict[str, int], Dict[str, List[Tuple[str, int]]]]:
+    """Return (direct_fp_to_cls, parent_fp_to_subclasses).
+
+    Unsplit classes have `fingerprint == compute_fingerprint(pred, probes)`
+    and are indexed directly. Split sub-classes store a composite fingerprint
+    `sha256(parent_fp|sub_fp)` where sub_fp = _member_fp(pred) on
+    exemplars+holdout. We index these by parent_fp so we can do a 2-stage
+    lookup: raw fp → parent → sub_fp via _member_fp → composite.
+    """
+    direct: Dict[str, int] = {}
+    parent_to_subs: Dict[str, List[Tuple[str, int]]] = {}
+    for i, c in enumerate(equiv_classes):
+        parent = c.get("parent_fingerprint")
+        if parent:
+            parent_to_subs.setdefault(parent, []).append((c["fingerprint"], i))
+        else:
+            direct[c["fingerprint"]] = i
+    return direct, parent_to_subs
+
+
+def _build_member_fp_fn(exemplar_hands, holdout_seed: int = 9999,
+                         n_holdout: int = 1000):
+    """Replicate _member_fp from analyze._strict_split_classes."""
+    from gallery_analysis.exemplars import generate_probe_set as _gps
+    holdout = _gps(n_probes=n_holdout, seed=holdout_seed)
+    check_hands = list(exemplar_hands) + list(holdout)
+
+    def member_fp(pred):
+        bits = []
+        for h in check_hands:
+            try:
+                bits.append("1" if pred(h) else "0")
+            except Exception:
+                bits.append("E")
+        return "".join(bits)
+    return member_fp
+
+
+def _compose_fp(parent_fp: str, sub_fp: str) -> str:
+    return hashlib.sha256(f"{parent_fp}|{sub_fp}".encode()).hexdigest()
 
 
 def _aggregate_mcmc_to_classes(
@@ -149,6 +186,8 @@ def _aggregate_mcmc_to_classes(
     prim_dict: Dict[str, Primitive],
     fp_probes,
     fp_to_cls: Dict[str, int],
+    parent_to_subs: Dict[str, List[Tuple[str, int]]] = None,
+    member_fp_fn=None,
 ) -> Tuple[Dict[int, int], Dict[str, Any]]:
     """Map each MCMC program → fingerprint → class idx; sum counts per class.
 
@@ -193,6 +232,31 @@ def _aggregate_mcmc_to_classes(
             class_counts[idx] = class_counts.get(idx, 0) + count
             n_mapped += 1
             mass_mapped += count
+        elif parent_to_subs and fp in parent_to_subs and member_fp_fn:
+            # This raw fingerprint was a parent of a strict-split; disambiguate
+            # via the same (exemplars+holdout) check used during splitting.
+            try:
+                sub_fp = member_fp_fn(pred)
+            except Exception:
+                n_predicate_fail += 1
+                mass_predicate_fail += count
+                continue
+            composite = _compose_fp(fp, sub_fp)
+            hit_idx = None
+            for stored_comp, cidx in parent_to_subs[fp]:
+                if stored_comp == composite:
+                    hit_idx = cidx
+                    break
+            if hit_idx is not None:
+                class_counts[hit_idx] = class_counts.get(hit_idx, 0) + count
+                n_mapped += 1
+                mass_mapped += count
+            else:
+                unmapped_fp_counts[composite] = (
+                    unmapped_fp_counts.get(composite, 0) + count
+                )
+                n_unmapped += 1
+                mass_unmapped += count
         else:
             unmapped_fp_counts[fp] = unmapped_fp_counts.get(fp, 0) + count
             n_unmapped += 1
@@ -375,11 +439,14 @@ def compare_one_rule(
     mcmc_visit_counts: Dict[str, int],
     comparison_probes,
     top_k_summary: int,
+    parent_to_subs: Dict[str, List[Tuple[str, int]]] = None,
+    member_fp_fn=None,
 ) -> Dict[str, Any]:
     t0 = time.time()
     # Aggregate MCMC to classes
     class_counts, parse_audit = _aggregate_mcmc_to_classes(
         mcmc_visit_counts, grammar, prim_dict, fp_probes, fp_to_cls,
+        parent_to_subs=parent_to_subs, member_fp_fn=member_fp_fn,
     )
     mcmc_cls_post = _normalize(class_counts)
 
@@ -455,6 +522,8 @@ def run_convergence_for_rule(
     ckpt_dir: Path,
     comparison_probes,
     top_k_summary: int,
+    parent_to_subs: Dict[str, List[Tuple[str, int]]] = None,
+    member_fp_fn=None,
 ) -> Dict[str, Any]:
     """Replay the comparison at each MCMC checkpoint."""
     ckpt_files = sorted(
@@ -471,6 +540,7 @@ def run_convergence_for_rule(
             rule_id, equiv_classes, fp_probes, fp_to_cls,
             grammar, prim_dict, enum_posteriors, enum_retained_mass,
             visits, comparison_probes, top_k_summary,
+            parent_to_subs=parent_to_subs, member_fp_fn=member_fp_fn,
         )
         rec = {
             "step": step,
@@ -514,9 +584,26 @@ def main():
     print(f"[CMP] Pool: {len(equiv):,} classes, "
           f"{len(enum_probes)} fingerprint probes", flush=True)
 
-    fp_to_cls = _build_fingerprint_index(equiv)
+    fp_to_cls, parent_to_subs = _build_fingerprint_index(equiv)
+    print(f"[CMP] fp index: {len(fp_to_cls)} direct, "
+          f"{sum(len(v) for v in parent_to_subs.values())} sub-classes "
+          f"under {len(parent_to_subs)} parents", flush=True)
     grammar = build_gallery_grammar()
     prim_dict = _build_prim_dict(grammar)
+
+    # Build member_fp function using the same exemplars + holdout probes as
+    # the enum strict-split step. Exemplar hands stored in pool stats.
+    exemplar_hands = pool_payload["stats"].get("_exemplar_hands")
+    if exemplar_hands is None:
+        print("[CMP] WARNING: no _exemplar_hands in pool; sub-class mapping "
+              "will be disabled", flush=True)
+        member_fp_fn = None
+    else:
+        member_fp_fn = _build_member_fp_fn(
+            exemplar_hands, holdout_seed=9999, n_holdout=1000,
+        )
+        print(f"[CMP] member_fp uses {len(exemplar_hands)} exemplars + "
+              f"1000 holdout probes (seed=9999)", flush=True)
 
     comp_probes = _build_comparison_probes(
         n_probes=CONFIG["comparison"]["n_probes"],
@@ -567,6 +654,7 @@ def main():
             rid, equiv, enum_probes, fp_to_cls, grammar, prim_dict,
             enum_posteriors, enum_retained, visit_counts, comp_probes,
             top_k_summary,
+            parent_to_subs=parent_to_subs, member_fp_fn=member_fp_fn,
         )
         with open(OUT_DIR / "question_a" / f"{rid}.json", "w") as f:
             json.dump(result, f, indent=2, default=str)
@@ -578,6 +666,8 @@ def main():
                     rid, equiv, enum_probes, fp_to_cls, grammar, prim_dict,
                     enum_posteriors, enum_retained, cdir, comp_probes,
                     top_k_summary,
+                    parent_to_subs=parent_to_subs,
+                    member_fp_fn=member_fp_fn,
                 )
                 with open(OUT_DIR / "convergence_diagnostics" / f"{rid}.json",
                           "w") as f:
