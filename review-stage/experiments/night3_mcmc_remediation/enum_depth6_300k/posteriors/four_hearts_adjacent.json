@@ -1,0 +1,36 @@
+{
+  "rule_id": "four_hearts_adjacent",
+  "n_hyps_in_posterior": 2,
+  "enum_retained_mass": 0.9993087668662493,
+  "elapsed_seconds": 0.11,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.9979895648142212,
+      "cls_idx": 322,
+      "fingerprint": "6eb835b7d2e97ae191309f5a314a4769db0021f8f14e09d950cdd3a50ff56f48",
+      "canonical_program": "(\u03bb gt (count_suit $0 HEARTS) 3)",
+      "n_expressions": 79
+    },
+    {
+      "rank": 2,
+      "prob": 0.0020104351857788134,
+      "cls_idx": 98,
+      "fingerprint": "4ca49bdce081eb865339e402da03bfaf6a4c80124f6ce168c89cfa8ba3944aee",
+      "canonical_program": "(\u03bb lt 3 (max_suit_count $0))",
+      "n_expressions": 243
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.9979895648142212,
+      "cls_idx": 322,
+      "fingerprint": "6eb835b7d2e97ae191309f5a314a4769db0021f8f14e09d950cdd3a50ff56f48"
+    },
+    {
+      "prob": 0.0020104351857788134,
+      "cls_idx": 98,
+      "fingerprint": "4ca49bdce081eb865339e402da03bfaf6a4c80124f6ce168c89cfa8ba3944aee"
+    }
+  ]
+}

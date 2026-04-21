@@ -1,0 +1,439 @@
+{
+  "rule_id": "three_or_more_same_suit",
+  "elapsed_s": 3.02,
+  "parse_audit": {
+    "total_visits": 80004,
+    "n_programs": 468,
+    "n_parse_fail": 0,
+    "mass_parse_fail_frac": 0.0,
+    "n_predicate_fail": 0,
+    "mass_predicate_fail_frac": 0.0,
+    "n_mapped_programs": 136,
+    "mass_mapped_frac": 0.7793235338233089,
+    "n_unmapped_programs": 332,
+    "mass_unmapped_frac": 0.22067646617669118,
+    "n_distinct_unmapped_fps": 3,
+    "top_unmapped_fps": [
+      {
+        "fingerprint": "a50b45ea9633aeea...",
+        "count": 17580,
+        "mass_frac": 0.21973901304934754
+      },
+      {
+        "fingerprint": "03f77d78004eb003...",
+        "count": 64,
+        "mass_frac": 0.0007999600019999
+      },
+      {
+        "fingerprint": "91d46fbae37b7bdc...",
+        "count": 11,
+        "mass_frac": 0.00013749312534373282
+      }
+    ]
+  },
+  "enum_retained_mass": 0.9776889658906062,
+  "divergence": {
+    "n_union_classes": 63,
+    "n_enum_classes": 31,
+    "n_mcmc_classes": 55,
+    "total_variation": 0.14460732084684622,
+    "max_abs_diff_on_class": 0.06014485637019357,
+    "jensen_shannon": 0.0629784025499161,
+    "spearman_rank_corr": 0.3776154188463896
+  },
+  "top_k": {
+    "k": 50,
+    "enum_top_k_classes": [
+      0,
+      2,
+      6,
+      7,
+      12,
+      32,
+      33,
+      34,
+      77,
+      84,
+      87,
+      95,
+      169,
+      172,
+      177,
+      190,
+      192,
+      247,
+      249,
+      263,
+      267,
+      268,
+      271,
+      272,
+      275,
+      284,
+      295,
+      296,
+      358,
+      359,
+      383
+    ],
+    "mcmc_top_k_classes": [
+      0,
+      2,
+      6,
+      7,
+      8,
+      9,
+      12,
+      15,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      47,
+      77,
+      84,
+      87,
+      95,
+      169,
+      172,
+      177,
+      180,
+      190,
+      192,
+      227,
+      229,
+      230,
+      237,
+      238,
+      247,
+      249,
+      267,
+      268,
+      281,
+      294,
+      295,
+      297,
+      298,
+      302,
+      303,
+      309,
+      359,
+      441,
+      443,
+      880
+    ],
+    "overlap_size": 23,
+    "overlap_frac_of_k": 0.46,
+    "enum_top1_cls": 7,
+    "mcmc_top1_cls": 7
+  },
+  "extensional": {
+    "n_probes": 5000,
+    "mean_abs_diff": 0.03812109699048098,
+    "max_abs_diff": 0.11429860027472394,
+    "spearman_rank_corr": 0.9462208748270559,
+    "fraction_disagreement_above_0_5": 0.0,
+    "probe_hit_rate_enum": 0.8533383096203242,
+    "probe_hit_rate_mcmc": 0.8885953936711094
+  },
+  "n_enum_exc": 0,
+  "n_mcmc_exc": 0,
+  "validity_flags": {
+    "mcmc_parse_drop_excessive": false,
+    "mcmc_unmapped_excessive": true,
+    "enum_truncation_excessive": false,
+    "rare_rule_blind_spot": false,
+    "predicate_exceptions_present": false
+  },
+  "comparison_valid": false,
+  "enum_top20": [
+    {
+      "rank": 1,
+      "prob": 0.26175285636520934,
+      "cls_idx": 7,
+      "fingerprint": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006",
+      "canonical_program": "(\u03bb has_suit $0 DIAMONDS)"
+    },
+    {
+      "rank": 2,
+      "prob": 0.2583816280394336,
+      "cls_idx": 6,
+      "fingerprint": "78facf877a9d9a631a922ef94a466680e24352602ca0f130b3272eb787819856",
+      "canonical_program": "(\u03bb has_suit $0 CLUBS)"
+    },
+    {
+      "rank": 3,
+      "prob": 0.12703810785570804,
+      "cls_idx": 2,
+      "fingerprint": "ea989cd41502549fe2b7a9f47953cd080b88c4413891aeecd1134164bcd70407",
+      "canonical_program": "(\u03bb has_color $0 BLACK)"
+    },
+    {
+      "rank": 4,
+      "prob": 0.12700790206010132,
+      "cls_idx": 0,
+      "fingerprint": "24abae8be39ef33f43e2f2d1d5ccd003252a90be0e9fe1bf00b8b5001e610599",
+      "canonical_program": "(\u03bb has_color $0 RED)"
+    },
+    {
+      "rank": 5,
+      "prob": 0.09581503552302681,
+      "cls_idx": 87,
+      "fingerprint": "fdf27f1295a62b8e7a43185ef3ac43ff0048b3f3bbf0a88fdf60445f0be0f4a6",
+      "canonical_program": "(\u03bb lt 2 (max_suit_count $0))"
+    },
+    {
+      "rank": 6,
+      "prob": 0.023754060495560846,
+      "cls_idx": 295,
+      "fingerprint": "9fb8460ecf88de6ec473925c4ab5ba979692edf9115cf9fc4a4075864a3abe9f",
+      "canonical_program": "(\u03bb lt (count_suit $0 DIAMONDS) 2)"
+    },
+    {
+      "rank": 7,
+      "prob": 0.021831408759128295,
+      "cls_idx": 12,
+      "fingerprint": "59b988561723a257d91f0f5fccece70936b53e77b61de02737f0a2e3d5f3b7e5",
+      "canonical_program": "(\u03bb has_color (first_half $0) BLACK)"
+    },
+    {
+      "rank": 8,
+      "prob": 0.008506458555863195,
+      "cls_idx": 177,
+      "fingerprint": "3cd69a58da612750b0f3a67228394e1be1a7d720f909b2cd653e5bf6e5017b77",
+      "canonical_program": "(\u03bb lt (n_repeated_suits $0) 3)"
+    },
+    {
+      "rank": 9,
+      "prob": 0.008171674835287308,
+      "cls_idx": 192,
+      "fingerprint": "c563182d7a3841a47d612bf74af6575fb3a07330117cd38ddfe71b2692131e69",
+      "canonical_program": "(\u03bb has_color (head (adjacent_pairs $0)) BLACK)"
+    },
+    {
+      "rank": 10,
+      "prob": 0.007289179819023481,
+      "cls_idx": 32,
+      "fingerprint": "3b3461abd46cea61a96537e3fbdfcf70bb4eea810335fe737f0b3e08371ee157",
+      "canonical_program": "(\u03bb lt 1 (n_unique_suits $0))"
+    },
+    {
+      "rank": 11,
+      "prob": 0.007107413085971097,
+      "cls_idx": 84,
+      "fingerprint": "8b3c38d6a72c59ce70e66f03bc6a359e4f06b3aa419954bb2d2db795f2ef6368",
+      "canonical_program": "(\u03bb lt 2 (n_unique_suits $0))"
+    },
+    {
+      "rank": 12,
+      "prob": 0.005855631504730133,
+      "cls_idx": 77,
+      "fingerprint": "97f0bf9ff01d15bee56a07f7ee8f81e7c1107c643c584e947dc089ba4855a353",
+      "canonical_program": "(\u03bb lt 1 (n_unique_colors $0))"
+    },
+    {
+      "rank": 13,
+      "prob": 0.0050754239052964445,
+      "cls_idx": 95,
+      "fingerprint": "3fece1346f786f4bafe0104bfe09da6e6d59d019d8da695d1ed69ac9bb9e7724",
+      "canonical_program": "(\u03bb lt 3 (n_unique_ranks $0))"
+    },
+    {
+      "rank": 14,
+      "prob": 0.0048355403703364535,
+      "cls_idx": 172,
+      "fingerprint": "d8a236216a17ef15117abd0ee9bca9b099a4896cecf47555e94a67d71eba7729",
+      "canonical_program": "(\u03bb lt (n_repeated_ranks $0) 3)"
+    },
+    {
+      "rank": 15,
+      "prob": 0.004774583615919811,
+      "cls_idx": 33,
+      "fingerprint": "a09f9cfeeaebb3e251970d30305c3a0cdfbcdc2edc9d2839eff3079332de5892",
+      "canonical_program": "(\u03bb lt 2 (n_unique_ranks $0))"
+    },
+    {
+      "rank": 16,
+      "prob": 0.004723115216820656,
+      "cls_idx": 169,
+      "fingerprint": "ff4402ca66a33d297bb25e077f88186c43e2e6d4b2ffab8c6dde7241cba298a0",
+      "canonical_program": "(\u03bb lt (max_suit_count $0) 5)"
+    },
+    {
+      "rank": 17,
+      "prob": 0.0033096719748131748,
+      "cls_idx": 249,
+      "fingerprint": "3642a9591fff3c28e069ff128e1163bf88f7168c3fbc3ff1d61520fefc29b2d4",
+      "canonical_program": "(\u03bb lt 3 (rank_val (last $0)))"
+    },
+    {
+      "rank": 18,
+      "prob": 0.002557162736611998,
+      "cls_idx": 275,
+      "fingerprint": "b649b4876d91de48bf7c8297fa5960dfc532d0322a44c04a1efffb5f4e60af5a",
+      "canonical_program": "(\u03bb has_suit (drop 2 $0) CLUBS)"
+    },
+    {
+      "rank": 19,
+      "prob": 0.0025026916608890514,
+      "cls_idx": 263,
+      "fingerprint": "361c9f3f78f546915aee81aac331875747787405230231312fbf63054593ac38",
+      "canonical_program": "(\u03bb has_suit (take 4 $0) CLUBS)"
+    },
+    {
+      "rank": 20,
+      "prob": 0.0024099469928061754,
+      "cls_idx": 359,
+      "fingerprint": "554da2915dcef4c1a1a1d1b35f36e401221180911d85336d89caed803009ca12",
+      "canonical_program": "(\u03bb lt (n_repeated_ranks (first_half $0)) 1)"
+    }
+  ],
+  "mcmc_top20": [
+    {
+      "rank": 1,
+      "prob": 0.26348457874224124,
+      "cls_idx": 7,
+      "fingerprint": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006",
+      "canonical_program": "(\u03bb has_suit $0 DIAMONDS)"
+    },
+    {
+      "rank": 2,
+      "prob": 0.2581597138687068,
+      "cls_idx": 6,
+      "fingerprint": "78facf877a9d9a631a922ef94a466680e24352602ca0f130b3272eb787819856",
+      "canonical_program": "(\u03bb has_suit $0 CLUBS)"
+    },
+    {
+      "rank": 3,
+      "prob": 0.1834351793934145,
+      "cls_idx": 0,
+      "fingerprint": "24abae8be39ef33f43e2f2d1d5ccd003252a90be0e9fe1bf00b8b5001e610599",
+      "canonical_program": "(\u03bb has_color $0 RED)"
+    },
+    {
+      "rank": 4,
+      "prob": 0.1721438996615824,
+      "cls_idx": 2,
+      "fingerprint": "ea989cd41502549fe2b7a9f47953cd080b88c4413891aeecd1134164bcd70407",
+      "canonical_program": "(\u03bb has_color $0 BLACK)"
+    },
+    {
+      "rank": 5,
+      "prob": 0.03567017915283324,
+      "cls_idx": 87,
+      "fingerprint": "fdf27f1295a62b8e7a43185ef3ac43ff0048b3f3bbf0a88fdf60445f0be0f4a6",
+      "canonical_program": "(\u03bb lt 2 (max_suit_count $0))"
+    },
+    {
+      "rank": 6,
+      "prob": 0.015926478371746138,
+      "cls_idx": 32,
+      "fingerprint": "3b3461abd46cea61a96537e3fbdfcf70bb4eea810335fe737f0b3e08371ee157",
+      "canonical_program": "(\u03bb lt 1 (n_unique_suits $0))"
+    },
+    {
+      "rank": 7,
+      "prob": 0.013568782177741424,
+      "cls_idx": 177,
+      "fingerprint": "3cd69a58da612750b0f3a67228394e1be1a7d720f909b2cd653e5bf6e5017b77",
+      "canonical_program": "(\u03bb lt (n_repeated_suits $0) 3)"
+    },
+    {
+      "rank": 8,
+      "prob": 0.00737782482477666,
+      "cls_idx": 84,
+      "fingerprint": "8b3c38d6a72c59ce70e66f03bc6a359e4f06b3aa419954bb2d2db795f2ef6368",
+      "canonical_program": "(\u03bb lt 2 (n_unique_suits $0))"
+    },
+    {
+      "rank": 9,
+      "prob": 0.004571043641437713,
+      "cls_idx": 169,
+      "fingerprint": "ff4402ca66a33d297bb25e077f88186c43e2e6d4b2ffab8c6dde7241cba298a0",
+      "canonical_program": "(\u03bb lt (max_suit_count $0) 5)"
+    },
+    {
+      "rank": 10,
+      "prob": 0.004121958652103482,
+      "cls_idx": 229,
+      "fingerprint": "298756d0729977b0f440f45cedd3221010adf9e62aec2f36320a2a30f7375a67",
+      "canonical_program": "(\u03bb not (has_suit (first_half $0) HEARTS))"
+    },
+    {
+      "rank": 11,
+      "prob": 0.0029671686795297437,
+      "cls_idx": 77,
+      "fingerprint": "97f0bf9ff01d15bee56a07f7ee8f81e7c1107c643c584e947dc089ba4855a353",
+      "canonical_program": "(\u03bb lt 1 (n_unique_colors $0))"
+    },
+    {
+      "rank": 12,
+      "prob": 0.002742626184862628,
+      "cls_idx": 249,
+      "fingerprint": "3642a9591fff3c28e069ff128e1163bf88f7168c3fbc3ff1d61520fefc29b2d4",
+      "canonical_program": "(\u03bb lt 3 (rank_val (last $0)))"
+    },
+    {
+      "rank": 13,
+      "prob": 0.0027105486856244688,
+      "cls_idx": 38,
+      "fingerprint": "49197f01124e3a40a316b53ffc7a6dafe154abc0cec77b9b6807524b7caddf8c",
+      "canonical_program": "(\u03bb le (count_suit $0 HEARTS) 5)"
+    },
+    {
+      "rank": 14,
+      "prob": 0.0025661999390527513,
+      "cls_idx": 8,
+      "fingerprint": "985e7f28bdfe262507083821c2663898d3b631a712b3e40dc4c7360ae74c670c",
+      "canonical_program": "(\u03bb has_suit $0 HEARTS)"
+    },
+    {
+      "rank": 15,
+      "prob": 0.0023576961940047153,
+      "cls_idx": 34,
+      "fingerprint": "c7143ebde0ef686d2fa6737267363edd11c1c78ba5098ae172fa57ffefb611fb",
+      "canonical_program": "(\u03bb lt 5 (max_rank $0))"
+    },
+    {
+      "rank": 16,
+      "prob": 0.0023095799451474763,
+      "cls_idx": 12,
+      "fingerprint": "59b988561723a257d91f0f5fccece70936b53e77b61de02737f0a2e3d5f3b7e5",
+      "canonical_program": "(\u03bb has_color (first_half $0) BLACK)"
+    },
+    {
+      "rank": 17,
+      "prob": 0.002004843702384962,
+      "cls_idx": 95,
+      "fingerprint": "3fece1346f786f4bafe0104bfe09da6e6d59d019d8da695d1ed69ac9bb9e7724",
+      "canonical_program": "(\u03bb lt 3 (n_unique_ranks $0))"
+    },
+    {
+      "rank": 18,
+      "prob": 0.0019246499542895637,
+      "cls_idx": 31,
+      "fingerprint": "1d7d89c531dd85ade11e1b5517eedb2d33c5de695198640788a593115972af43",
+      "canonical_program": "(\u03bb lt 0 (n_repeated_ranks $0))"
+    },
+    {
+      "rank": 19,
+      "prob": 0.0017321849588606071,
+      "cls_idx": 309,
+      "fingerprint": "dd513bafdf14aca2004bc5ce9bf3e3aa66235e24491d3179c336f906ed28d0fa",
+      "canonical_program": "(\u03bb lt (count_suit $0 SPADES) 5)"
+    },
+    {
+      "rank": 20,
+      "prob": 0.0016519912107652087,
+      "cls_idx": 36,
+      "fingerprint": "905eb4b75701e0b7e30d1e998b89aa2350324cbfa90bcc0484f1d06919239ae3",
+      "canonical_program": "(\u03bb le (count_suit $0 CLUBS) 5)"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "rule_id": "all_odd",
+  "n_hyps_in_posterior": 5,
+  "enum_retained_mass": 0.9978108323227483,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.538188854343187,
+      "cls_idx": 1659,
+      "fingerprint": "d18bafa293ce8cc15b7ae32c02bd948e3259e7437254002fb2f01d3174224640",
+      "canonical_program": "(\u03bb gt (+ 5 5) (max_rank $0))",
+      "n_expressions": 12
+    },
+    {
+      "rank": 2,
+      "prob": 0.38264636706676697,
+      "cls_idx": 82,
+      "fingerprint": "2cc3fe650544a76a080612d4c4d57313b9e5660408b8b5596b44880596184169",
+      "canonical_program": "(\u03bb lt 1 (n_repeated_ranks $0))",
+      "n_expressions": 359
+    },
+    {
+      "rank": 3,
+      "prob": 0.0756171646678866,
+      "cls_idx": 160,
+      "fingerprint": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f",
+      "canonical_program": "(\u03bb lt (n_unique_ranks $0) 5)",
+      "n_expressions": 192
+    },
+    {
+      "rank": 4,
+      "prob": 0.0017889701945641664,
+      "cls_idx": 585,
+      "fingerprint": "ca3404d5a53e43dcdba8a4b8856871686b4a0bb75d27bb904ad537651384b04d",
+      "canonical_program": "(\u03bb le (n_unique_colors $0) (n_repeated_ranks $0))",
+      "n_expressions": 16
+    },
+    {
+      "rank": 5,
+      "prob": 0.0017586437275953185,
+      "cls_idx": 1661,
+      "fingerprint": "5c29b6eb11a550dbbe1b5c242c4f91530623981768160cdc61c119945b036d40",
+      "canonical_program": "(\u03bb ge (+ 5 5) (max_rank $0))",
+      "n_expressions": 4
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.538188854343187,
+      "cls_idx": 1659,
+      "fingerprint": "d18bafa293ce8cc15b7ae32c02bd948e3259e7437254002fb2f01d3174224640"
+    },
+    {
+      "prob": 0.38264636706676697,
+      "cls_idx": 82,
+      "fingerprint": "2cc3fe650544a76a080612d4c4d57313b9e5660408b8b5596b44880596184169"
+    },
+    {
+      "prob": 0.0756171646678866,
+      "cls_idx": 160,
+      "fingerprint": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f"
+    },
+    {
+      "prob": 0.0017889701945641664,
+      "cls_idx": 585,
+      "fingerprint": "ca3404d5a53e43dcdba8a4b8856871686b4a0bb75d27bb904ad537651384b04d"
+    },
+    {
+      "prob": 0.0017586437275953185,
+      "cls_idx": 1661,
+      "fingerprint": "5c29b6eb11a550dbbe1b5c242c4f91530623981768160cdc61c119945b036d40"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "rule_id": "all_clubs_or_hearts",
+  "n_hyps_in_posterior": 5,
+  "enum_retained_mass": 0.9982797718381969,
+  "elapsed_seconds": 0.08,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.8952601733840949,
+      "cls_idx": 154,
+      "fingerprint": "00b3d19488546a1ff56d535b8ce8f6c116f7522c1f4d7927dfa8424c89bb9d46",
+      "canonical_program": "(\u03bb lt (n_unique_suits $0) 3)",
+      "n_expressions": 261
+    },
+    {
+      "rank": 2,
+      "prob": 0.0773515477052574,
+      "cls_idx": 577,
+      "fingerprint": "eba6b5d1a57ce7fd4b2a95bb65b614f8ba516056f409e0b8e4aba08ba0e072b6",
+      "canonical_program": "(\u03bb le (n_unique_suits $0) (n_unique_colors $0))",
+      "n_expressions": 16
+    },
+    {
+      "rank": 3,
+      "prob": 0.015887565800148665,
+      "cls_idx": 1583,
+      "fingerprint": "047a1b4857a756453e01133b462da034552d14b1e493c72b4c1e752b7ee6ca62",
+      "canonical_program": "(\u03bb ge (n_unique_colors (second_half $0)) (n_unique_suits $0))",
+      "n_expressions": 2
+    },
+    {
+      "rank": 4,
+      "prob": 0.005860868486633374,
+      "cls_idx": 30,
+      "fingerprint": "ff0dee07d924749766a61396920d1d6342a4f21eb71d231fee015b310398c15b",
+      "canonical_program": "(\u03bb not (has_suit $0 SPADES))",
+      "n_expressions": 153
+    },
+    {
+      "rank": 5,
+      "prob": 0.005639844623865621,
+      "cls_idx": 28,
+      "fingerprint": "c96f283ede0a5bff66938f25b7940dd9766f9b994d30538469bc4d026ae0e116",
+      "canonical_program": "(\u03bb not (has_suit $0 DIAMONDS))",
+      "n_expressions": 153
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.8952601733840949,
+      "cls_idx": 154,
+      "fingerprint": "00b3d19488546a1ff56d535b8ce8f6c116f7522c1f4d7927dfa8424c89bb9d46"
+    },
+    {
+      "prob": 0.0773515477052574,
+      "cls_idx": 577,
+      "fingerprint": "eba6b5d1a57ce7fd4b2a95bb65b614f8ba516056f409e0b8e4aba08ba0e072b6"
+    },
+    {
+      "prob": 0.015887565800148665,
+      "cls_idx": 1583,
+      "fingerprint": "047a1b4857a756453e01133b462da034552d14b1e493c72b4c1e752b7ee6ca62"
+    },
+    {
+      "prob": 0.005860868486633374,
+      "cls_idx": 30,
+      "fingerprint": "ff0dee07d924749766a61396920d1d6342a4f21eb71d231fee015b310398c15b"
+    },
+    {
+      "prob": 0.005639844623865621,
+      "cls_idx": 28,
+      "fingerprint": "c96f283ede0a5bff66938f25b7940dd9766f9b994d30538469bc4d026ae0e116"
+    }
+  ]
+}

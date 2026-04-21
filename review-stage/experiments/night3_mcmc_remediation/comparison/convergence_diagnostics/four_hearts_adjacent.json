@@ -1,0 +1,187 @@
+{
+  "rule_id": "four_hearts_adjacent",
+  "n_checkpoints": 10,
+  "first_valid_step": 11999,
+  "trajectory": [
+    {
+      "step": 1999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9930952077696733,
+      "ext_mean_abs_diff": 0.8596742564070768,
+      "topk_overlap": 1,
+      "comparison_valid": false,
+      "mass_mapped": 0.596875,
+      "mass_unmapped": 0.403125,
+      "n_mcmc_classes": 21,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": true,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 3999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9918885424115078,
+      "ext_mean_abs_diff": 0.7431473845409996,
+      "topk_overlap": 1,
+      "comparison_valid": false,
+      "mass_mapped": 0.75225,
+      "mass_unmapped": 0.24775,
+      "n_mcmc_classes": 26,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": true,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 5999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9915078707476808,
+      "ext_mean_abs_diff": 0.6560756367520592,
+      "topk_overlap": 1,
+      "comparison_valid": false,
+      "mass_mapped": 0.8189583333333333,
+      "mass_unmapped": 0.18104166666666666,
+      "n_mcmc_classes": 33,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": true,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 7999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9910156725361858,
+      "ext_mean_abs_diff": 0.5787533745194756,
+      "topk_overlap": 1,
+      "comparison_valid": false,
+      "mass_mapped": 0.86259375,
+      "mass_unmapped": 0.13740625,
+      "n_mcmc_classes": 36,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": true,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 9999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9907030073055416,
+      "ext_mean_abs_diff": 0.5154393572031889,
+      "topk_overlap": 1,
+      "comparison_valid": false,
+      "mass_mapped": 0.890075,
+      "mass_unmapped": 0.109925,
+      "n_mcmc_classes": 36,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": true,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 11999,
+      "total_variation": 0.9979895648142212,
+      "jensen_shannon": 0.9905350670976805,
+      "ext_mean_abs_diff": 0.46698558521544803,
+      "topk_overlap": 1,
+      "comparison_valid": true,
+      "mass_mapped": 0.9083958333333333,
+      "mass_unmapped": 0.09160416666666667,
+      "n_mcmc_classes": 38,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 13999,
+      "total_variation": 0.9605498810749037,
+      "jensen_shannon": 0.8743613776227852,
+      "ext_mean_abs_diff": 0.42765181694462,
+      "topk_overlap": 2,
+      "comparison_valid": true,
+      "mass_mapped": 0.9214821428571428,
+      "mass_unmapped": 0.07851785714285714,
+      "n_mcmc_classes": 43,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 15999,
+      "total_variation": 0.926785095240542,
+      "jensen_shannon": 0.8017883174603717,
+      "ext_mean_abs_diff": 0.3950805420438112,
+      "topk_overlap": 2,
+      "comparison_valid": true,
+      "mass_mapped": 0.931296875,
+      "mass_unmapped": 0.068703125,
+      "n_mcmc_classes": 43,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 17999,
+      "total_variation": 0.876042313952573,
+      "jensen_shannon": 0.7125129683808045,
+      "ext_mean_abs_diff": 0.35411374029379356,
+      "topk_overlap": 2,
+      "comparison_valid": true,
+      "mass_mapped": 0.9389305555555556,
+      "mass_unmapped": 0.06106944444444445,
+      "n_mcmc_classes": 44,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    },
+    {
+      "step": 19999,
+      "total_variation": 0.8070183070598993,
+      "jensen_shannon": 0.6126861190698982,
+      "ext_mean_abs_diff": 0.3186173858540717,
+      "topk_overlap": 2,
+      "comparison_valid": true,
+      "mass_mapped": 0.9450375,
+      "mass_unmapped": 0.0549625,
+      "n_mcmc_classes": 44,
+      "validity_flags": {
+        "mcmc_parse_drop_excessive": false,
+        "mcmc_unmapped_excessive": false,
+        "enum_truncation_excessive": false,
+        "rare_rule_blind_spot": false,
+        "predicate_exceptions_present": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "n_rules_completed": 18,
+  "n_chains_per_rule": 4,
+  "n_steps_per_chain": 20000,
+  "checkpoint_steps": [
+    1999,
+    3999,
+    5999,
+    7999,
+    9999,
+    11999,
+    13999,
+    15999,
+    17999,
+    19999
+  ],
+  "total_wall_seconds": 45549.6,
+  "config": {
+    "n_steps": 20000,
+    "n_chains": 4,
+    "max_depth": 6,
+    "max_nodes": 25,
+    "noise_epsilon": 0.01,
+    "beta_start": 0.3,
+    "beta_end": 1.0,
+    "init_max_depth": 3,
+    "base_seed": 42,
+    "n_checkpoints": 10,
+    "ext_probes_native": 2000,
+    "_note_budget": "Cut from 50k/10k-probes to 20k/2k-probes after smoke measured 171 ms/step at 2k probes. Full 50k/10k-probes config would have taken ~15 h; 20k/2k-probes is ~6-7 h on 12 cores, leaves headroom for comparison + report overnight."
+  }
+}

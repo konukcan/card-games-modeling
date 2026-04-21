@@ -1,0 +1,270 @@
+{
+  "rule_id": "all_same_color",
+  "elapsed_s": 1.44,
+  "parse_audit": {
+    "total_visits": 80004,
+    "n_programs": 272,
+    "n_parse_fail": 0,
+    "mass_parse_fail_frac": 0.0,
+    "n_predicate_fail": 0,
+    "mass_predicate_fail_frac": 0.0,
+    "n_mapped_programs": 83,
+    "mass_mapped_frac": 0.8096345182740863,
+    "n_unmapped_programs": 189,
+    "mass_unmapped_frac": 0.1903654817259137,
+    "n_distinct_unmapped_fps": 3,
+    "top_unmapped_fps": [
+      {
+        "fingerprint": "a50b45ea9633aeea...",
+        "count": 15207,
+        "mass_frac": 0.190077996100195
+      },
+      {
+        "fingerprint": "03f77d78004eb003...",
+        "count": 14,
+        "mass_frac": 0.00017499125043747812
+      },
+      {
+        "fingerprint": "dce1dd52fbc020e7...",
+        "count": 9,
+        "mass_frac": 0.00011249437528123593
+      }
+    ]
+  },
+  "enum_retained_mass": 0.9999737654774934,
+  "divergence": {
+    "n_union_classes": 36,
+    "n_enum_classes": 2,
+    "n_mcmc_classes": 36,
+    "total_variation": 0.5666324069224311,
+    "max_abs_diff_on_class": 0.5666324069224311,
+    "jensen_shannon": 0.3611063898528648,
+    "spearman_rank_corr": 0.39648956342279157
+  },
+  "top_k": {
+    "k": 50,
+    "enum_top_k_classes": [
+      154,
+      162
+    ],
+    "mcmc_top_k_classes": [
+      6,
+      7,
+      8,
+      9,
+      17,
+      19,
+      20,
+      21,
+      26,
+      32,
+      33,
+      34,
+      40,
+      41,
+      42,
+      83,
+      86,
+      87,
+      95,
+      97,
+      154,
+      162,
+      172,
+      177,
+      215,
+      216,
+      247,
+      249,
+      274,
+      282,
+      332,
+      369,
+      378,
+      556,
+      569,
+      578
+    ],
+    "overlap_size": 2,
+    "overlap_frac_of_k": 0.04,
+    "enum_top1_cls": 162,
+    "mcmc_top1_cls": 154
+  },
+  "extensional": {
+    "n_probes": 5000,
+    "mean_abs_diff": 0.07034902093477854,
+    "max_abs_diff": 0.5474889234259666,
+    "spearman_rank_corr": 0.4128018676145475,
+    "fraction_disagreement_above_0_5": 0.0396,
+    "probe_hit_rate_enum": 0.020853770308621598,
+    "probe_hit_rate_mcmc": 0.09026293883348259
+  },
+  "n_enum_exc": 0,
+  "n_mcmc_exc": 0,
+  "validity_flags": {
+    "mcmc_parse_drop_excessive": false,
+    "mcmc_unmapped_excessive": true,
+    "enum_truncation_excessive": false,
+    "rare_rule_blind_spot": false,
+    "predicate_exceptions_present": false
+  },
+  "comparison_valid": false,
+  "enum_top20": [
+    {
+      "rank": 1,
+      "prob": 0.9986421639236971,
+      "cls_idx": 162,
+      "fingerprint": "e8694b20023779409be00e728db011ab78da96f4b241cf9dd50217c495227ea6",
+      "canonical_program": "(\u03bb lt (n_unique_colors $0) 2)"
+    },
+    {
+      "rank": 2,
+      "prob": 0.0013578360763029274,
+      "cls_idx": 154,
+      "fingerprint": "00b3d19488546a1ff56d535b8ce8f6c116f7522c1f4d7927dfa8424c89bb9d46",
+      "canonical_program": "(\u03bb lt (n_unique_suits $0) 3)"
+    }
+  ],
+  "mcmc_top20": [
+    {
+      "rank": 1,
+      "prob": 0.5023620588507735,
+      "cls_idx": 154,
+      "fingerprint": "00b3d19488546a1ff56d535b8ce8f6c116f7522c1f4d7927dfa8424c89bb9d46",
+      "canonical_program": "(\u03bb lt (n_unique_suits $0) 3)"
+    },
+    {
+      "rank": 2,
+      "prob": 0.4320097570012659,
+      "cls_idx": 162,
+      "fingerprint": "e8694b20023779409be00e728db011ab78da96f4b241cf9dd50217c495227ea6",
+      "canonical_program": "(\u03bb lt (n_unique_colors $0) 2)"
+    },
+    {
+      "rank": 3,
+      "prob": 0.010328218112205514,
+      "cls_idx": 9,
+      "fingerprint": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c",
+      "canonical_program": "(\u03bb has_suit $0 SPADES)"
+    },
+    {
+      "rank": 4,
+      "prob": 0.00915490783338994,
+      "cls_idx": 8,
+      "fingerprint": "985e7f28bdfe262507083821c2663898d3b631a712b3e40dc4c7360ae74c670c",
+      "canonical_program": "(\u03bb has_suit $0 HEARTS)"
+    },
+    {
+      "rank": 5,
+      "prob": 0.007333189242597338,
+      "cls_idx": 6,
+      "fingerprint": "78facf877a9d9a631a922ef94a466680e24352602ca0f130b3272eb787819856",
+      "canonical_program": "(\u03bb has_suit $0 CLUBS)"
+    },
+    {
+      "rank": 6,
+      "prob": 0.0068237255689011025,
+      "cls_idx": 7,
+      "fingerprint": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006",
+      "canonical_program": "(\u03bb has_suit $0 DIAMONDS)"
+    },
+    {
+      "rank": 7,
+      "prob": 0.006283385308920246,
+      "cls_idx": 86,
+      "fingerprint": "1c874791b8b6a30e9784f24d41bac4add362b9b65ad6fc947b0103130925413e",
+      "canonical_program": "(\u03bb lt 2 (min_rank $0))"
+    },
+    {
+      "rank": 8,
+      "prob": 0.004091147682712199,
+      "cls_idx": 177,
+      "fingerprint": "3cd69a58da612750b0f3a67228394e1be1a7d720f909b2cd653e5bf6e5017b77",
+      "canonical_program": "(\u03bb lt (n_repeated_suits $0) 3)"
+    },
+    {
+      "rank": 9,
+      "prob": 0.002840645938185074,
+      "cls_idx": 556,
+      "fingerprint": "83bef12cbfd1b43c07efb6a4d7be82a14c102ef14ad57e68d455cd6964309951",
+      "canonical_program": "(\u03bb lt (n_unique_colors $0) (n_repeated_suits $0))"
+    },
+    {
+      "rank": 10,
+      "prob": 0.0026245098341927315,
+      "cls_idx": 249,
+      "fingerprint": "3642a9591fff3c28e069ff128e1163bf88f7168c3fbc3ff1d61520fefc29b2d4",
+      "canonical_program": "(\u03bb lt 3 (rank_val (last $0)))"
+    },
+    {
+      "rank": 11,
+      "prob": 0.0022076759193503568,
+      "cls_idx": 83,
+      "fingerprint": "b1293c4d664da00a2567bc767fdfd7d460f52556b80abcb7047694f3705c79ea",
+      "canonical_program": "(\u03bb lt 1 (n_repeated_suits $0))"
+    },
+    {
+      "rank": 12,
+      "prob": 0.002068731281069565,
+      "cls_idx": 95,
+      "fingerprint": "3fece1346f786f4bafe0104bfe09da6e6d59d019d8da695d1ed69ac9bb9e7724",
+      "canonical_program": "(\u03bb lt 3 (n_unique_ranks $0))"
+    },
+    {
+      "rank": 13,
+      "prob": 0.002068731281069565,
+      "cls_idx": 172,
+      "fingerprint": "d8a236216a17ef15117abd0ee9bca9b099a4896cecf47555e94a67d71eba7729",
+      "canonical_program": "(\u03bb lt (n_repeated_ranks $0) 3)"
+    },
+    {
+      "rank": 14,
+      "prob": 0.0015901441936579492,
+      "cls_idx": 87,
+      "fingerprint": "fdf27f1295a62b8e7a43185ef3ac43ff0048b3f3bbf0a88fdf60445f0be0f4a6",
+      "canonical_program": "(\u03bb lt 2 (max_suit_count $0))"
+    },
+    {
+      "rank": 15,
+      "prob": 0.0013740080896656067,
+      "cls_idx": 369,
+      "fingerprint": "321ae3dbf9028e3f1f13e9f83726b4a81823c5db6c65ded117d7c1f4533c1af6",
+      "canonical_program": "(\u03bb gt (max_rank (first_half $0)) 4)"
+    },
+    {
+      "rank": 16,
+      "prob": 0.001157871985673264,
+      "cls_idx": 17,
+      "fingerprint": "3e4ddc5a10f13a4200af9355906f2401aaa28c7182c7b7d3b59b6a1f8f135488",
+      "canonical_program": "(\u03bb not (has_color $0 RED))"
+    },
+    {
+      "rank": 17,
+      "prob": 0.0007719146571155093,
+      "cls_idx": 19,
+      "fingerprint": "64502833cdf0739dac49fb09c0befb41276b2c97b35c3fb92b94c05ed5b451c4",
+      "canonical_program": "(\u03bb has_suit (first_half $0) CLUBS)"
+    },
+    {
+      "rank": 18,
+      "prob": 0.0007255997776885787,
+      "cls_idx": 378,
+      "fingerprint": "923cd54b53fc9c810ab913c3cff8be6f854d888f54dd91295b5d505a76d73bb0",
+      "canonical_program": "(\u03bb gt (min_rank (first_half $0)) 2)"
+    },
+    {
+      "rank": 19,
+      "prob": 0.0005249019668385463,
+      "cls_idx": 33,
+      "fingerprint": "a09f9cfeeaebb3e251970d30305c3a0cdfbcdc2edc9d2839eff3079332de5892",
+      "canonical_program": "(\u03bb lt 2 (n_unique_ranks $0))"
+    },
+    {
+      "rank": 20,
+      "prob": 0.0005094636736962361,
+      "cls_idx": 32,
+      "fingerprint": "3b3461abd46cea61a96537e3fbdfcf70bb4eea810335fe737f0b3e08371ee157",
+      "canonical_program": "(\u03bb lt 1 (n_unique_suits $0))"
+    }
+  ]
+}

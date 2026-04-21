@@ -1,0 +1,23 @@
+{
+  "rule_id": "all_same_suit",
+  "n_hyps_in_posterior": 1,
+  "enum_retained_mass": 0.9999999320185277,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 1.0,
+      "cls_idx": 107,
+      "fingerprint": "2080a53e70bbb87d66a3196c6d03dd2178bceda09c1fb3476ba0510a64c66071",
+      "canonical_program": "(\u03bb lt 5 (max_suit_count $0))",
+      "n_expressions": 475
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 1.0,
+      "cls_idx": 107,
+      "fingerprint": "2080a53e70bbb87d66a3196c6d03dd2178bceda09c1fb3476ba0510a64c66071"
+    }
+  ]
+}

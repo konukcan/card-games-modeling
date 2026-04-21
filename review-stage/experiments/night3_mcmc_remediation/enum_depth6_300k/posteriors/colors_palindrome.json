@@ -1,0 +1,350 @@
+{
+  "rule_id": "colors_palindrome",
+  "n_hyps_in_posterior": 36,
+  "enum_retained_mass": 0.9711941581574246,
+  "elapsed_seconds": 0.56,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.23155683216099002,
+      "cls_idx": 9,
+      "fingerprint": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c",
+      "canonical_program": "(\u03bb has_suit $0 SPADES)",
+      "n_expressions": 386
+    },
+    {
+      "rank": 2,
+      "prob": 0.23024913469742558,
+      "cls_idx": 6,
+      "fingerprint": "78facf877a9d9a631a922ef94a466680e24352602ca0f130b3272eb787819856",
+      "canonical_program": "(\u03bb has_suit $0 CLUBS)",
+      "n_expressions": 386
+    },
+    {
+      "rank": 3,
+      "prob": 0.168667256211563,
+      "cls_idx": 19,
+      "fingerprint": "64502833cdf0739dac49fb09c0befb41276b2c97b35c3fb92b94c05ed5b451c4",
+      "canonical_program": "(\u03bb has_suit (first_half $0) CLUBS)",
+      "n_expressions": 114
+    },
+    {
+      "rank": 4,
+      "prob": 0.11320624701269733,
+      "cls_idx": 2,
+      "fingerprint": "ea989cd41502549fe2b7a9f47953cd080b88c4413891aeecd1134164bcd70407",
+      "canonical_program": "(\u03bb has_color $0 BLACK)",
+      "n_expressions": 546
+    },
+    {
+      "rank": 5,
+      "prob": 0.08095505109867504,
+      "cls_idx": 31,
+      "fingerprint": "1d7d89c531dd85ade11e1b5517eedb2d33c5de695198640788a593115972af43",
+      "canonical_program": "(\u03bb lt 0 (n_repeated_ranks $0))",
+      "n_expressions": 536
+    },
+    {
+      "rank": 6,
+      "prob": 0.0219768179710293,
+      "cls_idx": 334,
+      "fingerprint": "3cec037bd22ca774e54b1a53f5240dd3901e320f1e225df0ef9ceddbd7ebc61a",
+      "canonical_program": "(\u03bb lt (n_unique_suits (second_half $0)) 3)",
+      "n_expressions": 194
+    },
+    {
+      "rank": 7,
+      "prob": 0.021089074331700104,
+      "cls_idx": 298,
+      "fingerprint": "501762b85afa8b6d6e1b29dd3cbcc798ea7621865796726fbafea36ab8c106f6",
+      "canonical_program": "(\u03bb lt (count_suit $0 HEARTS) 2)",
+      "n_expressions": 87
+    },
+    {
+      "rank": 8,
+      "prob": 0.019561816570275916,
+      "cls_idx": 15,
+      "fingerprint": "9584ca079af1b02b0697b7703b52387ac4e9107e172ee764e69e044f24ed4bf1",
+      "canonical_program": "(\u03bb has_color (second_half $0) BLACK)",
+      "n_expressions": 187
+    },
+    {
+      "rank": 9,
+      "prob": 0.019454413280683914,
+      "cls_idx": 12,
+      "fingerprint": "59b988561723a257d91f0f5fccece70936b53e77b61de02737f0a2e3d5f3b7e5",
+      "canonical_program": "(\u03bb has_color (first_half $0) BLACK)",
+      "n_expressions": 181
+    },
+    {
+      "rank": 10,
+      "prob": 0.014069520136256824,
+      "cls_idx": 165,
+      "fingerprint": "db0b6914c886aecfd38833da0c7565664cb8a0387d01ddca14b67a336ee954b3",
+      "canonical_program": "(\u03bb lt (min_rank $0) 5)",
+      "n_expressions": 238
+    },
+    {
+      "rank": 11,
+      "prob": 0.00878580863028164,
+      "cls_idx": 208,
+      "fingerprint": "a5c7b316aed39fa507aeaa020ff6a2098ed75e549d2b9018a115e78cadbcfb07",
+      "canonical_program": "(\u03bb has_suit (first_half (sort_by_rank $0)) SPADES)",
+      "n_expressions": 12
+    },
+    {
+      "rank": 12,
+      "prob": 0.007580278585163553,
+      "cls_idx": 177,
+      "fingerprint": "3cd69a58da612750b0f3a67228394e1be1a7d720f909b2cd653e5bf6e5017b77",
+      "canonical_program": "(\u03bb lt (n_repeated_suits $0) 3)",
+      "n_expressions": 293
+    },
+    {
+      "rank": 13,
+      "prob": 0.00649553669399417,
+      "cls_idx": 32,
+      "fingerprint": "3b3461abd46cea61a96537e3fbdfcf70bb4eea810335fe737f0b3e08371ee157",
+      "canonical_program": "(\u03bb lt 1 (n_unique_suits $0))",
+      "n_expressions": 478
+    },
+    {
+      "rank": 14,
+      "prob": 0.004522813681779203,
+      "cls_idx": 95,
+      "fingerprint": "3fece1346f786f4bafe0104bfe09da6e6d59d019d8da695d1ed69ac9bb9e7724",
+      "canonical_program": "(\u03bb lt 3 (n_unique_ranks $0))",
+      "n_expressions": 243
+    },
+    {
+      "rank": 15,
+      "prob": 0.004309048574825591,
+      "cls_idx": 172,
+      "fingerprint": "d8a236216a17ef15117abd0ee9bca9b099a4896cecf47555e94a67d71eba7729",
+      "canonical_program": "(\u03bb lt (n_repeated_ranks $0) 3)",
+      "n_expressions": 273
+    },
+    {
+      "rank": 16,
+      "prob": 0.004254728768634675,
+      "cls_idx": 33,
+      "fingerprint": "a09f9cfeeaebb3e251970d30305c3a0cdfbcdc2edc9d2839eff3079332de5892",
+      "canonical_program": "(\u03bb lt 2 (n_unique_ranks $0))",
+      "n_expressions": 275
+    },
+    {
+      "rank": 17,
+      "prob": 0.004208864229244771,
+      "cls_idx": 169,
+      "fingerprint": "ff4402ca66a33d297bb25e077f88186c43e2e6d4b2ffab8c6dde7241cba298a0",
+      "canonical_program": "(\u03bb lt (max_suit_count $0) 5)",
+      "n_expressions": 192
+    },
+    {
+      "rank": 18,
+      "prob": 0.003910866157973232,
+      "cls_idx": 186,
+      "fingerprint": "21e6568f81fe5c507f74b5d28aa87d012a0559b5aea5297e5e69389a9b02fd3e",
+      "canonical_program": "(\u03bb has_color (second_half (first_half $0)) BLACK)",
+      "n_expressions": 174
+    },
+    {
+      "rank": 19,
+      "prob": 0.003599987682907587,
+      "cls_idx": 178,
+      "fingerprint": "f8c028b9535a277fee4805e1c182e4cc32d33ec2f733956e65dc4d7dafb3e4a9",
+      "canonical_program": "(\u03bb le (min_rank $0) 5)",
+      "n_expressions": 144
+    },
+    {
+      "rank": 20,
+      "prob": 0.003307137210193015,
+      "cls_idx": 699,
+      "fingerprint": "d7cd6e016c4c2f63480d700acf59e3ed69aa6edaa3880f0f2bd17163a5721007",
+      "canonical_program": "(\u03bb lt (n_unique_colors (second_half (second_half $0))) 2)",
+      "n_expressions": 36
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.23155683216099002,
+      "cls_idx": 9,
+      "fingerprint": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c"
+    },
+    {
+      "prob": 0.23024913469742558,
+      "cls_idx": 6,
+      "fingerprint": "78facf877a9d9a631a922ef94a466680e24352602ca0f130b3272eb787819856"
+    },
+    {
+      "prob": 0.168667256211563,
+      "cls_idx": 19,
+      "fingerprint": "64502833cdf0739dac49fb09c0befb41276b2c97b35c3fb92b94c05ed5b451c4"
+    },
+    {
+      "prob": 0.11320624701269733,
+      "cls_idx": 2,
+      "fingerprint": "ea989cd41502549fe2b7a9f47953cd080b88c4413891aeecd1134164bcd70407"
+    },
+    {
+      "prob": 0.08095505109867504,
+      "cls_idx": 31,
+      "fingerprint": "1d7d89c531dd85ade11e1b5517eedb2d33c5de695198640788a593115972af43"
+    },
+    {
+      "prob": 0.0219768179710293,
+      "cls_idx": 334,
+      "fingerprint": "3cec037bd22ca774e54b1a53f5240dd3901e320f1e225df0ef9ceddbd7ebc61a"
+    },
+    {
+      "prob": 0.021089074331700104,
+      "cls_idx": 298,
+      "fingerprint": "501762b85afa8b6d6e1b29dd3cbcc798ea7621865796726fbafea36ab8c106f6"
+    },
+    {
+      "prob": 0.019561816570275916,
+      "cls_idx": 15,
+      "fingerprint": "9584ca079af1b02b0697b7703b52387ac4e9107e172ee764e69e044f24ed4bf1"
+    },
+    {
+      "prob": 0.019454413280683914,
+      "cls_idx": 12,
+      "fingerprint": "59b988561723a257d91f0f5fccece70936b53e77b61de02737f0a2e3d5f3b7e5"
+    },
+    {
+      "prob": 0.014069520136256824,
+      "cls_idx": 165,
+      "fingerprint": "db0b6914c886aecfd38833da0c7565664cb8a0387d01ddca14b67a336ee954b3"
+    },
+    {
+      "prob": 0.00878580863028164,
+      "cls_idx": 208,
+      "fingerprint": "a5c7b316aed39fa507aeaa020ff6a2098ed75e549d2b9018a115e78cadbcfb07"
+    },
+    {
+      "prob": 0.007580278585163553,
+      "cls_idx": 177,
+      "fingerprint": "3cd69a58da612750b0f3a67228394e1be1a7d720f909b2cd653e5bf6e5017b77"
+    },
+    {
+      "prob": 0.00649553669399417,
+      "cls_idx": 32,
+      "fingerprint": "3b3461abd46cea61a96537e3fbdfcf70bb4eea810335fe737f0b3e08371ee157"
+    },
+    {
+      "prob": 0.004522813681779203,
+      "cls_idx": 95,
+      "fingerprint": "3fece1346f786f4bafe0104bfe09da6e6d59d019d8da695d1ed69ac9bb9e7724"
+    },
+    {
+      "prob": 0.004309048574825591,
+      "cls_idx": 172,
+      "fingerprint": "d8a236216a17ef15117abd0ee9bca9b099a4896cecf47555e94a67d71eba7729"
+    },
+    {
+      "prob": 0.004254728768634675,
+      "cls_idx": 33,
+      "fingerprint": "a09f9cfeeaebb3e251970d30305c3a0cdfbcdc2edc9d2839eff3079332de5892"
+    },
+    {
+      "prob": 0.004208864229244771,
+      "cls_idx": 169,
+      "fingerprint": "ff4402ca66a33d297bb25e077f88186c43e2e6d4b2ffab8c6dde7241cba298a0"
+    },
+    {
+      "prob": 0.003910866157973232,
+      "cls_idx": 186,
+      "fingerprint": "21e6568f81fe5c507f74b5d28aa87d012a0559b5aea5297e5e69389a9b02fd3e"
+    },
+    {
+      "prob": 0.003599987682907587,
+      "cls_idx": 178,
+      "fingerprint": "f8c028b9535a277fee4805e1c182e4cc32d33ec2f733956e65dc4d7dafb3e4a9"
+    },
+    {
+      "prob": 0.003307137210193015,
+      "cls_idx": 699,
+      "fingerprint": "d7cd6e016c4c2f63480d700acf59e3ed69aa6edaa3880f0f2bd17163a5721007"
+    },
+    {
+      "prob": 0.002666748250710571,
+      "cls_idx": 288,
+      "fingerprint": "f3168795427ba5dab6100a86243dc264cf674e96ac47b9a8bf19ce26ed382d13"
+    },
+    {
+      "prob": 0.002663733044279092,
+      "cls_idx": 457,
+      "fingerprint": "8e2c2907269ed97d7477faaef703ce3b0449ed36924fe6bf090a36bccd8cd8b5"
+    },
+    {
+      "prob": 0.002287140509024899,
+      "cls_idx": 278,
+      "fingerprint": "400604ad63752a31115baf2bc00dbd1f43d1e99766354cd0216073033127ef2e"
+    },
+    {
+      "prob": 0.0022301995451713087,
+      "cls_idx": 263,
+      "fingerprint": "361c9f3f78f546915aee81aac331875747787405230231312fbf63054593ac38"
+    },
+    {
+      "prob": 0.002165563077431792,
+      "cls_idx": 701,
+      "fingerprint": "30905ac78e37925efd61b9179deb3f17b7cd263a2904060b5617d27406a9ef70"
+    },
+    {
+      "prob": 0.002118675087290538,
+      "cls_idx": 284,
+      "fingerprint": "1d7b88683124c4662ed17f19821d22496e17b62561eccaaa040d20683eeab754"
+    },
+    {
+      "prob": 0.00199168646906196,
+      "cls_idx": 34,
+      "fingerprint": "c7143ebde0ef686d2fa6737267363edd11c1c78ba5098ae172fa57ffefb611fb"
+    },
+    {
+      "prob": 0.0018691774420648874,
+      "cls_idx": 686,
+      "fingerprint": "dab2a8639131048242f4a1acff1760ca894619d05c6c50a5f79cd897d0aaee07"
+    },
+    {
+      "prob": 0.0017675627966771553,
+      "cls_idx": 247,
+      "fingerprint": "0064fafa67d2918e70bfdbe300fc415971b1a219d67bbb7f08751ab02f36dc39"
+    },
+    {
+      "prob": 0.0014983810472005096,
+      "cls_idx": 383,
+      "fingerprint": "e8a8d221f5dc048fbfbae69f1a3e770a1cff5415ae2b45933fbc18da8d3b1e78"
+    },
+    {
+      "prob": 0.001336231890512065,
+      "cls_idx": 274,
+      "fingerprint": "a0f13e9b4592b275ed8ccb9230772c184d2034078c2b987598174663520a1798"
+    },
+    {
+      "prob": 0.0012576286395282587,
+      "cls_idx": 300,
+      "fingerprint": "df4cb9215b774b4f58c43847d76bcb1860e86adbe80dce96c6b334d633105b98"
+    },
+    {
+      "prob": 0.0012404566469822473,
+      "cls_idx": 407,
+      "fingerprint": "c29dbee49d9f107ce50ae6052211ad3e6d71c9a80338429924023f1373f9e53f"
+    },
+    {
+      "prob": 0.0010551764090575766,
+      "cls_idx": 270,
+      "fingerprint": "c36058048281edeaba64f3e246bc7515d97c5eecf67ae8b18e0b46f811c04785"
+    },
+    {
+      "prob": 0.0010540482100178964,
+      "cls_idx": 267,
+      "fingerprint": "5e469c59cf33d470de480c171cfca16f2c4d7eb9a3e47ee59a7e92b0c76cedb0"
+    },
+    {
+      "prob": 0.0010363572486947535,
+      "cls_idx": 453,
+      "fingerprint": "13498c6ad58c26fcf85d99da9667944b1e29edb5918a2f70f43097422c4b59a3"
+    }
+  ]
+}

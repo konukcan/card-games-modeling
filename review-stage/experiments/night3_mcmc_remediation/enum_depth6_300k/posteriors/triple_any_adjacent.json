@@ -1,0 +1,101 @@
+{
+  "rule_id": "triple_any_adjacent",
+  "n_hyps_in_posterior": 7,
+  "enum_retained_mass": 0.9951952355828819,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.9908193437613745,
+      "cls_idx": 160,
+      "fingerprint": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f",
+      "canonical_program": "(\u03bb lt (n_unique_ranks $0) 5)",
+      "n_expressions": 192
+    },
+    {
+      "rank": 2,
+      "prob": 0.0025242978124462383,
+      "cls_idx": 1724,
+      "fingerprint": "39c1808430af6da2652fddd2fe4ac7a2bf455040aae6580405aedb12adf72fc0",
+      "canonical_program": "(\u03bb lt 3 (mod (n_unique_ranks $0) 5))",
+      "n_expressions": 8
+    },
+    {
+      "rank": 3,
+      "prob": 0.0014503374543924003,
+      "cls_idx": 7,
+      "fingerprint": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006",
+      "canonical_program": "(\u03bb has_suit $0 DIAMONDS)",
+      "n_expressions": 386
+    },
+    {
+      "rank": 4,
+      "prob": 0.0014453080346560057,
+      "cls_idx": 8,
+      "fingerprint": "985e7f28bdfe262507083821c2663898d3b631a712b3e40dc4c7360ae74c670c",
+      "canonical_program": "(\u03bb has_suit $0 HEARTS)",
+      "n_expressions": 386
+    },
+    {
+      "rank": 5,
+      "prob": 0.0014397890162912309,
+      "cls_idx": 9,
+      "fingerprint": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c",
+      "canonical_program": "(\u03bb has_suit $0 SPADES)",
+      "n_expressions": 386
+    },
+    {
+      "rank": 6,
+      "prob": 0.0012587898980391868,
+      "cls_idx": 1725,
+      "fingerprint": "12434f94605241f16e13a35d6435c35f94db34f8d4b0bab6f301e93bd86f17bf",
+      "canonical_program": "(\u03bb lt (mod 4 (n_unique_ranks $0)) 1)",
+      "n_expressions": 4
+    },
+    {
+      "rank": 7,
+      "prob": 0.0010621340228004772,
+      "cls_idx": 22,
+      "fingerprint": "277138b05808edeae35a293d0e487f8d73d8ae8a6a98d185eaa77ac4334b410a",
+      "canonical_program": "(\u03bb has_suit (first_half $0) SPADES)",
+      "n_expressions": 114
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.9908193437613745,
+      "cls_idx": 160,
+      "fingerprint": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f"
+    },
+    {
+      "prob": 0.0025242978124462383,
+      "cls_idx": 1724,
+      "fingerprint": "39c1808430af6da2652fddd2fe4ac7a2bf455040aae6580405aedb12adf72fc0"
+    },
+    {
+      "prob": 0.0014503374543924003,
+      "cls_idx": 7,
+      "fingerprint": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006"
+    },
+    {
+      "prob": 0.0014453080346560057,
+      "cls_idx": 8,
+      "fingerprint": "985e7f28bdfe262507083821c2663898d3b631a712b3e40dc4c7360ae74c670c"
+    },
+    {
+      "prob": 0.0014397890162912309,
+      "cls_idx": 9,
+      "fingerprint": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c"
+    },
+    {
+      "prob": 0.0012587898980391868,
+      "cls_idx": 1725,
+      "fingerprint": "12434f94605241f16e13a35d6435c35f94db34f8d4b0bab6f301e93bd86f17bf"
+    },
+    {
+      "prob": 0.0010621340228004772,
+      "cls_idx": 22,
+      "fingerprint": "277138b05808edeae35a293d0e487f8d73d8ae8a6a98d185eaa77ac4334b410a"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "n_classes": 2501,
+  "n_rules": 18,
+  "rules": {
+    "all_red": {
+      "n_hyps": 2,
+      "retained_mass": 0.9999403096532722,
+      "elapsed_s": 0.13,
+      "top_fp": "d47919ef9427dd08711f3b72c4ee6d3dddeb063783645c6195882e06b36962e7"
+    },
+    "all_same_suit": {
+      "n_hyps": 1,
+      "retained_mass": 0.9999999320185277,
+      "elapsed_s": 0.09,
+      "top_fp": "2080a53e70bbb87d66a3196c6d03dd2178bceda09c1fb3476ba0510a64c66071"
+    },
+    "all_even": {
+      "n_hyps": 8,
+      "retained_mass": 0.9954637520634165,
+      "elapsed_s": 0.1,
+      "top_fp": "d6cf5487f3fdf9c13b0e86cecc0aa500e3259e70e53f2a5ae569f1e644c7daec"
+    },
+    "triple_any_adjacent": {
+      "n_hyps": 7,
+      "retained_mass": 0.9951952355828819,
+      "elapsed_s": 0.09,
+      "top_fp": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f"
+    },
+    "strict_increasing": {
+      "n_hyps": 14,
+      "retained_mass": 0.9937074507929979,
+      "elapsed_s": 0.1,
+      "top_fp": "fba0dc684dd2488062713c42e2080243b9b8b21250c54cbe721457bb5fe11476"
+    },
+    "four_of_a_kind_adjacent": {
+      "n_hyps": 1,
+      "retained_mass": 0.9991237003520359,
+      "elapsed_s": 0.1,
+      "top_fp": "36fec005896794f52d787d3eeed14b0d6e9300599927b79270baadb7cf77a299"
+    },
+    "ranks_palindrome": {
+      "n_hyps": 2,
+      "retained_mass": 0.9989048393845974,
+      "elapsed_s": 0.08,
+      "top_fp": "57d2f13d10a8a7732f6bfaec5351b74047b3d9872b1f2b5f2acc2f2fe6f379a0"
+    },
+    "all_same_color": {
+      "n_hyps": 2,
+      "retained_mass": 0.9999737654774934,
+      "elapsed_s": 0.18,
+      "top_fp": "e8694b20023779409be00e728db011ab78da96f4b241cf9dd50217c495227ea6"
+    },
+    "three_or_more_same_suit": {
+      "n_hyps": 31,
+      "retained_mass": 0.9776889658906062,
+      "elapsed_s": 0.1,
+      "top_fp": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006"
+    },
+    "all_odd": {
+      "n_hyps": 5,
+      "retained_mass": 0.9978108323227483,
+      "elapsed_s": 0.09,
+      "top_fp": "d18bafa293ce8cc15b7ae32c02bd948e3259e7437254002fb2f01d3174224640"
+    },
+    "all_clubs_or_hearts": {
+      "n_hyps": 5,
+      "retained_mass": 0.9982797718381969,
+      "elapsed_s": 0.08,
+      "top_fp": "00b3d19488546a1ff56d535b8ce8f6c116f7522c1f4d7927dfa8424c89bb9d46"
+    },
+    "four_hearts_adjacent": {
+      "n_hyps": 2,
+      "retained_mass": 0.9993087668662493,
+      "elapsed_s": 0.11,
+      "top_fp": "6eb835b7d2e97ae191309f5a314a4769db0021f8f14e09d950cdd3a50ff56f48"
+    },
+    "three_clubs_adjacent": {
+      "n_hyps": 8,
+      "retained_mass": 0.990946375807216,
+      "elapsed_s": 0.09,
+      "top_fp": "b44ed8917926d4f1112691ed836b5ab8b9c265cb64d41a37c2629295b66f60f4"
+    },
+    "ap_step1_len3_adj": {
+      "n_hyps": 40,
+      "retained_mass": 0.976292082396295,
+      "elapsed_s": 0.09,
+      "top_fp": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c"
+    },
+    "pair_5s_adjacent": {
+      "n_hyps": 32,
+      "retained_mass": 0.9773383070799532,
+      "elapsed_s": 0.1,
+      "top_fp": "048b7a5501b2f6c7edf5ebe5ff199b256a8956d2fd8387f37276b1fa688ad006"
+    },
+    "pos135_same_rank": {
+      "n_hyps": 4,
+      "retained_mass": 0.9916873731526906,
+      "elapsed_s": 0.1,
+      "top_fp": "022059a5ee1949dca68923379f5729d1a319bb2445d70dfa377e472b08d1cf5f"
+    },
+    "colors_palindrome": {
+      "n_hyps": 36,
+      "retained_mass": 0.9711941581574246,
+      "elapsed_s": 0.56,
+      "top_fp": "d9a9e443b40e9b70ea85bf21647f35f1dbc6ae6fd3d61453814e2881306a460c"
+    },
+    "left_red_right_black": {
+      "n_hyps": 5,
+      "retained_mass": 0.9919213555273337,
+      "elapsed_s": 0.09,
+      "top_fp": "623d62e0e52c780b8b79b6938ee3ffb33abe8bd3296bba98255465022e10d0bc"
+    }
+  }
+}
