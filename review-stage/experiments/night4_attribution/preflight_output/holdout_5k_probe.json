@@ -1,0 +1,32 @@
+{
+  "rows": [
+    {
+      "rule": "all_red",
+      "ss_mass_at_1k": 0.048872556372181394,
+      "rescued_at_5k": 0.0,
+      "still_at_5k": 0.04887255637218139,
+      "eval_fail": 0.0
+    },
+    {
+      "rule": "all_even",
+      "ss_mass_at_1k": 0.08834558272086396,
+      "rescued_at_5k": 0.0,
+      "still_at_5k": 0.08834558272086396,
+      "eval_fail": 0.0
+    },
+    {
+      "rule": "all_same_suit",
+      "ss_mass_at_1k": 0.005024748762561872,
+      "rescued_at_5k": 0.0,
+      "still_at_5k": 0.005024748762561872,
+      "eval_fail": 0.0
+    },
+    {
+      "rule": "ranks_palindrome",
+      "ss_mass_at_1k": 0.034585770711464424,
+      "rescued_at_5k": 0.0,
+      "still_at_5k": 0.034585770711464445,
+      "eval_fail": 0.0
+    }
+  ]
+}
