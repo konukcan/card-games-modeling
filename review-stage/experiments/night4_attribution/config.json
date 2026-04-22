@@ -1,0 +1,39 @@
+{
+  "run_date": "2026-04-22T00:00:00Z",
+  "branch": "aris/bayesian-review",
+  "goal": "C1 — 6-rule attribution MCMC (100k steps, piecewise_half β=0.5→1.0, per-chain persistence, 10 every-10k checkpoints)",
+  "rules": [
+    "all_red",
+    "all_same_suit",
+    "ranks_palindrome",
+    "pair_5s_adjacent",
+    "all_even",
+    "four_of_a_kind_adjacent"
+  ],
+  "_rule_bucket_note": "all_red / all_same_suit / ranks_palindrome = tight-agree anchors (per Night 3 TV < 0.18). pair_5s_adjacent = borderline (Night 3 TV 0.394). all_even / four_of_a_kind_adjacent = divergent (Night 3 TV > 0.98). colors_palindrome dropped per Night 4 consensus review (mass_mapped 0.666 too broken to be borderline); all_red subbed in.",
+  "mcmc": {
+    "n_steps": 100000,
+    "n_chains": 4,
+    "max_depth": 6,
+    "max_nodes": 25,
+    "noise_epsilon": 0.01,
+    "beta_start": 0.5,
+    "beta_end": 1.0,
+    "beta_schedule": "piecewise_half",
+    "_beta_note": "Ramps 0.5→1.0 linearly over first 50k steps, flat at 1.0 for final 50k. Posterior estimates use β=1 tail only (steps 50000-99999); chain trajectory up to step 49999 is tempered burn-in.",
+    "init_max_depth": 3,
+    "base_seed": 42,
+    "n_checkpoints": 10,
+    "_ckpt_note": "10 every-10k checkpoints: steps 9999, 19999, ..., 99999. Post-hoc: use steps 49999+ for β=1-only posterior.",
+    "ext_probes_native": 2000
+  },
+  "parallelism": {
+    "n_mcmc_workers": 10,
+    "n_enum_jobs": 1
+  },
+  "persistence": {
+    "schema_version": 2,
+    "_schema_note": "v2 adds chain_visit_counts: List[Dict[prog_str, int]] alongside the merged visit_counts field (v1 shape preserved for run_comparison.py backward compat).",
+    "output_dir": "mcmc_100k_4chains"
+  }
+}
