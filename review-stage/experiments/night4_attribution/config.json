@@ -1,7 +1,7 @@
 {
   "run_date": "2026-04-22T00:00:00Z",
   "branch": "aris/bayesian-review",
-  "goal": "C1 — 6-rule attribution MCMC (100k steps, piecewise_half β=0.5→1.0, per-chain persistence, 10 every-10k checkpoints)",
+  "goal": "C1 — 6-rule attribution MCMC (100k steps, piecewise_half β=0.5→1.0, per-chain persistence, 10 every-10k checkpoints); C2 — d7 × 500k enum pool shared across all 6 rules (budget-cap test for unmapped residual).",
   "rules": [
     "all_red",
     "all_same_suit",
@@ -26,6 +26,26 @@
     "n_checkpoints": 10,
     "_ckpt_note": "10 every-10k checkpoints: steps 9999, 19999, ..., 99999. Post-hoc: use steps 49999+ for β=1-only posterior.",
     "ext_probes_native": 2000
+  },
+  "enumeration": {
+    "depth": 7,
+    "max_programs": 500000,
+    "max_cost": 35.0,
+    "timeout_seconds": 3600,
+    "grammar": "uniform",
+    "injections": false,
+    "n_probes": 500,
+    "probe_seed": 42,
+    "output_dir": "enum_depth7_500k",
+    "_note": "C2 arm. Depth and budget both scaled up from night3 (d6, 300k). Same uniform grammar, same 500-probe fingerprint, same seed=42 — pool is directly comparable to night3/enum_depth6_300k. ONE pool shared across all 6 rules (rule-independent)."
+  },
+  "comparison": {
+    "n_probes": 5000,
+    "probe_seed": 99,
+    "top_k_summary": 50,
+    "shared_ext_base_probes": 100000,
+    "shared_ext_escalated_probes": 1000000,
+    "escalation_threshold_base_rate": 0.001
   },
   "parallelism": {
     "n_mcmc_workers": 10,
