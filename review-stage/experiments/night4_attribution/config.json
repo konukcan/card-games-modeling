@@ -47,6 +47,18 @@
     "shared_ext_escalated_probes": 1000000,
     "escalation_threshold_base_rate": 0.001
   },
+  "enumeration_d8_anchor": {
+    "rule": "all_same_suit",
+    "depth": 8,
+    "max_programs": 2000000,
+    "max_cost": 40.0,
+    "timeout_seconds": 10800,
+    "grammar": "uniform",
+    "n_probes": 500,
+    "probe_seed": 42,
+    "output_dir": "enum_depth8_anchor",
+    "_note": "Reference run. all_same_suit is a Night 3 tight-agree anchor (mass_mapped 0.9897). Enumerating at d8 with a generous budget gives a near-saturated posterior for one easy rule — the ground truth against which d6 and d7 can be checked. Single rule, single pool, same 500-probe fingerprint (seed=42) for direct fingerprint-overlap comparison to d6 and d7."
+  },
   "parallelism": {
     "n_mcmc_workers": 10,
     "n_enum_jobs": 1
