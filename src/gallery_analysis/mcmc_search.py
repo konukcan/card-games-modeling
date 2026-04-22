@@ -47,7 +47,7 @@ import logging
 import itertools
 from dataclasses import dataclass, field, replace as dc_replace
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -1754,6 +1754,13 @@ class MCMCConfig:
     init_max_depth: int = 3   # Max depth for initial program sample (small to avoid dead chains)
     beta_start: float = 1.0   # Likelihood temperature at step 0 (1.0 = no annealing)
     beta_end: float = 1.0     # Likelihood temperature at final step
+    # β-schedule: "linear" (β ramps from beta_start to beta_end linearly over all
+    # n_steps — historical default, preserved for backward compat).
+    # "piecewise_half" (β ramps from beta_start to beta_end linearly over the
+    # FIRST half of n_steps, then holds flat at beta_end for the remaining half —
+    # lets the second half sample the un-tempered posterior for β=1-tail-only
+    # posterior estimates).
+    beta_schedule: Literal["linear", "piecewise_half"] = "linear"
 
 
 @dataclass
@@ -2114,7 +2121,17 @@ class MCMCChain:
             # unannealed posterior for correct posterior estimates.
             if config.beta_start == config.beta_end:
                 beta = config.beta_start
-            else:
+            elif config.beta_schedule == "piecewise_half":
+                # Ramp over first half, flat at beta_end for the second half.
+                # Second-half visits form a β=1-tail-only posterior sample
+                # when beta_end == 1.0.
+                half = config.n_steps // 2
+                if step >= half:
+                    beta = config.beta_end
+                else:
+                    # step/half ∈ [0, 1) on the ramp.
+                    beta = config.beta_start + (config.beta_end - config.beta_start) * (step / half)
+            else:  # "linear"
                 beta = config.beta_start + (config.beta_end - config.beta_start) * (step / config.n_steps)
 
             current_annealed = current_log_prior + beta * current_log_lik
