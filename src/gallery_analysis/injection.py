@@ -33,29 +33,6 @@ from gallery_analysis.hypothesis_table import compute_fingerprint
 _REQUIRED_FIELDS = {"id", "source", "true_for_rule", "dsl_program"}
 
 
-def deduplicate_injections(injections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Keep only one injection per unique DSL program string.
-
-    When duplicates exist, keeps the one with the shortest program
-    (fewest characters). This prevents LLM-generated duplicates from
-    artificially inflating the summed prior of equivalence classes.
-
-    Args:
-        injections: List of validated injection dicts, each containing
-            at least a 'dsl_program' key.
-
-    Returns:
-        Deduplicated list. Order follows first-seen order of each
-        unique program string.
-    """
-    seen: Dict[str, Dict[str, Any]] = {}  # dsl_program -> injection entry
-    for inj in injections:
-        prog = inj["dsl_program"]
-        if prog not in seen or len(prog) < len(seen[prog]["dsl_program"]):
-            seen[prog] = inj
-    return list(seen.values())
-
-
 def load_and_validate_injections(
     filepath: str,
     grammar=None,
@@ -262,6 +239,15 @@ def merge_injected(
             ec["all_programs"].append(inj["dsl_program"])
             ec["n_expressions"] += 1
 
+            # Finding 1: keep _all_predicates / _all_priors in sync so strict
+            # splitting (if re-run) can see the injected member. These fields
+            # may be absent on legacy classes — initialise from canonical.
+            if "_all_predicates" not in ec:
+                ec["_all_predicates"] = [ec["predicate"]]
+                ec["_all_priors"] = [ec["canonical_prior"]]
+            ec["_all_predicates"].append(inj["predicate"])
+            ec["_all_priors"].append(inj["log_prior"])
+
             # DO NOT add injected programs' priors into summed_prior.
             # summed_prior should reflect only enumerated programs
             # (grammar expressibility), not LLM agreement. Injected
@@ -304,6 +290,9 @@ def merge_injected(
                 "predicate": inj["predicate"],
                 "source": "injected",
                 "injection_ids": [inj.get("id", "unknown")],
+                # Finding 1: member-level lists for strict-split compatibility.
+                "_all_predicates": [inj["predicate"]],
+                "_all_priors": [inj["log_prior"]],
             }
             if inj.get("true_for_rule"):
                 new_class["true_for_rule"] = inj["true_for_rule"]
@@ -314,6 +303,35 @@ def merge_injected(
 
             n_novel += 1
 
+    # Safety dedup: check for duplicate fingerprints after injection merge.
+    import math
+    fp_check: Dict[str, int] = {}
+    deduped: List[Dict] = []
+    n_post = 0
+    for cls in merged:
+        fp = cls["fingerprint"]
+        if fp in fp_check:
+            existing = deduped[fp_check[fp]]
+            existing["all_programs"].extend(cls.get("all_programs", []))
+            existing["n_expressions"] += cls["n_expressions"]
+            if cls.get("canonical_prior", float("-inf")) > existing.get("canonical_prior", float("-inf")):
+                existing["canonical_prior"] = cls["canonical_prior"]
+                existing["canonical_program"] = cls["canonical_program"]
+                existing["predicate"] = cls["predicate"]
+            existing["summed_prior"] = _log_sum_exp(
+                existing["summed_prior"], cls["summed_prior"]
+            )
+            for key in ("injection_ids", "true_for_rules"):
+                if key in cls:
+                    existing.setdefault(key, []).extend(cls[key])
+            if "true_for_rule" in cls:
+                existing["true_for_rule"] = cls["true_for_rule"]
+            n_post += 1
+        else:
+            fp_check[fp] = len(deduped)
+            deduped.append(cls)
+    merged = deduped
+
     # Print merge statistics
     print(
         f"Injection merge: {len(injected)} hypotheses → "
@@ -321,6 +339,7 @@ def merge_injected(
         f"{n_novel} novel classes created. "
         f"Total classes: {len(merged)} "
         f"(was {len(equivalence_classes)})"
+        + (f" [post-dedup merged {n_post} duplicates]" if n_post > 0 else "")
     )
 
     return merged

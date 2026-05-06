@@ -23,7 +23,9 @@ from pathlib import Path
 
 RESULTS_DIR = Path("gallery_analysis/results")
 INJECT_PATH = "gallery_analysis/data/injected_hypotheses.json"
-EXT_CACHE = str(RESULTS_DIR / "extension_cache_depth6_v2.json")
+# v3 cache (separate from v2 to allow A/B comparison if needed)
+EXT_CACHE = str(RESULTS_DIR / "extension_cache_depth6_v3.json")
+PREFIX = "v3"
 
 # Common flags for enumeration
 COMMON = [
@@ -36,24 +38,24 @@ COMMON = [
 ]
 
 # All 10 scoring variants
+# inject: "all" = 401 hypotheses, "true_only" = 42 true rules only, False = no injection
 VARIANTS = [
-    # (name, prior_mode, scoring_grammar, inject?, likelihood_mode)
-    ("weighted_canonical_inject",   "canonical", "weighted", True,  "noisy"),
-    ("weighted_summed_inject",      "summed",    "weighted", True,  "noisy"),
-    ("weighted_canonical_noinject", "canonical", "weighted", False, "noisy"),
-    ("weighted_summed_noinject",    "summed",    "weighted", False, "noisy"),
-    ("uniform_canonical_inject",    "canonical", "uniform",  True,  "noisy"),
-    ("uniform_summed_inject",       "summed",    "uniform",  True,  "noisy"),
-    ("uniform_canonical_noinject",  "canonical", "uniform",  False, "noisy"),
-    ("uniform_summed_noinject",     "summed",    "uniform",  False, "noisy"),
-    ("weighted_canonical_strict",   "canonical", "weighted", True,  "strict"),
-    ("weighted_summed_strict",      "summed",    "weighted", True,  "strict"),
+    ("weighted_canonical_inject",    "canonical", "weighted", "all",       "noisy"),
+    ("weighted_summed_inject",       "summed",    "weighted", "all",       "noisy"),
+    ("weighted_canonical_trueonly",  "canonical", "weighted", "true_only", "noisy"),
+    ("weighted_summed_trueonly",     "summed",    "weighted", "true_only", "noisy"),
+    ("uniform_canonical_inject",     "canonical", "uniform",  "all",       "noisy"),
+    ("uniform_summed_inject",        "summed",    "uniform",  "all",       "noisy"),
+    ("uniform_canonical_trueonly",   "canonical", "uniform",  "true_only", "noisy"),
+    ("uniform_summed_trueonly",      "summed",    "uniform",  "true_only", "noisy"),
+    ("weighted_canonical_strict",    "canonical", "weighted", "all",       "strict"),
+    ("weighted_summed_strict",       "summed",    "weighted", "all",       "strict"),
 ]
 
 
 def run_variant(name, prior_mode, scoring_grammar, inject, likelihood_mode):
     """Run analyze.py for one scoring variant."""
-    output = str(RESULTS_DIR / f"v2_{name}.json")
+    output = str(RESULTS_DIR / f"{PREFIX}_{name}.json")
     cmd = [
         sys.executable, "gallery_analysis/analyze.py",
         "--depth", "6",
@@ -65,8 +67,10 @@ def run_variant(name, prior_mode, scoring_grammar, inject, likelihood_mode):
         "--verbose", "1",
         "--output", output,
     ]
-    if inject:
+    if inject in ("all", "true_only"):
         cmd += ["--inject", INJECT_PATH]
+    if inject == "true_only":
+        cmd += ["--inject-true-only"]
     if likelihood_mode == "strict":
         cmd += ["--likelihood-mode", "strict"]
 
@@ -90,7 +94,7 @@ def run_variant(name, prior_mode, scoring_grammar, inject, likelihood_mode):
 
 def run_diagnosticity(results_file, name):
     """Run diagnosticity analysis for one variant."""
-    output = str(RESULTS_DIR / f"v2_diagnosticity_{name}.json")
+    output = str(RESULTS_DIR / f"{PREFIX}_diagnosticity.json")
     cmd = [
         sys.executable, "gallery_analysis/run_diagnosticity.py",
         "--all-rules",
@@ -98,6 +102,7 @@ def run_diagnosticity(results_file, name):
         "--balanced", "500",
         "--extension-cache", EXT_CACHE,
         "--inject", INJECT_PATH,
+        "--targeted-probes",
         "--output", output,
         "--verbose", "1",
     ]
@@ -164,7 +169,7 @@ def main():
         sys.executable, "gallery_analysis/depth_mass_analysis.py",
         "--inject", INJECT_PATH,
         "--extension-cache", EXT_CACHE,
-        "--output", str(RESULTS_DIR / "v2_depth_decomposition.json"),
+        "--output", str(RESULTS_DIR / f"{PREFIX}_depth_decomposition.json"),
         "--verbose", "1",
     ]
     subprocess.run(cmd, capture_output=False)
