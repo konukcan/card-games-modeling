@@ -1,0 +1,209 @@
+{
+  "config": {
+    "rules": [
+      "all_red",
+      "all_same_suit",
+      "ranks_palindrome",
+      "pair_5s_adjacent",
+      "all_even",
+      "four_of_a_kind_adjacent"
+    ],
+    "d6_pool": "/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-bayesian-review/review-stage/experiments/night3_mcmc_remediation/enum_depth6_300k/pool.pkl",
+    "d7_pool": "/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-bayesian-review/review-stage/experiments/night4_attribution/enum_depth7_500k/pool.pkl",
+    "mcmc": "/Users/cankonuk/Documents/self-explanations-project/card-games-modelling/.worktrees/aris-bayesian-review/review-stage/experiments/night4_attribution/mcmc_100k_4chains"
+  },
+  "rows": [
+    {
+      "rule_id": "all_red",
+      "bucket": "tight-agree",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.9892776072239278,
+        "mass_unmapped": 0.010722392776072238,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.0023849761502384974,
+        "src_B_depth_first": 0.0013099869001309988,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.007027429725702743,
+        "src_C_pruner_first": 0.0015149848501514985,
+        "src_B_pruner_first": 0.0014499855001449985,
+        "src_D_pruner_first": 0.0007299927000729993,
+        "src_residual_pruner_first": 0.007027429725702743
+      },
+      "d7": {
+        "mass_mapped": 0.9892776072239278,
+        "mass_unmapped": 0.010722392776072238,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.0023849761502384974,
+        "src_B_depth_first": 0.0013099869001309988,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.007027429725702743,
+        "src_C_pruner_first": 0.0015149848501514985,
+        "src_B_pruner_first": 0.0014499855001449985,
+        "src_D_pruner_first": 0.0007299927000729993,
+        "src_residual_pruner_first": 0.007027429725702743
+      },
+      "d7_minus_d6_mapped": 0.0
+    },
+    {
+      "rule_id": "all_same_suit",
+      "bucket": "tight-agree",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.9849676503234968,
+        "mass_unmapped": 0.015032349676503236,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.008752412475875241,
+        "src_B_depth_first": 0.004604953950460495,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.0016749832501674984,
+        "src_C_pruner_first": 0.0026724732752672472,
+        "src_B_pruner_first": 0.004609953900460996,
+        "src_D_pruner_first": 0.006074939250607494,
+        "src_residual_pruner_first": 0.0016749832501674984
+      },
+      "d7": {
+        "mass_mapped": 0.9849676503234968,
+        "mass_unmapped": 0.015032349676503236,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.008752412475875241,
+        "src_B_depth_first": 0.004604953950460495,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.0016749832501674984,
+        "src_C_pruner_first": 0.0026724732752672472,
+        "src_B_pruner_first": 0.004609953900460996,
+        "src_D_pruner_first": 0.006074939250607494,
+        "src_residual_pruner_first": 0.0016749832501674984
+      },
+      "d7_minus_d6_mapped": 0.0
+    },
+    {
+      "rule_id": "ranks_palindrome",
+      "bucket": "tight-agree",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.9802951970480295,
+        "mass_unmapped": 0.01970480295197048,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.014954850451495486,
+        "src_B_depth_first": 0.0036324636753632465,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.001117488825111749,
+        "src_C_pruner_first": 0.014934850651493485,
+        "src_B_pruner_first": 0.0036324636753632465,
+        "src_D_pruner_first": 1.999980000199998e-05,
+        "src_residual_pruner_first": 0.001117488825111749
+      },
+      "d7": {
+        "mass_mapped": 0.9802951970480295,
+        "mass_unmapped": 0.01970480295197048,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.014954850451495486,
+        "src_B_depth_first": 0.0036324636753632465,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.001117488825111749,
+        "src_C_pruner_first": 0.014934850651493485,
+        "src_B_pruner_first": 0.0036324636753632465,
+        "src_D_pruner_first": 1.999980000199998e-05,
+        "src_residual_pruner_first": 0.001117488825111749
+      },
+      "d7_minus_d6_mapped": 0.0
+    },
+    {
+      "rule_id": "pair_5s_adjacent",
+      "bucket": "borderline",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.8734612653873461,
+        "mass_unmapped": 0.12653873461265389,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.02221227787722123,
+        "src_B_depth_first": 0.035147148528514714,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.06917930820691794,
+        "src_C_pruner_first": 0.0041399586004139954,
+        "src_B_pruner_first": 0.03838711612883871,
+        "src_D_pruner_first": 0.014832351676483235,
+        "src_residual_pruner_first": 0.06917930820691794
+      },
+      "d7": {
+        "mass_mapped": 0.8740762592374076,
+        "mass_unmapped": 0.12592374076259238,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.021597284027159727,
+        "src_B_depth_first": 0.035147148528514714,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.06917930820691794,
+        "src_C_pruner_first": 0.0035249647503524965,
+        "src_B_pruner_first": 0.03838711612883871,
+        "src_D_pruner_first": 0.014832351676483235,
+        "src_residual_pruner_first": 0.06917930820691794
+      },
+      "d7_minus_d6_mapped": 0.0006149938500614738
+    },
+    {
+      "rule_id": "all_even",
+      "bucket": "divergent",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.9081484185158148,
+        "mass_unmapped": 0.09185158148418515,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.007129928700712993,
+        "src_B_depth_first": 0.029657203427965722,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.055064449355506445,
+        "src_C_pruner_first": 0.0030649693503064968,
+        "src_B_pruner_first": 0.03074219257807422,
+        "src_D_pruner_first": 0.002979970200297997,
+        "src_residual_pruner_first": 0.055064449355506445
+      },
+      "d7": {
+        "mass_mapped": 0.9081484185158148,
+        "mass_unmapped": 0.09185158148418515,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.007129928700712993,
+        "src_B_depth_first": 0.029657203427965722,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.055064449355506445,
+        "src_C_pruner_first": 0.0030649693503064968,
+        "src_B_pruner_first": 0.03074219257807422,
+        "src_D_pruner_first": 0.002979970200297997,
+        "src_residual_pruner_first": 0.055064449355506445
+      },
+      "d7_minus_d6_mapped": 0.0
+    },
+    {
+      "rule_id": "four_of_a_kind_adjacent",
+      "bucket": "divergent",
+      "total_visits": 400004,
+      "d6": {
+        "mass_mapped": 0.6915480845191548,
+        "mass_unmapped": 0.3084519154808452,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.2982520174798252,
+        "src_B_depth_first": 0.0014049859501404987,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.008794912050879492,
+        "src_C_pruner_first": 0.2969470305296947,
+        "src_B_pruner_first": 0.0014049859501404987,
+        "src_D_pruner_first": 0.0013049869501304988,
+        "src_residual_pruner_first": 0.008794912050879492
+      },
+      "d7": {
+        "mass_mapped": 0.6875831241687583,
+        "mass_unmapped": 0.31241687583124167,
+        "mass_parse_fail": 0.0,
+        "src_C_depth_first": 0.3022169778302217,
+        "src_B_depth_first": 0.0014049859501404987,
+        "src_D_depth_first": 0.0,
+        "src_residual_depth_first": 0.008794912050879492,
+        "src_C_pruner_first": 0.2969470305296947,
+        "src_B_pruner_first": 0.0014049859501404987,
+        "src_D_pruner_first": 0.0052699473005269944,
+        "src_residual_pruner_first": 0.008794912050879492
+      },
+      "d7_minus_d6_mapped": -0.003964960350396507
+    }
+  ]
+}

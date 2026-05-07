@@ -1,0 +1,36 @@
+{
+  "rule_id": "ranks_palindrome",
+  "n_hyps_in_posterior": 2,
+  "enum_retained_mass": 0.9989061452202646,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.993260733370936,
+      "cls_idx": 122,
+      "fingerprint": "57d2f13d10a8a7732f6bfaec5351b74047b3d9872b1f2b5f2acc2f2fe6f379a0",
+      "canonical_program": "(\u03bb lt 2 (n_repeated_ranks $0))",
+      "n_expressions": 304
+    },
+    {
+      "rank": 2,
+      "prob": 0.006739266629064024,
+      "cls_idx": 123,
+      "fingerprint": "484945c4f4886c00952991f73a964f0f706ded1226da10e2a5a5d4e7f67e2b7f",
+      "canonical_program": "(\u03bb le (n_unique_ranks $0) (n_repeated_ranks $0))",
+      "n_expressions": 16
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.993260733370936,
+      "cls_idx": 122,
+      "fingerprint": "57d2f13d10a8a7732f6bfaec5351b74047b3d9872b1f2b5f2acc2f2fe6f379a0"
+    },
+    {
+      "prob": 0.006739266629064024,
+      "cls_idx": 123,
+      "fingerprint": "484945c4f4886c00952991f73a964f0f706ded1226da10e2a5a5d4e7f67e2b7f"
+    }
+  ]
+}

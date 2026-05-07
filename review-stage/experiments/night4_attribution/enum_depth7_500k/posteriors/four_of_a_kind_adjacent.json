@@ -1,0 +1,23 @@
+{
+  "rule_id": "four_of_a_kind_adjacent",
+  "n_hyps_in_posterior": 1,
+  "enum_retained_mass": 0.9991225998942267,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 1.0,
+      "cls_idx": 166,
+      "fingerprint": "36fec005896794f52d787d3eeed14b0d6e9300599927b79270baadb7cf77a299",
+      "canonical_program": "(\u03bb lt (n_unique_ranks (drop 2 $0)) 2)",
+      "n_expressions": 18
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 1.0,
+      "cls_idx": 166,
+      "fingerprint": "36fec005896794f52d787d3eeed14b0d6e9300599927b79270baadb7cf77a299"
+    }
+  ]
+}

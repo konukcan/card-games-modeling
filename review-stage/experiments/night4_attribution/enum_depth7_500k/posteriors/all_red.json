@@ -1,0 +1,36 @@
+{
+  "rule_id": "all_red",
+  "n_hyps_in_posterior": 2,
+  "enum_retained_mass": 0.9999270891814036,
+  "elapsed_seconds": 0.11,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.9904307309176106,
+      "cls_idx": 25,
+      "fingerprint": "d47919ef9427dd08711f3b72c4ee6d3dddeb063783645c6195882e06b36962e7",
+      "canonical_program": "(\u03bb not (has_color $0 BLACK))",
+      "n_expressions": 403
+    },
+    {
+      "rank": 2,
+      "prob": 0.009569269082389415,
+      "cls_idx": 219,
+      "fingerprint": "e8694b20023779409be00e728db011ab78da96f4b241cf9dd50217c495227ea6",
+      "canonical_program": "(\u03bb lt (n_unique_colors $0) 2)",
+      "n_expressions": 424
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.9904307309176106,
+      "cls_idx": 25,
+      "fingerprint": "d47919ef9427dd08711f3b72c4ee6d3dddeb063783645c6195882e06b36962e7"
+    },
+    {
+      "prob": 0.009569269082389415,
+      "cls_idx": 219,
+      "fingerprint": "e8694b20023779409be00e728db011ab78da96f4b241cf9dd50217c495227ea6"
+    }
+  ]
+}

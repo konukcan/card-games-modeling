@@ -1,0 +1,44 @@
+{
+  "n_mixed_classes": 9,
+  "n_rules_done": 1,
+  "n_rules_total": 1,
+  "pool_build_seconds": 419.50542402267456,
+  "pool_size_orig": 2670,
+  "pool_size_split": 2679,
+  "args": {
+    "depth": 7,
+    "max_programs": 300000,
+    "audit_n": 2000,
+    "rules": "ALL",
+    "max_rules": 1,
+    "n_exemplars": 6,
+    "exemplar_seed": 12345,
+    "extension_samples": 5000,
+    "inject": "src/gallery_analysis/data/injected_hypotheses.json",
+    "prior_modes": "summed",
+    "output_dir": "review-stage/experiments/night2/timing_test"
+  },
+  "results": {
+    "summed": {
+      "all_red": {
+        "true_rank_orig": 1,
+        "true_rank_split": 1,
+        "true_prob_orig": 0.990472376930892,
+        "true_prob_split": 0.9904723769309061,
+        "delta_rank": 0,
+        "delta_prob": 1.4099832412739488e-14,
+        "top1_orig": "(\u03bb not (has_color $0 BLACK))",
+        "top1_split": "(\u03bb not (has_color $0 BLACK))",
+        "top1_changed": false,
+        "mixed_class_posterior_mass": 9.986251427961138e-12,
+        "rule_answer": "All cards are red (hearts or diamonds)"
+      }
+    }
+  },
+  "timings": [
+    [
+      "all_red",
+      177.14851307868958
+    ]
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "depth": 8,
+  "max_programs": 2000000,
+  "n_classes": 8104,
+  "n_rules": 1,
+  "rules": {
+    "all_same_suit": {
+      "n_hyps": 1,
+      "retained_mass": 0.9999998504886746,
+      "elapsed_s": 0.22,
+      "top_fp": "2080a53e70bbb87d66a3196c6d03dd2178bceda09c1fb3476ba0510a64c66071"
+    }
+  }
+}

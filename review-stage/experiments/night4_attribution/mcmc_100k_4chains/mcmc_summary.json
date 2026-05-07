@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "n_rules_completed": 6,
+  "n_chains_per_rule": 4,
+  "n_steps_per_chain": 100000,
+  "checkpoint_steps": [
+    9999,
+    19999,
+    29999,
+    39999,
+    49999,
+    59999,
+    69999,
+    79999,
+    89999,
+    99999
+  ],
+  "beta_schedule": "piecewise_half",
+  "beta_start": 0.5,
+  "beta_end": 1.0,
+  "total_wall_seconds": 101383.7,
+  "config": {
+    "n_steps": 100000,
+    "n_chains": 4,
+    "max_depth": 6,
+    "max_nodes": 25,
+    "noise_epsilon": 0.01,
+    "beta_start": 0.5,
+    "beta_end": 1.0,
+    "beta_schedule": "piecewise_half",
+    "_beta_note": "Ramps 0.5\u21921.0 linearly over first 50k steps, flat at 1.0 for final 50k. Posterior estimates use \u03b2=1 tail only (steps 50000-99999); chain trajectory up to step 49999 is tempered burn-in.",
+    "init_max_depth": 3,
+    "base_seed": 42,
+    "n_checkpoints": 10,
+    "_ckpt_note": "10 every-10k checkpoints: steps 9999, 19999, ..., 99999. Post-hoc: use steps 49999+ for \u03b2=1-only posterior.",
+    "ext_probes_native": 2000
+  }
+}

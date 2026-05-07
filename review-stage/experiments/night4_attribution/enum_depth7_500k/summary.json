@@ -1,0 +1,42 @@
+{
+  "n_classes": 3933,
+  "n_rules": 6,
+  "rules": {
+    "all_red": {
+      "n_hyps": 2,
+      "retained_mass": 0.9999270891814036,
+      "elapsed_s": 0.11,
+      "top_fp": "d47919ef9427dd08711f3b72c4ee6d3dddeb063783645c6195882e06b36962e7"
+    },
+    "all_same_suit": {
+      "n_hyps": 1,
+      "retained_mass": 0.9999999093405633,
+      "elapsed_s": 0.09,
+      "top_fp": "2080a53e70bbb87d66a3196c6d03dd2178bceda09c1fb3476ba0510a64c66071"
+    },
+    "ranks_palindrome": {
+      "n_hyps": 2,
+      "retained_mass": 0.9989061452202646,
+      "elapsed_s": 0.09,
+      "top_fp": "57d2f13d10a8a7732f6bfaec5351b74047b3d9872b1f2b5f2acc2f2fe6f379a0"
+    },
+    "pair_5s_adjacent": {
+      "n_hyps": 32,
+      "retained_mass": 0.9753807601732262,
+      "elapsed_s": 0.09,
+      "top_fp": "71dffaca0c7072f8f053fad2289711a59d5dec0032800fe915ba0ca24ac45ef8"
+    },
+    "all_even": {
+      "n_hyps": 8,
+      "retained_mass": 0.9951930661275749,
+      "elapsed_s": 0.09,
+      "top_fp": "d6cf5487f3fdf9c13b0e86cecc0aa500e3259e70e53f2a5ae569f1e644c7daec"
+    },
+    "four_of_a_kind_adjacent": {
+      "n_hyps": 1,
+      "retained_mass": 0.9991225998942267,
+      "elapsed_s": 0.09,
+      "top_fp": "36fec005896794f52d787d3eeed14b0d6e9300599927b79270baadb7cf77a299"
+    }
+  }
+}

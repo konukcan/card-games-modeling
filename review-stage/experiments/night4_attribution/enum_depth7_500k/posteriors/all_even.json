@@ -1,0 +1,114 @@
+{
+  "rule_id": "all_even",
+  "n_hyps_in_posterior": 8,
+  "enum_retained_mass": 0.9951930661275749,
+  "elapsed_seconds": 0.09,
+  "top20": [
+    {
+      "rank": 1,
+      "prob": 0.9615181404377409,
+      "cls_idx": 1835,
+      "fingerprint": "d6cf5487f3fdf9c13b0e86cecc0aa500e3259e70e53f2a5ae569f1e644c7daec",
+      "canonical_program": "(\u03bb lt (mod (max_rank $0) 5) 1)",
+      "n_expressions": 4
+    },
+    {
+      "rank": 2,
+      "prob": 0.024206513255722553,
+      "cls_idx": 1742,
+      "fingerprint": "5c29b6eb11a550dbbe1b5c242c4f91530623981768160cdc61c119945b036d40",
+      "canonical_program": "(\u03bb ge (+ 5 5) (max_rank $0))",
+      "n_expressions": 4
+    },
+    {
+      "rank": 3,
+      "prob": 0.006800964222220632,
+      "cls_idx": 220,
+      "fingerprint": "c0648bd57c4515bf385c6cce27172d4f35321974fc61fffa8789fbc90f282948",
+      "canonical_program": "(\u03bb lt (min_rank $0) 3)",
+      "n_expressions": 362
+    },
+    {
+      "rank": 4,
+      "prob": 0.0020343106406827648,
+      "cls_idx": 1836,
+      "fingerprint": "0ac8fd51e328f21ebc07606f779680f973f6dd289a42ba029d69663cf3e8df44",
+      "canonical_program": "(\u03bb lt (mod (max_rank $0) 5) 2)",
+      "n_expressions": 4
+    },
+    {
+      "rank": 5,
+      "prob": 0.001524043409376361,
+      "cls_idx": 10,
+      "fingerprint": "71dffaca0c7072f8f053fad2289711a59d5dec0032800fe915ba0ca24ac45ef8",
+      "canonical_program": "(\u03bb has_suit $0 DIAMONDS)",
+      "n_expressions": 524
+    },
+    {
+      "rank": 6,
+      "prob": 0.0015129589010651305,
+      "cls_idx": 14,
+      "fingerprint": "a4217d5717345d45d5a6fec964f468161bb47a752163cc9d9583b02cb30c5fcb",
+      "canonical_program": "(\u03bb has_suit $0 SPADES)",
+      "n_expressions": 524
+    },
+    {
+      "rank": 7,
+      "prob": 0.0012826075906144927,
+      "cls_idx": 274,
+      "fingerprint": "770b0b4596ac91cd81be95d0e453dc4cc323db5f7b8c81d957b3ea31bf7964da",
+      "canonical_program": "(\u03bb has_suit (second_half (second_half $0)) SPADES)",
+      "n_expressions": 306
+    },
+    {
+      "rank": 8,
+      "prob": 0.0011204615425771593,
+      "cls_idx": 42,
+      "fingerprint": "260e4779e76c58075f2b605544fe7d7879b06cab04e4ad8b40e2ad3502b94038",
+      "canonical_program": "(\u03bb has_suit (second_half $0) SPADES)",
+      "n_expressions": 159
+    }
+  ],
+  "full_posterior": [
+    {
+      "prob": 0.9615181404377409,
+      "cls_idx": 1835,
+      "fingerprint": "d6cf5487f3fdf9c13b0e86cecc0aa500e3259e70e53f2a5ae569f1e644c7daec"
+    },
+    {
+      "prob": 0.024206513255722553,
+      "cls_idx": 1742,
+      "fingerprint": "5c29b6eb11a550dbbe1b5c242c4f91530623981768160cdc61c119945b036d40"
+    },
+    {
+      "prob": 0.006800964222220632,
+      "cls_idx": 220,
+      "fingerprint": "c0648bd57c4515bf385c6cce27172d4f35321974fc61fffa8789fbc90f282948"
+    },
+    {
+      "prob": 0.0020343106406827648,
+      "cls_idx": 1836,
+      "fingerprint": "0ac8fd51e328f21ebc07606f779680f973f6dd289a42ba029d69663cf3e8df44"
+    },
+    {
+      "prob": 0.001524043409376361,
+      "cls_idx": 10,
+      "fingerprint": "71dffaca0c7072f8f053fad2289711a59d5dec0032800fe915ba0ca24ac45ef8"
+    },
+    {
+      "prob": 0.0015129589010651305,
+      "cls_idx": 14,
+      "fingerprint": "a4217d5717345d45d5a6fec964f468161bb47a752163cc9d9583b02cb30c5fcb"
+    },
+    {
+      "prob": 0.0012826075906144927,
+      "cls_idx": 274,
+      "fingerprint": "770b0b4596ac91cd81be95d0e453dc4cc323db5f7b8c81d957b3ea31bf7964da"
+    },
+    {
+      "prob": 0.0011204615425771593,
+      "cls_idx": 42,
+      "fingerprint": "260e4779e76c58075f2b605544fe7d7879b06cab04e4ad8b40e2ad3502b94038"
+    }
+  ]
+}
