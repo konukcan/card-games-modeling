@@ -56,8 +56,8 @@ This implementation follows the architecture of [Ellis et al. (2023)](https://do
 ### Installation
 
 ```bash
-git clone https://github.com/konukcan/card-games-modelling.git
-cd card-games-modelling
+git clone https://github.com/konukcan/card-games-modeling.git
+cd card-games-modeling
 pip install -r requirements.txt
 ```
 
@@ -188,7 +188,7 @@ This Repository                    Behavioral Experiment
 ## Directory Structure
 
 ```
-card-games-modelling/
+card-games-modeling/
 ├── src/                              # Main implementation
 │   ├── dreamcoder_core/              # Core DreamCoder components
 │   │   ├── primitives.py             # 🔑 AUTHORITATIVE primitive library (57 primitives)
