@@ -903,6 +903,10 @@ def score_rule(
             "n_expressions": sh.n_expressions,
             "extension_size": sh.extension_size,
             "base_rate": round(sh.base_rate, 6),
+            # extension_fingerprint added for downstream model_compare pipeline
+            # join (participant fingerprint -> model rank). Was already present
+            # on ScoredHypothesis but not serialized to JSON.
+            "extension_fingerprint": sh.fingerprint,
             "log_prior": round(
                 (sh.log_posterior_strict if likelihood_mode == "strict"
                  else sh.log_posterior_noisy)
@@ -912,6 +916,20 @@ def score_rule(
                 sh.log_likelihood_strict if likelihood_mode == "strict"
                 else sh.log_likelihood_noisy, 2),
         })
+
+    # Full enumerated posterior (lean: just fingerprint + probability + n_expressions).
+    # Used by model_compare/load_model.py to build fingerprint_to_rank for the
+    # full ranked list (not just top-10). Each entry is rank-ordered (best first).
+    # ~9003 entries × ~70 bytes ≈ 600KB per rule × 55 rules ≈ 33MB per variant JSON
+    # (still well under the 100MB warning size; was 660KB before the addition).
+    full_posterior = [
+        {
+            "fp": sh.fingerprint,
+            "p": round(prob, 8),
+            "n_progs": sh.n_expressions,
+        }
+        for sh, prob in normalized
+    ]
 
     # --- True-rule tracking ---
     # Find the true rule in the posterior ranking by its fingerprint.
@@ -1004,6 +1022,7 @@ def score_rule(
         "n_with_all_hits": n_with_all_hits,
         "difficulty": difficulty,
         "top_hypotheses": top_hyps,
+        "full_posterior": full_posterior,
         # True-rule tracking fields
         "true_rule_rank": true_rule_rank,
         "true_rule_posterior_mass": true_rule_posterior_mass,
