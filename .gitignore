@@ -52,6 +52,12 @@ data/*.npy
 *.pkl
 *.pid
 
+# Whitelist: experiment artifacts (equivalence-class pools, extension caches)
+# These are precious — represent hours of enumeration / MCMC runs and contain
+# the program objects we use for downstream analysis.
+!review-stage/experiments/**/pool.pkl
+!review-stage/experiments/**/extensions.pkl
+
 # Cython generated files (regenerate from .pyx)
 src/dreamcoder_core/cython_src/*.c
 src/dreamcoder_core/cython_src/*.html
