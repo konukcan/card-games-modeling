@@ -1,5 +1,7 @@
 # Primitive Library Design Document
 
+> **⚠️ STALE — December 2024.** This document describes v3.1 of the primitive library (59 base + 4 parallel = 63). The current authoritative library is v5 in `src/dreamcoder_core/primitives.py` (**64 primitives**; MCMC subset = 62 minus `true`/`false`). The category labels and counts in this doc no longer match the code. See `src/docs/library-explanations.tex` (also pending regen) for narrative context. For the live count, run: `python -c "import sys; sys.path.insert(0,'src'); from dreamcoder_core.primitives import build_primitives; print(len(build_primitives()))"`.
+
 **Version:** 3.1 (with Parallel Extensions)
 **Date:** December 2024
 **Status:** Active Development
